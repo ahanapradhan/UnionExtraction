@@ -28,16 +28,33 @@ class DbMock(DbBase):
 
 
 class DbParser:
-    fromtab_QH = set()
-    comtab_QH = set()
-    parttab_QH = set()
-    fromtabs_qi = []
-    parttabs_qi = []
+
+    def __init__(self):
+        self.parttabs_qi = None
+        self.fromtabs_qi = None
+        self.parttab_QH = None
+        self.comtab_QH = None
+        self.fromtab_QH = None
+
+    def reset(self):
+        self.fromtab_QH = set()
+        self.comtab_QH = set()
+        self.parttab_QH = set()
+        self.fromtabs_qi = []
+        self.parttabs_qi = []
 
     def parse(self, sql):
+        self.reset()
         subqueries = re.findall(r'\((.*?)\)', sql)
+
+        if not len(subqueries):  # no union case
+            tables = re.findall(r'FROM\s+([^\s,]+)', sql, re.IGNORECASE)
+            self.fromtab_QH = set(tables)
+            return
+
         for subquery in subqueries:
-            tables = re.findall(r'FROM\s+(.*?)(?:\s+WHERE|\))', subquery, re.IGNORECASE)
+            match = re.findall(r'FROM\s+(\S+)(,\S+)*(\s+WHERE)*', subquery, re.IGNORECASE)
+            tables = match[0][0].split(",")
             self.fromtabs_qi.append(set(tables))
 
         # Find tables present in all subqueries
@@ -48,7 +65,6 @@ class DbParser:
 
         self.fromtab_QH = set().union(*self.fromtabs_qi)
         self.parttab_QH = set().union(*self.parttabs_qi)
-
 
     def print(self):
         print("fromtab_QH")
@@ -61,6 +77,3 @@ class DbParser:
         print(self.fromtabs_qi)
         print("parttabs_qi")
         print(self.parttabs_qi)
-
-
-
