@@ -1,14 +1,8 @@
-from database import TPCH
 from utils import get_combs
 
 
-def algo(QH, partial_QH):
-    db = TPCH()
-    S = get_combs(partial_QH)
-    Nulls = set()
-    NonNulls = set()
-    MaxNonNulls = set()
-    Partials = set()
+def algo(db, QH):
+    Partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S = init(db, QH)
 
     for s in S:
         print(s)
@@ -45,4 +39,14 @@ def algo(QH, partial_QH):
         Partials = Partials.union(cc)
 
     return Partials
+
+
+def init(db, QH):
+    partial_QH = db.get_partial_QH(QH)
+    S = get_combs(partial_QH)
+    Nulls = set()
+    NonNulls = set()
+    MaxNonNulls = set()
+    Partials = set()
+    return partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S
 

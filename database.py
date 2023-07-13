@@ -15,6 +15,10 @@ class Schema:
     def run_query(self, QH):
         raise NotImplementedError("method not implemented")
 
+    def get_partial_QH(self, QH):
+        self.parser.parse(QH)
+        return self.parser.parttab_QH
+
 
 class TPCH(Schema):
     relations = ["orders", "lineitem", "customer", "supplier", "part", "partsupp", "nation", "region"]
@@ -31,3 +35,5 @@ class TPCH(Schema):
         froms = set(self.parser.fromtab_QH)
         is_subset = froms.issubset(self.ddot)
         return is_subset
+
+
