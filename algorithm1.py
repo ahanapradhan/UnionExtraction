@@ -4,27 +4,7 @@ from utils import get_combs
 def algo(db, QH):
     Partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S = init(db, QH)
 
-    for s in S:
-        print(s)
-        s_set = set(s)
-        for onenull in Nulls:
-            subset_check = onenull.issubset(s_set)
-            if subset_check:
-                Nulls = Nulls.union(s_set)
-                continue
-
-        db.nullify_except(s_set)
-        Res = db.run_query(QH)
-
-        if not Res:
-            Nulls = Nulls.union(s_set)
-        else:
-            NonNulls = NonNulls.union(s_set)
-
-    print("Nulls: ")
-    print(Nulls)
-    print("NonNulls: ")
-    print(NonNulls)
+    NonNulls = construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db)
 
     for one in NonNulls:
         is_subset = True
@@ -41,6 +21,32 @@ def algo(db, QH):
     return Partials
 
 
+def construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db):
+    for s in S:
+
+        to_nulls = False
+        for onenull in Nulls:
+            subset_check = onenull.issubset(s)
+            if subset_check:
+                to_nulls = True
+                break
+        if to_nulls:
+            continue
+
+        Res = nullify_and_runQuery(QH, db, s)
+        if not Res:
+            Nulls.add(s)
+        else:
+            NonNulls.add(s)
+    return NonNulls
+
+
+def nullify_and_runQuery(QH, db, s):
+    db.nullify_except(s)
+    Res = db.run_query(QH)
+    return Res
+
+
 def init(db, QH):
     partial_QH = db.get_partial_QH(QH)
     S = get_combs(partial_QH)
@@ -49,4 +55,3 @@ def init(db, QH):
     MaxNonNulls = set()
     Partials = set()
     return partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S
-

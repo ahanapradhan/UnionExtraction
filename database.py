@@ -32,8 +32,9 @@ class TPCH(Schema):
 
     def run_query(self, QH):
         self.parser.parse(QH)
-        froms = set(self.parser.fromtab_QH)
-        is_subset = froms.issubset(self.ddot)
-        return is_subset
+        for form in self.parser.fromtabs_qi:
+            if form.issubset(self.ddot):
+                return True
+        return False
 
 
