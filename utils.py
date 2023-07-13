@@ -6,5 +6,9 @@ def get_combs(elems):
     pw_elems = powerset(elems)
     pw_elems.remove(set())
     pw_elems.remove(elems)
-    print(pw_elems)
-    return pw_elems
+    combs = set()
+    for e in pw_elems:
+        combs.add(frozenset(e))
+    #combs = set(pw_elems)
+    print(combs)
+    return combs

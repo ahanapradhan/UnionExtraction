@@ -14,7 +14,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(NonNulls, set())
         self.assertEqual(Nulls, set())
         self.assertEqual(Partials, set())
-        self.assertEqual(S, {{'part'}, {'customer'}})
+        self.assertEqual(S, {frozenset({'part'}), frozenset({'customer'})})
 
     def test_init1(self):
         query = "(select * from part,orders) union all (select * from customer)"
@@ -25,8 +25,9 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(NonNulls, set())
         self.assertEqual(Nulls, set())
         self.assertEqual(Partials, set())
-        self.assertEqual(S, {('part',), ('customer',), ('orders',), ('part', 'orders'), ('part', 'customer'),
-                             ('customer', 'orders')})
+        self.assertEqual(S, {frozenset({'part'}), frozenset({'customer'}), frozenset({'orders'}),
+                             frozenset({'part', 'orders'}), frozenset({'part', 'customer'}),
+                             frozenset({'customer', 'orders'})})
 
 
 if __name__ == '__main__':
