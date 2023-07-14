@@ -1,4 +1,4 @@
-from utils import get_combs
+from utils import get_combs, construct_maxNonNulls
 
 
 def algo(db, QH):
@@ -6,17 +6,11 @@ def algo(db, QH):
 
     NonNulls = construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db)
 
-    for one in NonNulls:
-        is_subset = True
-        for other in NonNulls:
-            if one != other:
-                is_subset = is_subset and (not one.issubset(other))
-        if not is_subset:
-            MaxNonNulls = MaxNonNulls.union(one)
+    MaxNonNulls = construct_maxNonNulls(MaxNonNulls, NonNulls)
 
     for c in MaxNonNulls:
-        cc = partial_QH.difference(c)
-        Partials = Partials.union(cc)
+        cc = Partial_QH.difference(c)
+        Partials.add(cc)
 
     return Partials
 

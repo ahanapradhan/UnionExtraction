@@ -1,6 +1,7 @@
 import unittest
 
 import algorithm1
+import utils
 from database import TPCH
 
 
@@ -83,6 +84,15 @@ class MyTestCase(unittest.TestCase):
         NonNulls = algorithm1.construct_nulls_nonNulls(NonNulls, Nulls, query, S, db)
         self.assertEqual(NonNulls, {frozenset({'part'}), frozenset({'customer'}), frozenset({'nation'}),
                                     frozenset({'customer', 'nation'})})
+
+    def test_construct_maxNonNulls(self):
+        query = "(select * from part,orders) union all (select * from orders,customer) union all (select * from " \
+                "customer,part)"
+        db = TPCH()
+        Partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S = algorithm1.init(db, query)
+        NonNulls = algorithm1.construct_nulls_nonNulls(NonNulls, Nulls, query, S, db)
+        MaxNonNulls = utils.construct_maxNonNulls(MaxNonNulls, NonNulls)
+        self.assertEqual(NonNulls, MaxNonNulls)
 
 
 if __name__ == '__main__':

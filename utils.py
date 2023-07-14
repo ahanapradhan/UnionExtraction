@@ -9,6 +9,52 @@ def get_combs(elems):
     combs = set()
     for e in pw_elems:
         combs.add(frozenset(e))
-    #combs = set(pw_elems)
     print(combs)
     return combs
+
+
+def get_pairs_from_set(elems):
+    org_nl = list(elems)
+    res = set()
+    for i in range(len(org_nl)):
+        one_rotate_nl = org_nl[i:] + org_nl[:i]
+        zipped = zip(org_nl, one_rotate_nl)
+        for z in zipped:
+            if not (z[0] == z[1]):
+                res.add(frozenset(z))
+    return res
+
+
+def construct_maxNonNulls(MaxNonNulls, NonNulls):
+    pairs = get_pairs_from_set(NonNulls)
+
+    to_add = set()
+    to_del = set()
+    dont_add = set()
+
+    for pair in pairs:
+        one, other = pair
+
+        if one < other:
+            to_add.add(other)
+        if other < one:
+            to_add.add(one)
+        if (not one < other) and (not other < one):
+            to_add.add(other)
+            to_add.add(one)
+
+        for m in MaxNonNulls:
+            for ta in to_add:
+                if m < ta:
+                    to_del.add(m)
+                if ta < m:
+                    dont_add.add(ta)
+
+        for da in dont_add:
+            to_add.discard(da)
+        for td in to_del:
+            MaxNonNulls.discard(td)
+        for ta in to_add:
+            MaxNonNulls.add(ta)
+
+    return MaxNonNulls
