@@ -94,6 +94,23 @@ class MyTestCase(unittest.TestCase):
         MaxNonNulls = utils.construct_maxNonNulls(MaxNonNulls, NonNulls)
         self.assertEqual(NonNulls, MaxNonNulls)
 
+    def test_algo(self):
+        query = "(SELECT * FROM lineitem,nation,region) union all " \
+                "(SELECT * FROM customer,nation,region) union all " \
+                "(SELECT * FROM orders,nation,region)"
+        db = TPCH()
+        p = algorithm1.algo(db, query)
+        self.assertEqual(p, {frozenset({'orders'}), frozenset({'customer'}), frozenset({'lineitem'})})
+
+    def test_algo1(self):
+        query = "(SELECT * FROM lineitem,nation where something) union all " \
+                "(SELECT * FROM customer,nation where some other thing) union all " \
+                "(SELECT * FROM customer,lineitem where more things)"
+        db = TPCH()
+        p = algorithm1.algo(db, query)
+        self.assertEqual(p, {frozenset({'lineitem', 'nation'}), frozenset({'customer', 'nation'}),
+                             frozenset({'lineitem', 'customer'})})
+
 
 if __name__ == '__main__':
     unittest.main()

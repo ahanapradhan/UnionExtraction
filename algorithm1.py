@@ -10,7 +10,7 @@ def algo(db, QH):
 
     for c in MaxNonNulls:
         cc = Partial_QH.difference(c)
-        Partials.add(cc)
+        Partials.add(frozenset(cc))
 
     return Partials
 
