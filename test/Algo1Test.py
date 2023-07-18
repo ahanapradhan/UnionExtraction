@@ -1,8 +1,8 @@
 import unittest
 
-import algorithm1
-import utils
-from database import TPCH
+from src.core import algorithm1
+from src.util import utils
+from src.mocks.database import TPCH
 
 
 class MyTestCase(unittest.TestCase):

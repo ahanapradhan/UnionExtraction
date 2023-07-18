@@ -1,8 +1,8 @@
 # This is a sample Python script.
 from flask import Flask, request
 
-import algorithm1
-from database import TPCH
+from src.core import algorithm1
+from src.mocks.database import TPCH
 
 app = Flask(__name__)
 

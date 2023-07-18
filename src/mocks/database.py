@@ -1,4 +1,6 @@
-from db_actions import DbMock, DbParser
+import sys, os
+
+from .db_actions import DbMock, DbParser
 
 
 class Schema:
@@ -36,5 +38,3 @@ class TPCH(Schema):
             if form.issubset(self.ddot):
                 return True
         return False
-
-

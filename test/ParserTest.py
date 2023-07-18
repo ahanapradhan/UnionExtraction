@@ -1,6 +1,6 @@
 import unittest
 
-from db_actions import DbParser
+from src.mocks.db_actions import DbParser
 
 
 class MyTestCase(unittest.TestCase):
