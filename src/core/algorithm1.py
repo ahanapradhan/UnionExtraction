@@ -12,7 +12,22 @@ def algo(db, QH):
         cc = Partial_QH.difference(c)
         Partials.add(frozenset(cc))
 
-    return Partials
+    prettY_str = construct_pretty_print_string(Partials)
+
+    return Partials, prettY_str
+
+
+def construct_pretty_print_string(Partials):
+    i = 1
+    prettY_str = ""
+    for p in Partials:
+        tabs = ""
+        for t in p:
+            tabs += str(t) + ", "
+        tabs = tabs[:-2]
+        prettY_str += "FROM(q" + str(i) + ") = { " + tabs + " }, "
+        i = i + 1
+    return prettY_str[:-2]
 
 
 def construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db):

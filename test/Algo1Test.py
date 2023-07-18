@@ -99,7 +99,7 @@ class MyTestCase(unittest.TestCase):
                 "(SELECT * FROM customer,nation,region) union all " \
                 "(SELECT * FROM orders,nation,region)"
         db = TPCH()
-        p = algorithm1.algo(db, query)
+        p, pstr = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'orders'}), frozenset({'customer'}), frozenset({'lineitem'})})
 
     def test_algo1(self):
@@ -107,7 +107,7 @@ class MyTestCase(unittest.TestCase):
                 "(SELECT * FROM customer,nation where some other thing) union all " \
                 "(SELECT * FROM customer,lineitem where more things)"
         db = TPCH()
-        p = algorithm1.algo(db, query)
+        p, pstr = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'nation'}), frozenset({'customer', 'nation'}),
                              frozenset({'lineitem', 'customer'})})
 
