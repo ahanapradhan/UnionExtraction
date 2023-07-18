@@ -1,0 +1,63 @@
+<Html>
+<head> 
+<title>
+Registration Page
+</title>
+
+<style>
+.button {
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+.button1 {background-color: #4CAF50;} /* Green */
+.button2 {background-color: #008CBA;} /* Blue */
+</style>
+
+</head>
+<body>
+
+<h2> Welcome to UNMASQUE </h2>
+<hr>
+<br>
+<br>
+<form>
+
+<label> Database </label>
+<input type="text" name="db" size="15" value="tpch"/> <br> <br>
+<label> Username: </label>
+<input type="text" name="username" size="15" value="postgres"/> <br> <br>
+<label> Password: </label>
+<input type="text" name="password" size="15" value="postgres"/> <br> <br>
+<label> Host </label>
+<input type="text" name="host" size="15" value="localhost"/> <br> <br>
+<label> Port: </label>
+<input type="text" name="port" size="15" value="54321"/> <br> <br>
+
+<label> 
+Database Engine :
+</label> 
+<select>
+<option value="PostgreSQL">PostgreSQL</option>
+</select>
+
+<button class="button button1">Connect</button>
+<br>
+<br>
+
+
+Hidden Query
+<br>
+<textarea cols="80" rows="5" value="hiddenQuery"> 
+</textarea>
+
+<button class="button button2">Submit</button>
+
+

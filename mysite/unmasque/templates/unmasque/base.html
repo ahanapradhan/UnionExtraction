@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Turbo-Flask Streams Demo</title>
+
+<style>
+
+.container {
+  height:50%;
+  background-color: #f2f2f2;
+  padding: 20px;
+
+}
+
+.col-75{
+  margin-top: 5px;
+  margin-right: 10px;
+  margin-left: 10px;
+
+}
+
+textarea{
+  font-size: 15px;
+  width: 100%;
+  height: 200px;
+
+}
+
+
+
+      .load {
+        width: 100%;
+        height:100%;
+      }
+      .load th, .load td {
+        padding: 6px;
+        text-align: center;
+      }
+
+
+.box1 {
+  width: 100%;
+  height:600px;
+  padding: 10px;
+  border: 5px solid gray;
+  margin: 0;
+}
+
+.box2 {
+  width: 100%;
+  height:400px;
+  padding: 10px;
+  padding: 10px;
+  border: 5px solid gray;
+  margin: 0;
+}
+
+
+.spots:not(empty) {
+  background: #00e676;
+  width:505px;
+  float: center;
+
+}
+
+.spots:empty {
+  background: #f17d7d;
+  width:505px;
+  height: 15px;
+  float: center;
+
+}
+
+
+
+.op:not(empty) {
+  background: #00e676;
+  width:1500px;
+  float: center;
+
+}
+
+.op:empty {
+  background: #f17d7d;
+  width:1500px;
+  float: center;
+
+}
+
+
+
+
+
+.border_where_clause_extractor {
+    border: 2px solid #ae90aa;
+} 
+
+
+.border_pipeline {
+    border: 2px solid #d14e6f;
+} 
+
+ th, td {
+  border: 1px solid black;
+  border-radius: 10px;
+}
+
+
+
+    </style>
+    {{ turbo() }}
+  </head>
+  <body>
+    <div class="box1">
+        <h2>UNMASQUE</h2>
+        {% include "loadavg.html" %}
+    </div>
+    <div class="box2">
+        {% block content %}{% endblock %}
+    </div>
+    
+  </body>
+</html>

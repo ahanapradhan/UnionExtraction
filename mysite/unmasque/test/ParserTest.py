@@ -1,6 +1,6 @@
 import unittest
 
-from src.mocks.db_actions import DbParser
+from mysite.unmasque.src.mocks.db_actions import DbParser
 
 
 class MyTestCase(unittest.TestCase):

@@ -1,6 +1,6 @@
 import unittest
 
-from src.util import utils
+from mysite.unmasque.src.util import utils
 
 
 class MyTestCase(unittest.TestCase):
