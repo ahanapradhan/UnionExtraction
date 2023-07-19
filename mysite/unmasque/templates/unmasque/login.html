@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login to Database</title>
+</head>
+<body>
+    <h2>Login to Database</h2>
+    <hr>
+    {% if error_message %}
+        <p>{{ error_message }}</p>
+    {% endif %}
+    <hr>
+    <form method="post">
+
+        {% csrf_token %}
+        <label> DB Engine: </label>
+        <select>
+             <option value = "PostgreSQL">PostgreSQL</option>
+        </select>
+        <br><br>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" value="postgres"><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" value="postgres"><br><br>
+        <label for="host">Host    :</label>
+        <input type="text" id="host" name="host" value="localhost"><br><br>
+        <label for="port">Port    :</label>
+        <input type="text" id="port" name="port" value="5432"><br><br>
+        <label for="database">Database:</label>
+        <input type="text" id="database" name="database" value="tpch"><br><br>
+        <input type="submit" value="Login">
+    </form>
+</body>
+</html>
