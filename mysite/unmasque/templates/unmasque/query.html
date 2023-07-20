@@ -4,11 +4,14 @@
     <title>Query</title>
 </head>
 <body>
-    <h1>Query</h1>
+    <h1>Enter Hidden SQL query:</h1>
     <form method="post" action="{% url 'query' %}">
         {% csrf_token %}
         <textarea name="query" rows="5" cols="100" required></textarea><br><br>
         <input type="submit" value="Submit">
+        <br><br>
     </form>
+    <a href="{% url 'bye' %}"><button>Logout</button></a>
+
 </body>
 </html>

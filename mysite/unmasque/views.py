@@ -53,14 +53,18 @@ def query_page(request):
         query = request.POST['query']
         db = TPCH()
         p, data = algorithm1.algo(db, query)
-        return redirect('result', data=data)
+        request.session['partials'] = data
+        return redirect('result')
 
     return render(request, 'unmasque/query.html')
 
 
 def result_page(request):
     # Retrieve the result from the previous view or database
-    data = request.GET.get('data')
-    print(data)
-    return render(request, 'unmasque/result.html', {'result': data})
+    partials = request.session.get('partials')
+    print(partials)
+    return render(request, 'unmasque/result.html', {'result': partials})
 
+
+def bye_page(request):
+    return render(request, 'unmasque/bye.html')
