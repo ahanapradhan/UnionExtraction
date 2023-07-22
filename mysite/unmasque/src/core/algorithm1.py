@@ -1,3 +1,6 @@
+import sys
+
+sys.path.append(".")
 from ..util.utils import get_combs, construct_maxNonNulls
 
 

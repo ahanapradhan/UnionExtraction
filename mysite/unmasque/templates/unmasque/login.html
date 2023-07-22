@@ -4,7 +4,7 @@
     <title>Login to Database</title>
 </head>
 <body>
-    <h2>Login to Database</h2>
+    <h2>Enter the Details:</h2>
     <hr>
     {% if error_message %}
         <p>{{ error_message }}</p>
@@ -28,7 +28,8 @@
         <input type="text" id="port" name="port" value="5432"><br><br>
         <label for="database">Database:</label>
         <input type="text" id="database" name="database" value="tpch"><br><br>
-        <input type="submit" value="Login">
+        <textarea name="query" rows="5" cols="100" required></textarea><br><br>
+        <input type="submit" value="Extract">
     </form>
 </body>
 </html>

@@ -111,6 +111,18 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(p, {frozenset({'lineitem', 'nation'}), frozenset({'customer', 'nation'}),
                              frozenset({'lineitem', 'customer'})})
 
+    def test_algo1_2(self):
+        query = "(SELECT * FROM part,lineitem) union all " \
+                "(SELECT * FROM customer,orders) union all " \
+                "(SELECT * FROM nation,region,part)"
+        db = TPCH()
+        p, pstr = algorithm1.algo(db, query)
+        self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'customer', 'orders'}),
+                             frozenset({'nation', 'region','part'})})
+        print("---------")
+        print(pstr)
+
+
 
 if __name__ == '__main__':
     unittest.main()

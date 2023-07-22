@@ -18,21 +18,22 @@ def login_view(request):
         database = request.POST.get('database')
         try:
             conn = connect_to_db(database, host, password, port, username)
-            conn.close()
-            return redirect('success')
+            print(conn)
         except OperationalError:
             error_message = 'Invalid credentials. Please try again.'
             return render(request, 'unmasque/login.html', {'error_message': error_message})
+
+        query = request.POST.get('query')
+        db = TPCH()
+        p, data = algorithm1.algo(db, query)
+        conn.close()
+        request.session['partials'] = data
+        return redirect('result')
 
     return render(request, 'unmasque/login.html')
 
 
 def connect_to_db(database, host, password, port, username):
-    print(database)
-    print(host)
-    print(password)
-    print(username)
-    print(port)
     connection = psycopg2.connect(
         database=database,
         user=username,
@@ -40,27 +41,11 @@ def connect_to_db(database, host, password, port, username):
         host=host,
         port=port
     )
-    print(connection)
     return connection
 
 
-def success_page(request):
-    return render(request, 'unmasque/success.html')
-
-
-def query_page(request):
-    if request.method == 'POST':
-        query = request.POST['query']
-        db = TPCH()
-        p, data = algorithm1.algo(db, query)
-        request.session['partials'] = data
-        return redirect('result')
-
-    return render(request, 'unmasque/query.html')
-
-
 def result_page(request):
-    # Retrieve the result from the previous view or database
+    # Retrieve the result from the previous view through session
     partials = request.session.get('partials')
     print(partials)
     return render(request, 'unmasque/result.html', {'result': partials})

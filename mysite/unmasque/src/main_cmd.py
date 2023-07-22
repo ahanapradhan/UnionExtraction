@@ -5,7 +5,8 @@ from mocks.database import TPCH
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
-    query = "(select * from part,orders) union all (select * from customer)"
+    query = "(select * from part,lineitem) union all (select * from orders,customer)" \
+            " union all (select * from nation,region,part)"
     db = TPCH()
     p, pstr = algorithm1.algo(db, query)
     return pstr
