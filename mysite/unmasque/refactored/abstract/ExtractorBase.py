@@ -20,12 +20,16 @@ class Base:
         self.connectionHelper = connectionHelper
         self.extractor_name = name
 
-    def doJob(self, param: Any):
+    def doJob(self, *args):
         self.local_start_time = time.time()
-        self.doActualJob(param)
+        result = self.doActualJob(args)
         self.local_end_time = time.time()
+        return result
 
-    def doActualJob(self, param: Any):
+    def doActualJob(self, args):
+        pass
+
+    def extract_params_from_args(self, args):
         pass
 
     def print_elapsed_time(self):

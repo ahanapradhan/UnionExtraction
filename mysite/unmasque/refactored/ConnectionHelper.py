@@ -30,9 +30,12 @@ class ConnectionHelper:
 
     def execute_sql(self, sqls):
         cur = self.conn.cursor()
+        print(cur)
         # print(cur)
         for sql in sqls:
+            print("..cur execute.." + sql)
             cur.execute(sql)
+            print("..done")
         cur.close()
 
     def execute_sql_fetchone(self, sql):

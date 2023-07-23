@@ -44,7 +44,11 @@ class Executable(Base):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Executable")
 
-    def doActualJob(self, query):
+    def extract_params_from_args(self, args):
+        return args[0]
+
+    def doActualJob(self, args):
+        query = self.extract_params_from_args(args)
         result = []
         try:
             res, description = self.connectionHelper.execute_sql_fetchall(query)
@@ -60,6 +64,6 @@ class Executable(Base):
         return result
 
 
-def getExecOutput(connHelper, query):
+def getExecOutput(connHelper, args):
     executable = Executable(connHelper)
-    return executable.doJob(query), executable.method_call_count
+    return executable.doJob(args), executable.method_call_count
