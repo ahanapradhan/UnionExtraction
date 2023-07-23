@@ -1,7 +1,7 @@
 import unittest
 
-from mysite.unmasque.u_global import executable
-from mysite.unmasque.u_global.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.refactored import executable
+from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 
 
 class MyTestCase(unittest.TestCase):

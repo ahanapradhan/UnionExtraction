@@ -5,10 +5,13 @@ import psycopg2
 
 class ConnectionHelper:
     conn = None
-    params = None
+    paramString = None
+    db = None
 
     def __init__(self, dbname, user, password, port, host="localhost"):
-        self.params = "dbname=" + dbname + " user=" + user + " password=" + password + " host=" + host + " port=" + port
+        self.db = dbname
+        self.paramString = "dbname=" + dbname + " user=" + user + \
+                           " password=" + password + " host=" + host + " port=" + port
 
     def closeConnection(self):
         if self.conn is not None:
@@ -16,7 +19,7 @@ class ConnectionHelper:
             self.conn = None
 
     def connectUsingParams(self):
-        self.conn = psycopg2.connect(self.params)
+        self.conn = psycopg2.connect(self.paramString)
 
     def getConnection(self):
         if self.conn is None:
