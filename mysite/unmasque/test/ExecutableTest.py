@@ -10,10 +10,20 @@ class MyTestCase(unittest.TestCase):
         conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
         conn.connectUsingParams()
         self.assertTrue(conn.conn is not None)
-        result = executable.getExecOutput(conn, query)
+        result, count = executable.getExecOutput(conn, query)
+        self.assertTrue(result is not None)
+        conn.closeConnection()
+        self.assertEqual(count, 1)
+        self.assertEqual(conn.conn, None)
+        query = "select count(*) from public.nation;"
+        conn.connectUsingParams()
+        self.assertTrue(conn.conn is not None)
+        result, count = executable.getExecOutput(conn, query)
         self.assertTrue(result is not None)
         conn.closeConnection()
         self.assertEqual(conn.conn, None)
+        self.assertEqual(count, 2)
+
 
 
 if __name__ == '__main__':
