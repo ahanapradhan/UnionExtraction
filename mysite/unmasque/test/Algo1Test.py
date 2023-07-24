@@ -1,5 +1,6 @@
 import unittest
 
+from mysite.unmasque.constants import NO_UNION
 from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.src.core import algorithm1
 from mysite.unmasque.src.core.UN1_from_clause import UN1FromClause
@@ -132,10 +133,20 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(conn.conn is not None)
         db = UN1FromClause(conn)
 
-
         p, pstr = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'lineitem', 'orders'})})
         conn.closeConnection()
+
+    def test_no_union(self):
+        query = "select l_partkey as key from lineitem, part where l_partkey = p_partkey limit 2"
+        conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+        conn.connectUsingParams()
+        self.assertTrue(conn.conn is not None)
+        db = UN1FromClause(conn)
+
+        p, pstr = algorithm1.algo(db, query)
+        self.assertEqual(p, set())
+        self.assertEqual(pstr, NO_UNION)
 
 
 if __name__ == '__main__':

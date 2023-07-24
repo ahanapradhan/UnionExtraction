@@ -1,11 +1,16 @@
 import sys
 
+from ...constants import NO_UNION
+
 sys.path.append(".")
 from ..util.utils import get_combs, construct_maxNonNulls
 
 
 def algo(db, QH):
     Partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S = init(db, QH)
+
+    if len(Partial_QH) == 0:
+        return set(), NO_UNION
 
     NonNulls = construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db)
 
@@ -62,7 +67,9 @@ def nullify_and_runQuery(QH, db, s):
 
 def init(db, QH):
     partial_QH = db.get_partial_QH(QH)
-    S = get_combs(partial_QH)
+    S = set()
+    if len(partial_QH) > 0:
+        S = get_combs(partial_QH)
     Nulls = set()
     NonNulls = set()
     MaxNonNulls = set()
