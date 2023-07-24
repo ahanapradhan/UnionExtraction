@@ -1,2 +1,2 @@
-CONN_OBJ_KEY = 'connection'
-PARTIALS_KEY = 'partials'
+TEMP_TABLE = 'temp'
+TEMP_TABNAME = "temp"

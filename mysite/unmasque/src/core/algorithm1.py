@@ -46,7 +46,7 @@ def construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db):
             continue
 
         Res = nullify_and_runQuery(QH, db, s)
-        if not Res:
+        if db.isEmpty(Res):
             Nulls.add(s)
         else:
             NonNulls.add(s)
@@ -56,6 +56,7 @@ def construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db):
 def nullify_and_runQuery(QH, db, s):
     db.nullify_except(s)
     Res = db.run_query(QH)
+    db.revert_nullify()
     return Res
 
 

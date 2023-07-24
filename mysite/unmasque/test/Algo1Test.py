@@ -1,6 +1,8 @@
 import unittest
 
+from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.src.core import algorithm1
+from mysite.unmasque.src.core.UN1_from_clause import UN1FromClause
 from mysite.unmasque.src.util import utils
 from mysite.unmasque.src.mocks.database import TPCH
 
@@ -118,10 +120,22 @@ class MyTestCase(unittest.TestCase):
         db = TPCH()
         p, pstr = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'customer', 'orders'}),
-                             frozenset({'nation', 'region','part'})})
-        print("---------")
-        print(pstr)
+                             frozenset({'nation', 'region', 'part'})})
 
+    def test_algo_with_real_flow(self):
+        query = "(select l_partkey as key from lineitem, part where l_partkey = p_partkey limit 2) " \
+                "union all " \
+                "(select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey limit 2)"
+
+        conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+        conn.connectUsingParams()
+        self.assertTrue(conn.conn is not None)
+        db = UN1FromClause(conn)
+
+
+        p, pstr = algorithm1.algo(db, query)
+        self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'lineitem', 'orders'})})
+        conn.closeConnection()
 
 
 if __name__ == '__main__':

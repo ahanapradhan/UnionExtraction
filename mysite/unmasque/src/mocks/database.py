@@ -1,12 +1,7 @@
-import sys, os
-
 from .db_actions import DbMock, DbParser
 
 
 class Schema:
-    ddot = []
-    db = DbMock()
-    parser = DbParser()
 
     def get_relations(self):
         raise NotImplementedError("method not implemented")
@@ -18,11 +13,21 @@ class Schema:
         raise NotImplementedError("method not implemented")
 
     def get_partial_QH(self, QH):
-        self.parser.parse(QH)
-        return self.parser.parttab_QH
+        raise NotImplementedError("method not implemented")
+
+    def revert_nullify(self):
+        pass
+
+    def isEmpty(self, Res):
+        if not Res:
+            return True
+        return False
 
 
 class TPCH(Schema):
+    ddot = []
+    db = DbMock()
+    parser = DbParser()
     relations = ["orders", "lineitem", "customer", "supplier", "part", "partsupp", "nation", "region"]
 
     def get_relations(self):
@@ -38,3 +43,8 @@ class TPCH(Schema):
             if form.issubset(self.ddot):
                 return True
         return False
+
+    def get_partial_QH(self, QH):
+        self.parser.parse(QH)
+        return self.parser.parttab_QH
+
