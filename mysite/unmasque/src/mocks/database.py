@@ -2,6 +2,7 @@ from .db_actions import DbMock, DbParser
 
 
 class Schema:
+    comtabs = []
 
     def get_relations(self):
         raise NotImplementedError("method not implemented")

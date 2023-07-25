@@ -9,6 +9,8 @@ class Base:
     local_end_time = None
     local_elapsed_time = None
     extractor_name = "Base"
+    done = False
+    result = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -21,9 +23,10 @@ class Base:
 
     def doJob(self, *args):
         self.local_start_time = time.time()
-        result = self.doActualJob(args)
+        self.result = self.doActualJob(args)
         self.local_end_time = time.time()
-        return result
+        self.done = True
+        return self.result
 
     def doActualJob(self, args):
         pass

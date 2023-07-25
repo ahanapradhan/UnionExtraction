@@ -1,6 +1,21 @@
-import logging
-
 import psycopg2
+
+
+def cus_execute_sqls(cur, sqls):
+    print(cur)
+    for sql in sqls:
+        print("..cur execute.." + sql)
+        cur.execute(sql)
+        print("..done")
+    cur.close()
+
+
+def cur_execute_sql_fetch_one(cur, sql):
+    cur.execute(sql)
+    prev = cur.fetchone()
+    prev = prev[0]
+    cur.close()
+    return prev
 
 
 class ConnectionHelper:
@@ -29,27 +44,31 @@ class ConnectionHelper:
         return self.conn
 
     def execute_sql(self, sqls):
-        cur = self.conn.cursor()
-        print(cur)
-        # print(cur)
-        for sql in sqls:
-            print("..cur execute.." + sql)
-            cur.execute(sql)
-            print("..done")
-        cur.close()
+        cur = self.get_cursor()
+        cus_execute_sqls(cur, sqls)
+
+    def execute_sqls_with_DictCursor(self, sqls):
+        cur = self.get_DictCursor()
+        cus_execute_sqls(cur, sqls)
 
     def execute_sql_fetchone(self, sql):
-        cur = self.conn.cursor()
-        cur.execute(sql)
-        prev = cur.fetchone()
-        prev = prev[0]
-        cur.close()
-        return prev
+        cur = self.get_cursor()
+        return cur_execute_sql_fetch_one(cur, sql)
+
+    def execute_sql_with_DictCursor_fetchone(self, sql):
+        cur = self.get_DictCursor()
+        return cur_execute_sql_fetch_one(cur, sql)
 
     def execute_sql_fetchall(self, sql):
-        cur = self.conn.cursor()
+        cur = self.get_cursor()
         cur.execute(sql)
         res = cur.fetchall()
         des = cur.description
         cur.close()
         return res, des
+
+    def get_cursor(self):
+        return self.conn.cursor()
+
+    def get_DictCursor(self):
+        return self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)

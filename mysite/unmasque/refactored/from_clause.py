@@ -1,5 +1,6 @@
 from mysite.unmasque.refactored.abstract.ExtractorBase import Base
 from mysite.unmasque.refactored.executable import Executable
+from mysite.unmasque.refactored.initialization import Initiator
 from mysite.unmasque.refactored.util.common_queries import drop_table, alter_table_rename_to, create_table_like
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
 
@@ -18,31 +19,7 @@ class FromClause(Base):
         self.all_relations = set()
         self.core_relations = []
         self.app = Executable(connectionHelper)
-        self.init = False
-
-    def init_check(self):
-        self.all_relations = set()
-        self.core_relations = []
-        try:
-            res, desc = self.connectionHelper.execute_sql_fetchall(
-                "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema = 'public' and TABLE_CATALOG= '" + self.connectionHelper.db + "';")
-            self.connectionHelper.execute_sql(["SET search_path = 'public';"])
-            for val in res:
-                self.all_relations.add(val[0])
-        except Exception as error:
-            print("Can not obtain table names. Error: " + str(error))
-            return False
-
-        if not self.all_relations:
-            print("No table in the selected instance. Please select another instance.")
-            return False
-
-        if 'temp' in self.all_relations:
-            self.connectionHelper.execute_sql([drop_table("temp")])
-
-        self.init = True
-        return True
+        self.init = Initiator(connectionHelper)
 
     def get_core_relations_by_rename(self, query):
         for tabname in self.all_relations:
@@ -84,11 +61,18 @@ class FromClause(Base):
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
 
+    def doJob(self, *args):
+        check = self.init.result
+        if not self.init.done:
+            check = self.init.doJob()
+        if not check:
+            return False
+        self.all_relations = self.init.all_relations
+        return super().doJob(*args)
+
     def doActualJob(self, args):
         query, method = self.extract_params_from_args(args)
-        if not self.init_check():
-            return
-
+        self.core_relations = []
         if method == "rename":
             self.get_core_relations_by_rename(query)
         else:

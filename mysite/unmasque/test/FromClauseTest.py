@@ -44,7 +44,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(conn.conn is not None)
         fc = FromClause(conn)
         rels = fc.doJob([query, "error"])
-        self.assertTrue(rels is None)
+        self.assertTrue(not rels)
         conn.closeConnection()
 
     def test_unionQ(self):

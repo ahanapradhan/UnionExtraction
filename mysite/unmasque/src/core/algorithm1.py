@@ -16,8 +16,12 @@ def algo(db, QH):
 
     MaxNonNulls = construct_maxNonNulls(MaxNonNulls, NonNulls)
 
+    comtabs = db.comtabs
+
     for c in MaxNonNulls:
         cc = Partial_QH.difference(c)
+        for ct in comtabs:
+            cc.add(ct)
         Partials.add(frozenset(cc))
 
     prettY_str = construct_pretty_print_string(Partials)
