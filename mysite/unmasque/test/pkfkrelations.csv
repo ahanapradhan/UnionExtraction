@@ -7,6 +7,7 @@ partsupp,ps_suppkey,y,y,supplier,s_suppkey
 customer,c_custkey,y,n,,
 orders,o_orderkey,y,n,,
 lineitem,l_orderkey,y,y,orders,o_orderkey
+lineitem,l_linenumber,y,n,,
 nation,n_nationkey,y,n,,
 region,r_regionkey,y,n,,
 customer,c_nationkey,n,y,nation,n_nationkey
