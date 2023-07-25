@@ -1,11 +1,10 @@
 import unittest
 
-from mysite.unmasque.constants import NO_UNION
 from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.src.core import algorithm1
 from mysite.unmasque.src.core.UN1_from_clause import UN1FromClause
-from mysite.unmasque.src.util import utils
 from mysite.unmasque.src.mocks.database import TPCH
+from mysite.unmasque.src.util import utils
 
 
 class MyTestCase(unittest.TestCase):
@@ -148,7 +147,6 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(p, {'lineitem', 'part'})
         self.assertTrue("FROM(q1)" in pstr)
         self.assertTrue("FROM(q2)" not in pstr)
-
 
 
 if __name__ == '__main__':

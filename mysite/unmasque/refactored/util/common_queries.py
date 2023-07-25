@@ -12,3 +12,7 @@ def create_table_like(tab, ctab):
 
 def get_row_count(tab):
     return "select count(*) from " + tab + ";"
+
+
+def get_restore_name(tab):
+    return tab + "_restore"

@@ -1,4 +1,5 @@
 import psycopg2
+import psycopg2.extras
 
 
 def cus_execute_sqls(cur, sqls):
