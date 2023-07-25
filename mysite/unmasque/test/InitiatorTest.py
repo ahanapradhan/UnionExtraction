@@ -13,7 +13,12 @@ class MyTestCase(unittest.TestCase):
         initor.doJob()
         self.assertEqual(len(initor.global_index_dict), 8)
 
-        print(len(initor.global_key_lists))
+        # verify from "AutoJoin: Providing Freedom from Specifying Joins
+        # University of Iowa Technical Report 04-03" Fig 5.
+        # https://www.researchgate.net/publication/228738477_AutoJoin_Providing_Freedom_from_Specifying_Joins_University_of_Iowa_Technical_Report_04-03
+        # combined key for lineitem and partsupp is missing in the result prduced by the code
+        # analyze impact
+        self.assertEqual(len(initor.global_key_lists), 6)
         for key_list in initor.global_key_lists:
             print(key_list)
 
