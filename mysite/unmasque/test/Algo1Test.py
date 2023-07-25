@@ -145,8 +145,10 @@ class MyTestCase(unittest.TestCase):
         db = UN1FromClause(conn)
 
         p, pstr = algorithm1.algo(db, query)
-        self.assertEqual(p, set())
-        self.assertEqual(pstr, NO_UNION)
+        self.assertEqual(p, {'lineitem', 'part'})
+        self.assertTrue("FROM(q1)" in pstr)
+        self.assertTrue("FROM(q2)" not in pstr)
+
 
 
 if __name__ == '__main__':

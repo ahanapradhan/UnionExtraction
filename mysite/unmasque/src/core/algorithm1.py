@@ -10,7 +10,7 @@ def algo(db, QH):
     Partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S = init(db, QH)
 
     if len(Partial_QH) == 0:
-        return set(), NO_UNION
+        return set(db.fromtabs), construct_pretty_print_string({frozenset(db.fromtabs)})
 
     NonNulls = construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db)
 
