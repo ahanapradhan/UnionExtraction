@@ -7,7 +7,8 @@ from mysite.unmasque.refactored.abstract.ExtractorBase import Base
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.common_queries import get_row_count, alter_table_rename_to, get_min_max_ctid, \
     drop_view, drop_table, create_table_as_select_star_from, get_ctid_from, get_tabname_1, \
-    create_view_as_select_star_where_ctid, create_table_as_select_star_from_ctid, get_tabname_4, get_star
+    create_view_as_select_star_where_ctid, create_table_as_select_star_from_ctid, get_tabname_4, get_star, \
+    get_restore_name
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
 
 
@@ -38,7 +39,7 @@ class ViewMinimizer(Base):
         self.global_min_instance_dict = {}
         self.app = Executable(connectionHelper)
         self.core_relations = core_relations
-        self.cs_status = sampling_status
+        self.cs2_passed = sampling_status
 
     def getCoreSizes(self):
         core_sizes = {}
@@ -54,15 +55,14 @@ class ViewMinimizer(Base):
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
-        if self.cs_status == "PASS":
-            return self.reduce_Database_Instance_cs_pass(query)
-        else:
-            return False  # reduce_Database_Instance_cs_fail(query)
+        return self.reduce_Database_Instance(query,
+                                             True) if self.cs2_passed else self.reduce_Database_Instance(query, False)
 
     def do_binary_halving(self, core_sizes,
                           query,
                           tabname,
-                          rctid):
+                          rctid,
+                          tabname1):
         end_ctid, end_page, start_ctid, start_page = extract_start_and_end_page(rctid)
         while start_page < end_page - 1:
             mid_page = int((start_page + end_page) / 2)
@@ -70,26 +70,27 @@ class ViewMinimizer(Base):
             mid_ctid2 = "(" + str(mid_page) + ",2)"
 
             end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid, mid_ctid1, mid_ctid2, query,
-                                                                          start_ctid, tabname)
+                                                                          start_ctid, tabname, tabname1)
             start_ctid2 = start_ctid.split(",")
             start_page = int(start_ctid2[0][1:])
             end_ctid2 = end_ctid.split(",")
             end_page = int(end_ctid2[0][1:])
 
-        core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname)
+        core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
 
-    def update_with_remaining_size(self, core_sizes, end_ctid, start_ctid, tabname):
-        self.connectionHelper.execute_sql([create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname)
-                                              , drop_table(get_tabname_1(tabname))])
+    def update_with_remaining_size(self, core_sizes, end_ctid, start_ctid, tabname, tabname1):
+        self.connectionHelper.execute_sql(
+            [create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname, tabname1),
+             drop_table(tabname1)])
         size = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
         core_sizes[tabname] = size
         print("REMAINING TABLE SIZE", core_sizes[tabname])
         return core_sizes
 
-    def create_view_execute_app_drop_view(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname):
+    def create_view_execute_app_drop_view(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname, tabname1):
         self.connectionHelper.execute_sql(
-            [create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, tabname)])
+            [create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, tabname, tabname1)])
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
             # Take the lower half
@@ -108,21 +109,21 @@ class ViewMinimizer(Base):
             return False
         return True
 
-    def reduce_Database_Instance_cs_pass(self, query):
+    def reduce_Database_Instance(self, query, cs_pass):
+
         self.local_other_info_dict = {}
         core_sizes = self.getCoreSizes()
 
         for tabname in self.core_relations:
-            self.connectionHelper.execute_sql([alter_table_rename_to(tabname, get_tabname_1(tabname))])
-            rctid = self.connectionHelper.execute_sql_fetchone(get_min_max_ctid(get_tabname_1(tabname)))
-            core_sizes = self.do_binary_halving(core_sizes, query, tabname, rctid)
-            core_sizes = self.do_binary_halving_1(core_sizes, query, tabname)
+            view_name = get_tabname_1(tabname) if cs_pass else get_restore_name(tabname)
+            self.connectionHelper.execute_sql([alter_table_rename_to(tabname, view_name)])
+            rctid = self.connectionHelper.execute_sql_fetchone(get_min_max_ctid(view_name))
+            core_sizes = self.do_binary_halving(core_sizes, query, tabname, rctid, view_name)
+            core_sizes = self.do_binary_halving_1(core_sizes, query, tabname, get_tabname_1(tabname))
 
             if not self.sanity_check(query):
                 return False
 
-        if not os.path.exists(self.global_reduced_data_path):
-            os.makedirs(self.global_reduced_data_path)
         for tabname in self.core_relations:
             res = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
             self.connectionHelper.execute_sql([create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
@@ -134,9 +135,9 @@ class ViewMinimizer(Base):
         self.populate_dict_info(query)
         return True
 
-    def do_binary_halving_1(self, core_sizes, query, tabname):
+    def do_binary_halving_1(self, core_sizes, query, tabname, tabname1):
         while int(core_sizes[tabname]) > self.max_row_no:
-            self.connectionHelper.execute_sql([alter_table_rename_to(tabname, get_tabname_1(tabname))])
+            self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
             start_page, start_row = self.get_boundary("min", tabname)
             end_page, end_row = self.get_boundary("max", tabname)
 
@@ -147,8 +148,8 @@ class ViewMinimizer(Base):
             mid_ctid2 = "(" + str(0) + "," + str(mid_row + 1) + ")"
 
             end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid, mid_ctid1, mid_ctid2, query,
-                                                                          start_ctid, tabname)
-            core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname)
+                                                                          start_ctid, tabname, tabname1)
+            core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
 
         return core_sizes
 

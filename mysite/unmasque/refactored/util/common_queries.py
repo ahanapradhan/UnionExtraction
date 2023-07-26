@@ -42,17 +42,17 @@ def get_tabname_4(tab):
     return tab + "4"
 
 
-def create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, tabname):
+def create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, tabname, tabname1):
     return ("create view " + tabname
-            + " as select * from " + get_tabname_1(tabname)
+            + " as select * from " + tabname1
             + " where ctid >= '"
             + str(start_ctid) + "' and ctid <= '"
             + str(mid_ctid1) + "'  ; ")
 
 
-def create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname):
+def create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname, tabname1):
     return ("create table " + tabname
-            + " as select * from " + get_tabname_1(tabname)
+            + " as select * from " + tabname1
             + " where ctid >= '" + str(start_ctid)
             + "' and ctid <= '" + str(end_ctid) + "'  ; ")
 
