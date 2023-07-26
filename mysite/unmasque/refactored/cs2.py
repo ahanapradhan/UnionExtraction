@@ -38,7 +38,7 @@ class Cs2(Base):
     def getSizes_cs(self):
         sizes = {}
         for table in self.all_relations:
-            sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone(get_row_count(table))
+            sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(get_row_count(table))
         return sizes
 
     def extract_params_from_args(self, args):
@@ -85,7 +85,7 @@ class Cs2(Base):
         self.do_for_empty_key_lists(not_sampled_tables)
 
         for table in self.core_relations:
-            res = self.connectionHelper.execute_sql_fetchone(get_row_count(table))
+            res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(table))
             print(table, res)
             self.sample[table] = res
 
@@ -106,7 +106,7 @@ class Cs2(Base):
                                                                     " select * from " + get_restore_name(table)
                                                                     + " tablesample system("
                                                                     + str(self.seed_sample_size_per) + ");"])
-                res = self.connectionHelper.execute_sql_fetchone(get_row_count(table))
+                res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(table))
                 print(table, res)
 
     def do_for_key_lists(self, sizes):
@@ -115,8 +115,8 @@ class Cs2(Base):
 
             # Sample base table
             base_table = key_list[base_t][0]
+            base_key = key_list[base_t][1]
             if base_table in self.core_relations:
-                base_key = key_list[base_t][1]
                 limit_row = sizes[base_table]
                 self.connectionHelper.execute_sqls_with_DictCursor([
                     "insert into " + base_table
@@ -125,25 +125,25 @@ class Cs2(Base):
                     + base_key + ") not in (select distinct("
                     + base_key + ") from "
                     + base_table + ")  Limit " + str(limit_row) + " ;"])
-                res = self.connectionHelper.execute_sql_fetchone(get_row_count(base_table))
+                res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(base_table))
                 print(base_table, res)
 
-            # sample remaining tables from key_list using the sampled base table
+                # sample remaining tables from key_list using the sampled base table
             for i in range(0, len(key_list)):
                 tabname2 = key_list[i][0]
                 key2 = key_list[i][1]
 
-                # if tabname2 in not_sampled_tables:
+                    # if tabname2 in not_sampled_tables:
                 if tabname2 != base_table and tabname2 in self.core_relations:
                     limit_row = sizes[tabname2]
                     self.connectionHelper.execute_sqls_with_DictCursor([
-                        "insert into " + tabname2 +
-                        " select * from " + tabname2 + "_restore "
-                                                       "where " + key2 + " in (select distinct(" + base_key + ") "
-                                                                                                              "from "
-                        + base_table + ") and "
-                        + key2 + " not in (select distinct("
-                        + key2 + ") from "
-                        + tabname2 + " ) Limit " + str(limit_row) + " ;"])
-                    res = self.connectionHelper.execute_sql_fetchone(get_row_count(tabname2))
+                            "insert into " + tabname2 +
+                            " select * from " + tabname2 + "_restore "
+                                                           "where " + key2 + " in (select distinct("
+                            + base_key + ") from "
+                            + base_table + ") and "
+                            + key2 + " not in (select distinct("
+                            + key2 + ") from "
+                            + tabname2 + " ) Limit " + str(limit_row) + " ;"])
+                    res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname2))
                     print(tabname2, res)

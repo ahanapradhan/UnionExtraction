@@ -11,10 +11,17 @@ def cus_execute_sqls(cur, sqls):
     cur.close()
 
 
-def cur_execute_sql_fetch_one(cur, sql):
+def cur_execute_sql_fetch_one_0(cur, sql):
     cur.execute(sql)
     prev = cur.fetchone()
     prev = prev[0]
+    cur.close()
+    return prev
+
+
+def cur_execute_sql_fetch_one(cur, sql):
+    cur.execute(sql)
+    prev = cur.fetchone()
     cur.close()
     return prev
 
@@ -52,13 +59,17 @@ class ConnectionHelper:
         cur = self.get_DictCursor()
         cus_execute_sqls(cur, sqls)
 
+    def execute_sql_fetchone_0(self, sql):
+        cur = self.get_cursor()
+        return cur_execute_sql_fetch_one_0(cur, sql)
+
     def execute_sql_fetchone(self, sql):
         cur = self.get_cursor()
         return cur_execute_sql_fetch_one(cur, sql)
 
-    def execute_sql_with_DictCursor_fetchone(self, sql):
+    def execute_sql_with_DictCursor_fetchone_0(self, sql):
         cur = self.get_DictCursor()
-        return cur_execute_sql_fetch_one(cur, sql)
+        return cur_execute_sql_fetch_one_0(cur, sql)
 
     def execute_sql_fetchall(self, sql):
         cur = self.get_cursor()
