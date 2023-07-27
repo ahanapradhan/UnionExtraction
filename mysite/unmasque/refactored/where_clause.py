@@ -1,34 +1,185 @@
 import copy
-import math
+import datetime
 
 from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.util.utils import is_int, get_min_max_vals
+from mysite.unmasque.refactored.executable import Executable
+from mysite.unmasque.refactored.util.utils import is_int, get_all_combo_lists, get_datatype_from_typesList, \
+    get_dummy_val_for, get_val_plus_delta
+
+
+def get_two_different_vals(list_type):
+    datatype = get_datatype_from_typesList(list_type)
+    val1 = get_dummy_val_for(datatype)
+    val2 = get_val_plus_delta(datatype, val1, 1)
+    return val1, val2
+
+
+def construct_two_lists(attrib_types_dict, curr_list, elt):
+    list1 = [curr_list[index] for index in elt]
+    list_type = attrib_types_dict[curr_list[elt[0]]] if elt else ''
+    list2 = list(set(curr_list) - set(list1))
+    return list1, list2, list_type
 
 
 class WhereClause(Base):
+    local_other_info_dict = {}
+    local_instance_no = 0
+    local_instance_list = []
 
     def __init__(self, connectionHelper,
                  global_key_lists,
                  core_relations,
                  global_other_info_dict,
-                 local_other_info_dict):
+                 global_result_dict,
+                 global_min_instance_dict):
         super().__init__(connectionHelper, "Where_clause")
-        self.global_key_lists = global_key_lists
-        self.core_relations = core_relations
-        self.global_other_info_dict = global_other_info_dict  # from view minimizer
-        self.local_other_info_dict = local_other_info_dict  # from view minimizer
+        self.app = Executable(connectionHelper)
 
+        # from initiator
+        self.global_key_lists = global_key_lists
+
+        # from from clause
+        self.core_relations = core_relations
+
+        # from view minimizer
+        self.global_other_info_dict = global_other_info_dict
+        self.global_min_instance_dict = global_min_instance_dict
+        self.global_result_dict = global_result_dict
+
+        # init data
         self.global_attrib_types = []
         self.global_all_attribs = []
-        self.global_d_plus_value = {} # this is the tuple from D_min
+        self.global_d_plus_value = {}  # this is the tuple from D_min
         self.global_attrib_max_length = {}
 
-        self.global_attrib_dict = {}
-        self.global_instance_dict = {}
+        # join data
         self.global_attrib_types_dict = {}
+        self.global_attrib_dict = {}
+
+        self.global_join_instance_dict = {}
+        self.global_component_dict = {}
+
+        self.global_join_graph = []
+        self.global_key_attributes = []
+
+        self.global_instance_dict = {}
 
     def extract_params_from_args(self, args):
         return args[0]
+
+    def get_join_graph(self, query):
+        # self.get_init_data()
+        global_key_lists = self.global_key_lists
+        join_graph = []
+        attrib_types_dict, combo_dict_of_lists = self.construct_attribs_types_dict()
+
+        # For each list, test its presence in join graph
+        # This will either add the list in join graph or break it
+        self.global_attrib_dict['join'] = []
+        k = 0
+        while global_key_lists:
+            curr_list = global_key_lists[0]
+            join_keys = [join_key for join_key in curr_list if join_key[0] in self.core_relations]
+            if len(join_keys) <= 1:
+                global_key_lists.remove(curr_list)
+                continue
+            print("... checking for: ", join_keys)
+
+            k += 1
+            self.global_attrib_dict['join'].append("Component-" + str(k))
+            self.global_join_instance_dict['Component-' + str(k)] = []
+            self.global_component_dict['Component-' + str(k)] = join_keys
+
+            # Try for all possible combinations
+            for elt in combo_dict_of_lists[len(join_keys)]:
+                self.local_other_info_dict = {}
+
+                list1, list2, list_type = construct_two_lists(attrib_types_dict, join_keys, elt)
+                val1, val2 = get_two_different_vals(list_type)
+                temp_copy = {tab: self.global_min_instance_dict[tab] for tab in self.core_relations}
+
+                # Assign two different values to two lists in database
+                self.assign_values_to_lists(list1, list2, temp_copy, val1, val2)
+
+                self.fill_join_dicts_for_demo(k, list1, list2, temp_copy, val1, val2)
+
+                # CHECK THE RESULT
+                new_result = self.app.doJob(query)
+                self.global_result_dict['join_' + self.global_attrib_dict['join'][-1] + '_' +
+                                        self.global_join_instance_dict['Component-' + str(k)][-1]] = new_result
+                self.local_other_info_dict['Result Cardinality'] = len(new_result) - 1
+                if len(new_result) > 1:
+                    self.remove_edge_from_join_graph_dicts(join_keys, list1, list2, global_key_lists)
+                    break
+
+            for keys in global_key_lists:
+                if all(x in keys for x in join_keys):
+                    global_key_lists.remove(keys)
+                    join_graph.append(copy.deepcopy(join_keys))
+                    self.local_other_info_dict['Conclusion'] = u'Edge ' + list1[0][1] + u"\u2014" + list2[0][
+                        1] + ' is present in the join graph'
+
+            # Assign same values in all cur_lists to get non-empty output
+            self.global_other_info_dict['join_' + self.global_attrib_dict['join'][-1] + '_' +
+                                        self.global_join_instance_dict['Component-' + str(k)][
+                                            -1]] = copy.deepcopy(self.local_other_info_dict)
+            for val in join_keys:
+                self.connectionHelper.execute_sql(["Insert into " + val[0] + " Select * from " + val[0] + "4;"])
+
+        self.refine_join_graph(join_graph)
+        return
+
+    def remove_edge_from_join_graph_dicts(self, curr_list, list1, list2, global_key_lists):
+        self.local_other_info_dict[
+            'Conclusion'] = 'Selected edge(s) are not present in the join graph'
+        for keys in global_key_lists:
+            if all(x in keys for x in curr_list):
+                global_key_lists.remove(keys)
+        global_key_lists.append(copy.deepcopy(list1))
+        global_key_lists.append(copy.deepcopy(list2))
+
+    def fill_join_dicts_for_demo(self, k, list1, list2, temp_copy, val1, val2):
+        # Hardcoding for demo, need to be revised
+        self.global_join_instance_dict['Component-' + str(k)].append(
+            u"" + list1[0][1] + u"\u2014" + list2[0][1])
+        self.local_other_info_dict['Current Mutation'] = 'Mutation of ' + list1[0][
+            1] + ' with value ' + str(val1) + " and " + list2[0][1] + ' with value ' + str(val2)
+        for tabname in self.core_relations:
+            self.global_min_instance_dict[
+                'join_' + self.global_attrib_dict['join'][-1] + '_' + tabname + '_' +
+                self.global_join_instance_dict['Component-' + str(k)][-1]] = copy.deepcopy(
+                temp_copy[tabname])
+        ########################################
+
+    def assign_values_to_lists(self, list1, list2, temp_copy, val1, val2):
+        self.assign_value_to_list(list1, temp_copy, val1)
+        self.assign_value_to_list(list2, temp_copy, val2)
+
+    def assign_value_to_list(self, list1, temp_copy, val1):
+        for val in list1:
+            self.connectionHelper.execute_sql(
+                ["update " + str(val[0]) + " set " + str(val[1]) + " = " + str(val1) + ";"])
+            index = temp_copy[val[0]][0].index(val[1])
+            mutated_list = copy.deepcopy(list(temp_copy[val[0]][1]))
+            mutated_list[index] = str(val1)
+            temp_copy[val[0]][1] = tuple(mutated_list)
+
+    def construct_attribs_types_dict(self):
+        max_list_len = max(len(elt) for elt in self.global_key_lists)
+        combo_dict_of_lists = get_all_combo_lists(max_list_len)
+        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
+        return attrib_types_dict, combo_dict_of_lists
+
+    def refine_join_graph(self, join_graph):
+        # refine join graph and get all key attributes
+        self.global_join_graph = []
+        self.global_key_attributes = []
+        for elt in join_graph:
+            temp = []
+            for val in elt:
+                temp.append(val[1])
+                self.global_key_attributes.append(val[1])
+            self.global_join_graph.append(copy.deepcopy(temp))
 
     def get_init_data(self):
         for tabname in self.core_relations:
@@ -53,7 +204,6 @@ class WhereClause(Base):
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
 
-    """
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
 
@@ -82,9 +232,7 @@ class WhereClause(Base):
                     self.local_instance_list = []
                     if 'int' in self.global_attrib_types_dict[(tabname, attrib)]:
                         self.handle_int_filter(attrib, d_plus_value, filterAttribs, tabname)
-                    elif 'text' in self.global_attrib_types_dict[(tabname, attrib)] or 'char' in \
-                            self.global_attrib_types_dict[
-                                (tabname, attrib)] or 'varbit' == self.global_attrib_types_dict[(tabname, attrib)]:
+                    elif any(x in self.global_attrib_types_dict[(tabname, attrib)] for x in ['text', 'char', 'varbit']):
                         self.handle_string_filter(attrib, attrib_max_length, d_plus_value, filterAttribs, tabname)
                     elif 'date' in self.global_attrib_types_dict[(tabname, attrib)]:
                         self.handle_date_filter(attrib, d_plus_value, filterAttribs, tabname)
@@ -96,6 +244,9 @@ class WhereClause(Base):
         return filterAttribs
 
     def handle_numeric_filter(self, attrib, d_plus_value, filterAttribs, tabname):
+        pass
+        """
+
         # NUMERIC HANDLING
         # min and max domain values (initialize based on data type)
         min_val_domain = -214748364888
@@ -136,8 +287,12 @@ class WhereClause(Base):
             val = float(val)
             val1 = getFloatFilterValue(tabname, attrib, val - 1, val, '>=')
             filterAttribs.append((tabname, attrib, '>=', float(round(val1, 2)), float(max_val_domain)))
+    """
 
     def handle_date_filter(self, attrib, d_plus_value, filterAttribs, tabname):
+        pass
+        """
+
         # min and max domain values (initialize based on data type)
         # PLEASE CONFIRM THAT DATE FORMAT IN DATABASE IS YYYY-MM-DD
         min_val_domain = datetime.date(1, 1, 1)
@@ -212,8 +367,12 @@ class WhereClause(Base):
             self.global_other_info_dict[
                 'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
                 self.local_other_info_dict)
+                    """
 
     def handle_string_filter(self, attrib, attrib_max_length, d_plus_value, filterAttribs, tabname):
+        pass
+        """
+
         # STRING HANDLING
         # ESCAPE CHARACTERS IN STRING REMAINING
         if (checkStringPredicate(tabname, attrib)):
@@ -250,8 +409,12 @@ class WhereClause(Base):
         # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
         cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
         cur.close()
+            """
 
     def handle_int_filter(self, attrib, d_plus_value, filterAttribs, tabname):
+        pass
+        """
+
         # NUMERIC HANDLING
         # min and max domain values (initialize based on data type)
         min_val_domain, max_val_domain = get_min_max_vals("int")
@@ -329,124 +492,6 @@ class WhereClause(Base):
 
 
 """
-def get_join_graph():
-    get_init_data()
-    max_list_len = 2
-    join_graph = []
-    key_attributes = []
-    for elt in self.global_key_lists:
-        if len(elt) > max_list_len:
-            max_list_len = len(elt)
-    combo_dict_of_lists = get_all_combo_lists(max_list_len)
-    attrib_types_dict = {}
-    for entry in self.global_attrib_types:
-        attrib_types_dict[(entry[0], entry[1])] = entry[2]
-    dummy_int = 2
-    dummy_char = 65  # to avoid having space/tab
-    dummy_date = datetime.date(1000, 1, 1)
-    # For each list, test its presence in join graph
-    # This will either add the list in join graph or break it
-    self.global_attrib_dict['join'] = []
-    k = 0
-    while not (not self.global_key_lists):
-        curr_list = self.global_key_lists[0]
-        if len(curr_list) <= 1:
-            self.global_key_lists.remove(curr_list)
-            continue
-        k += 1
-        self.global_attrib_dict['join'].append("Component-" + str(k))
-        self.global_join_instance_dict['Component-' + str(k)] = []
-        self.global_component_dict['Component-' + str(k)] = curr_list
-        # Try for all possible combinations
-        for elt in combo_dict_of_lists[len(curr_list)]:
-            self.local_other_info_dict = {}
-            list1 = []
-            list_type = ''
-            list2 = []
-            for index in elt:
-                list1.append(curr_list[index])
-                if list_type == '':
-                    list_type = attrib_types_dict[curr_list[index]]
-            for val in curr_list:
-                if val not in list1:
-                    list2.append(val)
-            # Assign two different values to two lists in database
-            val1 = str(dummy_int)
-            val2 = str(dummy_int + 1)
-            if 'date' in list_type:
-                val1 = str(dummy_date)
-                val2 = str(dummy_date + datetime.timedelta(days=1))
-            elif not ('int' in list_type or 'numeric' in list_type):
-                val1 = str(chr(dummy_char))
-                val2 = str(chr(dummy_char + 1))
-            cur = self.global_conn.cursor()
-            temp_copy = {}
-            for tab in self.global_core_relations:
-                temp_copy[tab] = self.global_min_instance_dict[tab]
-            for val in list1:
-                cur.execute("update " + val[0] + " set " + val[1] + " = " + val1 + ";")
-                index = temp_copy[val[0]][0].index(val[1])
-                mutated_list = copy.deepcopy(list(temp_copy[val[0]][1]))
-                mutated_list[index] = str(val1)
-                temp_copy[val[0]][1] = tuple(mutated_list)
-            cur.close()
-            cur = self.global_conn.cursor()
-            for val in list2:
-                cur.execute("update " + val[0] + " set " + val[1] + " = " + val2 + ";")
-                index = temp_copy[val[0]][0].index(val[1])
-                mutated_list = copy.deepcopy(list(temp_copy[val[0]][1]))
-                mutated_list[index] = str(val2)
-                temp_copy[val[0]][1] = tuple(mutated_list)
-            cur.close()
-            # Hardcoding for demo, need to be revised
-            self.global_join_instance_dict['Component-' + str(k)].append(
-                u"" + list1[0][1] + u"\u2014" + list2[0][1])
-            self.local_other_info_dict['Current Mutation'] = 'Mutation of ' + list1[0][
-                1] + ' with value ' + str(val1) + " and " + list2[0][1] + ' with value ' + str(val2)
-            for tabname in self.global_core_relations:
-                self.global_min_instance_dict[
-                    'join_' + self.global_attrib_dict['join'][-1] + '_' + tabname + '_' +
-                    self.global_join_instance_dict['Component-' + str(k)][-1]] = copy.deepcopy(
-                    temp_copy[tabname])
-            ########################################
-            # CHECK THE RESULT
-            new_result = executable_aman.getExecOutput(self)
-            self.global_result_dict['join_' + self.global_attrib_dict['join'][-1] + '_' +
-                                    self.global_join_instance_dict['Component-' + str(k)][
-                                        -1]] = new_result
-            self.local_other_info_dict['Result Cardinality'] = len(new_result) - 1
-            if len(new_result) > 1:
-                self.local_other_info_dict[
-                    'Conclusion'] = 'Selected edge(s) are not present in the join graph'
-                self.global_key_lists.remove(curr_list)
-                self.global_key_lists.append(copy.deepcopy(list1))
-                self.global_key_lists.append(copy.deepcopy(list2))
-                break
-        if curr_list in self.global_key_lists:
-            self.global_key_lists.remove(curr_list)
-            join_graph.append(copy.deepcopy(curr_list))
-            self.local_other_info_dict['Conclusion'] = u'Edge ' + list1[0][1] + u"\u2014" + list2[0][
-                1] + ' is present in the join graph'
-            # Assign same values in all cur_lists to get non-empty output
-        self.global_other_info_dict['join_' + self.global_attrib_dict['join'][-1] + '_' +
-                                    self.global_join_instance_dict['Component-' + str(k)][
-                                        -1]] = copy.deepcopy(self.local_other_info_dict)
-        cur = self.global_conn.cursor()
-        for val in curr_list:
-            cur.execute("Insert into " + val[0] + " Select * from " + val[0] + "4;")
-            # cur.execute("copy " + val[0] + " from " + "'" + self.global_reduced_data_path + val[0] + ".csv' " + "delimiter ',' csv header;")
-        cur.close()
-    # refine join graph and get all key attributes
-    self.global_join_graph = []
-    self.global_key_attributes = []
-    for elt in join_graph:
-        temp = []
-        for val in elt:
-            temp.append(val[1])
-            self.global_key_attributes.append(val[1])
-        self.global_join_graph.append(copy.deepcopy(temp))
-    return
-
 
 # SUPPORT FUNCTIONS FOR FILTER PREDICATES
 

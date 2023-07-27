@@ -1,4 +1,8 @@
 import copy
+import datetime
+
+from mysite.unmasque import constants
+from mysite.unmasque.constants import dummy_int, dummy_date, dummy_char
 
 
 def isQ_result_empty(Res):
@@ -36,10 +40,42 @@ def is_int(s):
         return False
 
 
-def get_min_max_vals(datatype):
-    if datatype == "numeric":
-        return -214748364888, 214748364788
-    elif datatype == "int":
-        return -2147483648, 2147483647
+def get_datatype_from_typesList(list_type):
+    if 'date' in list_type:
+        datatype = 'date'
+    elif 'int' in list_type:
+        datatype = 'int'
+    elif 'numeric' in list_type:
+        datatype = 'numeric'
+    else:
+        datatype = 'text'
+    return datatype
 
 
+def get_dummy_val_for(datatype):
+    if datatype == 'int' or datatype == 'numeric':
+        return dummy_int
+    elif datatype == 'date':
+        return dummy_date
+    else:
+        return dummy_char
+
+
+def get_val_plus_delta(datatype, min_val, delta):
+    plus_delta = min_val
+    if datatype == 'date':
+        plus_delta = min_val + datetime.timedelta(days=delta)
+    elif datatype == 'int' or datatype == 'numeric':  # INT, NUMERIC
+        plus_delta = min_val + delta
+    elif datatype == 'char':
+        plus_delta = chr(min_val + delta)
+    return plus_delta
+
+
+def get_min_and_max_val(datatype):
+    if datatype == 'date':
+        return constants.min_date_val, constants.max_date_val
+    elif datatype == 'int':
+        return constants.min_int_val, constants.max_int_val
+    elif datatype == 'numeric':
+        return constants.min_numeric_val, constants.max_numeric_val
