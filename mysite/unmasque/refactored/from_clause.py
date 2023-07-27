@@ -16,10 +16,11 @@ class FromClause(Base):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "FromClause")
-        self.all_relations = set()
-        self.core_relations = []
         self.app = Executable(connectionHelper)
         self.init = Initiator(connectionHelper)
+
+        self.all_relations = set()
+        self.core_relations = []
 
     def get_core_relations_by_rename(self, query):
         for tabname in self.all_relations:
