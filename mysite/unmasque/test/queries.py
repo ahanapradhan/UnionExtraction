@@ -49,11 +49,4 @@ Q21 = "Select  s_name, count(*) as numwait From  supplier, lineitem l1, orders, 
       "'GERMANY' Group By  s_name Order By  numwait desc, s_name Limit  100;"
 Q23_1 = "Select  min(ps_supplycost) From  partsupp, supplier, nation, region Where  s_suppkey = ps_suppkey and " \
         "s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'MIDDLE EAST';"
-Q23_2 = "select c_mktsegment from customer,nation where c_acctbal <3000 and c_nationkey=n_nationkey intersect select " \
-        "c_mktsegment from customer,nation where c_acctbal> 3000 and c_nationkey=n_nationkey;"
-Q23_3 = "select c_mktsegment from customer,nation where c_acctbal <3000 and c_nationkey=n_nationkey intersect select " \
-        "c_mktsegment from customer,nation where c_acctbal> 3000 and c_acctbal <7000 and c_nationkey=n_nationkey " \
-        "intersect  select c_mktsegment from customer,nation where c_acctbal > 7000 and c_nationkey=n_nationkey;"
-Q23_4 = "select o_clerk,l_extendedprice from orders,lineitem where l_orderkey = o_orderkey and l_linenumber < 5 " \
-        "intersect select o_clerk,l_extendedprice from orders,lineitem where l_orderkey = o_orderkey and l_linenumber" \
-        " > 5;"
+

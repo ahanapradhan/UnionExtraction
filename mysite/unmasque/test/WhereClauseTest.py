@@ -66,7 +66,7 @@ class MyTestCase(unittest.TestCase):
                          minimizer.global_min_instance_dict)
 
         wc.get_init_data()
-        self.assertEqual(len(wc.global_all_attribs), 2)
+        self.assertEqual(len(wc.global_all_attribs), 2)  # per table 1 attrib, Q17 has 2 tables
 
         wc.get_join_graph(queries.Q17)
         self.assertEqual(len(wc.global_join_graph), 1)
@@ -74,6 +74,76 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(wc.global_key_attributes), 2)
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('l_partkey' in wc.global_key_attributes)
+        self.conn.closeConnection()
+
+    def test_join_graph1(self):
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+
+        from_rels = tpchSettings.from_rels['Q21']
+        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        check = minimizer.doJob(queries.Q21)
+        self.assertTrue(check)
+
+        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
+                         minimizer.global_other_info_dict, minimizer.global_result_dict,
+                         minimizer.global_min_instance_dict)
+
+        wc.get_init_data()
+        self.assertEqual(len(wc.global_all_attribs), 4)  # per table 1 attrib, Q17 has 2 tables
+
+        wc.get_join_graph(queries.Q21)
+        self.assertEqual(len(wc.global_join_graph), 3)
+        join_edges = frozenset({frozenset({'l_suppkey', 's_suppkey'}),
+                                frozenset({'l_orderkey', 'o_orderkey'}),
+                                frozenset({'s_nationkey', 'n_nationkey'})})
+        for join_edge in wc.global_join_graph:
+            edge = frozenset({join_edge[0], join_edge[1]})
+            self.assertTrue(edge in join_edges)
+
+        self.assertEqual(len(wc.global_key_attributes), 6)
+        self.assertTrue('l_suppkey' in wc.global_key_attributes)
+        self.assertTrue('s_suppkey' in wc.global_key_attributes)
+        self.assertTrue('l_orderkey' in wc.global_key_attributes)
+        self.assertTrue('o_orderkey' in wc.global_key_attributes)
+        self.assertTrue('s_nationkey' in wc.global_key_attributes)
+        self.assertTrue('n_nationkey' in wc.global_key_attributes)
+        self.conn.closeConnection()
+
+    def test_join_graph2(self):
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+
+        from_rels = tpchSettings.from_rels['Q23_1']
+        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        check = minimizer.doJob(queries.Q23_1)
+        self.assertTrue(check)
+
+        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
+                         minimizer.global_other_info_dict, minimizer.global_result_dict,
+                         minimizer.global_min_instance_dict)
+
+        wc.get_init_data()
+        self.assertEqual(len(wc.global_all_attribs), 4)  # per table 1 attrib, Q17 has 2 tables
+
+        wc.get_join_graph(queries.Q23_1)
+        self.assertEqual(len(wc.global_join_graph), 3)
+        join_edges = frozenset({frozenset({'ps_suppkey', 's_suppkey'}),
+                                frozenset({'n_regionkey', 'r_regionkey'}),
+                                frozenset({'s_nationkey', 'n_nationkey'})})
+        print(wc.global_join_graph)
+        for join_edge in wc.global_join_graph:
+            edge = frozenset({join_edge[0], join_edge[1]})
+            self.assertTrue(edge in join_edges)
+
+        self.assertEqual(len(wc.global_key_attributes), 6)
+        self.assertTrue('ps_suppkey' in wc.global_key_attributes)
+        self.assertTrue('s_suppkey' in wc.global_key_attributes)
+        self.assertTrue('s_nationkey' in wc.global_key_attributes)
+        self.assertTrue('n_nationkey' in wc.global_key_attributes)
+        self.assertTrue('r_regionkey' in wc.global_key_attributes)
+        self.assertTrue('n_regionkey' in wc.global_key_attributes)
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':
