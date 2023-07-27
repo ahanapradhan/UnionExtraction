@@ -69,7 +69,7 @@ class WhereClause(Base):
 
     def get_join_graph(self, query):
         # self.get_init_data()
-        global_key_lists = self.global_key_lists
+        global_key_lists = copy.deepcopy(self.global_key_lists)
         join_graph = []
         attrib_types_dict, combo_dict_of_lists = self.construct_attribs_types_dict()
 
