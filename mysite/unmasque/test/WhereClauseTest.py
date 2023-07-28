@@ -75,7 +75,6 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('l_partkey' in wc.global_key_attributes)
 
-
         filters = wc.get_filter_predicates(queries.Q17)
         print(filters)
         self.assertEqual(len(filters), 2)
@@ -244,6 +243,54 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(f[2], "range")
         self.assertTrue(f[3] > 800)
         self.assertTrue(f[4] < 1000)
+
+        self.conn.closeConnection()
+
+    def test_join_graph_and_filterQ3(self):
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+
+        from_rels = tpchSettings.from_rels['Q3']
+        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        check = minimizer.doJob(queries.Q3)
+        self.assertTrue(check)
+
+        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
+                         minimizer.global_other_info_dict, minimizer.global_result_dict,
+                         minimizer.global_min_instance_dict)
+
+        wc.do_init()
+        self.assertEqual(len(wc.global_all_attribs), 3)  # per table 1 attrib, Q17 has 2 tables
+
+        wc.get_join_graph(queries.Q3)
+        self.assertEqual(len(wc.global_join_graph), 2)
+        join_edges = frozenset({frozenset({'o_custkey', 'c_custkey'}),
+                                frozenset({'o_orderkey', 'l_orderkey'})})
+        print(wc.global_join_graph)
+        for join_edge in wc.global_join_graph:
+            edge = frozenset({join_edge[0], join_edge[1]})
+            self.assertTrue(edge in join_edges)
+
+        self.assertEqual(len(wc.global_key_attributes), 4)
+
+        filters = wc.get_filter_predicates(queries.Q3)
+        print(filters)
+        self.assertEqual(len(filters), 3)
+        f = filters[0]
+        self.assertEqual(f[0], 'customer')
+        self.assertEqual(f[1], 'c_mktsegment')
+        self.assertEqual(f[2], "equal")
+        self.assertTrue('BUILDING' in f[3])
+
+        f = filters[1]
+        self.assertEqual(f[0], 'orders')
+        self.assertEqual(f[1], 'o_orderdate')
+        self.assertEqual(f[2], "<=")
+
+        f = filters[2]
+        self.assertEqual(f[0], 'lineitem')
+        self.assertEqual(f[1], 'l_shipdate')
+        self.assertEqual(f[2], ">=")
 
         self.conn.closeConnection()
 

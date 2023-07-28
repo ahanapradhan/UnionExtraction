@@ -1,6 +1,7 @@
 import copy
 import datetime
 import decimal
+import math
 from _decimal import getcontext
 
 from mysite.unmasque import constants
@@ -81,3 +82,38 @@ def get_min_and_max_val(datatype):
         return constants.min_int_val, constants.max_int_val
     elif datatype == 'numeric':
         return constants.min_numeric_val, constants.max_numeric_val
+
+
+def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
+    if datatype == 'date':
+        yes = int((right - left).days) > cutoff
+    else:
+        yes = int((right - left)) > cutoff
+    return yes
+
+
+def get_format(datatype, val):
+    if datatype == 'date':
+        return "'" + str(val) + "'"
+    elif datatype == 'float' or datatype == 'numeric':
+        return str(round(val, 12))
+    return str(val)
+
+
+def get_mid_val(datatype, high, low):
+    if datatype == 'date':
+        mid_val = low + datetime.timedelta(days=int(math.ceil((high - low).days / 2)))
+    elif datatype == 'int':
+        mid_val = int((high + low) / 2)
+    else:  # numeric
+        mid_val = (high + low) / 2
+    return mid_val
+
+
+def get_cast_value(datatype, val):
+    if datatype == 'int':
+        return int(val)
+    elif datatype == 'float' or datatype == 'numeric':
+        return float(val)
+    else:  # date
+        return val
