@@ -1,7 +1,6 @@
 import unittest
 
 from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
-from mysite.unmasque.refactored.util.utils import get_min_and_max_val
 from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
 from mysite.unmasque.refactored.where_clause import WhereClause
 from mysite.unmasque.test import tpchSettings, queries
@@ -144,11 +143,18 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue('n_nationkey' in wc.global_key_attributes)
         self.assertTrue('r_regionkey' in wc.global_key_attributes)
         self.assertTrue('n_regionkey' in wc.global_key_attributes)
-        self.conn.closeConnection()
 
-    def test_boundaries_numeric(self):
-        minn, maxn = get_min_and_max_val('numeric')
-        print(minn, maxn)
+        filters = wc.get_filter_predicates(queries.Q23_1)
+        print(filters)
+        f = filters[0]
+
+        self.assertEqual(len(filters), 1)
+        self.assertEqual(f[0], 'region')
+        self.assertEqual(f[1], 'r_name')
+        self.assertEqual(f[2], 'equal')
+        self.assertTrue('MIDDLE EAST' in f[3])
+
+        self.conn.closeConnection()
 
     def test_join_graph_and_filter(self):
         self.conn.connectUsingParams()

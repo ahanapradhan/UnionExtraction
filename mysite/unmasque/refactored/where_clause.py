@@ -266,7 +266,7 @@ class WhereClause(Base):
         if 'int' in self.global_attrib_types_dict[(tabname, attrib)]:
             self.handle_int_filter(attrib, d_plus_value, filter_attribs, tabname, query)
         elif any(x in self.global_attrib_types_dict[(tabname, attrib)] for x in ['text', 'char', 'varbit']):
-            self.handle_string_filter(attrib, attrib_max_length, d_plus_value, filter_attribs, tabname)
+            self.handle_string_filter(attrib, attrib_max_length, d_plus_value, filter_attribs, tabname, query)
         elif 'date' in self.global_attrib_types_dict[(tabname, attrib)]:
             self.handle_date_filter(attrib, d_plus_value, filter_attribs, tabname)
         elif 'numeric' in self.global_attrib_types_dict[(tabname, attrib)]:
@@ -278,8 +278,7 @@ class WhereClause(Base):
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
             # self.connectionHelper.execute_sql(["ROLLBACK"])
-            self.connectionHelper.execute_sql(["Truncate Table " + tabname + ";",
-                                            "Insert into " + tabname + " Select * from " + tabname + "4;"])
+            self.revert_filter_changes(tabname)
         self.update_other_data(tabname, attrib, 'int', val, new_result, [])
         if len(new_result) > 1:
             return True
@@ -373,8 +372,7 @@ class WhereClause(Base):
         # if operator == "<=":
         #    delta = -1 * delta
 
-        self.connectionHelper.execute_sql(["Truncate Table " + tabname + ";",
-                                           "Insert into " + tabname + " Select * from " + tabname + "4;"])
+        self.revert_filter_changes(tabname)
 
         low = min_val
         high = max_val
@@ -392,8 +390,7 @@ class WhereClause(Base):
                     self.update_other_data(tabname, filter_attrib, datatype, mid_val, new_result,
                                            [low, mid_val, high, mid_val, high])
                     low = mid_val
-                self.connectionHelper.execute_sql(["TRUNCATE table " + tabname + ";",
-                                                   "Insert into " + tabname + " Select * from " + tabname + "4;"])
+                self.revert_filter_changes(tabname)
             return low
 
         if operator == '>=':
@@ -409,8 +406,7 @@ class WhereClause(Base):
                     self.update_other_data(tabname, filter_attrib, datatype, mid_val, new_result,
                                            [low, mid_val, high, low, mid_val])
                     high = mid_val
-                self.connectionHelper.execute_sql(["TRUNCATE table " + tabname + ";",
-                                                   "Insert into " + tabname + " Select * from " + tabname + "4;"])
+                self.revert_filter_changes(tabname)
             return high
 
         else:  # =, i.e. datatype == 'int'
@@ -423,8 +419,7 @@ class WhereClause(Base):
             is_high = self.run_app_for_a_val(datatype, filter_attrib, is_high,
                                              high, query, query_back, query_front,
                                              tabname)
-            self.connectionHelper.execute_sql(["TRUNCATE table " + tabname + ";",
-                                               "Insert into " + tabname + " Select * from " + tabname + "4;"])
+            self.revert_filter_changes(tabname)
             return not is_low and not is_high
 
     def run_app_for_a_val(self, datatype, filter_attrib, is_low, low, query, query_back, query_front, tabname):
@@ -528,13 +523,10 @@ class WhereClause(Base):
                 self.local_other_info_dict)
                     """
 
-    def handle_string_filter(self, attrib, attrib_max_length, d_plus_value, filterAttribs, tabname):
-        pass
-        """
-
+    def handle_string_filter(self, attrib, attrib_max_length, d_plus_value, filterAttribs, tabname, query):
         # STRING HANDLING
         # ESCAPE CHARACTERS IN STRING REMAINING
-        if (checkStringPredicate(tabname, attrib)):
+        if self.checkStringPredicate(query, tabname, attrib):
             # returns true if there is predicate on this string attribute
             self.local_other_info_dict['Conclusion'] = 'Filter Predicate on ' + attrib
             self.global_other_info_dict[
@@ -545,8 +537,8 @@ class WhereClause(Base):
             max_length = 100000
             if (tabname, attrib) in attrib_max_length.keys():
                 max_length = attrib_max_length[(tabname, attrib)]
-            val = getStrFilterValue(tabname, attrib, representative, max_length)
-            if ('%' in val or '_' in val):
+            val = self.getStrFilterValue(query, tabname, attrib, representative, max_length)
+            if '%' in val or '_' in val:
                 filterAttribs.append((tabname, attrib, 'LIKE', val, val))
                 self.local_other_info_dict[
                     'Conclusion'] = u'Filter Predicate is \u2013 ' + attrib + ' LIKE ' + str(val)
@@ -563,12 +555,11 @@ class WhereClause(Base):
                 'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
                 self.local_other_info_dict)
         # update table so that result is not empty
-        cur = self.global_conn.cursor()
-        cur.execute("Truncate table " + tabname + ';')
-        # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-        cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-        cur.close()
-            """
+        self.revert_filter_changes(tabname)
+
+    def revert_filter_changes(self, tabname):
+        self.connectionHelper.execute_sql(["Truncate table " + tabname + ';',
+                                           "Insert into " + tabname + " Select * from " + tabname + "4;"])
 
     def handle_int_filter(self, attrib, d_plus_value, filterAttribs, tabname, query):
 
@@ -610,6 +601,108 @@ class WhereClause(Base):
             val = self.get_filter_value(query, 'int', tabname, attrib, min_val_domain + 1, int(d_plus_value[attrib]),
                                         '>=')
             filterAttribs.append((tabname, attrib, '>=', int(val), int(max_val_domain)))
+
+    def checkStringPredicate(self, query, tabname, attrib):
+        # updatequery
+        if self.global_d_plus_value[attrib] is not None and self.global_d_plus_value[attrib][0] == 'a':
+            val = 'b'
+        else:
+            val = 'a'
+        new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, val)
+        if isQ_result_empty(new_result):
+            self.revert_filter_changes(tabname)
+            return True
+        new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, "" "")
+        if isQ_result_empty(new_result):
+            self.revert_filter_changes(tabname)
+            return True
+        return False
+
+    def getStrFilterValue(self, query, tabname, attrib, representative, max_length):
+        index = 0
+        output = ""
+        # currently inverted exclaimaination is being used assuming it will not be in the string
+        # GET minimal string with _
+        while index < len(representative):
+            temp = list(representative)
+            if temp[index] == 'a':
+                temp[index] = 'b'
+            else:
+                temp[index] = 'a'
+            temp = ''.join(temp)
+            new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
+            if len(new_result) > 1:
+                self.local_other_info_dict['Conclusion'] = "'" + representative[
+                    index] + "' is a replacement for wildcard character '%' or '_'"
+                self.global_other_info_dict[
+                    'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
+                    self.local_other_info_dict)
+                temp = copy.deepcopy(representative)
+                temp = temp[:index] + temp[index + 1:]
+                new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
+                if len(new_result) > 1:
+                    self.local_other_info_dict['Conclusion'] = "'" + representative[
+                        index] + "' is a replacement from wildcard character '%'"
+                    self.global_other_info_dict[
+                        'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
+                        self.local_other_info_dict)
+                    representative = representative[:index] + representative[index + 1:]
+                else:
+                    self.local_other_info_dict['Conclusion'] = "'" + representative[
+                        index] + "' is a replacement from wildcard character '_'"
+                    self.global_other_info_dict[
+                        'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
+                        self.local_other_info_dict)
+                    output = output + "_"
+                    representative = list(representative)
+                    representative[index] = u"\u00A1"
+                    representative = ''.join(representative)
+                    index = index + 1
+            else:
+                self.local_other_info_dict['Conclusion'] = "'" + representative[
+                    index] + "' is an intrinsic character in filter value"
+                self.global_other_info_dict[
+                    'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
+                    self.local_other_info_dict)
+                output = output + representative[index]
+                index = index + 1
+        if output == '':
+            return output
+        # GET % positions
+        index = 0
+        representative = copy.deepcopy(output)
+        if len(representative) < max_length:
+            output = ""
+            while index < len(representative):
+                temp = list(representative)
+                if temp[index] == 'a':
+                    temp.insert(index, 'b')
+                else:
+                    temp.insert(index, 'a')
+                temp = ''.join(temp)
+                new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
+                if len(new_result) > 1:
+                    output = output + '%'
+                output = output + representative[index]
+                index = index + 1
+            temp = list(representative)
+            if temp[index - 1] == 'a':
+                temp.append('b')
+            else:
+                temp.append('a')
+            temp = ''.join(temp)
+            new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
+            if len(new_result) > 1:
+                output = output + '%'
+        return output
+
+    def run_updateQ_with_temp_str(self, attrib, query, tabname, temp):
+        # updatequery
+        up_query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
+        self.connectionHelper.execute_sql([up_query])
+        new_result = self.app.doJob(query)
+        self.update_other_data(tabname, attrib, 'text', temp, new_result, [])
+        return new_result
 
     """
 
@@ -706,152 +799,6 @@ def getDateFilterValue(tabname, attrib, min_val, max_val, operator):
 
 
 
-
-def checkStringPredicate(tabname, attrib):
-    # updatequery
-    val = ''
-    if self.global_d_plus_value[attrib] is not None and self.global_d_plus_value[attrib][0] == 'a':
-        query = "update " + tabname + " set " + attrib + " = " + "'b';"
-        val = 'b'
-    else:
-        query = "update " + tabname + " set " + attrib + " = " + "'a';"
-        val = 'a'
-    cur = self.global_conn.cursor()
-    cur.execute(query)
-    cur.close()
-    new_result = executable_aman.getExecOutput(self)
-    update_other_data(tabname, attrib, 'text', val, new_result, [])
-    if len(new_result) <= 1:
-        cur = self.global_conn.cursor()
-        cur.execute("Truncate Table " + tabname + ";")
-        # conn.commit()
-        cur.close()
-        cur = self.global_conn.cursor()
-        # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-        # conn.commit()
-        cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-        cur.close()
-        return True
-    query = "update " + tabname + " set " + attrib + " = " + "' ';"
-    cur = self.global_conn.cursor()
-    cur.execute(query)
-    cur.close()
-    new_result = executable_aman.getExecOutput(self)
-    update_other_data(tabname, attrib, 'text', "''", new_result, [])
-    if len(new_result) <= 1:
-        cur = self.global_conn.cursor()
-        cur.execute("Truncate Table " + tabname + ";")
-        cur.close()
-        cur = self.global_conn.cursor()
-        # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-        cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-        cur.close()
-        return True
-    return False
-
-
-def getStrFilterValue(tabname, attrib, representative, max_length):
-    index = 0
-    output = ""
-    # currently inverted exclaimaination is being used assuming it will not be in the string
-    # GET minimal string with _
-    while (index < len(representative)):
-        temp = list(representative)
-        if temp[index] == 'a':
-            temp[index] = 'b'
-        else:
-            temp[index] = 'a'
-        temp = ''.join(temp)
-        # updatequery
-        query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
-        cur = self.global_conn.cursor()
-        cur.execute(query)
-        # conn.commit()
-        cur.close()
-        new_result = executable_aman.getExecOutput(self)
-        update_other_data(tabname, attrib, 'text', temp, new_result, [])
-        if len(new_result) > 1:
-            self.local_other_info_dict['Conclusion'] = "'" + representative[
-                index] + "' is a replacement for wildcard character '%' or '_'"
-            self.global_other_info_dict[
-                'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
-                self.local_other_info_dict)
-            temp = copy.deepcopy(representative)
-            temp = temp[:index] + temp[index + 1:]
-            # updatequery
-            query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
-            cur = self.global_conn.cursor()
-            cur.execute(query)
-            cur.close()
-            new_result = executable_aman.getExecOutput(self)
-            update_other_data(tabname, attrib, 'text', temp, new_result, [])
-            if len(new_result) > 1:
-                self.local_other_info_dict['Conclusion'] = "'" + representative[
-                    index] + "' is a replacement from wildcard character '%'"
-                self.global_other_info_dict[
-                    'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
-                    self.local_other_info_dict)
-                representative = representative[:index] + representative[index + 1:]
-            else:
-                self.local_other_info_dict['Conclusion'] = "'" + representative[
-                    index] + "' is a replacement from wildcard character '_'"
-                self.global_other_info_dict[
-                    'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
-                    self.local_other_info_dict)
-                output = output + "_"
-                representative = list(representative)
-                representative[index] = u"\u00A1"
-                representative = ''.join(representative)
-                index = index + 1
-        else:
-            self.local_other_info_dict['Conclusion'] = "'" + representative[
-                index] + "' is an intrinsic character in filter value"
-            self.global_other_info_dict[
-                'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
-                self.local_other_info_dict)
-            output = output + representative[index]
-            index = index + 1
-    if output == '':
-        return output
-    # GET % positions
-    index = 0
-    representative = copy.deepcopy(output)
-    if (len(representative) < max_length):
-        output = ""
-        while index < len(representative):
-            temp = list(representative)
-            if temp[index] == 'a':
-                temp.insert(index, 'b')
-            else:
-                temp.insert(index, 'a')
-            temp = ''.join(temp)
-            # updatequery
-            query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
-            cur = self.global_conn.cursor()
-            cur.execute(query)
-            # conn.commit()
-            cur.close()
-            new_result = executable_aman.getExecOutput(self)
-            update_other_data(tabname, attrib, 'text', temp, new_result, [])
-            if len(new_result) > 1:
-                output = output + '%'
-            output = output + representative[index]
-            index = index + 1
-        temp = list(representative)
-        if temp[index - 1] == 'a':
-            temp.append('b')
-        else:
-            temp.append('a')
-        temp = ''.join(temp)
-        # updatequery
-        query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
-        cur = self.global_conn.cursor()
-        cur.execute(query)
-        # conn.commit()
-        cur.close()
-        new_result = executable_aman.getExecOutput(self)
-        update_other_data(tabname, attrib, 'text', temp, new_result, [])
-        if len(new_result) > 1:
-            output = output + '%'
-    return output
 """
+
+
