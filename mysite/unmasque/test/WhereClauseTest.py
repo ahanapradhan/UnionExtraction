@@ -74,6 +74,23 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(wc.global_key_attributes), 2)
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('l_partkey' in wc.global_key_attributes)
+
+
+        filters = wc.get_filter_predicates(queries.Q17)
+        print(filters)
+        self.assertEqual(len(filters), 2)
+
+        f = filters[0]
+        self.assertEqual(f[0], 'part')
+        self.assertEqual(f[1], 'p_brand')
+        self.assertEqual(f[2], 'equal')
+        self.assertTrue('Brand#52' in f[3])
+
+        f = filters[1]
+        self.assertEqual(f[0], 'part')
+        self.assertEqual(f[1], 'p_container')
+        self.assertEqual(f[2], 'equal')
+        self.assertTrue('LG CAN' in f[3])
         self.conn.closeConnection()
 
     def test_join_graph1(self):
