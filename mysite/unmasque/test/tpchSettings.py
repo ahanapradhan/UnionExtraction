@@ -21,5 +21,8 @@ from_rels = {'tpch_query1': ["lineitem"],
              'Q17': ["lineitem", "part"],
              'Q18': ["partsupp", "part"],
              'Q21': ["supplier", "lineitem", "orders", "nation"],
-             'Q23_1': ["partsupp", "supplier", "nation", "region"]
+             'Q23_1': ["partsupp", "supplier", "nation", "region"],
+             'Q18_test': ["partsupp", "part"],
+             'Q18_test1': ["partsupp", "part"],
+
              }

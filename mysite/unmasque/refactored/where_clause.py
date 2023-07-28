@@ -1,10 +1,13 @@
 import copy
 import datetime
+import math
+
+import psycopg2
 
 from mysite.unmasque.refactored.abstract.ExtractorBase import Base
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import is_int, get_all_combo_lists, get_datatype_from_typesList, \
-    get_dummy_val_for, get_val_plus_delta
+    get_dummy_val_for, get_val_plus_delta, get_min_and_max_val, isQ_result_empty
 
 
 def get_two_different_vals(list_type):
@@ -19,6 +22,23 @@ def construct_two_lists(attrib_types_dict, curr_list, elt):
     list_type = attrib_types_dict[curr_list[elt[0]]] if elt else ''
     list2 = list(set(curr_list) - set(list1))
     return list1, list2, list_type
+
+
+def get_test_value_for(datatype, val, precision):
+    if datatype == 'float' or datatype == 'numeric':
+        return round(val, precision)
+    elif datatype == 'int':
+        return int(val)
+
+
+def get_constants_for(datatype):
+    if datatype == 'int':
+        while_cut_off = 0
+        delta = 1
+    elif datatype == 'float' or datatype == 'numeric':
+        while_cut_off = 0.00001
+        delta = 0.01
+    return delta, while_cut_off
 
 
 class WhereClause(Base):
@@ -68,7 +88,7 @@ class WhereClause(Base):
         return args[0]
 
     def get_join_graph(self, query):
-        # self.get_init_data()
+        self.do_init()
         global_key_lists = copy.deepcopy(self.global_key_lists)
         join_graph = []
         attrib_types_dict, combo_dict_of_lists = self.construct_attribs_types_dict()
@@ -182,6 +202,11 @@ class WhereClause(Base):
             self.global_join_graph.append(copy.deepcopy(temp))
 
     def get_init_data(self):
+        if len(self.global_attrib_types) + len(self.global_all_attribs) + len(self.global_d_plus_value) + len(
+                self.global_attrib_max_length) == 0:
+            self.do_init()
+
+    def do_init(self):
         for tabname in self.core_relations:
             res, desc = self.connectionHelper.execute_sql_fetchall("select column_name, data_type, "
                                                                    "character_maximum_length from "
@@ -204,16 +229,17 @@ class WhereClause(Base):
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
 
-    def doActualJob(self, args):
-        query = self.extract_params_from_args(args)
+    def get_filter_predicates(self, query):
+        # query = self.extract_params_from_args(args)
 
         self.global_attrib_dict['filter'] = []
-        self.get_init_data()
-        filterAttribs = []
+        self.do_init()
+
+        filter_attribs = []
         total_attribs = 0
-        # attrib_types_dict = {}
         d_plus_value = copy.deepcopy(self.global_d_plus_value)
         attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
+
         for entry in self.global_attrib_types:
             # attrib_types_dict[(entry[0], entry[1])] = entry[2]
             # aoa change
@@ -224,71 +250,204 @@ class WhereClause(Base):
             attrib_list = self.global_all_attribs[i]
             total_attribs = total_attribs + len(attrib_list)
             for attrib in attrib_list:
-                if attrib not in self.global_key_attributes:
-                    self.global_attrib_dict['filter'].append(attrib)
-                    self.local_other_info_dict = {}
-                    self.local_instance_no = 1
-                    self.global_instance_dict[attrib] = []
-                    self.local_instance_list = []
-                    if 'int' in self.global_attrib_types_dict[(tabname, attrib)]:
-                        self.handle_int_filter(attrib, d_plus_value, filterAttribs, tabname)
-                    elif any(x in self.global_attrib_types_dict[(tabname, attrib)] for x in ['text', 'char', 'varbit']):
-                        self.handle_string_filter(attrib, attrib_max_length, d_plus_value, filterAttribs, tabname)
-                    elif 'date' in self.global_attrib_types_dict[(tabname, attrib)]:
-                        self.handle_date_filter(attrib, d_plus_value, filterAttribs, tabname)
-                    elif 'numeric' in self.global_attrib_types_dict[(tabname, attrib)]:
-                        self.handle_numeric_filter(attrib, d_plus_value, filterAttribs, tabname)
-                    self.global_instance_dict['filter_' + attrib] = copy.deepcopy(
-                        self.local_instance_list)
-        print("filterAttribs", filterAttribs)
-        return filterAttribs
+                if attrib not in self.global_key_attributes:  # filter is allowed only on non-key attribs
+                    self.extract_filter_on_attrib(attrib, attrib_max_length, d_plus_value, filter_attribs,
+                                                          query, tabname)
 
-    def handle_numeric_filter(self, attrib, d_plus_value, filterAttribs, tabname):
-        pass
-        """
+                    print("filter_attribs", filter_attribs)
+        return filter_attribs
 
+    def extract_filter_on_attrib(self, attrib, attrib_max_length, d_plus_value, filter_attribs, query, tabname):
+        self.global_attrib_dict['filter'].append(attrib)
+        self.local_other_info_dict = {}
+        self.local_instance_no = 1
+        self.global_instance_dict[attrib] = []
+        self.local_instance_list = []
+        if 'int' in self.global_attrib_types_dict[(tabname, attrib)]:
+            self.handle_int_filter(attrib, d_plus_value, filter_attribs, tabname, query)
+        elif any(x in self.global_attrib_types_dict[(tabname, attrib)] for x in ['text', 'char', 'varbit']):
+            self.handle_string_filter(attrib, attrib_max_length, d_plus_value, filter_attribs, tabname)
+        elif 'date' in self.global_attrib_types_dict[(tabname, attrib)]:
+            self.handle_date_filter(attrib, d_plus_value, filter_attribs, tabname)
+        elif 'numeric' in self.global_attrib_types_dict[(tabname, attrib)]:
+            self.handle_numeric_filter(attrib, d_plus_value, filter_attribs, tabname, query)
+        self.global_instance_dict['filter_' + attrib] = copy.deepcopy(self.local_instance_list)
+
+    def checkAttribValueEffect(self, query, tabname, attrib, val):
+        self.connectionHelper.execute_sql(["update " + tabname + " set " + attrib + " = " + str(val) + ";"])
+        new_result = self.app.doJob(query)
+        if isQ_result_empty(new_result):
+            # self.connectionHelper.execute_sql(["ROLLBACK"])
+            self.connectionHelper.execute_sql(["Truncate Table " + tabname + ";",
+                                            "Insert into " + tabname + " Select * from " + tabname + "4;"])
+        self.update_other_data(tabname, attrib, 'int', val, new_result, [])
+        if len(new_result) > 1:
+            return True
+        return False
+
+    # SUPPORT FUNCTIONS FOR FILTER PREDICATES
+    def update_other_data(self, tabname, attrib, attrib_type, val, result, other_info_list):
+        self.local_other_info_dict = {}
+        if 'text' not in attrib_type and other_info_list != []:
+            low = str(other_info_list[0])
+            mid = str(other_info_list[1])
+            high = str(other_info_list[2])
+            low_next = str(other_info_list[3])
+            high_next = str(other_info_list[4])
+            self.local_other_info_dict['Current Search Range'] = '[' + low + ', ' + high + ']'
+            self.local_other_info_dict[
+                'Current Mutation'] = 'Mutation of attribute ' + attrib + ' with value ' + str(val)
+            self.local_other_info_dict['Result Cardinality'] = (len(result) - 1)
+            self.local_other_info_dict['New Search Range'] = '[' + low_next + ', ' + high_next + ']'
+        else:
+            self.local_other_info_dict[
+                'Current Mutation'] = 'Mutation of attribute ' + attrib + ' with value ' + str(val)
+            self.local_other_info_dict['Result Cardinality'] = str(len(result) - 1)
+        temp = copy.deepcopy(self.global_min_instance_dict[tabname])
+        index = temp[0].index(attrib)
+        mutated_list = copy.deepcopy(list(temp[1]))
+        mutated_list[index] = str(val)
+        temp[1] = mutated_list
+        for tab in self.core_relations:
+            self.global_min_instance_dict[
+                'filter_' + attrib + '_' + tab + '_D_mut' + str(self.local_instance_no)] = \
+                self.global_min_instance_dict[tab]
+        self.global_min_instance_dict[
+            'filter_' + attrib + '_' + tabname + '_D_mut' + str(self.local_instance_no)] = temp
+        self.global_result_dict[
+            'filter_' + attrib + '_D_mut' + str(self.local_instance_no)] = copy.deepcopy(result)
+        self.local_other_info_dict['Result Cardinality'] = str(len(result) - 1)
+        self.local_instance_list.append('D_mut' + str(self.local_instance_no))
+        self.global_other_info_dict[
+            'filter_' + attrib + '_D_mut' + str(self.local_instance_no)] = copy.deepcopy(
+            self.local_other_info_dict)
+        self.local_instance_no += 1
+
+    def handle_numeric_filter(self, attrib, d_plus_value, filterAttribs, tabname, query):
+        min_val_domain, max_val_domain = get_min_and_max_val('numeric')
         # NUMERIC HANDLING
-        # min and max domain values (initialize based on data type)
-        min_val_domain = -214748364888
-        max_val_domain = 214748364788
         # PRECISION TO BE GET FROM SCHEMA GRAPH
         precision = 2
-        flag_min = checkAttribValueEffect(tabname, attrib,
-                                          min_val_domain)  # True implies row was still present
-        flag_max = checkAttribValueEffect(tabname, attrib,
-                                          max_val_domain)  # True implies row was still present
+        min_present = self.checkAttribValueEffect(query, tabname, attrib,
+                                                  min_val_domain)  # True implies row was still present
+        max_present = self.checkAttribValueEffect(query, tabname, attrib,
+                                                  max_val_domain)  # True implies row was still present
         # inference based on flag_min and flag_max
-        if (flag_max == True and flag_min == True):
+        if max_present and min_present:
             self.local_other_info_dict['Conclusion'] = 'No Filter predicate on ' + attrib
-        elif (flag_min == False and flag_max == False):
-            print('identifying value for Int filter(range) attribute..', attrib)
-            equalto_flag = getIntFilterValue(tabname, attrib, float(d_plus_value[attrib]) - .01,
-                                             float(d_plus_value[attrib]) + .01, '=')
+        elif not min_present and not max_present:
+            print('identifying value for numeric filter(range) attribute..', attrib)
+            equalto_flag = self.get_filter_value(query, 'int', tabname, attrib, float(d_plus_value[attrib]) - .01,
+                                                 float(d_plus_value[attrib]) + .01, '=')
             if equalto_flag:
                 filterAttribs.append(
                     (tabname, attrib, '=', float(d_plus_value[attrib]), float(d_plus_value[attrib])))
             else:
-                val1 = getIntFilterValue(tabname, attrib, math.ceil(float(d_plus_value[attrib])),
-                                         max_val_domain, '<=')
-                val2 = getIntFilterValue(tabname, attrib, min_val_domain,
-                                         math.floor(float(d_plus_value[attrib])), '>=')
+                val1 = self.get_filter_value(query, 'float', tabname, attrib, math.ceil(float(d_plus_value[attrib])),
+                                             max_val_domain, '<=')
+                val2 = self.get_filter_value(query, 'float', tabname, attrib, min_val_domain,
+                                             math.floor(float(d_plus_value[attrib])), '>=')
                 filterAttribs.append((tabname, attrib, 'range', float(val2), float(val1)))
-        elif (flag_min == True and flag_max == False):
+        elif min_present and not max_present:
             print('identifying value for Int filter attribute', attrib)
-            val = getIntFilterValue(tabname, attrib, math.ceil(float(d_plus_value[attrib])) - 5,
-                                    max_val_domain, '<=')
+            val = self.get_filter_value(query, 'float', tabname, attrib, math.ceil(float(d_plus_value[attrib])) - 5,
+                                        max_val_domain, '<=')
             val = float(val)
-            val1 = getFloatFilterValue(tabname, attrib, val, val + 0.99, '<=')
+            val1 = self.get_filter_value(query, 'float', tabname, attrib, val, val + 0.99, '<=')
             filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round(val1, 2))))
-        elif (flag_min == False and flag_max == True):
+        elif not min_present and max_present:
             print('identifying value for Int filter attribute', attrib)
-            val = getIntFilterValue(tabname, attrib, min_val_domain,
-                                    math.floor(float(d_plus_value[attrib]) + 5), '>=')
+            val = self.get_filter_value(query, 'float', tabname, attrib, min_val_domain,
+                                        math.floor(float(d_plus_value[attrib]) + 5), '>=')
             val = float(val)
-            val1 = getFloatFilterValue(tabname, attrib, val - 1, val, '>=')
+            val1 = self.get_filter_value(query, 'float', tabname, attrib, val - 1, val, '>=')
             filterAttribs.append((tabname, attrib, '>=', float(round(val1, 2)), float(max_val_domain)))
-    """
 
+    def get_filter_value(self, query, datatype,
+                         tabname, filter_attrib,
+                         min_val, max_val, operator):
+        query_front = "update " + str(tabname) + " set " + str(filter_attrib) + " = "
+        query_back = ";"
+        delta, while_cut_off = get_constants_for(datatype)
+
+        # if operator == "<=":
+        #    delta = -1 * delta
+
+        self.connectionHelper.execute_sql(["Truncate Table " + tabname + ";",
+                                           "Insert into " + tabname + " Select * from " + tabname + "4;"])
+
+        low = min_val
+        high = max_val
+
+        if operator == '<=':
+            while (high - low) > while_cut_off:
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, query_back)
+                if isQ_result_empty(new_result):
+                    # put filter_
+                    self.update_other_data(tabname, filter_attrib, datatype, mid_val, new_result,
+                                           [low, mid_val, high, low, mid_val - delta])
+                    high = mid_val - delta
+                else:
+                    # put filter_
+                    self.update_other_data(tabname, filter_attrib, datatype, mid_val, new_result,
+                                           [low, mid_val, high, mid_val, high])
+                    low = mid_val
+                self.connectionHelper.execute_sql(["TRUNCATE table " + tabname + ";",
+                                                   "Insert into " + tabname + " Select * from " + tabname + "4;"])
+            return low
+
+        if operator == '>=':
+            while (high - low) > while_cut_off:
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, query_back)
+                if isQ_result_empty(new_result):
+                    # put filter_
+                    self.update_other_data(tabname, filter_attrib, datatype, mid_val, new_result,
+                                           [low, mid_val, high, mid_val + delta, high])
+                    low = mid_val + delta
+                else:
+                    # put filter_
+                    self.update_other_data(tabname, filter_attrib, datatype, mid_val, new_result,
+                                           [low, mid_val, high, low, mid_val])
+                    high = mid_val
+                self.connectionHelper.execute_sql(["TRUNCATE table " + tabname + ";",
+                                                   "Insert into " + tabname + " Select * from " + tabname + "4;"])
+            return high
+
+        else:  # =, i.e. datatype == 'int'
+            is_low = True
+            is_high = True
+            # updatequery
+            is_low = self.run_app_for_a_val(datatype, filter_attrib, is_low,
+                                            low, query, query_back, query_front,
+                                            tabname)
+            is_high = self.run_app_for_a_val(datatype, filter_attrib, is_high,
+                                             high, query, query_back, query_front,
+                                             tabname)
+            self.connectionHelper.execute_sql(["TRUNCATE table " + tabname + ";",
+                                               "Insert into " + tabname + " Select * from " + tabname + "4;"])
+            return not is_low and not is_high
+
+    def run_app_for_a_val(self, datatype, filter_attrib, is_low, low, query, query_back, query_front, tabname):
+        low_query = query_front + " " + str(low) + " " + query_back + ";"
+        self.connectionHelper.execute_sql([low_query])
+        new_result = self.app.doJob(query)
+        if len(new_result) <= 1:
+            is_low = False
+        # put filter_
+        self.update_other_data(tabname, filter_attrib, datatype, low, new_result, [])
+        return is_low
+
+    def run_app_with_mid_val(self, datatype, high, low, query, q_front, q_back):
+        mid_val = (low + high) / 2
+        print("[low,high,mid]", low, high, mid_val)
+        # updatequery
+        update_query = q_front + " " + str(get_test_value_for(datatype, mid_val, 12)) + q_back
+        self.connectionHelper.execute_sql([update_query])
+        new_result = self.app.doJob(query)
+        print(new_result, mid_val)
+        return mid_val, new_result
+
+    # mukul
     def handle_date_filter(self, attrib, d_plus_value, filterAttribs, tabname):
         pass
         """
@@ -411,321 +570,48 @@ class WhereClause(Base):
         cur.close()
             """
 
-    def handle_int_filter(self, attrib, d_plus_value, filterAttribs, tabname):
-        pass
-        """
+    def handle_int_filter(self, attrib, d_plus_value, filterAttribs, tabname, query):
 
         # NUMERIC HANDLING
         # min and max domain values (initialize based on data type)
-        min_val_domain, max_val_domain = get_min_max_vals("int")
-        flag_min = checkAttribValueEffect(tabname, attrib,
-                                          min_val_domain)  # True implies row was still present
-        flag_max = checkAttribValueEffect(tabname, attrib,
-                                          max_val_domain)  # True implies row was still present
+        min_val_domain, max_val_domain = get_min_and_max_val("int")
+        min_present = self.checkAttribValueEffect(query, tabname, attrib,
+                                                  min_val_domain)  # True implies row was still present
+        max_present = self.checkAttribValueEffect(query, tabname, attrib,
+                                                  max_val_domain)  # True implies row was still present
         # inference based on flag_min and flag_max
-        if flag_max == True and flag_min == True:
+        if max_present and min_present:
             self.local_other_info_dict['Conclusion'] = 'No filter on attribute ' + attrib
             self.global_other_info_dict[
                 'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
                 self.local_other_info_dict)
-        elif flag_min == False and flag_max == False:
-            self.local_other_info_dict[
-                'Conclusion'] = 'Filter predicate on ' + attrib + ' with operator between'
-            self.global_other_info_dict[
-                'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
-                self.local_other_info_dict)
+        elif not min_present and not max_present:
             print('identifying value for Int filter(range) attribute..', attrib)
-            equalto_flag = getIntFilterValue(tabname, attrib, int(d_plus_value[attrib]) - 1,
-                                             int(d_plus_value[attrib]) + 1, '=')
+            equalto_flag = self.get_filter_value(query, 'int', tabname, attrib, int(d_plus_value[attrib]) - 1,
+                                                 int(d_plus_value[attrib]) + 1, '=')
             if equalto_flag:
                 filterAttribs.append(
                     (tabname, attrib, '=', int(d_plus_value[attrib]), int(d_plus_value[attrib])))
-                self.local_other_info_dict[
-                    'Conclusion'] = u'Filter predicate is \u2013 ' + attrib + ' = ' + str(
-                    d_plus_value[attrib])
-                self.global_other_info_dict['filter_' + attrib + '_D_mut' + str(
-                    self.local_instance_no - 1)] = copy.deepcopy(
-                    self.local_other_info_dict)
             else:
-                val1 = getIntFilterValue(tabname, attrib, int(d_plus_value[attrib]), max_val_domain - 1,
-                                         '<=')
-                val2 = getIntFilterValue(tabname, attrib, min_val_domain + 1, int(d_plus_value[attrib]),
-                                         '>=')
+                val1 = self.get_filter_value(query, 'int', tabname, attrib, int(d_plus_value[attrib]),
+                                             max_val_domain - 1,
+                                             '<=')
+                val2 = self.get_filter_value(query, 'int', tabname, attrib, min_val_domain + 1,
+                                             int(d_plus_value[attrib]),
+                                             '>=')
                 filterAttribs.append((tabname, attrib, 'range', int(val2), int(val1)))
-                self.local_other_info_dict[
-                    'Conclusion'] = u'Filter Predicate is \u2013 ' + attrib + ' between ' + str(
-                    val2) + ' and ' + str(val1)
-                self.global_other_info_dict['filter_' + attrib + '_D_mut' + str(
-                    self.local_instance_no - 1)] = copy.deepcopy(
-                    self.local_other_info_dict)
-        elif flag_min == True and flag_max == False:
-            self.local_other_info_dict[
-                'Conclusion'] = 'Filter predicate on ' + attrib + ' with operator <='
-            self.global_other_info_dict[
-                'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
-                self.local_other_info_dict)
+        elif min_present and not max_present:
             print('identifying value for Int filter attribute', attrib)
-            val = getIntFilterValue(tabname, attrib, int(d_plus_value[attrib]), max_val_domain - 1,
-                                    '<=')
+            val = self.get_filter_value(query, 'int', tabname, attrib, int(d_plus_value[attrib]), max_val_domain - 1,
+                                        '<=')
             filterAttribs.append((tabname, attrib, '<=', int(min_val_domain), int(val)))
-            self.local_other_info_dict[
-                'Conclusion'] = u'Filter Predicate is \u2013 ' + attrib + ' <= ' + str(val)
-            self.global_other_info_dict[
-                'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
-                self.local_other_info_dict)
-        elif flag_min == False and flag_max == True:
-            self.local_other_info_dict[
-                'Conclusion'] = 'Filter predicate on ' + attrib + ' with operator >='
-            self.global_other_info_dict[
-                'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
-                self.local_other_info_dict)
+        elif not min_present and max_present:
             print('identifying value for Int filter attribute', attrib)
-            val = getIntFilterValue(tabname, attrib, min_val_domain + 1, int(d_plus_value[attrib]),
-                                    '>=')
+            val = self.get_filter_value(query, 'int', tabname, attrib, min_val_domain + 1, int(d_plus_value[attrib]),
+                                        '>=')
             filterAttribs.append((tabname, attrib, '>=', int(val), int(max_val_domain)))
-            self.local_other_info_dict[
-                'Conclusion'] = u'Filter Predicate is \u2013 ' + attrib + ' >= ' + str(val)
-            self.global_other_info_dict[
-                'filter_' + attrib + '_D_mut' + str(self.local_instance_no - 1)] = copy.deepcopy(
-                self.local_other_info_dict)
+
     """
-
-
-"""
-
-# SUPPORT FUNCTIONS FOR FILTER PREDICATES
-
-def update_other_data(tabname, attrib, attrib_type, val, result, other_info_list):
-    self.local_other_info_dict = {}
-    if 'text' not in attrib_type and other_info_list != []:
-        low = str(other_info_list[0])
-        mid = str(other_info_list[1])
-        high = str(other_info_list[2])
-        low_next = str(other_info_list[3])
-        high_next = str(other_info_list[4])
-        self.local_other_info_dict['Current Search Range'] = '[' + low + ', ' + high + ']'
-        self.local_other_info_dict[
-            'Current Mutation'] = 'Mutation of attribute ' + attrib + ' with value ' + str(val)
-        self.local_other_info_dict['Result Cardinality'] = (len(result) - 1)
-        self.local_other_info_dict['New Search Range'] = '[' + low_next + ', ' + high_next + ']'
-    else:
-        self.local_other_info_dict[
-            'Current Mutation'] = 'Mutation of attribute ' + attrib + ' with value ' + str(val)
-        self.local_other_info_dict['Result Cardinality'] = str(len(result) - 1)
-    temp = copy.deepcopy(self.global_min_instance_dict[tabname])
-    index = temp[0].index(attrib)
-    mutated_list = copy.deepcopy(list(temp[1]))
-    mutated_list[index] = str(val)
-    temp[1] = mutated_list
-    for tab in self.global_core_relations:
-        self.global_min_instance_dict[
-            'filter_' + attrib + '_' + tab + '_D_mut' + str(self.local_instance_no)] = \
-            self.global_min_instance_dict[tab]
-    self.global_min_instance_dict[
-        'filter_' + attrib + '_' + tabname + '_D_mut' + str(self.local_instance_no)] = temp
-    self.global_result_dict[
-        'filter_' + attrib + '_D_mut' + str(self.local_instance_no)] = copy.deepcopy(result)
-    self.local_other_info_dict['Result Cardinality'] = str(len(result) - 1)
-    self.local_instance_list.append('D_mut' + str(self.local_instance_no))
-    self.global_other_info_dict[
-        'filter_' + attrib + '_D_mut' + str(self.local_instance_no)] = copy.deepcopy(
-        self.local_other_info_dict)
-    self.local_instance_no += 1
-
-
-def checkAttribValueEffect(tabname, attrib, val):
-    # updatequery
-    query = "update " + tabname + " set " + attrib + " = " + str(val) + ";"
-    cur = self.global_conn.cursor()
-    cur.execute(query)
-    cur.close()
-    new_result = executable_aman.getExecOutput(self)
-    if len(new_result) <= 1:
-        cur = self.global_conn.cursor()
-        cur.execute("Truncate Table " + tabname + ";")
-        cur.close()
-        cur = self.global_conn.cursor()
-        # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-        cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-        cur.close()
-    update_other_data(tabname, attrib, 'int', val, new_result, [])
-    if len(new_result) > 1:
-        return True
-    return False
-
-
-# mukul
-def getFloatFilterValue(tabname, filter_attrib, min_val, max_val, operator):
-    query_front = "update " + str(tabname) + " set " + str(filter_attrib) + " = "
-    cur = self.global_conn.cursor()
-    cur.execute("Truncate Table " + tabname + ";")
-    # conn.commit()
-    cur.close()
-    cur = self.global_conn.cursor()
-    # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-    cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-    # conn.commit()
-    cur.close()
-    if operator == '<=':
-        low = float(min_val)
-        high = float(max_val)
-        while (high - low) > 0.00001:
-            mid_val = (low + high) / 2
-            print("[low,high,mid]", low, high, mid_val)
-            # updatequery
-            query = query_front + " " + str(round(mid_val, 2)) + " ;"
-            cur = self.global_conn.cursor()
-            cur.execute(query)
-            cur.close()
-            new_result = executable_aman.getExecOutput(self)
-            print(new_result, mid_val)
-            if len(new_result) <= 1:
-                # put filter_
-                update_other_data(tabname, filter_attrib, 'float', mid_val, new_result,
-                                  [low, mid_val, high, low, mid_val - 0.01])
-                high = mid_val - 0.01
-            else:
-                # put filter_
-                update_other_data(tabname, filter_attrib, 'float', mid_val, new_result,
-                                  [low, mid_val, high, mid_val, high])
-                low = mid_val
-            cur = self.global_conn.cursor()
-            cur.execute('TRUNCATE table ' + tabname + ';')
-            # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-            cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-            cur.close()
-        return (low)
-
-    if operator == '>=':
-        low = float(min_val)
-        high = float(max_val)
-        while (high - low) > 0.00001:
-            mid_val = (low + high) / 2
-            print("[low,high,mid]", low, high, mid_val)
-            # updatequery
-            query = query_front + " " + str(round(mid_val, 2)) + " ;"
-            cur = self.global_conn.cursor()
-            cur.execute(query)
-            cur.close()
-            new_result = executable_aman.getExecOutput(self)
-            if len(new_result) <= 1:
-                # put filter_
-                update_other_data(tabname, filter_attrib, 'float', mid_val, new_result,
-                                  [low, mid_val, high, mid_val + 0.01, high])
-                low = mid_val + 0.01
-            else:
-                # put filter_
-                update_other_data(tabname, filter_attrib, 'float', mid_val, new_result,
-                                  [low, mid_val, high, low, mid_val])
-                high = mid_val
-            cur = self.global_conn.cursor()
-            cur.execute('TRUNCATE table ' + tabname + ';')
-            # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-            cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-            cur.close()
-        return (high)
-    return False
-
-
-def getIntFilterValue(tabname, filter_attrib, min_val, max_val, operator):
-    counter = 0
-    query_front = "update " + tabname + " set " + filter_attrib + " = "
-    query_back = ""
-    firstflag = True
-    cur = self.global_conn.cursor()
-    cur.execute("Truncate Table " + tabname + ";")
-    # conn.commit()
-    cur.close()
-    cur = self.global_conn.cursor()
-    # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-    # conn.commit()
-    cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-    cur.close()
-    if operator == '<=':
-        low = min_val
-        high = max_val
-        while (high - low) > 0:
-            mid_val = int(math.ceil((low + high) / 2))
-            # updatequery
-            query = query_front + " " + str(mid_val) + " " + query_back + ";"
-            cur = self.global_conn.cursor()
-            cur.execute(query)
-            cur.close()
-            new_result = executable_aman.getExecOutput(self)
-            if len(new_result) <= 1:
-                # put filter_
-                update_other_data(tabname, filter_attrib, 'int', mid_val, new_result,
-                                  [low, mid_val, high, low, mid_val - 1])
-                high = mid_val - 1
-            else:
-                # put filter_
-                update_other_data(tabname, filter_attrib, 'int', mid_val, new_result,
-                                  [low, mid_val, high, mid_val, high])
-                low = mid_val
-            cur = self.global_conn.cursor()
-            cur.execute('TRUNCATE table ' + tabname + ';')
-            # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-            cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-            cur.close()
-        return str(low)
-    if operator == '>=':
-        low = min_val
-        high = max_val
-        while (high - low) > 0:
-            mid_val = int((low + high) / 2)
-            # updatequery
-            query = query_front + " " + str(mid_val) + " " + query_back + ";"
-            cur = self.global_conn.cursor()
-            cur.execute(query)
-            cur.close()
-            new_result = executable_aman.getExecOutput(self)
-            if len(new_result) <= 1:
-                # put filter_
-                update_other_data(tabname, filter_attrib, 'int', mid_val, new_result,
-                                  [low, mid_val, high, mid_val + 1, high])
-                low = mid_val + 1
-            else:
-                # put filter_
-                update_other_data(tabname, filter_attrib, 'int', mid_val, new_result,
-                                  [low, mid_val, high, low, mid_val])
-                high = mid_val
-            cur = self.global_conn.cursor()
-            cur.execute('TRUNCATE table ' + tabname + ';')
-            # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-            cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-            cur.close()
-        return str(high)
-    if operator == '=':
-        low = min_val
-        high = max_val
-        flag_low = True
-        flag_high = True
-        # updatequery
-        query = query_front + " " + str(low) + " " + query_back + ";"
-        cur = self.global_conn.cursor()
-        cur.execute(query)
-        cur.close()
-        new_result = executable_aman.getExecOutput(self)
-        if len(new_result) <= 1:
-            flag_low = False
-        # put filter_
-        update_other_data(tabname, filter_attrib, 'int', low, new_result, [])
-        query = query_front + " " + str(high) + " " + query_back + ";"
-        cur = self.global_conn.cursor()
-        cur.execute(query)
-        cur.close()
-        new_result = executable_aman.getExecOutput(self)
-        # put filter_
-        update_other_data(tabname, filter_attrib, 'int', high, new_result, [])
-        cur = self.global_conn.cursor()
-        cur.execute('TRUNCATE table ' + tabname + ';')
-        # cur.execute("copy " + tabname + " from " + "'" + self.global_reduced_data_path + tabname + ".csv' " + "delimiter ',' csv header;")
-        cur.execute("Insert into " + tabname + " Select * from " + tabname + "4;")
-        cur.close()
-        if len(new_result) <= 1:
-            flag_high = False
-        return (flag_low == False and flag_high == False)
-    return False
 
 
 def getDateFilterValue(tabname, attrib, min_val, max_val, operator):
@@ -817,6 +703,8 @@ def getDateFilterValue(tabname, attrib, min_val, max_val, operator):
             flag_high = False
         return (flag_low == False and flag_high == False)
     return False
+
+
 
 
 def checkStringPredicate(tabname, attrib):

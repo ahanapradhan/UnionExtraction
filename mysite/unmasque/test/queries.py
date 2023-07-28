@@ -50,3 +50,11 @@ Q21 = "Select  s_name, count(*) as numwait From  supplier, lineitem l1, orders, 
 Q23_1 = "Select  min(ps_supplycost) From  partsupp, supplier, nation, region Where  s_suppkey = ps_suppkey and " \
         "s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'MIDDLE EAST';"
 
+Q18_test = "Select  p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From  partsupp, part Where  p_partkey = " \
+      "ps_partkey and p_size >= 4 Group By  p_brand, p_type, p_size Order By  " \
+      "supplier_cnt desc, p_brand, p_type, p_size;"
+
+Q18_test1 = "Select  p_retailprice, p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From  partsupp, " \
+            "part Where  p_partkey = ps_partkey and p_retailprice < 1000 and p_retailprice > 800 and p_size >= 4 " \
+            "Group By p_retailprice, p_brand, p_type, p_size Order By  supplier_cnt desc, p_brand, p_type, p_size;"
+

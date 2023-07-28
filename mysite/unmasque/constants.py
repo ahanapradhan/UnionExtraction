@@ -1,6 +1,6 @@
 import datetime
-min_numeric_val = -214748364888
-max_numeric_val = 214748364788
+min_numeric_val = -2147483648.88
+max_numeric_val = 2147483647.88
 min_int_val = -2147483648
 max_int_val = 2147483647
 min_date_val = datetime.date(1, 1, 1)

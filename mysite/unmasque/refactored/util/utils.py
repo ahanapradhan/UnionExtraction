@@ -1,5 +1,7 @@
 import copy
 import datetime
+import decimal
+from _decimal import getcontext
 
 from mysite.unmasque import constants
 from mysite.unmasque.constants import dummy_int, dummy_date, dummy_char
