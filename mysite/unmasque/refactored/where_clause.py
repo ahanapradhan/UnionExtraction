@@ -22,13 +22,6 @@ def construct_two_lists(attrib_types_dict, curr_list, elt):
     return list1, list2, list_type
 
 
-def get_test_value_for(datatype, val, precision):
-    if datatype == 'float' or datatype == 'numeric':
-        return round(val, precision)
-    elif datatype == 'int':
-        return int(val)
-
-
 def get_constants_for(datatype):
     if datatype == 'int' or datatype == 'date':
         while_cut_off = 0
@@ -51,6 +44,7 @@ class WhereClause(Base):
                  global_result_dict,
                  global_min_instance_dict):
         super().__init__(connectionHelper, "Where_clause")
+        self.filter_predicates = None
         self.app = Executable(connectionHelper)
 
         # from initiator
@@ -81,8 +75,14 @@ class WhereClause(Base):
     def extract_params_from_args(self, args):
         return args[0]
 
+    def doActualJob(self, args):
+        self.get_init_data()
+        query = self.extract_params_from_args(args)
+        self.get_join_graph(query)
+        self.filter_predicates = self.get_filter_predicates(query)
+        return self.global_join_graph, self.filter_predicates
+
     def get_join_graph(self, query):
-        self.do_init()
         global_key_lists = copy.deepcopy(self.global_key_lists)
         join_graph = []
         attrib_types_dict, combo_dict_of_lists = self.construct_attribs_types_dict()
@@ -282,45 +282,6 @@ class WhereClause(Base):
             return False
         return True
 
-    """
-    # SUPPORT FUNCTIONS FOR FILTER PREDICATES
-    def update_other_data(self, tabname, attrib, attrib_type, val, result, other_info_list):
-        self.local_other_info_dict = {}
-        if 'text' not in attrib_type and other_info_list != []:
-            low = str(other_info_list[0])
-            mid = str(other_info_list[1])
-            high = str(other_info_list[2])
-            low_next = str(other_info_list[3])
-            high_next = str(other_info_list[4])
-            self.local_other_info_dict['Current Search Range'] = '[' + low + ', ' + high + ']'
-            self.local_other_info_dict[
-                'Current Mutation'] = 'Mutation of attribute ' + attrib + ' with value ' + str(val)
-            self.local_other_info_dict['Result Cardinality'] = (len(result) - 1)
-            self.local_other_info_dict['New Search Range'] = '[' + low_next + ', ' + high_next + ']'
-        else:
-            self.local_other_info_dict[
-                'Current Mutation'] = 'Mutation of attribute ' + attrib + ' with value ' + str(val)
-            self.local_other_info_dict['Result Cardinality'] = str(len(result) - 1)
-        temp = copy.deepcopy(self.global_min_instance_dict[tabname])
-        index = temp[0].index(attrib)
-        mutated_list = copy.deepcopy(list(temp[1]))
-        mutated_list[index] = str(val)
-        temp[1] = mutated_list
-        for tab in self.core_relations:
-            self.global_min_instance_dict[
-                'filter_' + attrib + '_' + tab + '_D_mut' + str(self.local_instance_no)] = \
-                self.global_min_instance_dict[tab]
-        self.global_min_instance_dict[
-            'filter_' + attrib + '_' + tabname + '_D_mut' + str(self.local_instance_no)] = temp
-        self.global_result_dict[
-            'filter_' + attrib + '_D_mut' + str(self.local_instance_no)] = copy.deepcopy(result)
-        self.local_other_info_dict['Result Cardinality'] = str(len(result) - 1)
-        self.local_instance_list.append('D_mut' + str(self.local_instance_no))
-        self.global_other_info_dict[
-            'filter_' + attrib + '_D_mut' + str(self.local_instance_no)] = copy.deepcopy(
-            self.local_other_info_dict)
-        self.local_instance_no += 1
-    """
 
     def handle_numeric_filter(self, attrib, d_plus_value, filterAttribs, tabname, query):
         min_val_domain, max_val_domain = get_min_and_max_val('numeric')

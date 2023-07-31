@@ -1,8 +1,6 @@
 import copy
 import datetime
-import decimal
 import math
-from _decimal import getcontext
 
 from mysite.unmasque import constants
 from mysite.unmasque.constants import dummy_int, dummy_date, dummy_char
@@ -43,6 +41,37 @@ def is_int(s):
         return False
 
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+def get_unused_dummy_val(datatype, value_used):
+    if datatype == 'int':
+        dint = constants.dummy_int
+    elif datatype == 'date':
+        dint = constants.dummy_date
+    elif datatype == 'char':
+        if constants.dummy_char == 91:
+            constants.dummy_char = 65
+        dint = get_char(constants.dummy_char)
+
+    while dint in value_used:
+        dint = get_val_plus_delta(datatype, dint, 1)
+
+    if datatype == 'int':
+        constants.dummy_int = dint
+    elif datatype == 'date':
+        constants.dummy_date = dint
+    elif datatype == 'char':
+        constants.dummy_char = get_int(dint)
+
+    return dint
+
+
 def get_datatype_from_typesList(list_type):
     if 'date' in list_type:
         datatype = 'date'
@@ -71,7 +100,7 @@ def get_val_plus_delta(datatype, min_val, delta):
     elif datatype == 'int' or datatype == 'numeric':  # INT, NUMERIC
         plus_delta = min_val + delta
     elif datatype == 'char':
-        plus_delta = chr(min_val + delta)
+        plus_delta = get_int(min_val) + delta
     return plus_delta
 
 
@@ -117,3 +146,30 @@ def get_cast_value(datatype, val):
         return float(val)
     else:  # date
         return val
+
+
+def get_test_value_for(datatype, val, precision):
+    if datatype == 'float' or datatype == 'numeric':
+        return round(val, precision)
+    elif datatype == 'int':
+        return int(val)
+
+
+def get_char(dchar):
+    try:
+        chr(dchar)
+    except TypeError:
+        return dchar
+    return chr(dchar)
+
+
+def get_int(dchar):
+    try:
+        ord(dchar)
+    except TypeError:
+        return dchar
+    return ord(dchar)
+
+
+def find_indices(list_to_check, item_to_find):
+    return [idx for idx, value in enumerate(list_to_check) if value == item_to_find]
