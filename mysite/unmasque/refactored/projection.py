@@ -17,6 +17,62 @@ def cover_special_chars(curr_str, value_used):
     return curr_str
 
 
+def construct_value_used_for_filtered_attribs(attrib_types_dict, newfilterList, value_used):
+    curr_attrib = [newfilterList[0]]
+    index = 1
+    while index < len(newfilterList) and curr_attrib[0][2] != '=' and curr_attrib[0][2] != 'equal':
+        curr_attrib[0] = newfilterList[index]
+        index = index + 1
+    if 'char' in attrib_types_dict[(curr_attrib[0][0], curr_attrib[0][1])] \
+            or \
+            'text' in attrib_types_dict[(curr_attrib[0][0], curr_attrib[0][1])]:
+        curr_value = cover_special_chars(curr_attrib[0][3], value_used)
+    elif 'date' in attrib_types_dict[(curr_attrib[0][0], curr_attrib[0][1])] or 'numeric' in attrib_types_dict[
+        (curr_attrib[0][0], curr_attrib[0][1])]:
+        curr_value = curr_attrib[0][3]
+    else:
+        curr_value = int(curr_attrib[0][3])
+    value_used = [curr_attrib[0][1], curr_value]
+    return curr_attrib, curr_value, value_used
+
+
+def add_value_used_for_one_filtered_attrib(attrib_types_dict,
+                                           curr_attrib, curr_value,
+                                           entry, value_used):
+    if entry == curr_attrib[0]:
+        return
+    value_used.append(entry[1])
+    if 'int' in attrib_types_dict[(entry[0], entry[1])] or 'numeric' in attrib_types_dict[(entry[0], entry[1])]:
+        # indicates integer type attribute
+        value_used.append(0)
+        for i in range(int(entry[3]), int(entry[4]) + 1):
+            value_used[-1] = i
+            if i != curr_value:
+                break
+        if value_used[-1] == curr_value:
+            curr_attrib.append(entry)
+    elif 'date' in attrib_types_dict[(entry[0], entry[1])]:
+        value_used.append(entry[3])
+        for i in range(int((entry[4] - entry[3]).days)):
+            value_used[-1] = get_val_plus_delta('date', entry[3], i)
+            if value_used[-1] == curr_value:
+                curr_attrib.append(entry)
+            else:
+                break
+    elif 'char' in attrib_types_dict[(entry[0], entry[1])] or 'text' in attrib_types_dict[(entry[0], entry[1])]:
+        # character type attribute
+        curr_str = entry[3]
+        value_used.append(curr_str)
+        while '_' in curr_str or '%' in curr_str:
+            curr_str = cover_special_chars(curr_str, value_used)
+            if curr_str != curr_value:
+                value_used[-1]
+                break
+            curr_str = entry[3]
+        if value_used[-1] == curr_value:
+            curr_attrib.append(entry)
+
+
 class Projection(Base):
     def __init__(self, connectionHelper,
                  global_attrib_types,
@@ -132,11 +188,11 @@ class Projection(Base):
         while '' in projected_attrib and len(newfilterList):
             self.truncate_core_relations()
 
-            curr_attrib, curr_value, value_used = self.construct_value_used_for_filtered_attribs(
+            curr_attrib, curr_value, value_used = construct_value_used_for_filtered_attribs(
                 attrib_types_dict, newfilterList, value_used)
 
             for entry in self.global_filter_predicates:
-                self.add_value_used_for_one_filtered_attrib(attrib_types_dict, curr_attrib, curr_value, entry,
+                add_value_used_for_one_filtered_attrib(attrib_types_dict, curr_attrib, curr_value, entry,
                                                             value_used)
 
             value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
@@ -167,60 +223,6 @@ class Projection(Base):
             if projected_attrib[i] == '' and projected_attrib1[i] != '':
                 projected_attrib[i] = projected_attrib1[i]
         return projected_attrib, projection_names, value_used, True
-
-    def add_value_used_for_one_filtered_attrib(self, attrib_types_dict,
-                                               curr_attrib, curr_value,
-                                               entry, value_used):
-        if entry == curr_attrib[0]:
-            return
-        value_used.append(entry[1])
-        if 'int' in attrib_types_dict[(entry[0], entry[1])] or 'numeric' in attrib_types_dict[(entry[0], entry[1])]:
-            # indicates integer type attribute
-            value_used.append(0)
-            for i in range(int(entry[3]), int(entry[4]) + 1):
-                value_used[-1] = i
-                if i != curr_value:
-                    break
-            if value_used[-1] == curr_value:
-                curr_attrib.append(entry)
-        elif 'date' in attrib_types_dict[(entry[0], entry[1])]:
-            value_used.append(entry[3])
-            for i in range(int((entry[4] - entry[3]).days)):
-                value_used[-1] = get_val_plus_delta('date', entry[3], i)
-                if value_used[-1] == curr_value:
-                    curr_attrib.append(entry)
-                else:
-                    break
-        elif 'char' in attrib_types_dict[(entry[0], entry[1])] or 'text' in attrib_types_dict[(entry[0], entry[1])]:
-            # character type attribute
-            curr_str = entry[3]
-            value_used.append(curr_str)
-            while '_' in curr_str or '%' in curr_str:
-                curr_str = cover_special_chars(curr_str, value_used)
-                if curr_str != curr_value:
-                    value_used[-1]
-                    break
-                curr_str = entry[3]
-            if value_used[-1] == curr_value:
-                curr_attrib.append(entry)
-
-    def construct_value_used_for_filtered_attribs(self, attrib_types_dict, newfilterList, value_used):
-        curr_attrib = [newfilterList[0]]
-        index = 1
-        while index < len(newfilterList) and curr_attrib[0][2] != '=' and curr_attrib[0][2] != 'equal':
-            curr_attrib[0] = newfilterList[index]
-            index = index + 1
-        if 'char' in attrib_types_dict[(curr_attrib[0][0], curr_attrib[0][1])] \
-                or \
-                'text' in attrib_types_dict[(curr_attrib[0][0], curr_attrib[0][1])]:
-            curr_value = cover_special_chars(curr_attrib[0][3], value_used)
-        elif 'date' in attrib_types_dict[(curr_attrib[0][0], curr_attrib[0][1])] or 'numeric' in attrib_types_dict[
-            (curr_attrib[0][0], curr_attrib[0][1])]:
-            curr_value = curr_attrib[0][3]
-        else:
-            curr_value = int(curr_attrib[0][3])
-        value_used = [curr_attrib[0][1], curr_value]
-        return curr_attrib, curr_value, value_used
 
     def analyze1(self, new_result, projectedAttrib1, projected_attrib, value_used):
         for val in new_result:

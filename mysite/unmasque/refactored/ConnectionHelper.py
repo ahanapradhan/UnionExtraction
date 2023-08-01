@@ -11,6 +11,12 @@ def cus_execute_sqls(cur, sqls):
     cur.close()
 
 
+def cus_execute_sql_with_params(cur, sql, params):
+    for param in params:
+        cur.execute(sql, param)
+    cur.close()
+
+
 def cur_execute_sql_fetch_one_0(cur, sql):
     cur.execute(sql)
     prev = cur.fetchone()
@@ -54,6 +60,10 @@ class ConnectionHelper:
     def execute_sql(self, sqls):
         cur = self.get_cursor()
         cus_execute_sqls(cur, sqls)
+
+    def execute_sql_with_params(self, sql, params):
+        cur = self.get_cursor()
+        cus_execute_sql_with_params(cur, sql, params)
 
     def execute_sqls_with_DictCursor(self, sqls):
         cur = self.get_DictCursor()

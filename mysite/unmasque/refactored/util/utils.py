@@ -1,5 +1,6 @@
 import copy
 import datetime
+import itertools
 import math
 
 from mysite.unmasque import constants
@@ -173,3 +174,9 @@ def get_int(dchar):
 
 def find_indices(list_to_check, item_to_find):
     return [idx for idx, value in enumerate(list_to_check) if value == item_to_find]
+
+
+def get_2_elems_sublists(l):
+    comb = list(itertools.combinations(l, 2))
+    comb1 = list(set(tup) for tup in comb)
+    return comb1
