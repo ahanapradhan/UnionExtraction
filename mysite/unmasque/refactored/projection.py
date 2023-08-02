@@ -2,10 +2,9 @@ import ast
 import copy
 
 from mysite.unmasque import constants
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.executable import Executable
+from mysite.unmasque.refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
 from mysite.unmasque.refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
-    get_val_plus_delta, get_char, find_indices
+    get_val_plus_delta, get_char
 
 
 def cover_special_chars(curr_str, value_used):
@@ -73,24 +72,21 @@ def add_value_used_for_one_filtered_attrib(attrib_types_dict,
             curr_attrib.append(entry)
 
 
-class Projection(Base):
+class Projection(AfterWhereClauseBase):
     def __init__(self, connectionHelper,
                  global_attrib_types,
                  core_relations,
                  filter_predicates,
-                 join_graph, global_all_attribs):
-        super().__init__(connectionHelper, "Projection")
+                 join_graph,
+                 global_all_attribs):
+        super().__init__(connectionHelper, "Projection",
+                         core_relations,
+                         global_all_attribs,
+                         global_attrib_types,
+                         join_graph,
+                         filter_predicates)
         self.projection_names = None
         self.projected_attribs = None
-        self.app = Executable(connectionHelper)
-        self.global_attrib_types = global_attrib_types  # from where clause
-        self.core_relations = core_relations  # from from clause
-        self.global_filter_predicates = filter_predicates  # from where clause
-        self.global_join_graph = join_graph
-        self.global_all_attribs = global_all_attribs  # from where clause
-
-    def extract_params_from_args(self, args):
-        return args[0]
 
     def construct_values_used(self, attrib_types_dict):
         vu = []
@@ -156,19 +152,12 @@ class Projection(Base):
                         value_used.append(dummy)
 
             insert_values = tuple(insert_values)
-            att_order = att_order[:-1]
-            att_order += ')'
-
-            insert_query = "INSERT INTO " + tabname + att_order + " VALUES " + str(insert_values) + ";"
-            self.connectionHelper.execute_sql([insert_query])
+            self.insert_attrib_vals_into_table(att_order, attrib_list, [insert_values], tabname)
 
         value_used = [str(val) for val in value_used]
         return value_used
 
-    def doActualJob(self, args):
-        query = self.extract_params_from_args(args)
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
-
+    def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
         projected_attrib, projection_names, value_used, check = \
             self.find_projection_on_unfiltered_attribs(attrib_types_dict, query)
         if not check:
@@ -193,7 +182,7 @@ class Projection(Base):
 
             for entry in self.global_filter_predicates:
                 add_value_used_for_one_filtered_attrib(attrib_types_dict, curr_attrib, curr_value, entry,
-                                                            value_used)
+                                                       value_used)
 
             value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
             new_result = self.app.doJob(query)
@@ -267,8 +256,3 @@ class Projection(Base):
                     del (curr_attrib[0])
         for val in curr_attrib:
             newfilterList.remove(val)
-
-    def truncate_core_relations(self):
-        # Truncate all core relations
-        for table in self.core_relations:
-            self.connectionHelper.execute_sql(["Truncate Table " + table + ";"])

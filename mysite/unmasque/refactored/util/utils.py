@@ -180,3 +180,13 @@ def get_2_elems_sublists(l):
     comb = list(itertools.combinations(l, 2))
     comb1 = list(set(tup) for tup in comb)
     return comb1
+
+
+def get_escape_string(att_order, attrib_list_inner):
+    esc_string = '(' + '%s'
+    for k in range(1, len(attrib_list_inner)):
+        esc_string = esc_string + ", " + '%s'
+    esc_string = esc_string + ")"
+    att_order = att_order[:-1]
+    att_order += ')'
+    return att_order, esc_string

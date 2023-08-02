@@ -25,6 +25,7 @@ class Base:
         self.local_start_time = time.time()
         self.result = self.doActualJob(args)
         self.local_end_time = time.time()
+        self.local_elapsed_time = self.local_end_time - self.local_start_time
         self.done = True
         return self.result
 
@@ -35,5 +36,4 @@ class Base:
         pass
 
     def print_elapsed_time(self):
-        self.local_elapsed_time = self.local_end_time - self.local_start_time
         print(str(self.extractor_name) + ".:Elapsed time: ... " + str(self.local_elapsed_time))

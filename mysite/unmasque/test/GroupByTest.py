@@ -39,7 +39,7 @@ class MyTestCase(unittest.TestCase):
 
         join_graph = []
 
-        projections = ['l_returnflag', 'l_linestatus', 'l_quantity''l_extendedprice', 'l_discount'
+        projections = ['l_returnflag', 'l_linestatus', 'l_quantity','l_extendedprice', 'l_discount'
             , 'l_tax', 'l_quantity', 'l_extendedprice', 'l_discount', '']
         gb = GroupBy(self.conn, global_attrib_types, from_rels,
                      filter_predicates, global_all_attribs, join_graph, projections)
@@ -54,7 +54,7 @@ class MyTestCase(unittest.TestCase):
 
         self.conn.closeConnection()
 
-    def test_projections_Q3(self):
+    def test_gb_Q3(self):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
@@ -124,7 +124,7 @@ class MyTestCase(unittest.TestCase):
 
         self.conn.closeConnection()
 
-    def test_projection_Q4(self):
+    def test_gb_Q4(self):
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q4']
         filter_predicates = [('orders', 'o_orderdate', '<=', datetime.date(1997, 7, 1), datetime.date(1997, 10, 1))]
@@ -160,7 +160,7 @@ class MyTestCase(unittest.TestCase):
 
         self.conn.closeConnection()
 
-    def test_projection_Q5(self):
+    def test_gb_Q5(self):
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q5']
 
