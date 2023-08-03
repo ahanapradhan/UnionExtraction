@@ -107,7 +107,7 @@ class Aggregation(AfterWhereClauseBase):
                          global_attrib_types,
                          join_graph,
                          filter_predicates)
-        self.aggregations = None
+        self.global_aggregated_attributes = None
         self.global_key_attributes = global_key_attributes
         self.global_projected_attributes = projected_attribs
         self.has_groupby = has_groupby
@@ -116,7 +116,7 @@ class Aggregation(AfterWhereClauseBase):
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
         # Assuming NO DISTINCT IN AGGREGATION
 
-        self.aggregations = [(element, '') for element in self.global_projected_attributes]
+        self.global_aggregated_attributes = [(element, '') for element in self.global_projected_attributes]
         if not self.has_groupby:
             return False
 
@@ -208,7 +208,7 @@ class Aggregation(AfterWhereClauseBase):
 
         for i in range(len(self.global_projected_attributes)):
             if self.global_projected_attributes[i] == '':
-                self.aggregations[i] = ('', 'count(*)')
+                self.global_aggregated_attributes[i] = ('', 'count(*)')
 
         return True
 
@@ -225,6 +225,6 @@ class Aggregation(AfterWhereClauseBase):
         j = 0
         while j < len(agg_array) - 1:
             if check_value == agg_array[j + 1]:
-                self.aggregations[result_index] = (str(attrib), agg_array[j])
+                self.global_aggregated_attributes[result_index] = (str(attrib), agg_array[j])
                 break
             j = j + 2

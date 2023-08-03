@@ -1,9 +1,8 @@
 import datetime
 import unittest
 
-from mysite.unmasque.aggregation import Aggregation
+from mysite.unmasque.refactored.aggregation import Aggregation
 from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
-from mysite.unmasque.refactored.groupby_clause import GroupBy
 from mysite.unmasque.test import tpchSettings, queries
 
 
@@ -56,14 +55,14 @@ class MyTestCase(unittest.TestCase):
 
         check = agg.doJob(queries.Q1)
         self.assertTrue(check)
-        print(agg.aggregations)
+        print(agg.global_aggregated_attributes)
 
-        self.assertEqual(10, len(agg.aggregations))
+        self.assertEqual(10, len(agg.global_aggregated_attributes))
 
         count = 0
         sum_count = 0
         avg_count = 0
-        for agtuple in agg.aggregations:
+        for agtuple in agg.global_aggregated_attributes:
             if agtuple[1] != '':
                 count += 1
             if agtuple[1] == 'Sum':
@@ -145,14 +144,14 @@ class MyTestCase(unittest.TestCase):
 
         check = agg.doJob(queries.Q3)
         self.assertTrue(check)
-        print(agg.aggregations)
+        print(agg.global_aggregated_attributes)
 
-        self.assertEqual(4, len(agg.aggregations))
+        self.assertEqual(4, len(agg.global_aggregated_attributes))
 
         count = 0
         sum_count = 0
         avg_count = 0
-        for agtuple in agg.aggregations:
+        for agtuple in agg.global_aggregated_attributes:
             if agtuple[1] != '':
                 count += 1
             if agtuple[1] == 'Sum':

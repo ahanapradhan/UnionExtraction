@@ -34,12 +34,5 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(initor.global_pk_dict['lineitem'], 'l_orderkey,l_linenumber')
 
 
-
-
-
-
-
-
-
 if __name__ == '__main__':
     unittest.main()

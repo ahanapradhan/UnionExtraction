@@ -1,7 +1,7 @@
 tpch_query1 = "select count(*) as count_order from lineitem where l_shipdate <= date '1998-12-01' - interval ':1' " \
               "day group by l_returnflag, l_linestatus;"
 
-tpch_query3 = "select c_mktsegment, l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, " \
+tpch_query3 = "select c_mktsegment, l_orderkey, sum(l_extendedprice) as revenue, " \
               "o_orderdate, o_shippriority from customer, orders, lineitem where c_custkey = o_custkey " \
               "and l_orderkey = o_orderkey and o_orderdate > date '1995-10-11' " \
               "group by l_orderkey, o_orderdate, o_shippriority, c_mktsegment limit 4;"
@@ -21,10 +21,10 @@ Q3 = "select l_orderkey as orderkey, sum(l_discount) as revenue, o_orderdate as 
      "desc, o_orderdate, l_orderkey limit 10;"
 Q3_1 = "select l_orderkey as orderkey, sum(l_extendedprice * (1-l_discount)) as revenue, o_orderdate as orderdate, " \
        "o_shippriority as " \
-     "shippriority from customer, orders, " \
-     "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate " \
-     "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
-     "desc, o_orderdate, l_orderkey limit 10;"
+       "shippriority from customer, orders, " \
+       "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate " \
+       "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
+       "desc, o_orderdate, l_orderkey limit 10;"
 
 Q4 = "Select o_orderdate, o_orderpriority, count(*) as order_count From orders Where o_orderdate >= date '1997-07-01' " \
      "and o_orderdate < date '1997-07-01' + interval '3' month Group By o_orderdate, o_orderpriority Order By " \
@@ -59,10 +59,41 @@ Q23_1 = "Select  min(ps_supplycost) From  partsupp, supplier, nation, region Whe
         "s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'MIDDLE EAST';"
 
 Q18_test = "Select  p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From  partsupp, part Where  p_partkey = " \
-      "ps_partkey and p_size >= 4 Group By  p_brand, p_type, p_size Order By  " \
-      "supplier_cnt desc, p_brand, p_type, p_size;"
+           "ps_partkey and p_size >= 4 Group By  p_brand, p_type, p_size Order By  " \
+           "supplier_cnt desc, p_brand, p_type, p_size;"
 
 Q18_test1 = "Select  p_retailprice, p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From  partsupp, " \
             "part Where  p_partkey = ps_partkey and p_retailprice < 1000 and p_retailprice > 800 and p_size >= 4 " \
             "Group By p_retailprice, p_brand, p_type, p_size Order By  supplier_cnt desc, p_brand, p_type, p_size;"
 
+Q9_simple = "select n_name as nation, o_orderdate as o_year, " \
+            "l_quantity as amount from part, supplier,lineitem,partsupp,orders,nation " \
+            "where s_suppkey = l_suppkey and ps_suppkey = l_suppkey " \
+            "and ps_partkey = l_partkey and p_partkey = l_partkey " \
+            "and o_orderkey = l_orderkey and s_nationkey = n_nationkey and p_name like '%green%';"
+
+Q10_simple = "select c_custkey, c_name, sum(l_extendedprice) as revenue, " \
+             "c_acctbal,n_name,c_address,c_phone,c_comment " \
+             "from customer,orders,lineitem,nation " \
+             "where c_custkey = o_custkey and l_orderkey = o_orderkey " \
+             "and o_orderdate >= '1993-10-01' and o_orderdate < '1994-01-01' " \
+             "and l_returnflag = 'R' and c_nationkey = n_nationkey group by " \
+             "c_custkey, c_name, c_acctbal, c_phone, n_name, c_address, c_comment;"
+
+queries_dict = {'tpch_query1': tpch_query1,
+                'tpch_query3': tpch_query3,
+                'Q1': Q1,
+                'Q3': Q3,
+                'Q4': Q4,
+                'Q5': Q5,
+                'Q6': Q6,
+                'Q7': Q7,
+                'Q11': Q11,
+                'Q16': Q16,
+                'Q17': Q17,
+                'Q18': Q18,
+                'Q21': Q21,
+                'Q23_1': Q23_1,
+                'Q9_simple': Q9_simple,
+                'Q10_simple': Q10_simple
+                }

@@ -126,7 +126,8 @@ class ViewMinimizer(Base):
 
         for tabname in self.core_relations:
             res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
-            self.connectionHelper.execute_sql([create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
+            self.connectionHelper.execute_sql([drop_table(get_tabname_4(tabname)),
+                                               create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
             print(tabname, "==", res)
 
         if not self.sanity_check(query):

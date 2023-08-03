@@ -112,6 +112,9 @@ def get_min_and_max_val(datatype):
         return constants.min_int_val, constants.max_int_val
     elif datatype == 'numeric':
         return constants.min_numeric_val, constants.max_numeric_val
+    else:
+        return constants.min_int_val, constants.max_int_val
+
 
 
 def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
@@ -123,7 +126,9 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
 
 
 def get_format(datatype, val):
-    if datatype == 'date':
+    if datatype == 'date' or datatype == 'char' \
+        or datatype == 'character' \
+            or datatype == 'character varying':
         return "'" + str(val) + "'"
     elif datatype == 'float' or datatype == 'numeric':
         return str(round(val, 12))
@@ -190,3 +195,10 @@ def get_escape_string(att_order, attrib_list_inner):
     att_order = att_order[:-1]
     att_order += ')'
     return att_order, esc_string
+
+
+def get_datatype(my_list, input_tuple):
+    for tpl in my_list:
+        if tpl[:2] == input_tuple:
+            return tpl[2]
+    return 'int'  # Return None if no match is found
