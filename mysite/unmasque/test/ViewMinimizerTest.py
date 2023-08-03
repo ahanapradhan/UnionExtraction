@@ -141,7 +141,11 @@ class MyTestCase(unittest.TestCase):
 
         from_rels = tpchSettings.from_rels['Q17']
 
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
+        cs2.doJob(queries.Q11)
+        self.assertTrue(cs2.passed)
+
+        minimizer = ViewMinimizer(self.conn, from_rels, cs2.passed)
         check = minimizer.doJob(queries.Q17)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)

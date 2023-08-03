@@ -105,7 +105,7 @@ def extract(connectionHelper,
     check = vm.doJob(query)
     if not check:
         print("Cannot do database minimization. ")
-
+        return None
     if not vm.done:
         print("Some problem while view minimization. Aborting extraction!")
         return None
@@ -119,7 +119,7 @@ def extract(connectionHelper,
     check = wc.doJob(query)
     if not check:
         print("Cannot find where clause.")
-
+        return None
     if not wc.done:
         print("Some error while where clause extraction. Aborting extraction!")
         return None
@@ -133,7 +133,7 @@ def extract(connectionHelper,
     check = pj.doJob(query)
     if not check:
         print("Cannot find projected attributes. ")
-
+        return None
     if not pj.done:
         print("Some error while projection extraction. Aborting extraction!")
         return None

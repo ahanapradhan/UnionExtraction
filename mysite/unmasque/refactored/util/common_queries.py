@@ -42,6 +42,10 @@ def get_tabname_4(tab):
     return tab + "4"
 
 
+def get_tabname_un(tab):
+    return tab + "_un"
+
+
 def create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, tabname, tabname1):
     return ("create view " + tabname
             + " as select * from " + tabname1

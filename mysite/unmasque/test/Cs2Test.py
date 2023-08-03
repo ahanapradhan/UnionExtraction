@@ -37,6 +37,20 @@ class MyTestCase(unittest.TestCase):
             self.assertTrue(cs2.sample[fromr] < sizes[fromr])
         self.conn.closeConnection()
 
+    def test_multiple_tables2_cs2(self):
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+
+        from_rels = tpchSettings.from_rels['Q17']
+        cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
+        sizes = cs2.getSizes_cs()
+        self.assertEqual(len(sizes), 8)
+        cs2.doJob(queries.Q17)
+        self.assertTrue(cs2.passed)
+        for fromr in from_rels:
+            print(cs2.sample[fromr], sizes[fromr])
+            self.assertTrue(cs2.sample[fromr] < sizes[fromr])
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':

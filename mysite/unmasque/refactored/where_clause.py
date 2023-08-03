@@ -282,7 +282,6 @@ class WhereClause(Base):
             return False
         return True
 
-
     def handle_numeric_filter(self, attrib, d_plus_value, filterAttribs, tabname, query):
         min_val_domain, max_val_domain = get_min_and_max_val('numeric')
         # NUMERIC HANDLING
