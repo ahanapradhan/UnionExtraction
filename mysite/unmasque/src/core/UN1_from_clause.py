@@ -1,9 +1,9 @@
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.from_clause import FromClause
-from mysite.unmasque.refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
+from ...refactored.abstract.ExtractorBase import Base
+from ...refactored.from_clause import FromClause
+from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_tabname_1
-from mysite.unmasque.refactored.util.utils import isQ_result_empty
-from mysite.unmasque.src.mocks.database import Schema
+from ...refactored.util.utils import isQ_result_empty
+from ..mocks.database import Schema
 
 
 class UN1FromClause(Schema, Base):
@@ -57,6 +57,7 @@ class UN1FromClause(Schema, Base):
     def get_fromTabs(self, QH):
         if self.fromtabs is None:
             self.fromtabs = self.fromClause.doJob([QH, "error"])
+        print(str(self.fromtabs))
         return self.fromtabs
 
     def get_comTabs(self, QH):

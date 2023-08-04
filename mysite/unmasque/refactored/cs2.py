@@ -1,10 +1,10 @@
 import copy
 
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.executable import Executable
-from mysite.unmasque.refactored.util.common_queries import get_row_count, drop_table, alter_table_rename_to, \
+from ..refactored.abstract.ExtractorBase import Base
+from ..refactored.executable import Executable
+from ..refactored.util.common_queries import get_row_count, drop_table, alter_table_rename_to, \
     get_restore_name, create_table_like
-from mysite.unmasque.refactored.util.utils import isQ_result_empty
+from ..refactored.util.utils import isQ_result_empty
 
 
 def get_base_t(key_list, sizes):

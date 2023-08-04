@@ -1,12 +1,12 @@
 import copy
 
-from mysite.unmasque.refactored.aggregation import Aggregation
-from mysite.unmasque.refactored.cs2 import Cs2
-from mysite.unmasque.refactored.groupby_clause import GroupBy
-from mysite.unmasque.refactored.projection import Projection
-from mysite.unmasque.refactored.util.utils import get_datatype, get_min_and_max_val, get_format
-from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
-from mysite.unmasque.refactored.where_clause import WhereClause
+from ...refactored.aggregation import Aggregation
+from ...refactored.cs2 import Cs2
+from ...refactored.groupby_clause import GroupBy
+from ...refactored.projection import Projection
+from ...refactored.util.utils import get_datatype, get_min_and_max_val, get_format
+from ...refactored.view_minimizer import ViewMinimizer
+from ...refactored.where_clause import WhereClause
 
 
 def func_assemble(global_select_op,

@@ -1,7 +1,8 @@
-from mysite.unmasque.refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
+
+from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
-from mysite.unmasque.src.core import algorithm1, OldPipeLine
-from mysite.unmasque.src.core.UN1_from_clause import UN1FromClause
+from . import algorithm1, OldPipeLine
+from .UN1_from_clause import UN1FromClause
 
 
 def extract(connectionHelper, query):

@@ -1,8 +1,8 @@
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.executable import Executable
-from mysite.unmasque.refactored.initialization import Initiator
-from mysite.unmasque.refactored.util.common_queries import drop_table, alter_table_rename_to, create_table_like
-from mysite.unmasque.refactored.util.utils import isQ_result_empty
+from ..refactored.abstract.ExtractorBase import Base
+from ..refactored.executable import Executable
+from ..refactored.initialization import Initiator
+from ..refactored.util.common_queries import alter_table_rename_to, create_table_like
+from ..refactored.util.utils import isQ_result_empty
 
 try:
     import psycopg2

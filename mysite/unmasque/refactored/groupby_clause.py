@@ -1,7 +1,7 @@
 import ast
 
-from mysite.unmasque.refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
-from mysite.unmasque.refactored.util.utils import isQ_result_empty, get_val_plus_delta, get_format, get_dummy_val_for, \
+from ..refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
+from ..refactored.util.utils import isQ_result_empty, get_val_plus_delta, get_format, get_dummy_val_for, \
     get_char
 
 

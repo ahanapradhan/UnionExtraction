@@ -1,9 +1,9 @@
 import ast
 import copy
 
-from mysite.unmasque import constants
-from mysite.unmasque.refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
-from mysite.unmasque.refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
+from .. import constants
+from ..refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
+from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
     get_val_plus_delta, get_char
 
 

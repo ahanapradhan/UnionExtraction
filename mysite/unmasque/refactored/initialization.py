@@ -1,8 +1,8 @@
 import csv
 import os.path
 
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.util.common_queries import drop_table
+from ..refactored.abstract.ExtractorBase import Base
+from ..refactored.util.common_queries import drop_table
 
 
 class Initiator(Base):
@@ -11,7 +11,7 @@ class Initiator(Base):
     global_pk_dict = {}
     all_relations = []
     error = None
-    resource_path = "./"
+    resource_path = "/Users/ahanapradhan/PycharmProjects/Union_extraction/mysite/unmasque/refactored/"
     pkfkfilename = resource_path + "pkfkrelations.csv"
     create_index_filename = resource_path + "create_indexes.sql"
 

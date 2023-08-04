@@ -1,9 +1,9 @@
 import copy
 import math
 
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.executable import Executable
-from mysite.unmasque.refactored.util.utils import is_int, get_all_combo_lists, get_datatype_from_typesList, \
+from ..refactored.abstract.ExtractorBase import Base
+from ..refactored.executable import Executable
+from ..refactored.util.utils import is_int, get_all_combo_lists, get_datatype_from_typesList, \
     get_dummy_val_for, get_val_plus_delta, get_min_and_max_val, isQ_result_empty, is_left_less_than_right_by_cutoff, \
     get_format, get_mid_val, get_cast_value
 

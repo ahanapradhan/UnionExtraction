@@ -3,13 +3,13 @@ import os
 
 import pandas as pd
 
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.executable import Executable
-from mysite.unmasque.refactored.util.common_queries import get_row_count, alter_table_rename_to, get_min_max_ctid, \
+from ..refactored.abstract.ExtractorBase import Base
+from ..refactored.executable import Executable
+from ..refactored.util.common_queries import get_row_count, alter_table_rename_to, get_min_max_ctid, \
     drop_view, drop_table, create_table_as_select_star_from, get_ctid_from, get_tabname_1, \
     create_view_as_select_star_where_ctid, create_table_as_select_star_from_ctid, get_tabname_4, get_star, \
     get_restore_name
-from mysite.unmasque.refactored.util.utils import isQ_result_empty
+from ..refactored.util.utils import isQ_result_empty
 
 
 def extract_start_and_end_page(rctid):

@@ -1,6 +1,6 @@
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.executable import Executable
-from mysite.unmasque.refactored.util.utils import get_escape_string
+from .ExtractorBase import Base
+from ...refactored.executable import Executable
+from ...refactored.util.utils import get_escape_string
 
 
 class AfterWhereClauseBase(Base):

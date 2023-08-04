@@ -3,8 +3,8 @@ import datetime
 import itertools
 import math
 
-from mysite.unmasque import constants
-from mysite.unmasque.constants import dummy_int, dummy_date, dummy_char
+from ... import constants
+from ...constants import dummy_int, dummy_date, dummy_char
 
 
 def isQ_result_empty(Res):

@@ -2,8 +2,8 @@ import ast
 import copy
 import math
 
-from mysite.unmasque.refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
-from mysite.unmasque.refactored.util.utils import is_number, get_val_plus_delta, get_dummy_val_for, get_format, \
+from ..refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
+from ..refactored.util.utils import is_number, get_val_plus_delta, get_dummy_val_for, get_format, \
     get_char, isQ_result_empty
 
 
