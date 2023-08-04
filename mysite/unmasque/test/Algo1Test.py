@@ -148,6 +148,26 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue("FROM(q1)" in pstr)
         self.assertTrue("FROM(q2)" not in pstr)
 
+    def test_3_case(self):
+        query = "(select l_partkey as key from lineitem,part where l_partkey = p_partkey and l_extendedprice <= 905) " \
+                "union all " \
+                "(select l_orderkey as key from lineitem,orders where l_orderkey = o_orderkey and o_totalprice <= 905) " \
+                "union all " \
+                "(select o_orderkey as key from customer,orders where c_custkey = o_custkey and o_totalprice <= 890);"
+        conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+        conn.connectUsingParams()
+        self.assertTrue(conn.conn is not None)
+        db = UN1FromClause(conn)
+        #db = TPCH()
+
+        p, pstr = algorithm1.algo(db, query)
+        self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'lineitem', 'orders'}),
+                             frozenset({'customer', 'orders'})})
+        self.assertTrue("FROM(q1)" in pstr)
+        self.assertTrue("FROM(q2)" in pstr)
+        self.assertTrue("FROM(q3)" in pstr)
+        conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

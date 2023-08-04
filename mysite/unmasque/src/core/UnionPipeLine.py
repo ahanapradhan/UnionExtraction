@@ -9,7 +9,6 @@ def extract(connectionHelper, query):
     connectionHelper.connectUsingParams()
     db = UN1FromClause(connectionHelper)
     p, pstr = algorithm1.algo(db, query)
-    print(pstr)
 
     all_relations = db.get_relations()
     key_lists = db.fromClause.init.global_key_lists
@@ -32,17 +31,19 @@ def extract(connectionHelper, query):
                                  core_relations,
                                  key_lists)
         revert_nullifications(connectionHelper, nullify)
-#        revert_sideEffects(connectionHelper, core_relations)
         connectionHelper.closeConnection()
 
         if eq is not None:
             print(eq)
+            eq = eq.replace('Select', '(Select')
+            eq = eq.replace(';', ')')
             u_eq.append(eq)
         else:
             print("some error in the union pipeline.")
             return None
 
     u_Q = "\n union all \n".join(u_eq)
+    u_Q += ";"
     return u_Q
 
 

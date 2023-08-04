@@ -31,6 +31,22 @@ class MyTestCase(unittest.TestCase):
             f.write(u_Q)
             f.write("\n---------------------------------------\n")
             q_no += 1
+        f.close()
+
+    def test_unionQ(self):
+        query = "(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) " \
+                "union all " \
+                "(select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= " \
+                "905) " \
+                "union all " \
+                "(select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);"
+        u_Q = UnionPipeLine.extract(self.conn, query)
+        self.assertTrue(u_Q is not None)
+        print(u_Q)
+        f = open("check.txt",'w')
+        f.write(query + "\n\n")
+        f.write(u_Q)
+        f.close()
 
 
 if __name__ == '__main__':

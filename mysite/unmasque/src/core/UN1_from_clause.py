@@ -21,8 +21,10 @@ class UN1FromClause(Schema, Base):
         return self.fromClause.all_relations
 
     def nullify_except(self, s_set):
-        self.to_nullify = set(self.get_relations()).difference(s_set)
-        self.to_nullify = self.to_nullify.difference(self.comtabs)
+        #self.to_nullify = set(self.get_relations()).difference(s_set)
+        #self.to_nullify = self.to_nullify.difference(self.comtabs)
+        self.to_nullify = s_set.difference(self.comtabs)
+        print("to nullify " + str(self.to_nullify))
         for tab in self.to_nullify:
             self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab)),
                                                create_table_like(tab, get_tabname_1(tab))])

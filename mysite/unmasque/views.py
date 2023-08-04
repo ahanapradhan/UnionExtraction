@@ -2,8 +2,8 @@ import psycopg2
 from django.shortcuts import render, redirect
 from psycopg2 import OperationalError
 
-from .src.core import algorithm1
-from .src.mocks.database import TPCH
+from .refactored.ConnectionHelper import ConnectionHelper
+from .src.core import UnionPipeLine
 
 
 # Create your views here.
@@ -19,14 +19,14 @@ def login_view(request):
         try:
             conn = connect_to_db(database, host, password, port, username)
             print(conn)
+            conn.close()
         except OperationalError:
             error_message = 'Invalid credentials. Please try again.'
             return render(request, 'unmasque/login.html', {'error_message': error_message})
 
+        connHelper = ConnectionHelper(database, username, password, port, host)
         query = request.POST.get('query')
-        db = TPCH()
-        p, data = algorithm1.algo(db, query)
-        conn.close()
+        data = UnionPipeLine.extract(connHelper, query)
         request.session['partials'] = data
         return redirect('result')
 
