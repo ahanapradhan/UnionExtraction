@@ -10,7 +10,10 @@
     <hr>
     <h1>Extracted Query</h1>
     <pre>{{ result }}</pre>
-
+    <br>
+    <h2>Performance</h2>
+    <!-- Use innerHTML to render HTML content -->
+    <pre>{{ profiling | safe }}</pre>
     <hr>
     <a href="{% url 'login' %}"><button>Give Another Query</button></a>
 

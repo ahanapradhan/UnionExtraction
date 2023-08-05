@@ -1,5 +1,6 @@
 import copy
 
+from .elapsed_time import ElapsedTime
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.groupby_clause import GroupBy
@@ -193,8 +194,10 @@ def extract(connectionHelper,
         print("Some error while extrating aggregations. Aborting extraction!")
         return None
 
+    time_profile = ElapsedTime(cs2, vm, wc, pj, gb, agg, ob, vm.app)
+
     eq = generate_query_string(agg, core_relations, gb, pj, wc, ob)
-    return eq
+    return eq, time_profile
 
 
 def generate_query_string(agg, core_relations, gb, pj, wc, ob):

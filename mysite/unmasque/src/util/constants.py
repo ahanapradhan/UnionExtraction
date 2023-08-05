@@ -15,3 +15,5 @@ dummy_boolean = True
 TEMP_TABLE = 'temp'
 TEMP_TABNAME = "temp"
 NO_UNION = "No union present in the query"
+local_elapsed_time = 0
+method_call_count = 0

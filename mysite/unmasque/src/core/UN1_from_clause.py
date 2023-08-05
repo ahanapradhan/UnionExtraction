@@ -17,12 +17,11 @@ class UN1FromClause(Schema, Base):
         self.fromClause = FromClause(connectionHelper)
 
     def get_relations(self):
-        self.fromClause.init.doJob()
+        if not self.fromClause.init.done:
+            self.fromClause.init.doJob()
         return self.fromClause.all_relations
 
     def nullify_except(self, s_set):
-        #self.to_nullify = set(self.get_relations()).difference(s_set)
-        #self.to_nullify = self.to_nullify.difference(self.comtabs)
         self.to_nullify = s_set.difference(self.comtabs)
         print("to nullify " + str(self.to_nullify))
         for tab in self.to_nullify:

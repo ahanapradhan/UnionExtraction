@@ -11,9 +11,10 @@ class MyTestCase(unittest.TestCase):
     def test_nonUnion_query(self):
         key = 'tpch_query1'
         query = queries.queries_dict[key]
-        u_Q = UnionPipeLine.extract(self.conn, query)
+        u_Q, tp = UnionPipeLine.extract(self.conn, query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
+        tp.print()
 
     def test_nonUnion_queries(self):
         Q_keys = queries.queries_dict.keys()
@@ -21,7 +22,7 @@ class MyTestCase(unittest.TestCase):
         q_no = 1
         for q_key in Q_keys:
             query = queries.queries_dict[q_key]
-            u_Q = UnionPipeLine.extract(self.conn, query)
+            u_Q, tp = UnionPipeLine.extract(self.conn, query)
             self.assertTrue(u_Q is not None)
             print(u_Q)
             f.write("\n" + str(q_no) + ":")
@@ -30,6 +31,7 @@ class MyTestCase(unittest.TestCase):
             f.write("\n*** Extracted Query:\n")
             f.write(u_Q)
             f.write("\n---------------------------------------\n")
+            tp.print()
             q_no += 1
         f.close()
 
@@ -40,13 +42,14 @@ class MyTestCase(unittest.TestCase):
                 "905) " \
                 "union all " \
                 "(select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);"
-        u_Q = UnionPipeLine.extract(self.conn, query)
+        u_Q, tp = UnionPipeLine.extract(self.conn, query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
         f = open("check.txt",'w')
         f.write(query + "\n\n")
         f.write(u_Q)
         f.close()
+        tp.print()
 
 
 if __name__ == '__main__':

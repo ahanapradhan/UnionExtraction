@@ -27,6 +27,7 @@ class Base:
         self.local_end_time = time.time()
         self.local_elapsed_time = self.local_end_time - self.local_start_time
         self.done = True
+        self.method_call_count += 1
         return self.result
 
     def doActualJob(self, args):

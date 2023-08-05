@@ -1,4 +1,3 @@
-
 import psycopg2
 from django.shortcuts import render, redirect
 from psycopg2 import OperationalError
@@ -27,8 +26,8 @@ def login_view(request):
 
         connHelper = ConnectionHelper(database, username, password, port, host)
         query = request.POST.get('query')
-        data = UnionPipeLine.extract(connHelper, query)
-        request.session['partials'] = [query, data]
+        data, tp = UnionPipeLine.extract(connHelper, query)
+        request.session['partials'] = [query, data, tp.get_json_display_string()]
         return redirect('result')
 
     return render(request, 'unmasque/login.html')
@@ -49,7 +48,8 @@ def result_page(request):
     # Retrieve the result from the previous view through session
     partials = request.session.get('partials')
     print(partials)
-    return render(request, 'unmasque/result.html', {'query': partials[0], 'result': partials[1]})
+    return render(request, 'unmasque/result.html', {'query': partials[0], 'result': partials[1],
+                                                    'profiling': partials[2]})
 
 
 def bye_page(request):
