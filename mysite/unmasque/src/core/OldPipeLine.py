@@ -13,13 +13,16 @@ from ...refactored.where_clause import WhereClause
 def func_assemble(global_select_op,
                   global_from_op,
                   global_where_op,
-                  global_groupby_op):
+                  global_groupby_op,
+                  global_orderby_op):
     output = "Select " + global_select_op \
              + "\n" + "From " + global_from_op
     if global_where_op != '':
         output = output + "\n" + "Where " + global_where_op
     if global_groupby_op != '':
         output = output + "\n" + "Group By " + global_groupby_op
+    if global_orderby_op != '':
+        output = output + "\n" + "Order By " + global_orderby_op
     output = output + ";"
     return output
 
@@ -28,7 +31,7 @@ def refine_Query(wc, pj, gb, agg,
                  global_select_op,
                  global_from_op,
                  global_where_op,
-                 global_groupby_op,
+                 global_groupby_op, orderby_op,
                  global_output_list=[]):
     for i in range(len(agg.global_projected_attributes)):
         attrib = agg.global_projected_attributes[i]
@@ -89,7 +92,8 @@ def refine_Query(wc, pj, gb, agg,
     eq = func_assemble(global_select_op,
                        global_from_op,
                        global_where_op,
-                       global_groupby_op)
+                       global_groupby_op,
+                       orderby_op)
     return eq, global_output_list
 
 
@@ -209,8 +213,8 @@ def generate_query_string(agg, core_relations, gb, pj, wc, ob):
                                    global_from_op,
                                    global_where_op,
                                    global_groupby_op,
+                                   ob.orderBy_string,
                                    [])
-    eq += " " + ob.orderBy_string
     return eq
 
 
