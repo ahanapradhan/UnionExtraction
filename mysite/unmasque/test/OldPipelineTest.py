@@ -57,7 +57,6 @@ class MyTestCase(unittest.TestCase):
             f.write("\n---------------------------------------\n")
             q_no += 1
             self.conn.closeConnection()
-            sleep(5)
 
         f.close()
 

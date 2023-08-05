@@ -3,6 +3,7 @@ import copy
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.groupby_clause import GroupBy
+from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
 from ...refactored.util.utils import get_datatype, get_min_and_max_val, get_format
 from ...refactored.view_minimizer import ViewMinimizer
@@ -170,11 +171,29 @@ def extract(connectionHelper,
         print("Some error while extrating aggregations. Aborting extraction!")
         return None
 
-    eq = generate_query_string(agg, core_relations, gb, pj, wc)
+    ob = OrderBy(connectionHelper,
+                 wc.global_key_attributes,
+                 wc.global_attrib_types,
+                 core_relations,
+                 wc.filter_predicates,
+                 wc.global_all_attribs,
+                 wc.global_join_graph,
+                 pj.projected_attribs,
+                 pj.projection_names,
+                 agg.global_aggregated_attributes)
+
+    ob.doJob(query)
+    if not ob.has_orderBy:
+        print("Cannot find aggregations.")
+    if not ob.done:
+        print("Some error while extrating aggregations. Aborting extraction!")
+        return None
+
+    eq = generate_query_string(agg, core_relations, gb, pj, wc, ob)
     return eq
 
 
-def generate_query_string(agg, core_relations, gb, pj, wc):
+def generate_query_string(agg, core_relations, gb, pj, wc, ob):
     global_select_op = ''
     global_groupby_op = ''
     global_from_op = ", ".join(core_relations)
@@ -191,6 +210,7 @@ def generate_query_string(agg, core_relations, gb, pj, wc):
                                    global_where_op,
                                    global_groupby_op,
                                    [])
+    eq += " " + ob.orderBy_string
     return eq
 
 
@@ -220,7 +240,8 @@ def add_filters(global_where_op, wc):
             elif not min_present and max_present:
                 pred_op += " >= " + get_format(datatype, pred[3])
             elif not min_present and not max_present:
-                pred_op += " >= " + get_format(datatype, pred[3]) + " and " + pred[1] + " <= " + get_format(datatype, pred[4])
+                pred_op += " >= " + get_format(datatype, pred[3]) + " and " + pred[1] + " <= " + get_format(datatype,
+                                                                                                            pred[4])
 
         filters.append(pred_op)
     global_where_op += " and ".join(filters)

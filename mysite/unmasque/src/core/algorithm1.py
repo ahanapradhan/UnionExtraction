@@ -1,7 +1,5 @@
 import sys
 
-from ...constants import NO_UNION
-
 sys.path.append(".")
 from ..util.utils import get_combs, construct_maxNonNulls
 

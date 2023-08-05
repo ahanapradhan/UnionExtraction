@@ -199,7 +199,6 @@ class Aggregation(AfterWhereClauseBase):
                     new_result = self.app.doJob(query)
                     if isQ_result_empty(new_result):
                         print('some error in generating new database. Result is empty. Can not identify aggregation')
-                        # exit(1)
                         return False
                     elif len(new_result) > 2:
                         continue
