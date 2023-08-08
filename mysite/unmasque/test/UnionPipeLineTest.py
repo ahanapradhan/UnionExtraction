@@ -16,6 +16,14 @@ class MyTestCase(unittest.TestCase):
         print(u_Q)
         tp.print()
 
+    def test_nonUnion_query_Q2(self):
+        key = 'Q3'
+        query = queries.queries_dict[key]
+        u_Q, tp = UnionPipeLine.extract(self.conn, query)
+        self.assertTrue(u_Q is not None)
+        print(u_Q)
+        tp.print()
+
     def test_nonUnion_queries(self):
         Q_keys = queries.queries_dict.keys()
         f = open("UnionPipeLineTest_results.txt.txt", "w")
@@ -45,7 +53,7 @@ class MyTestCase(unittest.TestCase):
         u_Q, tp = UnionPipeLine.extract(self.conn, query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
-        f = open("check.txt",'w')
+        f = open("check.txt", 'w')
         f.write(query + "\n\n")
         f.write(u_Q)
         f.close()

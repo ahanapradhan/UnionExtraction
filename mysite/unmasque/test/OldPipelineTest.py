@@ -1,5 +1,4 @@
 import unittest
-from time import sleep
 
 from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.executable import Executable

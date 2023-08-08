@@ -11,6 +11,7 @@ def create_zero_time_profile():
                        constants,
                        constants,
                        constants,
+                       constants,
                        constants)
 
 
@@ -23,6 +24,7 @@ class ElapsedTime:
                    "Group BY:",
                    "Aggregation:",
                    "Order by:",
+                   "Limit",
                    "Number of Times Executable called: "
                    ]
     t_sampling = 0
@@ -32,6 +34,7 @@ class ElapsedTime:
     t_groupby = 0
     t_aggregate = 0
     t_orderby = 0
+    t_limit = 0
 
     executable_call_count = 0
     t_union = 0
@@ -44,7 +47,7 @@ class ElapsedTime:
                  pj,
                  gb,
                  agg,
-                 ob,
+                 ob, lm,
                  app):
         self.t_sampling += cs2.local_elapsed_time
         self.t_view_min += vm.local_elapsed_time
@@ -53,6 +56,7 @@ class ElapsedTime:
         self.t_groupby += gb.local_elapsed_time
         self.t_aggregate += agg.local_elapsed_time
         self.t_orderby += ob.local_elapsed_time
+        self.t_limit += lm.local_elapsed_time
         self.executable_call_count = app.method_call_count
         self.t_union = 0
 
@@ -67,6 +71,7 @@ class ElapsedTime:
         self.t_groupby += other_profile.t_groupby
         self.t_aggregate += other_profile.t_aggregate
         self.t_orderby += other_profile.t_orderby
+        self.t_limit += other_profile.t_limit
         self.executable_call_count = other_profile.executable_call_count
 
     def print(self):
@@ -84,12 +89,12 @@ class ElapsedTime:
             if i == len(self.clause_keys) - 1:
                 self.display_string += str("\n" +
                                            self.clause_keys[i] + " " + ' ' * (
-                                                       max_len - len(self.clause_keys[i])) + " " +
+                                                   max_len - len(self.clause_keys[i])) + " " +
                                            str(round(times[i])))
             else:
                 self.display_string += str("\n" +
                                            self.clause_keys[i] + " " + ' ' * (
-                                                       max_len - len(self.clause_keys[i])) + " " +
+                                                   max_len - len(self.clause_keys[i])) + " " +
                                            str(round(times[i] * 1000)) + " ms.")
             i += 1
 
@@ -103,5 +108,5 @@ class ElapsedTime:
 
     def get_times(self):
         times = [self.t_union, self.t_sampling, self.t_view_min, self.t_where_clause, self.t_projection,
-                 self.t_groupby, self.t_aggregate, self.t_orderby, self.executable_call_count]
+                 self.t_groupby, self.t_aggregate, self.t_orderby, self.t_limit, self.executable_call_count]
         return times

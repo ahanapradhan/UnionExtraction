@@ -4,6 +4,7 @@ from .elapsed_time import ElapsedTime
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.groupby_clause import GroupBy
+from ...refactored.limit import Limit
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
 from ...refactored.util.utils import get_datatype, get_min_and_max_val, get_format
@@ -15,7 +16,8 @@ def func_assemble(global_select_op,
                   global_from_op,
                   global_where_op,
                   global_groupby_op,
-                  global_orderby_op):
+                  global_orderby_op,
+                  limit):
     output = "Select " + global_select_op \
              + "\n" + "From " + global_from_op
     if global_where_op != '':
@@ -24,6 +26,8 @@ def func_assemble(global_select_op,
         output = output + "\n" + "Group By " + global_groupby_op
     if global_orderby_op != '':
         output = output + "\n" + "Order By " + global_orderby_op
+    if limit is not None:
+        output = output + "\n" + "Limit " + str(limit)
     output = output + ";"
     return output
 
@@ -32,7 +36,7 @@ def refine_Query(wc, pj, gb, agg,
                  global_select_op,
                  global_from_op,
                  global_where_op,
-                 global_groupby_op, orderby_op,
+                 global_groupby_op, orderby_op, limit,
                  global_output_list=[]):
     for i in range(len(agg.global_projected_attributes)):
         attrib = agg.global_projected_attributes[i]
@@ -94,7 +98,8 @@ def refine_Query(wc, pj, gb, agg,
                        global_from_op,
                        global_where_op,
                        global_groupby_op,
-                       orderby_op)
+                       orderby_op[:-2],
+                       limit)
     return eq, global_output_list
 
 
@@ -194,13 +199,28 @@ def extract(connectionHelper,
         print("Some error while extrating aggregations. Aborting extraction!")
         return None
 
-    time_profile = ElapsedTime(cs2, vm, wc, pj, gb, agg, ob, vm.app)
+    lm = Limit(connectionHelper,
+               wc.global_attrib_types,
+               wc.global_key_attributes,
+               core_relations,
+               wc.filter_predicates,
+               wc.global_all_attribs,
+               gb.group_by_attrib)
 
-    eq = generate_query_string(agg, core_relations, gb, pj, wc, ob)
+    lm.doJob(query)
+    if lm.limit is None:
+        print("Cannot find limit.")
+    if not lm.done:
+        print("Some error while extrating aggregations. Aborting extraction!")
+        return None
+
+    time_profile = ElapsedTime(cs2, vm, wc, pj, gb, agg, ob, lm, vm.app)
+
+    eq = generate_query_string(agg, core_relations, gb, pj, wc, ob, lm)
     return eq, time_profile
 
 
-def generate_query_string(agg, core_relations, gb, pj, wc, ob):
+def generate_query_string(agg, core_relations, gb, pj, wc, ob, lm):
     global_select_op = ''
     global_groupby_op = ''
     global_from_op = ", ".join(core_relations)
@@ -217,6 +237,7 @@ def generate_query_string(agg, core_relations, gb, pj, wc, ob):
                                    global_where_op,
                                    global_groupby_op,
                                    ob.orderBy_string,
+                                   lm.limit,
                                    [])
     return eq
 
