@@ -24,7 +24,8 @@ class ElapsedTime:
                    "Group BY:",
                    "Aggregation:",
                    "Order by:",
-                   "Limit",
+                   "Limit:",
+                   "Result Comparator:",
                    "Number of Times Executable called: "
                    ]
     t_sampling = 0
@@ -38,6 +39,7 @@ class ElapsedTime:
 
     executable_call_count = 0
     t_union = 0
+    t_result_comp = 0
 
     display_string = ''
 
@@ -59,9 +61,13 @@ class ElapsedTime:
         self.t_limit += lm.local_elapsed_time
         self.executable_call_count = app.method_call_count
         self.t_union = 0
+        self.t_result_comp = 0
 
     def update_for_union(self, t_u):
         self.t_union += t_u
+
+    def update_for_result_comparator(self, t_u):
+        self.t_result_comp += t_u
 
     def update(self, other_profile):
         self.t_sampling += other_profile.t_sampling
@@ -108,5 +114,6 @@ class ElapsedTime:
 
     def get_times(self):
         times = [self.t_union, self.t_sampling, self.t_view_min, self.t_where_clause, self.t_projection,
-                 self.t_groupby, self.t_aggregate, self.t_orderby, self.t_limit, self.executable_call_count]
+                 self.t_groupby, self.t_aggregate, self.t_orderby, self.t_limit, self.t_result_comp,
+                 self.executable_call_count]
         return times

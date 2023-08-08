@@ -3,6 +3,7 @@ import time
 from . import algorithm1, OldPipeLine
 from .UN1_from_clause import UN1FromClause
 from .elapsed_time import create_zero_time_profile
+from ...refactored.result_comparator import ResultComparator
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
 
@@ -53,6 +54,18 @@ def extract(connectionHelper, query):
 
     u_Q = "\n union all \n".join(u_eq)
     u_Q += ";"
+
+    connectionHelper.connectUsingParams()
+    comparator = ResultComparator(connectionHelper)
+    is_same = comparator.doJob(query, u_Q)
+    connectionHelper.closeConnection()
+
+    t_union_profile.update_for_result_comparator(comparator.local_elapsed_time)
+
+    if is_same:
+        print(" Hidden and extrcated Queries produce the same result!")
+    else:
+        print(" Hidden and extrcated Queries somehow produce different results!")
     return u_Q, t_union_profile
 
 
