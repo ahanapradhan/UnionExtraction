@@ -13,6 +13,7 @@ def extract(connectionHelper, query):
     # opening and closing connection actions are vital.
     connectionHelper.connectUsingParams()
     db = UN1FromClause(connectionHelper)
+    global_pk_dict = db.fromClause.init.global_pk_dict
     start_time = time.time()
     p, pstr = algorithm1.algo(db, query)
 
@@ -38,7 +39,8 @@ def extract(connectionHelper, query):
         eq, time_profile = OldPipeLine.extract(connectionHelper, query,
                                                all_relations,
                                                core_relations,
-                                               key_lists)
+                                               key_lists,
+                                               global_pk_dict)
         revert_nullifications(connectionHelper, nullify)
         connectionHelper.closeConnection()
         t_union_profile.update(time_profile)

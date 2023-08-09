@@ -12,6 +12,7 @@ def create_zero_time_profile():
                        constants,
                        constants,
                        constants,
+                       constants,
                        constants)
 
 
@@ -25,6 +26,7 @@ class ElapsedTime:
                    "Aggregation:",
                    "Order by:",
                    "Limit:",
+                   "NEP: ",
                    "Result Comparator:",
                    "Number of Times Executable called: "
                    ]
@@ -36,6 +38,7 @@ class ElapsedTime:
     t_aggregate = 0
     t_orderby = 0
     t_limit = 0
+    t_nep = 0
 
     executable_call_count = 0
     t_union = 0
@@ -49,7 +52,7 @@ class ElapsedTime:
                  pj,
                  gb,
                  agg,
-                 ob, lm,
+                 ob, lm, nep,
                  app):
         self.t_sampling += cs2.local_elapsed_time
         self.t_view_min += vm.local_elapsed_time
@@ -59,6 +62,8 @@ class ElapsedTime:
         self.t_aggregate += agg.local_elapsed_time
         self.t_orderby += ob.local_elapsed_time
         self.t_limit += lm.local_elapsed_time
+        if nep is not None:
+            self.t_nep += nep.local_elapsed_time
         self.executable_call_count = app.method_call_count
         self.t_union = 0
         self.t_result_comp = 0
@@ -78,6 +83,7 @@ class ElapsedTime:
         self.t_aggregate += other_profile.t_aggregate
         self.t_orderby += other_profile.t_orderby
         self.t_limit += other_profile.t_limit
+        self.t_nep += other_profile.t_nep
         self.executable_call_count = other_profile.executable_call_count
 
     def print(self):
@@ -114,6 +120,7 @@ class ElapsedTime:
 
     def get_times(self):
         times = [self.t_union, self.t_sampling, self.t_view_min, self.t_where_clause, self.t_projection,
-                 self.t_groupby, self.t_aggregate, self.t_orderby, self.t_limit, self.t_result_comp,
+                 self.t_groupby, self.t_aggregate, self.t_orderby, self.t_limit, self.t_nep,
+                 self.t_result_comp,
                  self.executable_call_count]
         return times

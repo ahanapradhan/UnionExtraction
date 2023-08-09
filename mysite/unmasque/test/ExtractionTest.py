@@ -25,7 +25,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -46,7 +46,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -67,7 +67,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -88,7 +88,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -109,7 +109,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -130,7 +130,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -151,7 +151,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -172,7 +172,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -193,7 +193,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -214,7 +214,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -235,7 +235,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -256,7 +256,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
 
         self.assertTrue(eq is not None)
         print(eq)
@@ -278,7 +278,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
 
         self.assertTrue(eq is not None)
         print(eq)
@@ -300,7 +300,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
 
         self.assertTrue(eq is not None)
         print(eq)
@@ -322,7 +322,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -343,7 +343,7 @@ class MyTestCase(unittest.TestCase):
         eq, tp = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()

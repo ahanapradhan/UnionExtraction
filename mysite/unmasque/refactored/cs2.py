@@ -34,12 +34,13 @@ class Cs2(Base):
         self.core_relations = core_relations
         self.global_key_lists = global_key_lists
         self.app = Executable(connectionHelper)
+        self.sizes = {}
 
     def getSizes_cs(self):
-        sizes = {}
-        for table in self.all_relations:
-            sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(get_row_count(table))
-        return sizes
+        if not self.sizes:
+            for table in self.all_relations:
+                self.sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(get_row_count(table))
+        return self.sizes
 
     def extract_params_from_args(self, args):
         return args[0]

@@ -2,6 +2,7 @@ import copy
 
 import pandas as pd
 
+from .abstract.MinimizerBase import Minimizer
 from ..refactored.abstract.ExtractorBase import Base
 from ..refactored.executable import Executable
 from ..refactored.util.common_queries import get_row_count, alter_table_rename_to, get_min_max_ctid, \
@@ -24,30 +25,19 @@ def extract_start_and_end_page(rctid):
     return end_ctid, end_page, start_ctid, start_page
 
 
-class ViewMinimizer(Base):
+class ViewMinimizer(Minimizer):
     max_row_no = 1
 
     def __init__(self, connectionHelper,
-                 core_relations,
+                 core_relations, core_sizes,
                  sampling_status):
-        super().__init__(connectionHelper, "View_Minimizer")
-        self.app = Executable(connectionHelper)
-        self.core_relations = core_relations
+        super().__init__(connectionHelper, core_relations, core_sizes, "View_Minimizer")
         self.cs2_passed = sampling_status
 
         self.global_other_info_dict = {}
         self.global_result_dict = {}
         self.local_other_info_dict = {}
         self.global_min_instance_dict = {}
-
-    def getCoreSizes(self):
-        core_sizes = {}
-        for table in self.core_relations:
-            try:
-                core_sizes[table] = self.connectionHelper.execute_sql([get_row_count(table)])
-            except Exception as error:
-                print("Error in getting table Sizes. Error: " + str(error))
-        return core_sizes
 
     def extract_params_from_args(self, args):
         return args[0]

@@ -26,4 +26,22 @@ from_rels = {'tpch_query1': ["lineitem"],
              'Q18_test': ["partsupp", "part"],
              'Q18_test1': ["partsupp", "part"],
              'Q9_simple': ['part', 'supplier', 'lineitem', 'partsupp', 'orders', 'nation'],
-             'Q10_simple': ['customer','orders','lineitem','nation']}
+             'Q10_simple': ['customer', 'orders', 'lineitem', 'nation']}
+
+global_pk_dict = {'part': 'p_partkey',
+                  'supplier': 's_suppkey',
+                  'partsupp': 'ps_partkey,ps_suppkey',
+                  'customer': 'c_custkey',
+                  'orders': 'o_orderkey',
+                  'nation': 'n_nationkey',
+                  'region': 'r_regionkey',
+                  'lineitem': 'l_orderkey,l_linenumber'}
+
+all_size = {'orders': 1500000,
+            'lineitem': 2999671,
+            'customer': 150000,
+            'supplier': 10000,
+            'part': 200000,
+            'partsupp': 800000,
+            'nation': 25,
+            'region': 10}

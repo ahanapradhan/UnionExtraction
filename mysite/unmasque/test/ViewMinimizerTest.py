@@ -16,7 +16,7 @@ class MyTestCase(unittest.TestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         cs2.doJob(queries.tpch_query1)
         self.assertTrue(cs2.passed)
-        minimizer = ViewMinimizer(self.conn, from_rels, cs2.passed)
+        minimizer = ViewMinimizer(self.conn, from_rels, cs2.sizes, cs2.passed)
         check = minimizer.doJob(queries.tpch_query1)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.global_min_instance_dict["lineitem"]), 2)
@@ -34,7 +34,7 @@ class MyTestCase(unittest.TestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         cs2.doJob(queries.tpch_query3)
         self.assertTrue(cs2.passed)
-        minimizer = ViewMinimizer(self.conn, from_rels, cs2.passed)
+        minimizer = ViewMinimizer(self.conn, from_rels, cs2.sizes, cs2.passed)
         check = minimizer.doJob(queries.tpch_query3)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)
@@ -50,7 +50,7 @@ class MyTestCase(unittest.TestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         cs2.doJob(queries.Q1)
         self.assertTrue(cs2.passed)
-        minimizer = ViewMinimizer(self.conn, from_rels, cs2.passed)
+        minimizer = ViewMinimizer(self.conn, from_rels, cs2.sizes, cs2.passed)
         check = minimizer.doJob(queries.Q1)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)
@@ -64,7 +64,7 @@ class MyTestCase(unittest.TestCase):
 
         from_rels = tpchSettings.from_rels['Q1']
 
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
         check = minimizer.doJob(queries.Q1)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)
@@ -80,7 +80,7 @@ class MyTestCase(unittest.TestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         cs2.doJob(queries.Q2)
         self.assertTrue(cs2.passed)
-        minimizer = ViewMinimizer(self.conn, from_rels, cs2.passed)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,cs2.passed)
         check = minimizer.doJob(queries.Q2)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)
@@ -96,7 +96,7 @@ class MyTestCase(unittest.TestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         cs2.doJob(queries.Q3)
         self.assertTrue(cs2.passed)
-        minimizer = ViewMinimizer(self.conn, from_rels, cs2.passed)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,cs2.passed)
         check = minimizer.doJob(queries.Q3)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)
@@ -113,7 +113,7 @@ class MyTestCase(unittest.TestCase):
         cs2.doJob(queries.Q11)
         self.assertTrue(cs2.passed)
 
-        minimizer = ViewMinimizer(self.conn, from_rels, cs2.passed)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,cs2.passed)
         check = minimizer.doJob(queries.Q11)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)
@@ -127,7 +127,7 @@ class MyTestCase(unittest.TestCase):
 
         from_rels = tpchSettings.from_rels['Q16']
 
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
         check = minimizer.doJob(queries.Q16)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)
@@ -145,7 +145,7 @@ class MyTestCase(unittest.TestCase):
         cs2.doJob(queries.Q11)
         self.assertTrue(cs2.passed)
 
-        minimizer = ViewMinimizer(self.conn, from_rels, cs2.passed)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,cs2.passed)
         check = minimizer.doJob(queries.Q17)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)
@@ -159,7 +159,7 @@ class MyTestCase(unittest.TestCase):
 
         from_rels = tpchSettings.from_rels['Q18']
 
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
         check = minimizer.doJob(queries.Q18)
         self.assertTrue(check)
         self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)

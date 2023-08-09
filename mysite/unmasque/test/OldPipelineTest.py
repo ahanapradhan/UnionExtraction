@@ -27,6 +27,19 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(ctabs), 1)
         self.conn.closeConnection()
 
+    def test_for_nep(self):
+        q_key = 'tpch_query1'
+        self.conn.connectUsingParams()
+        from_rels = tpchSettings.from_rels[q_key]
+        query = queries.queries_dict[q_key]
+        eq = OldPipeLine.extract(self.conn, query,
+                                 tpchSettings.relations,
+                                 from_rels,
+                                 tpchSettings.key_lists,
+                                 tpchSettings.global_pk_dict)
+        self.conn.closeConnection()
+        self.assertTrue(eq is not None)
+
     def test_all_sample_queries(self):
         Q_keys = queries.queries_dict.keys()
         f = open("experiment_results.txt", "w")
@@ -47,7 +60,8 @@ class MyTestCase(unittest.TestCase):
             eq = OldPipeLine.extract(self.conn, query,
                                      tpchSettings.relations,
                                      from_rels,
-                                     tpchSettings.key_lists)
+                                     tpchSettings.key_lists,
+                                     tpchSettings.global_pk_dict)
             f.write("\n*** Extracted Query:\n")
             if eq is None:
                 f.write("Extraction Failed!")

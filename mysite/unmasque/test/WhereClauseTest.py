@@ -14,7 +14,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['tpch_query1']
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
         check = minimizer.doJob(queries.tpch_query1)
         self.assertTrue(check)
 
@@ -57,7 +57,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q17']
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
         check = minimizer.doJob(queries.Q17)
         self.assertTrue(check)
 
@@ -97,7 +97,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q21']
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
         check = minimizer.doJob(queries.Q21)
         self.assertTrue(check)
 
@@ -131,7 +131,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q23_1']
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels,tpchSettings.all_size, False)
         check = minimizer.doJob(queries.Q23_1)
         self.assertTrue(check)
 
@@ -177,7 +177,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q18_test']
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
         check = minimizer.doJob(queries.Q18_test)
         self.assertTrue(check)
 
@@ -210,7 +210,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q18_test1']
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
         check = minimizer.doJob(queries.Q18_test1)
         self.assertTrue(check)
 
@@ -251,7 +251,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q3']
-        minimizer = ViewMinimizer(self.conn, from_rels, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
         check = minimizer.doJob(queries.Q3)
         self.assertTrue(check)
 
