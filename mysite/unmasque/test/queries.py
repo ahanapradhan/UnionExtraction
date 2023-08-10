@@ -98,18 +98,63 @@ queries_dict = {'tpch_query1': tpch_query1,
                 'Q10_simple': Q10_simple
                 }
 '''
-(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905 limit 1)
+(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905 limit 2)
 union
 all(select
 l_orderkey as key
 from lineitem, orders
 where
-l_orderkey = o_orderkey and o_totalprice <= 905 limit 1) union
+l_orderkey = o_orderkey and o_totalprice <= 905 limit 2) union
 all(select
 o_orderkey as key
 from customer, orders
 where
-c_custkey = o_custkey and o_totalprice <= 890 limit 1);
+c_custkey = o_custkey and o_totalprice <= 890 limit 3);
+
+
+(select c acctbal
+from customer)
+Union All
+(select l extendedprice
+from lineitem);
+
+(select sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price
+from lineitem 
+where l_shipdate ≤ '1998-12-01' - interval '71 days'
+group by l_returnflag, l_linestatus
+order by l_returnflag, l_linestatus)
+Union All
+(select s_acctbal, p_partkey
+from part, supplier, partsupp, nation, region
+where p_partkey = ps_partkey and s_suppkey = ps_suppkey and p_size = 38 and p_type like
+'%TIN' and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'MIDDLE EAST'
+order by s_acctbal desc, n_name, s_name, p_partkey);
+
+(SELECT o_orderkey, o_orderdate
+FROM orders)
+UNION
+(SELECT l_orderkey, l_shipdate
+FROM lineitem);
+
+(SELECT p_partkey, p_name
+FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100)
+UNION ALL
+(SELECT s_suppkey, s_name 
+FROM supplier, partsupp where s_suppkey = ps_suppkey
+and ps_availqty > 200);
+
+(SELECT r_regionkey, r_name
+FROM region 
+WHERE r_comment LIKE '%America%')
+UNION ALL
+(SELECT n_nationkey, n_name
+FROM nation, region  where n_regionkey = r_regionkey
+and r_name = 'AMERICA')
+UNION ALL
+(SELECT s_suppkey, s_name FROM supplier, nation where s_nationkey = n_nationkey
+and n_name = 'UNITED STATES');
+
+
 
 TPCDS Q14: INTERSECT, UNION ALL
 Q38: INTERSECT

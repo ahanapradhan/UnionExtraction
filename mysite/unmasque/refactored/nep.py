@@ -208,7 +208,7 @@ class NEP(Minimizer, AfterWhereClauseBase):
 
         filter_attrib_dict = self.construct_filter_attribs_dict()
 
-        attrib_list = self.global_all_attribs[i]
+        attrib_list = [self.global_all_attribs[i]]
         filterAttribs = []
 
         # convert the view into a table

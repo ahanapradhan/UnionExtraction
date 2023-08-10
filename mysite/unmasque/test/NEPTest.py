@@ -23,7 +23,7 @@ class MyTestCase(unittest.TestCase):
 
         Q_E = "Select l_shipmode, sum(l_extendedprice) as revenue " \
               "From lineitem " \
-              "Where l_shipdate <= '1994-12-30' " \
+              "Where l_shipdate <= '1993-12-30' " \
               "and l_quantity < 24 " \
               "Group By l_shipmode Limit 100; "
 
