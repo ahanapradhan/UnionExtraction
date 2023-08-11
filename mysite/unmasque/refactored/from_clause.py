@@ -34,9 +34,10 @@ class FromClause(Base):
 
             except Exception as error:
                 print("Error Occurred in table extraction. Error: " + str(error))
-                exit(1)
-            finally:
                 self.connectionHelper.execute_sql(["ROLLBACK;"])
+                exit(1)
+
+            self.connectionHelper.execute_sql(["ROLLBACK;"])
 
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:

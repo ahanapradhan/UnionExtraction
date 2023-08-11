@@ -1,0 +1,248 @@
+Hidden Query
+
+(SELECT p_partkey, p_name
+FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100)
+UNION ALL
+(SELECT s_suppkey, s_name
+FROM supplier, partsupp where s_suppkey = ps_suppkey
+and ps_availqty > 200);
+
+Extracted Query
+
+(Select s_suppkey as p_partkey, s_name as p_name
+From supplier, partsupp
+Where s_suppkey = ps_suppkey and ps_availqty  >= 201)
+ union all
+(Select p_partkey, p_name
+From partsupp, part
+Where p_partkey = ps_partkey and ps_availqty  >= 102);
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      84745 ms.
+Correlated Sampling:                  721 ms.
+View Minimization:                    981 ms.
+Where Clause:                         663 ms.
+Projection:                           14 ms.
+Group BY:                             210 ms.
+Aggregation:                          0 ms.
+Order by:                             27 ms.
+Limit:                                1061 ms.
+NEP:                                  0 ms.
+Result Comparator:                    6227 ms.
+Number of Times Executable called:    408
+
+
+Hidden Query
+
+(select c_acctbal
+from customer)
+Union All
+(select l_extendedprice
+from lineitem);
+
+Extracted Query
+
+;
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      190878 ms.
+Correlated Sampling:                  0 ms.
+View Minimization:                    0 ms.
+Where Clause:                         0 ms.
+Projection:                           0 ms.
+Group BY:                             0 ms.
+Aggregation:                          0 ms.
+Order by:                             0 ms.
+Limit:                                0 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    0
+
+
+
+Hidden Query
+
+SELECT s_suppkey, s_name
+FROM supplier, nation where s_nationkey = n_nationkey
+and  n_name = 'GERMANY'
+UNION ALL
+SELECT c_custkey, c_name
+FROM customer,
+ orders where c_custkey = o_custkey
+and o_orderpriority = '1-URGENT';
+
+Extracted Query
+
+(Select s_suppkey, s_name
+From supplier, nation
+Where s_nationkey = n_nationkey and n_name  = 'GERMANY')
+ union all
+(Select c_custkey as s_suppkey, c_name as s_name
+From orders, customer
+Where c_custkey = o_custkey and o_orderpriority  = '1-URGENT');
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      20846 ms.
+Correlated Sampling:                  299 ms.
+View Minimization:                    762 ms.
+Where Clause:                         444 ms.
+Projection:                           10 ms.
+Group BY:                             196 ms.
+Aggregation:                          0 ms.
+Order by:                             35 ms.
+Limit:                                1151 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    384
+
+
+Hidden Query
+
+SELECT c_custkey as key, c_name as name
+FROM customer, nation where c_nationkey = n_nationkey and
+ n_name = 'UNITED STATES'
+UNION ALL
+SELECT p_partkey as key, p_name as name
+FROM part , lineitem where p_partkey = l_partkey
+and l_quantity > 35;
+
+Extracted Query
+
+(Select c_custkey as key, c_name as name
+From nation, customer
+Where n_nationkey = c_nationkey and n_name  = 'UNITED STATES')
+ union all
+(Select p_partkey as key, p_name as name
+From part, lineitem
+Where p_partkey = l_partkey and l_quantity  >= 35.5);
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      102335 ms.
+Correlated Sampling:                  959 ms.
+View Minimization:                    1170 ms.
+Where Clause:                         585 ms.
+Projection:                           17 ms.
+Group BY:                             240 ms.
+Aggregation:                          0 ms.
+Order by:                             33 ms.
+Limit:                                2757 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    492
+
+
+Hidden Query
+
+SELECT c_custkey, c_name
+FROM customer,
+ nation where c_nationkey = n_nationkey
+and n_name = 'UNITED STATES'
+UNION ALL
+SELECT s_suppkey, s_name
+FROM supplier ,
+ nation where s_nationkey = n_nationkey
+and n_name = 'CANADA'
+UNION ALL
+SELECT p_partkey, p_name
+FROM part ,
+ lineitem where p_partkey = l_partkey
+and l_quantity > 20;
+
+Extracted Query
+
+(Select s_suppkey as c_custkey, s_name as c_name
+From supplier, nation
+Where s_nationkey = n_nationkey and n_name  = 'CANADA')
+ union all
+(Select p_partkey as c_custkey, p_name as c_name
+From part, lineitem
+Where p_partkey = l_partkey and l_quantity  >= 20.5)
+ union all
+(Select c_custkey, c_name
+From customer, nation
+Where n_nationkey = c_nationkey and n_name  = 'UNITED STATES');
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      193595 ms.
+Correlated Sampling:                  1154 ms.
+View Minimization:                    1125 ms.
+Where Clause:                         731 ms.
+Projection:                           21 ms.
+Group BY:                             627 ms.
+Aggregation:                          0 ms.
+Order by:                             100 ms.
+Limit:                                3727 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    1146
+
+
+Hidden Query
+
+SELECT o_orderkey, o_orderdate
+FROM orders, customer where o_custkey = c_custkey and c_name like '%0001248%'
+ AND o_orderdate >= '1997-01-01'
+UNION ALL
+SELECT l_orderkey, l_shipdate
+FROM lineitem,
+orders where l_orderkey = o_orderkey
+and o_orderdate < '1994-01-01'
+  AND l_quantity > 20
+  AND l_extendedprice > 1000;
+
+Extracted Query
+
+(Select o_orderkey, l_shipdate as o_orderdate
+From orders, lineitem
+Where o_orderkey = l_orderkey and o_orderdate  <= '1993-12-31' and l_quantity  >= 20.5 and l_extendedprice  >= 1000.43)
+ union all
+(Select o_orderkey, o_orderdate
+From customer, orders
+Where c_custkey = o_custkey and c_name LIKE '%0001248%' and o_orderdate  >= '1997-01-01');
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      73345 ms.
+Correlated Sampling:                  3380 ms.
+View Minimization:                    1478 ms.
+Where Clause:                         900 ms.
+Projection:                           21 ms.
+Group BY:                             369 ms.
+Aggregation:                          0 ms.
+Order by:                             36 ms.
+Limit:                                2267 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    1860
+
+
+
+Union Detection:                      91418 ms.
+Correlated Sampling:                  5090 ms.
+View Minimization:                    847 ms.
+Where Clause:                         449 ms.
+Projection:                           59 ms.
+Group BY:                             174 ms.
+Aggregation:                          13 ms.
+Order by:                             71 ms.
+Limit:                                43250 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    518

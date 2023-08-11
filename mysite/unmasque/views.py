@@ -26,11 +26,18 @@ def login_view(request):
 
         connHelper = ConnectionHelper(database, username, password, port, host)
         query = request.POST.get('query')
-        data, tp = UnionPipeLine.extract(connHelper, query)
-        request.session['partials'] = [query, data, tp.get_json_display_string()]
+        doExtraction(connHelper, query, request)
         return redirect('result')
 
     return render(request, 'unmasque/login.html')
+
+
+def doExtraction(connHelper, query, request):
+    data, tp = UnionPipeLine.extract(connHelper, query)
+    if tp is None:
+        request.session['partials'] = [query, data, "Nothing to Show"]
+    else:
+        request.session['partials'] = [query, data, tp.get_json_display_string()]
 
 
 def connect_to_db(database, host, password, port, username):

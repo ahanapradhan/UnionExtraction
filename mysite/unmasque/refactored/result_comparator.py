@@ -47,7 +47,10 @@ class ResultComparator(Base):
                     if all(val is None for val in row):
                         continue
                     ins = tuple(str(val) for val in row)
-                    self.connectionHelper.execute_sql(['INSERT INTO r_h' + str(t1) + ' VALUES' + str(ins) + '; '])
+                    values = str(ins)
+                    if values[-1] == ',':
+                        values = values[:-1]
+                    self.connectionHelper.execute_sql(['INSERT INTO r_h' + str(t1) + ' VALUES' + values + '; '])
 
         len1 = self.connectionHelper.execute_sql_fetchone_0(
             "select sum(hashtext) from (select hashtext(r_e::TEXT) FROM r_e) "

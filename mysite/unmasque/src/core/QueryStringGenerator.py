@@ -1,8 +1,8 @@
 import copy
 
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.executable import Executable
-from mysite.unmasque.refactored.util.utils import get_format, get_datatype, get_min_and_max_val
+from ...refactored.abstract.ExtractorBase import Base
+from ...refactored.executable import Executable
+from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val
 
 
 def refine_aggregates(agg, wc):

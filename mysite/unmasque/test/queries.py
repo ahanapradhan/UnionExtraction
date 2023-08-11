@@ -112,10 +112,10 @@ where
 c_custkey = o_custkey and o_totalprice <= 890 limit 3);
 
 
-(select c acctbal
+(select c_acctbal
 from customer)
 Union All
-(select l extendedprice
+(select l_extendedprice
 from lineitem);
 
 (select sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price

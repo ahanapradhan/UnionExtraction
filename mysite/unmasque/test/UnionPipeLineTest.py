@@ -1,7 +1,8 @@
 import unittest
 
 from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
-from mysite.unmasque.src.core import UnionPipeLine
+from mysite.unmasque.src.core import UnionPipeLine, algorithm1
+from mysite.unmasque.src.core.UN1_from_clause import UN1FromClause
 from mysite.unmasque.test import queries
 
 
@@ -58,6 +59,19 @@ class MyTestCase(unittest.TestCase):
         f.write(u_Q)
         f.close()
         tp.print()
+
+    def test_unionQuery_ui_caught_case(self):
+        self.conn.connectUsingParams()
+        query = "(SELECT c_custkey as key, c_name as name FROM customer, nation where c_nationkey = n_nationkey and " \
+                "n_name = 'UNITED STATES') UNION ALL " \
+                "(SELECT p_partkey as key, p_name as name FROM part , lineitem where p_partkey = l_partkey " \
+                "and l_quantity > 35);"
+
+        db = UN1FromClause(self.conn)
+        p, pstr = algorithm1.algo(db, query)
+        self.assertEqual(p, {frozenset({'customer', 'nation'}), frozenset({'part', 'lineitem'})})
+        self.assertTrue(pstr is not None)
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':

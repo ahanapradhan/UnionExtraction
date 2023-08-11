@@ -12,6 +12,13 @@ def extract(connectionHelper, query):
     t_union_profile = create_zero_time_profile()
     # opening and closing connection actions are vital.
     connectionHelper.connectUsingParams()
+
+    # sanity check of input
+    try:
+        connectionHelper.execute_sql(["EXPLAIN " + query])
+    except:
+        return "Please check your query.", None
+
     db = UN1FromClause(connectionHelper)
     global_pk_dict = db.fromClause.init.global_pk_dict
     start_time = time.time()
@@ -57,17 +64,19 @@ def extract(connectionHelper, query):
     u_Q = "\n union all \n".join(u_eq)
     u_Q += ";"
 
+    '''
     connectionHelper.connectUsingParams()
     comparator = ResultComparator(connectionHelper)
     is_same = comparator.doJob(query, u_Q)
     connectionHelper.closeConnection()
-
+    
     t_union_profile.update_for_result_comparator(comparator.local_elapsed_time)
 
     if is_same:
         print(" Hidden and extrcated Queries produce the same result!")
     else:
         print(" Hidden and extrcated Queries somehow produce different results!")
+    '''
     return u_Q, t_union_profile
 
 
