@@ -73,6 +73,14 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(pstr is not None)
         self.conn.closeConnection()
 
+    def test_random_nonUnion(self):
+        query = "SELECT o_orderdate, SUM(l_extendedprice) AS total_price " \
+                "FROM orders, lineitem where o_orderkey = l_orderkey " \
+                "and o_orderdate >= '1995-01-01' GROUP BY o_orderdate " \
+                "ORDER BY total_price DESC LIMIT 10;"
+        eq = UnionPipeLine.extract(self.conn, query)
+        print(eq)
+
 
 if __name__ == '__main__':
     unittest.main()

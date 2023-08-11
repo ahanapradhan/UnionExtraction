@@ -63,7 +63,7 @@ class QueryStringGenerator(Base):
             self.where_op += " and "
         self.where_op = self.add_filters(wc)
 
-        eq = self.refine_Query(wc, pj, gb, agg, ob, lm)
+        eq = self.refine_Query1(wc, pj, gb, agg, ob, lm)
         return eq
 
     def add_filters(self, wc):
@@ -98,12 +98,73 @@ class QueryStringGenerator(Base):
             output = output + "\n" + "Limit " + self.limit_op
         output = output + ";"
         return output
+    
+    def refine_Query1(self, wc, pj, gb, agg, ob, lm):
+        print("inside:   reveal_proc_support.refine_Query")
+        for i in range(len(agg.global_projected_attributes)):
+            attrib = agg.global_projected_attributes[i]
+            if attrib in wc.global_key_attributes and attrib in agg.global_groupby_attributes:
+                if not ('Sum' in agg.global_aggregated_attributes[i][1] or 'Count' in
+                        agg.global_aggregated_attributes[i][1]):
+                    agg.global_aggregated_attributes[i] = (agg.global_aggregated_attributes[i][0], '')
+        temp_list = copy.deepcopy(agg.global_groupby_attributes)
+        for attrib in temp_list:
+            if attrib not in agg.global_projected_attributes:
+                try:
+                    agg.global_groupby_attributes.remove(attrib)
+                except:
+                    pass
+                continue
+            remove_flag = True
+            for elt in agg.global_aggregated_attributes:
+                if elt[0] == attrib and (not ('Sum' in elt[1] or 'Count' in elt[1])):
+                    remove_flag = False
+                    break
+            if remove_flag:
+                try:
+                    agg.global_groupby_attributes.remove(attrib)
+                except:
+                    pass
+
+        # UPDATE OUTPUTS
+        first_occur = True
+        self.group_by_op = ''
+        for i in range(len(agg.global_groupby_attributes)):
+            elt = agg.global_groupby_attributes[i]
+            if first_occur:
+                self.group_by_op = elt
+                first_occur = False
+            else:
+                self.group_by_op = self.group_by_op + ", " + elt
+        first_occur = True
+        for i in range(len(agg.global_projected_attributes)):
+            elt = agg.global_projected_attributes[i]
+            if agg.global_aggregated_attributes[i][1] != '':
+                elt = agg.global_aggregated_attributes[i][1] + '(' + elt + ')'
+                if 'Count' in agg.global_aggregated_attributes[i][1]:
+                    elt = agg.global_aggregated_attributes[i][1]
+            if elt != pj.projection_names[i] and pj.projection_names[i] != '':
+                elt = elt + ' as ' + pj.projection_names[i]
+            if first_occur:
+                self.select_op = elt
+                first_occur = False
+            else:
+                self.select_op = self.select_op + ", " + elt
+
+        self.order_by_op = ob.orderBy_string[:-2]
+        if lm.limit is not None:
+            self.limit_op = str(lm.limit)
+        eq = self.assembleQuery()
+        return eq
 
     def refine_Query(self, wc, pj, gb, agg, ob, lm):
         refine_aggregates(agg, wc)
 
         # UPDATE OUTPUTS
-        self.group_by_op = ", ".join(agg.global_groupby_attributes)
+        if len(agg.global_groupby_attributes) == 1:
+            self.group_by_op = agg.global_groupby_attributes[0]
+        else:
+            self.group_by_op = ", ".join(agg.global_groupby_attributes)
 
         for i, elt in enumerate(agg.global_projected_attributes):
             if agg.global_aggregated_attributes[i][1] != '':
