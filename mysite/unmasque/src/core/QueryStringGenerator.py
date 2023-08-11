@@ -140,9 +140,11 @@ class QueryStringGenerator(Base):
         for i in range(len(agg.global_projected_attributes)):
             elt = agg.global_projected_attributes[i]
             if agg.global_aggregated_attributes[i][1] != '':
-                elt = agg.global_aggregated_attributes[i][1] + '(' + elt + ')'
                 if 'Count' in agg.global_aggregated_attributes[i][1]:
                     elt = agg.global_aggregated_attributes[i][1]
+                else:
+                    elt = agg.global_aggregated_attributes[i][1] + '(' + elt + ')'
+
             if elt != pj.projection_names[i] and pj.projection_names[i] != '':
                 elt = elt + ' as ' + pj.projection_names[i]
             if first_occur:

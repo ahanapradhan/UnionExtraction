@@ -279,3 +279,118 @@ Limit:                                1390 ms.
 NEP:                                  0 ms.
 Result Comparator:                    0 ms.
 Number of Times Executable called:    524
+
+
+Hidden Query
+
+SELECT
+    l_orderkey as key,
+    l_extendedprice as price,
+    l_partkey as s_key
+FROM
+    lineitem
+WHERE
+    l_shipdate >= DATE '1994-01-01'
+    AND l_shipdate < DATE '1995-01-01'
+    AND l_quantity > 30
+
+UNION ALL
+
+SELECT
+    ps_partkey as key,
+    p_retailprice as price,
+    ps_suppkey as s_key
+FROM
+    partsupp,supplier,part where ps_suppkey = s_suppkey
+and ps_partkey = p_partkey
+    AND ps_supplycost < 100;
+
+Extracted Query
+
+(Select p_partkey as key, p_retailprice as price, s_suppkey as s_key
+From partsupp, part, supplier
+Where p_partkey = ps_partkey and s_suppkey = ps_suppkey and ps_supplycost  <= 99.0)
+ UNION ALL
+(Select l_orderkey as key, l_extendedprice as price, l_partkey as s_key
+From lineitem
+Where l_quantity  >= 30.5 and l_shipdate  >= '1994-01-01' and l_shipdate <= '1994-12-31');
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      28652 ms.
+Correlated Sampling:                  1542 ms.
+View Minimization:                    1635 ms.
+Where Clause:                         590 ms.
+Projection:                           7 ms.
+Group BY:                             252 ms.
+Aggregation:                          0 ms.
+Order by:                             119 ms.
+Limit:                                1541 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    0
+
+
+Hidden Query
+
+(SELECT
+    c_custkey as order_id,
+    COUNT(*) AS total
+FROM
+    customer, orders where c_custkey = o_custkey
+and
+    o_orderdate >= '1995-01-01'
+    AND o_orderdate < '1995-04-01'
+GROUP BY
+    c_custkey
+ORDER BY
+    total ASC
+LIMIT 10)
+UNION ALL
+(SELECT
+    l_orderkey as order_id,
+    AVG(l_quantity) AS total
+FROM
+    orders, lineitem where l_orderkey = o_orderkey
+and o_orderdate >= DATE '1995-04-01'
+    AND o_orderdate < DATE '1995-07-01'
+GROUP BY
+    l_orderkey
+ORDER BY
+    total DESC
+LIMIT 10);
+
+Extracted Query
+
+(Select c_custkey as order_id, count(*)() as total
+From customer, orders
+Where c_custkey = o_custkey and o_orderdate  >= '1995-01-01' and o_orderdate <= '1995-03-31'
+Group By c_custkey
+Limit 10)
+ UNION ALL
+(Select o_orderkey as order_id, Avg(l_quantity) as total
+From lineitem, orders
+Where o_orderkey = l_orderkey and o_orderdate  >= '1995-04-02' and o_orderdate <= '1995-06-30'
+Group By o_orderkey
+Order By total desc
+Limit 10);
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      21268 ms.
+Correlated Sampling:                  5137 ms.
+View Minimization:                    3787 ms.
+Where Clause:                         535 ms.
+Projection:                           15 ms.
+Group BY:                             221 ms.
+Aggregation:                          4 ms.
+Order by:                             19 ms.
+Limit:                                1699 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    0
+
