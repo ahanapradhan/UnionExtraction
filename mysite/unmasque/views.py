@@ -22,10 +22,9 @@ def login_view(request):
             print(conn)
             cur = conn.cursor()
             try:
-                cur.execute("EXPLAIN" + query)
+                cur.execute("EXPLAIN " + query)
             except:
-                print("invalid query")
-                error_message = 'Invalid query. Please try again.'
+                error_message = "Invalid query. Please Try again!"
                 conn.close()
                 return render(request, 'unmasque/login.html', {'error_message': error_message})
             conn.close()
