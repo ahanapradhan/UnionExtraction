@@ -1,10 +1,9 @@
 from .QueryStringGenerator import QueryStringGenerator
-from .elapsed_time import ElapsedTime
+from .elapsed_time import create_zero_time_profile
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
-from ...refactored.nep import NEP
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
 from ...refactored.view_minimizer import ViewMinimizer
@@ -18,7 +17,7 @@ def extract(connectionHelper,
             key_lists,
             global_pk_dict):  # get core_relations, key_lists from from clause
 
-    time_profile = ElapsedTime()
+    time_profile = create_zero_time_profile()
 
     cs2 = Cs2(connectionHelper, all_relations, core_relations, key_lists)
     cs2.doJob(query)

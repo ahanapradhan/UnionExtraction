@@ -17,7 +17,6 @@ def extract(connectionHelper, query):
     global_pk_dict = db.fromClause.init.global_pk_dict
     start_time = time.time()
     p, pstr = algorithm1.algo(db, query)
-    u_Q = pstr
 
     all_relations = db.get_relations()
     end_time = time.time()
@@ -27,6 +26,7 @@ def extract(connectionHelper, query):
     connectionHelper.closeConnection()
 
     u_eq = []
+    pipeLineError = False
 
     for rels in p:
         core_relations = []
@@ -52,16 +52,19 @@ def extract(connectionHelper, query):
             eq = eq.replace(';', ')')
             u_eq.append(eq)
         else:
-            print("some error in the union pipeline.")
-            return None, None
+            pipeLineError = True
+            break
 
         if time_profile is not None:
             t_union_profile.update(time_profile)
 
-    if u_Q != '' or u_Q is not None:
-        u_Q = "\n UNION ALL \n".join(u_eq)
-        u_Q += ";"
+    u_Q = "\n UNION ALL \n".join(u_eq)
+    u_Q += ";"
 
+    result = ""
+    if pipeLineError:
+        result = "Could not extract the query due to errors.\nHere's what I have as a half-baked answer:\n" + pstr + "\n"
+    result += u_Q
     '''
     connectionHelper.connectUsingParams()
     comparator = ResultComparator(connectionHelper)
@@ -75,7 +78,7 @@ def extract(connectionHelper, query):
     else:
         print(" Hidden and extrcated Queries somehow produce different results!")
     '''
-    return u_Q, t_union_profile
+    return result, t_union_profile
 
 
 def nullify_relations(connectionHelper, relations):
