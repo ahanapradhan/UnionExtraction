@@ -13,16 +13,11 @@ def extract(connectionHelper, query):
     # opening and closing connection actions are vital.
     connectionHelper.connectUsingParams()
 
-    # sanity check of input
-    try:
-        connectionHelper.execute_sql(["EXPLAIN " + query])
-    except:
-        return "Please check your query.", None
-
     db = UN1FromClause(connectionHelper)
     global_pk_dict = db.fromClause.init.global_pk_dict
     start_time = time.time()
     p, pstr = algorithm1.algo(db, query)
+    u_Q = pstr
 
     all_relations = db.get_relations()
     end_time = time.time()
@@ -50,7 +45,6 @@ def extract(connectionHelper, query):
                                                global_pk_dict)
         revert_nullifications(connectionHelper, nullify)
         connectionHelper.closeConnection()
-        t_union_profile.update(time_profile)
 
         if eq is not None:
             print(eq)
@@ -59,10 +53,14 @@ def extract(connectionHelper, query):
             u_eq.append(eq)
         else:
             print("some error in the union pipeline.")
-            return None
+            return None, None
 
-    u_Q = "\n union all \n".join(u_eq)
-    u_Q += ";"
+        if time_profile is not None:
+            t_union_profile.update(time_profile)
+
+    if u_Q != '' or u_Q is not None:
+        u_Q = "\n UNION ALL \n".join(u_eq)
+        u_Q += ";"
 
     '''
     connectionHelper.connectUsingParams()

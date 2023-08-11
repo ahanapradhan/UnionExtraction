@@ -115,13 +115,13 @@ class WhereClause(Base):
                 # Assign two different values to two lists in database
                 self.assign_values_to_lists(list1, list2, temp_copy, val1, val2)
 
-                self.fill_join_dicts_for_demo(k, list1, list2, temp_copy, val1, val2)
+                # self.fill_join_dicts_for_demo(k, list1, list2, temp_copy, val1, val2)
 
                 # CHECK THE RESULT
                 new_result = self.app.doJob(query)
-                self.global_result_dict['join_' + self.global_attrib_dict['join'][-1] + '_' +
-                                        self.global_join_instance_dict['Component-' + str(k)][-1]] = new_result
-                self.local_other_info_dict['Result Cardinality'] = len(new_result) - 1
+                 #self.global_result_dict['join_' + self.global_attrib_dict['join'][-1] + '_' +
+                  #                      self.global_join_instance_dict['Component-' + str(k)][-1]] = new_result
+                # self.local_other_info_dict['Result Cardinality'] = len(new_result) - 1
                 if len(new_result) > 1:
                     self.remove_edge_from_join_graph_dicts(join_keys, list1, list2, global_key_lists)
                     break
@@ -130,18 +130,16 @@ class WhereClause(Base):
                 if all(x in keys for x in join_keys):
                     global_key_lists.remove(keys)
                     join_graph.append(copy.deepcopy(join_keys))
-                    self.local_other_info_dict['Conclusion'] = u'Edge ' + list1[0][1] + u"\u2014" + list2[0][
-                        1] + ' is present in the join graph'
+                    # self.local_other_info_dict['Conclusion'] = u'Edge ' + list1[0][1] + u"\u2014" + list2[0][
+                    #    1] + ' is present in the join graph'
 
             # Assign same values in all cur_lists to get non-empty output
-            self.global_other_info_dict['join_' + self.global_attrib_dict['join'][-1] + '_' +
-                                        self.global_join_instance_dict['Component-' + str(k)][
-                                            -1]] = copy.deepcopy(self.local_other_info_dict)
+            # self.global_other_info_dict['join_' + self.global_attrib_dict['join'][-1] + '_' +
+            #                            self.global_join_instance_dict['Component-' + str(k)][
+            #                                -1]] = copy.deepcopy(self.local_other_info_dict)
             for val in join_keys:
                 self.connectionHelper.execute_sql(["Insert into " + val[0] + " Select * from " + val[0] + "4;"])
-
         self.refine_join_graph(join_graph)
-        return
 
     def remove_edge_from_join_graph_dicts(self, curr_list, list1, list2, global_key_lists):
         self.local_other_info_dict[

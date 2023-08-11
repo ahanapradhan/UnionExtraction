@@ -234,15 +234,48 @@ Number of Times Executable called:    1860
 
 
 
-Union Detection:                      91418 ms.
-Correlated Sampling:                  5090 ms.
-View Minimization:                    847 ms.
-Where Clause:                         449 ms.
-Projection:                           59 ms.
-Group BY:                             174 ms.
+Hidden Query
+
+(SELECT o_clerk as name, SUM(l_extendedprice) AS total_price
+FROM orders, lineitem where o_orderkey = l_orderkey
+and o_orderdate <= '1995-01-01'
+GROUP BY o_clerk
+ORDER BY total_price DESC
+LIMIT 10)
+UNION ALL
+(SELECT n_name as name, SUM(s_acctbal) AS total_price
+FROM nation ,supplier where n_nationkey = s_nationkey and n_name like '%UNITED%'
+GROUP BY n_name
+ORDER BY n_name DESC);
+
+Extracted Query
+
+(Select o_clerk as name, Sum(l_extendedprice) as total_price
+From orders, lineitem
+Where o_orderkey = l_orderkey and o_orderdate  <= '1994-12-31'
+Group By o_clerk
+Order By total_price desc, name desc
+Limit 10)
+ union all
+(Select n_name as name, Sum(s_acctbal) as total_price
+From supplier, nation
+Where s_nationkey = n_nationkey and n_name LIKE '%UNITED%'
+Group By n_name
+Order By name desc);
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      48767 ms.
+Correlated Sampling:                  2024 ms.
+View Minimization:                    1175 ms.
+Where Clause:                         456 ms.
+Projection:                           18 ms.
+Group BY:                             201 ms.
 Aggregation:                          13 ms.
-Order by:                             71 ms.
-Limit:                                43250 ms.
+Order by:                             48 ms.
+Limit:                                1390 ms.
 NEP:                                  0 ms.
 Result Comparator:                    0 ms.
-Number of Times Executable called:    518
+Number of Times Executable called:    524

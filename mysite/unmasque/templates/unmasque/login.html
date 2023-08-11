@@ -4,11 +4,12 @@
     <title>Login to Database</title>
 </head>
 <body>
-    <h2>Enter the Details:</h2>
-    <hr>
+
     {% if error_message %}
-        <p>{{ error_message }}</p>
+        <h3 style="color:Tomato;">{{ error_message }}</h3>
     {% endif %}
+    <hr>
+    <h2>Enter the Details:</h2>
     <hr>
     <form method="post">
 
@@ -28,7 +29,8 @@
         <input type="text" id="port" name="port" value="5432"><br><br>
         <label for="database">Database:</label>
         <input type="text" id="database" name="database" value="tpch"><br><br>
-        <textarea name="query" rows="5" cols="100" required></textarea><br><br>
+        <label for="query">Hidden Query:</label><br>
+        <textarea name="query" id = "query" rows="5" cols="100" required></textarea><br><br>
         <input type="submit" value="Extract">
     </form>
 </body>

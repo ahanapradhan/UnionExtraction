@@ -74,6 +74,30 @@ class ElapsedTime:
     def update_for_result_comparator(self, t_u):
         self.t_result_comp += t_u
 
+    def update_for_where_clause(self, t_u):
+        self.t_where_clause += t_u
+
+    def update_for_projection(self, t_u):
+        self.t_projection += t_u
+
+    def update_for_group_by(self, t_u):
+        self.t_groupby += t_u
+
+    def update_for_aggregate(self, t_u):
+        self.t_aggregate += t_u
+
+    def update_for_order_by(self, t_u):
+        self.t_orderby += t_u
+
+    def update_for_limit(self, t_u):
+        self.t_limit += t_u
+
+    def update_for_cs2(self, t_u):
+        self.t_sampling += t_u
+
+    def update_for_view_minimization(self, t_u):
+        self.t_view_min += t_u
+
     def update(self, other_profile):
         self.t_sampling += other_profile.t_sampling
         self.t_view_min += other_profile.t_view_min

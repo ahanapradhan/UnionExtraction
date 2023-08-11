@@ -30,7 +30,7 @@ def checkOrdering(obj, result):
     reference_value = result[1][obj.index]
     for i in range(2, len(result)):
         if result[i][obj.index] != reference_value:
-            return 'desc' if result[i][obj.index] > reference_value else 'asc'
+            return 'asc' if result[i][obj.index] > reference_value else 'desc'
     return None
 
 
@@ -211,7 +211,7 @@ class OrderBy(AfterWhereClauseBase):
                                 second = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 1))
                         insert_values1.append(first)
                         insert_values2.append(second)
-                        if k == no_of_db - 1 and (attrib_inner == obj.attrib or 'count' in obj.aggregation):
+                        if k == no_of_db - 1 and (attrib_inner == obj.attrib or 'Count' in obj.aggregation):
                             # swap first and second
                             insert_values2[-1], insert_values1[-1] = insert_values1[-1], insert_values2[-1]
                         if attrib_inner in same_value_list:

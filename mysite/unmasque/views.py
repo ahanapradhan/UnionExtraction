@@ -16,16 +16,24 @@ def login_view(request):
         host = request.POST.get('host')
         port = request.POST.get('port')
         database = request.POST.get('database')
+        query = request.POST.get('query')
         try:
             conn = connect_to_db(database, host, password, port, username)
             print(conn)
+            cur = conn.cursor()
+            try:
+                cur.execute("EXPLAIN" + query)
+            except:
+                print("invalid query")
+                error_message = 'Invalid query. Please try again.'
+                conn.close()
+                return render(request, 'unmasque/login.html', {'error_message': error_message})
             conn.close()
         except OperationalError:
             error_message = 'Invalid credentials. Please try again.'
             return render(request, 'unmasque/login.html', {'error_message': error_message})
 
         connHelper = ConnectionHelper(database, username, password, port, host)
-        query = request.POST.get('query')
         doExtraction(connHelper, query, request)
         return redirect('result')
 
@@ -34,10 +42,18 @@ def login_view(request):
 
 def doExtraction(connHelper, query, request):
     data, tp = UnionPipeLine.extract(connHelper, query)
-    if tp is None:
-        request.session['partials'] = [query, data, "Nothing to Show"]
+    to_pass = [query]
+    if data is not None:
+        to_pass.append(data)
     else:
-        request.session['partials'] = [query, data, tp.get_json_display_string()]
+        to_pass.append("Sorry! Could not extract hidden query!")
+
+    if tp is not None:
+        to_pass.append(tp.get_json_display_string())
+    else:
+        to_pass.append("Nothing to show!")
+
+    request.session['partials'] = to_pass
 
 
 def connect_to_db(database, host, password, port, username):

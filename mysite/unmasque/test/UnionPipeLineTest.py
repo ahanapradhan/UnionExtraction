@@ -76,9 +76,26 @@ class MyTestCase(unittest.TestCase):
     def test_random_nonUnion(self):
         query = "SELECT o_orderdate, SUM(l_extendedprice) AS total_price " \
                 "FROM orders, lineitem where o_orderkey = l_orderkey " \
-                "and o_orderdate >= '1995-01-01' GROUP BY o_orderdate " \
+                "and o_orderdate <= '1995-01-01' GROUP BY o_orderdate " \
                 "ORDER BY total_price DESC LIMIT 10;"
-        eq = UnionPipeLine.extract(self.conn, query)
+        eq, _ = UnionPipeLine.extract(self.conn, query)
+        print(eq)
+        self.assertEqual(eq, "(Select o_orderdate, Sum(l_extendedprice) as total_price"
+                             "\nFrom orders, lineitem\n"
+                             "Where o_orderkey = l_orderkey and o_orderdate  <= '1995-01-02'\n"
+                             "Group By o_orderdate\nOrder By total_price desc, o_orderdate desc\nLimit 10;)")
+
+    def test_another(self):
+        query = "SELECT l_orderkey as key, l_quantity as dummy, " \
+                "l_partkey as s_key FROM lineitem WHERE l_shipdate >= DATE '1994-01-01'" \
+                " AND l_shipdate < DATE '1995-01-01' " \
+                "AND l_quantity > 30 UNION ALL SELECT " \
+                "ps_partkey as key, ps_supplycost as dummy, " \
+                "ps_suppkey as s_key FROM partsupp, orders WHERE" \
+                " partsupp.ps_suppkey = orders.o_custkey " \
+                "AND orders.o_orderdate >= DATE '1994-01-01' AND orders.o_orderdate < DATE '1995-01-01' " \
+                "AND partsupp.ps_supplycost < 100;"
+        eq, _ = UnionPipeLine.extract(self.conn, query)
         print(eq)
 
 
