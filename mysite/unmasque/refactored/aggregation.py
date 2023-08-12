@@ -5,6 +5,7 @@ import math
 from ..refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
 from ..refactored.util.utils import is_number, get_val_plus_delta, get_dummy_val_for, get_format, \
     get_char, isQ_result_empty
+from ..src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 
 
 def get_k_value_for_number(a, b):
@@ -12,7 +13,7 @@ def get_k_value_for_number(a, b):
         k_value = 1
         if a == 2:
             k_value = 2
-        agg_array = ['Sum', k_value * a + b, 'Avg', a, 'Min', a, 'Max', a, 'Count', k_value + 1]
+        agg_array = [SUM, k_value * a + b, AVG, a, MIN, a, MAX, a, COUNT, k_value + 1]
     else:
         constraint_array = [0, a, b, a - 1, b - 1]
         if a != 0:
@@ -27,7 +28,7 @@ def get_k_value_for_number(a, b):
         avg = round((k_value * a + b) / (k_value + 1), 2)
         if avg / int(avg) == 1:
             avg = int(avg)
-        agg_array = ['Sum', k_value * a + b, 'Avg', avg, 'Min', min(a, b), 'Max', max(a, b), 'Count', k_value + 1]
+        agg_array = [SUM, k_value * a + b, AVG, avg, MIN, min(a, b), MAX, max(a, b), COUNT, k_value + 1]
     return k_value, agg_array
 
 
@@ -36,7 +37,7 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
                              or 'numeric' in attrib_types_dict[(tabname, attrib)]):
         a = b = 3
         k_value = 1
-        agg_array = ['Sum', k_value * a + b, 'Avg', a, 'Min', a, 'Max', a, 'Count', k_value + 1]
+        agg_array = [SUM, k_value * a + b, AVG, a, MIN, a, MAX, a, COUNT, k_value + 1]
     elif (tabname, attrib) in filter_attrib_dict.keys():
         if ('int' in attrib_types_dict[(tabname, attrib)]
                 or 'numeric' in attrib_types_dict[(tabname, attrib)]):
@@ -53,7 +54,7 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
             date_val_plus_1 = get_val_plus_delta('date', date_val, 1)
             b = get_format('date', min(date_val_plus_1, filter_attrib_dict[(tabname, attrib)][1]))
             k_value = 1
-            agg_array = ['Min', min(a, b), 'Max', max(a, b)]
+            agg_array = [MIN, min(a, b), MAX, max(a, b)]
             a = ast.literal_eval(a)
             b = ast.literal_eval(b)
         else:
@@ -67,26 +68,26 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
             a = a.replace('%', '')
             b = b.replace('%', '')
             k_value = 1
-            agg_array = ['Min', min(a, b), 'Max', max(a, b)]
+            agg_array = [MIN, min(a, b), MAX, max(a, b)]
     else:
         if 'date' in attrib_types_dict[(tabname, attrib)]:
             a = get_format('date', get_dummy_val_for('date'))
             b = get_format('date', get_val_plus_delta('date', get_dummy_val_for('date'), 1))
             k_value = 1
-            agg_array = ['Min', min(a, b), 'Max', max(a, b)]
+            agg_array = [MIN, min(a, b), MAX, max(a, b)]
         elif ('int' in attrib_types_dict[(tabname, attrib)]
               or 'numeric' in attrib_types_dict[(tabname, attrib)]):
             # Combination which gives all different results for aggregation
             a = 5
             b = 8
             k_value = 2
-            agg_array = ['Sum', 18, 'Avg', 6, 'Min', 5, 'Max', 8, 'Count', 3]
+            agg_array = [SUM, 18, AVG, 6, MIN, 5, MAX, 8, COUNT, 3]
         else:
             # String data type
             a = get_char(get_dummy_val_for('char'))
             b = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 1))
             k_value = 1
-            agg_array = ['Min', min(a, b), 'Max', max(a, b)]
+            agg_array = [MIN, min(a, b), MAX, max(a, b)]
     return a, agg_array, b, k_value
 
 
@@ -114,7 +115,7 @@ class Aggregation(AfterWhereClauseBase):
         self.global_groupby_attributes = groupby_attribs
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
-        # Assuming NO DISTINCT IN AGGREGATION
+        # AsSUMing NO DISTINCT IN AGGREGATION
 
         self.global_aggregated_attributes = [(element, '') for element in self.global_projected_attributes]
         if not self.has_groupby:
@@ -207,7 +208,7 @@ class Aggregation(AfterWhereClauseBase):
 
         for i in range(len(self.global_projected_attributes)):
             if self.global_projected_attributes[i] == '':
-                self.global_aggregated_attributes[i] = ('', 'count(*)')
+                self.global_aggregated_attributes[i] = ('', COUNT_STAR)
 
         return True
 

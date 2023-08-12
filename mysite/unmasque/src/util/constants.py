@@ -17,3 +17,10 @@ TEMP_TABNAME = "temp"
 NO_UNION = "No union present in the query"
 local_elapsed_time = 0
 method_call_count = 0
+
+SUM = 'Sum'
+AVG = 'Avg'
+MIN = 'Min'
+MAX = 'Max'
+COUNT = 'Count'
+COUNT_STAR = 'Count(*)'

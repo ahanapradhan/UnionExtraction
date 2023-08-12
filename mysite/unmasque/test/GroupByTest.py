@@ -58,7 +58,7 @@ class MyTestCase(unittest.TestCase):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
-        from_rels = tpchSettings.from_rels['Q3']
+        from_rels = tpchSettings.from_rels['Q3_1']
 
         filter_predicates = [('customer', 'c_mktsegment', 'equal', 'BUILDING', 'BUILDING'),
                              ('orders', 'o_orderdate', '<=', datetime.date(1, 1, 1), datetime.date(1995, 3, 14)),
@@ -113,7 +113,7 @@ class MyTestCase(unittest.TestCase):
         gb = GroupBy(self.conn, global_attrib_types, from_rels,
                      filter_predicates, global_all_attribs, join_graph, projections)
 
-        check = gb.doJob(queries.Q3)
+        check = gb.doJob(queries.Q3_1)
         self.assertTrue(check)
 
         self.assertTrue(gb.has_groupby)

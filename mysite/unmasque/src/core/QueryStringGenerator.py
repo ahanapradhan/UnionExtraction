@@ -1,5 +1,6 @@
 import copy
 
+from ..util.constants import COUNT, SUM
 from ...refactored.abstract.ExtractorBase import Base
 from ...refactored.executable import Executable
 from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val
@@ -8,14 +9,14 @@ from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_v
 def refine_aggregates(agg, wc):
     for i, attrib in enumerate(agg.global_projected_attributes):
         if attrib in wc.global_key_attributes and attrib in agg.global_groupby_attributes:
-            if not any(keyword in agg.global_aggregated_attributes[i][1] for keyword in ['Sum', 'Count']):
+            if not any(keyword in agg.global_aggregated_attributes[i][1] for keyword in [SUM, COUNT]):
                 agg.global_aggregated_attributes[i] = (agg.global_aggregated_attributes[i][0], '')
     temp_list = copy.deepcopy(agg.global_groupby_attributes)
     for attrib in temp_list:
         if attrib not in agg.global_projected_attributes:
             agg.global_groupby_attributes.remove(attrib)
         else:
-            if not any(elt[0] == attrib and ('Sum' in elt[1] or 'Count' in elt[1]) for elt in
+            if not any(elt[0] == attrib and (SUM in elt[1] or COUNT in elt[1]) for elt in
                        agg.global_aggregated_attributes):
                 agg.global_groupby_attributes.remove(attrib)
 
@@ -104,7 +105,7 @@ class QueryStringGenerator(Base):
         for i in range(len(agg.global_projected_attributes)):
             attrib = agg.global_projected_attributes[i]
             if attrib in wc.global_key_attributes and attrib in agg.global_groupby_attributes:
-                if not ('Sum' in agg.global_aggregated_attributes[i][1] or 'Count' in
+                if not (SUM in agg.global_aggregated_attributes[i][1] or COUNT in
                         agg.global_aggregated_attributes[i][1]):
                     agg.global_aggregated_attributes[i] = (agg.global_aggregated_attributes[i][0], '')
         temp_list = copy.deepcopy(agg.global_groupby_attributes)
@@ -117,7 +118,7 @@ class QueryStringGenerator(Base):
                 continue
             remove_flag = True
             for elt in agg.global_aggregated_attributes:
-                if elt[0] == attrib and (not ('Sum' in elt[1] or 'Count' in elt[1])):
+                if elt[0] == attrib and (not (SUM in elt[1] or COUNT in elt[1])):
                     remove_flag = False
                     break
             if remove_flag:
@@ -140,7 +141,7 @@ class QueryStringGenerator(Base):
         for i in range(len(agg.global_projected_attributes)):
             elt = agg.global_projected_attributes[i]
             if agg.global_aggregated_attributes[i][1] != '':
-                if 'Count' in agg.global_aggregated_attributes[i][1]:
+                if COUNT in agg.global_aggregated_attributes[i][1]:
                     elt = agg.global_aggregated_attributes[i][1]
                 else:
                     elt = agg.global_aggregated_attributes[i][1] + '(' + elt + ')'
@@ -172,7 +173,7 @@ class QueryStringGenerator(Base):
             if agg.global_aggregated_attributes[i][1] != '':
                 suffix = f'({elt})' if elt else ""
                 elt = agg.global_aggregated_attributes[i][1] + suffix
-                if 'Count' in agg.global_aggregated_attributes[i][1]:
+                if COUNT in agg.global_aggregated_attributes[i][1]:
                     elt = agg.global_aggregated_attributes[i][1]
             if elt and elt != pj.projection_names[i]:
                 elt = f'{elt} as {pj.projection_names[i]}' if pj.projection_names[i] else elt
