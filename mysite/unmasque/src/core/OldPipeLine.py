@@ -132,6 +132,9 @@ def extract(connectionHelper,
         print("Some error while extrating aggregations. Aborting extraction!")
         return None, time_profile
 
+    # last component in the pipeline should do this
+    time_profile.update_for_app(lm.app.local_elapsed_time)
+
     q_generator = QueryStringGenerator(connectionHelper)
     eq = q_generator.generate_query_string(core_relations, wc, pj, gb, agg, ob, lm)
     print("extracted query without NEP:\n", eq)
