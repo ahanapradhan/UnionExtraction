@@ -4,11 +4,19 @@ sys.path.append(".")
 from ..util.utils import get_combs, construct_maxNonNulls
 
 
+def isMinusQuery(QH, s, db):
+    Res = nullify_and_runQuery(QH, db, s)
+    return not db.isEmpty(Res)
+
+
 def algo(db, QH):
     Partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S = init(db, QH)
 
     if len(Partial_QH) == 0:
         return {frozenset(db.fromtabs)}, construct_pretty_print_string({frozenset(db.fromtabs)})
+
+    if isMinusQuery(QH, Partial_QH, db):
+        return db.doJob(QH), db.comtabs
 
     NonNulls = construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db)
 
