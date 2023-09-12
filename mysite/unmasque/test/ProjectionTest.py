@@ -81,15 +81,6 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q3']
-        # minimizer = ViewMinimizer(self.conn, from_rels, False)
-        # check = minimizer.doJob(queries.Q3)
-        # self.assertTrue(check)
-
-        # wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
-        #                 minimizer.global_other_info_dict, minimizer.global_result_dict,
-        #                 minimizer.global_min_instance_dict)
-
-        # wc.doJob(queries.Q3)
 
         filter_predicates = [('customer', 'c_mktsegment', 'equal', 'BUILDING', 'BUILDING'),
                              ('orders', 'o_orderdate', '<=', datetime.date(1, 1, 1), datetime.date(1995, 3, 14)),
@@ -218,9 +209,6 @@ class MyTestCase(unittest.TestCase):
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
 
-        # self.assertEqual(frozenset({'orderkey', 'revenue', 'orderdate', 'shippriority'}),
-        #                  frozenset(set(pj.projection_names)))
-        # to-do: check if the projected attributes for 'revenue' col is indeed ''
         self.assertEqual(frozenset({'o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate', 'o_shippriority'}),
                          frozenset(set(pj.projected_attribs)))
 

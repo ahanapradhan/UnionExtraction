@@ -92,6 +92,8 @@ class Projection(AfterWhereClauseBase):
         self.projected_attribs = None
         self.dependencies = None
         self.solution = None
+        # List of list of all the subsets of the dependencies of an output column (having more than one dependencies)
+        # Suppose a column is dependent on a and b, corresponding index of that column in param_list will contain, [a,b,a*b]
         self.param_list = []
 
     def construct_values_used(self, attrib_types_dict):
@@ -279,14 +281,18 @@ class Projection(AfterWhereClauseBase):
         indices_to_check = []
         print("Projected Attrib", projected_attrib)
         for i in range(len(projected_attrib)):
+            # Construct the initial dependency list
             if projected_attrib[i] != '':
-                projection_dep.append([("identical_expr_nc", projected_attrib[i])])
+                # If identical, add a single tuple list, ("identical_expr_nc", attrib)
+                projection_dep.append([(constants.IDENTICAL_EXPR, projected_attrib[i])])
             else:
+                # Otherwise initialize an empty list, and add the index to be checked
                 projection_dep.append([])
                 indices_to_check.append(i)
         #print("Indices To check", indices_to_check)
         value_used = self.construct_values_used(attrib_types_dict)
         value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+        # Prev Result to check for changes
         prev_result = self.app.doJob(query)
         for idx in indices_to_check:
             projection_dep[idx] = self.get_dependence(idx, projection_names, query, prev_result, attrib_types_dict, value_used)
@@ -298,15 +304,15 @@ class Projection(AfterWhereClauseBase):
         for tab_idx in range(len(self.core_relations)):
             tabname = self.core_relations[tab_idx]
             attrib_list = self.global_all_attribs[tab_idx]
-            coinc = 0
+            coinc = 0 # Coincidence
             update_value = None
             attrib_idx = 0
             while attrib_idx < len(attrib_list):
                 attrib = attrib_list[attrib_idx]
-                #print("searching column", attrib, coinc)
-                #print("Dependencies", dep_list)
                 fil = 0
                 join = 0
+
+                # Check if the attribute is part of Filter or Join Predicates
                 for pred in self.global_filter_predicates:
                     if pred[0] == tabname and pred[1] == attrib:
                         fil = pred
@@ -320,27 +326,29 @@ class Projection(AfterWhereClauseBase):
                         break
                 
 
-                if fil!=0:
-                    #print("Filter", fil)
-                    if coinc ==0:
-                        update_value = fil[3]
+                if fil:
+                    # Handle attributes involved in filter predicates.
+                    if not coinc:
+                        update_value = fil[3] # Min Value for first test
                     else:
+                        # Take Max value for to check for coincidence
                         if 'date' in attrib_types_dict[(tabname, attrib)]: 
                             update_value = fil[4]- datetime.timedelta(days=1)
                         else: 
                             update_value = fil[4]
                 update_multi = []
-                if join != 0:
+                if join:
+                    # Code to be added later for attribs involved in join
                     attrib_idx += 1
                     continue
                     dummy_val = get_dummy_val_for('int')
-                    if fil != 0:
+                    if fil:
                         dummy_val = update_value
                     for val in join:
                         update_multi.append(val)
                         update_multi.append(dummy_val)
                 #print("Join Update", update_multi)
-                if fil==0 and join==0:
+                if not fil and not join:
                     if 'int' in attrib_types_dict[(tabname, attrib)] or 'numeric' in attrib_types_dict[(tabname, attrib)]:
                         update_value = get_unused_dummy_val('int', value_used)
                         value_used[value_used.index(attrib)+1] = update_value
@@ -350,12 +358,12 @@ class Projection(AfterWhereClauseBase):
                         value_used[value_used.index(attrib)+1] = update_value
 
                     elif 'boolean' in attrib_types_dict[(tabname, attrib)]:
-                        if coinc == 0:
+                        if not coinc:
                             update_value = constants.dummy_boolean
                         else: 
                             update_value = not update_value
                     elif 'bit varying' in attrib_types_dict[(tabname, attrib)]: 
-                        if coinc == 0:
+                        if not coinc:
                             update_value = constants.dummy_varbit
                         else:
                             update_value += format(1, 'b')
@@ -377,8 +385,10 @@ class Projection(AfterWhereClauseBase):
                     attrib_idx+=1
                     coinc = 0
                 elif coinc == 0:
+                    # Try again to check for coincidence
                     coinc = 1
                 else:
+                    # Not a coincidence
                     coinc = 0
                     attrib_idx +=1
         return dep_list
@@ -387,8 +397,9 @@ class Projection(AfterWhereClauseBase):
         solution = []
         for idx_pro, ele in enumerate(projected_attrib):
             print("ele being checked", ele, idx_pro)
-            if projection_dep[idx_pro] == [] or (len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == "identical_expr_nc"):
+            if projection_dep[idx_pro] == [] or (len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == constants.IDENTICAL_EXPR):
                 print("Simple Projection, Continue")
+                # Identical output column, so append empty list and continue
                 solution.append([])
                 self.param_list.append([])
             else:
@@ -399,13 +410,15 @@ class Projection(AfterWhereClauseBase):
                 solution.append(self.get_solution(attrib_types_dict,projection_dep, projection_names, idx_pro, prev_result, value_used, query))
         return solution
 
-
+    # Solve Ax=b to get the expression of the output column
     def get_solution(self, attrib_types_dict, projection_dep, projection_names, idx, prev_res, value_used, query):
         dep = projection_dep[idx]
         n = len(dep)
         fil_check = []
-        local_param_list = []
+        local_param_list = [] # param_list for only this output column
+        
         for ele in dep:
+            # Construct a list of list that will be used to check if the attrib belongs to filter predicate
             fil = 0
             for pred in self.global_filter_predicates:
                 if pred[0] == ele[0] and pred[1] == ele[1]:
@@ -415,24 +428,30 @@ class Projection(AfterWhereClauseBase):
                 fil_check.append(False)
             else:
                 fil_check.append(fil)
+
         coeff = np.zeros((2**n, 2**n))
+
         for i in range(n):
             coeff[0][i] = value_used[value_used.index(dep[i][1]) +1]
             local_param_list.append(value_used[value_used.index(dep[i][1])])
         ele = 1
         for i in range(n, 2**n-1):
+            # Given the values of the n dependencies, we form the rest 2^n - n combinations
             ele = int(i/n)
             coeff[0][i] = coeff[0][(i-n)]*coeff[0][(i+ele)%n]
             local_param_list.append(local_param_list[(i-n)] + "*" + local_param_list[(i+ele)%n])
+        
         coeff[0][2**n-1] = 1
         print("Param List", local_param_list)
         self.param_list.append(local_param_list)
         curr_rank = 1
         outer_idx = 1
         while outer_idx < 2**n and curr_rank < 2**n:
+            # Same algorithm as above with insertion of random values
+            # Additionally checking if rank of the matrix has become 2^n
             for j in  range(n):
-                mi = 1
-                ma = 999
+                mi = constants.pr_min
+                ma = constants.pr_max
                 if fil_check[j]:
                     mi = fil_check[j][3]
                     ma = fil_check[j][4]
@@ -463,7 +482,7 @@ class Projection(AfterWhereClauseBase):
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
         for idx_pro, ele in enumerate(projected_attrib):
-            if projection_dep[idx_pro] == [] or (len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == "identical_expr_nc"):
+            if projection_dep[idx_pro] == [] or (len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == constants.IDENTICAL_EXPR):
                 continue
             else:
                 projected_attrib[idx_pro] = self.build_equation_helper(projection_sol[idx_pro], projection_dep[idx_pro], self.param_list[idx_pro])

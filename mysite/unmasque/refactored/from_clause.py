@@ -70,9 +70,7 @@ class FromClause(Base):
         if not check:
             return False
         self.all_relations = self.init.all_relations
-        temp = super().doJob(*args)
-        print("Output", temp)
-        return temp
+        return super().doJob(*args)
 
     def doActualJob(self, args):
         query, method = self.extract_params_from_args(args)
@@ -81,7 +79,6 @@ class FromClause(Base):
             self.get_core_relations_by_rename(query)
         else:
             self.get_core_relations_by_error(query)
-        
         return self.core_relations
 
 

@@ -7,13 +7,13 @@ from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.from_clause import FromClause
 from mysite.unmasque.test import queries
 
-db_name = "tpch"
-user = "leftnomemes"
-password = "root"
-port = "5432"
-host = "localhost"
-
 class MyTestCase(unittest.TestCase):
+
+    db_name = "tpch"
+    user = "leftnomemes"
+    password = "root"
+    port = "5432"
+    host = "localhost"
 
     def test_like_tpchq1(self):
         query = queries.tpch_query1
@@ -42,7 +42,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_no_tables_in_db(self):
         query = "select count(*) from lineitem"
-        conn = ConnectionHelper("leftnomemes", user, password, port, host)
+        conn = ConnectionHelper("postgres", user, password, port, host)
         conn.connectUsingParams()
         self.assertTrue(conn.conn is not None)
         fc = FromClause(conn)

@@ -48,7 +48,6 @@ class UN1FromClause(Schema, Base):
 
     def doActualJob(self, args):
         QH = self.extract_params_from_args(args)
-        print("QH", QH)
         fromTabQ = set(self.get_fromTabs(QH))
         comTabQ = set(self.get_comTabs(QH))
         partTabQ = fromTabQ.difference(comTabQ)

@@ -70,8 +70,6 @@ def get_unused_dummy_val(datatype, value_used):
     elif datatype == 'char':
         dint = get_char(dint)
         constants.dummy_char = get_int(dint)
-
-    #print("Val", datatype, dint)
     return dint
 
 
