@@ -20,6 +20,7 @@ def login_view(request):
         try:
             conn = connect_to_db(database, host, password, port, username)
             print(conn)
+            print(query)
             cur = conn.cursor()
             try:
                 cur.execute("EXPLAIN " + query)
@@ -40,6 +41,7 @@ def login_view(request):
 
 
 def doExtraction(connHelper, query, request):
+    print("Inside Do Helper")
     data, tp = UnionPipeLine.extract(connHelper, query)
     to_pass = [query]
     if data is not None:

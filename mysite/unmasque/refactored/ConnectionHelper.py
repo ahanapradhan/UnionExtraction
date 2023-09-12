@@ -3,7 +3,7 @@ import psycopg2.extras
 
 
 def cus_execute_sqls(cur, sqls):
-    print(cur)
+    #print(cur)
     for sql in sqls:
         print("..cur execute.." + sql)
         cur.execute(sql)
