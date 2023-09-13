@@ -99,13 +99,13 @@ queries_dict = {'tpch_query1': tpch_query1,
                 'Q10_simple': Q10_simple
                 }
 '''
-(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905 limit 2)
+(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905 limit 3)
 union
 all(select
 l_orderkey as key
 from lineitem, orders
 where
-l_orderkey = o_orderkey and o_totalprice <= 905 limit 2) union
+l_orderkey = o_orderkey and o_totalprice <= 905 limit 3) union
 all(select
 o_orderkey as key
 from customer, orders

@@ -1,29 +1,31 @@
 import unittest
 
-from mysite.unmasque.src.core import UnionPipeLine, algorithm1
+from mysite.unmasque.src.core import algorithm1
 from mysite.unmasque.src.core.union_from_clause import UnionFromClause
+from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
 from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.test.util import queries
 
 
 class MyTestCase(unittest.TestCase):
     conn = ConnectionHelper()
+    pipeline = UnionPipeLine(conn)
 
     def test_nonUnion_query(self):
         key = 'tpch_query1'
         query = queries.queries_dict[key]
-        u_Q, tp = UnionPipeLine.extract(self.conn, query)
+        u_Q = self.pipeline.extract(query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
-        tp.print()
+        self.pipeline.time_profile.print()
 
     def test_nonUnion_query_Q2(self):
         key = 'Q3'
         query = queries.queries_dict[key]
-        u_Q, tp = UnionPipeLine.extract(self.conn, query)
+        u_Q = self.pipeline.extract(query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
-        tp.print()
+        self.pipeline.time_profile.print()
 
     def test_nonUnion_queries(self):
         Q_keys = queries.queries_dict.keys()
@@ -31,7 +33,7 @@ class MyTestCase(unittest.TestCase):
         q_no = 1
         for q_key in Q_keys:
             query = queries.queries_dict[q_key]
-            u_Q, tp = UnionPipeLine.extract(self.conn, query)
+            u_Q = self.pipeline.extract(query)
             self.assertTrue(u_Q is not None)
             print(u_Q)
             f.write("\n" + str(q_no) + ":")
@@ -40,7 +42,7 @@ class MyTestCase(unittest.TestCase):
             f.write("\n*** Extracted Query:\n")
             f.write(u_Q)
             f.write("\n---------------------------------------\n")
-            tp.print()
+            self.pipeline.time_profile.print()
             q_no += 1
         f.close()
 
@@ -51,14 +53,10 @@ class MyTestCase(unittest.TestCase):
                 "905) " \
                 "union all " \
                 "(select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);"
-        u_Q, tp = UnionPipeLine.extract(self.conn, query)
+        u_Q = self.pipeline.extract(query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
-        f = open("check.txt", 'w')
-        f.write(query + "\n\n")
-        f.write(u_Q)
-        f.close()
-        tp.print()
+        self.pipeline.time_profile.print()
 
     def test_unionQuery_ui_caught_case(self):
         self.conn.connectUsingParams()
@@ -78,7 +76,7 @@ class MyTestCase(unittest.TestCase):
                 "FROM orders, lineitem where o_orderkey = l_orderkey " \
                 "and o_orderdate <= '1995-01-01' GROUP BY o_orderdate " \
                 "ORDER BY total_price DESC LIMIT 10;"
-        eq, _ = UnionPipeLine.extract(self.conn, query)
+        eq = self.pipeline.extract(query)
         print(eq)
         self.assertEqual(eq, "(Select o_orderdate, Sum(l_extendedprice) as total_price"
                              "\nFrom orders, lineitem\n"
@@ -95,7 +93,7 @@ class MyTestCase(unittest.TestCase):
                 " partsupp.ps_suppkey = orders.o_custkey " \
                 "AND orders.o_orderdate >= DATE '1994-01-01' AND orders.o_orderdate < DATE '1995-01-01' " \
                 "AND partsupp.ps_supplycost < 100;"
-        eq, _ = UnionPipeLine.extract(self.conn, query)
+        eq = self.pipeline.extract(query)
         print(eq)
 
 

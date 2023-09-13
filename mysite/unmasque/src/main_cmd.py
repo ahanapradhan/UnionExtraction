@@ -1,4 +1,4 @@
-from mysite.unmasque.src.core import ExtractionPipeLine
+from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 
 # Press the green button in the gutter to run the script.
@@ -9,10 +9,11 @@ if __name__ == '__main__':
          "group by l_orderkey, o_orderdate, o_shippriority, c_mktsegment limit 4;"
 
     conn = ConnectionHelper()
-    eq, time = ExtractionPipeLine.extract(conn, hq)
+    pipeline = ExtractionPipeLine(conn)
+    eq = pipeline.extract(hq)
 
     print("=========== Extracted Query =============")
     print(eq)
-    time.print()
+    pipeline.time_profile.print()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

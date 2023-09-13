@@ -2,14 +2,15 @@ import unittest
 
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
-from mysite.unmasque.src.core import ExtractionPipeLine
 from mysite.unmasque.src.core.union_from_clause import UnionFromClause
+from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.test.util import tpchSettings, queries
 
 
 class MyTestCase(unittest.TestCase):
     conn = ConnectionHelper()
+    pipeline = ExtractionPipeLine(conn)
 
     def test_basic_flow(self):
         query = "(select l_partkey as key from lineitem, part where l_partkey = p_partkey limit 2) " \
@@ -32,7 +33,8 @@ class MyTestCase(unittest.TestCase):
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels[q_key]
         query = queries.queries_dict[q_key]
-        eq, _ = ExtractionPipeLine.after_from_clause_extract(self.conn, query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
+        eq, _ = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
+                                                        tpchSettings.key_lists)
         self.conn.closeConnection()
         self.assertTrue(eq is not None)
 
@@ -53,7 +55,8 @@ class MyTestCase(unittest.TestCase):
             f.write("\n" + str(q_no) + ":")
             f.write("\tHidden Query:\n")
             f.write(query)
-            eq, _ = ExtractionPipeLine.after_from_clause_extract(self.conn, query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
+            eq, _ = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
+                                                            tpchSettings.key_lists)
             f.write("\n*** Extracted Query:\n")
             if eq is None:
                 f.write("Extraction Failed!")

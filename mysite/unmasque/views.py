@@ -2,7 +2,7 @@ import psycopg2
 from django.shortcuts import render, redirect
 from psycopg2 import OperationalError
 
-from .src.core import UnionPipeLine
+from .src.pipeline.UnionPipeLine import UnionPipeLine
 from .src.util.ConnectionHelper import ConnectionHelper
 
 
@@ -40,7 +40,9 @@ def login_view(request):
 
 
 def doExtraction(connHelper, query, request):
-    data, tp = UnionPipeLine.extract(connHelper, query)
+    pipeline = UnionPipeLine(connHelper)
+    data = pipeline.extract(query)
+    tp = pipeline.time_profile
     to_pass = [query]
     if data is not None:
         to_pass.append(data)
