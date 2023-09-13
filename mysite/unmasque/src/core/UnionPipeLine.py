@@ -2,6 +2,7 @@ import time
 
 from . import algorithm1, ExtractionPipeLine
 from .elapsed_time import create_zero_time_profile
+from .union import Union
 from .union_from_clause import UnionFromClause
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
@@ -12,15 +13,12 @@ def extract(connectionHelper, query):
     # opening and closing connection actions are vital.
     connectionHelper.connectUsingParams()
 
-    db = UnionFromClause(connectionHelper)
-    start_time = time.time()
-    p, pstr = algorithm1.algo(db, query)
+    union = Union(connectionHelper)
+    p, pstr = union.doJob(query)
+    t_union_profile.update_for_union(union.local_elapsed_time)
+    all_relations = union.all_relations
+    key_lists = union.key_lists
 
-    all_relations = db.get_relations()
-    end_time = time.time()
-    t_union_profile.update_for_union(end_time - start_time)
-
-    key_lists = db.fromClause.init.global_key_lists
     connectionHelper.closeConnection()
 
     u_eq = []
