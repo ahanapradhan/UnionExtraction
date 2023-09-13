@@ -55,12 +55,12 @@ class UnionFromClause(Schema, Base):
 
     def get_fromTabs(self, QH):
         if self.fromtabs is None:
-            self.fromtabs = self.fromClause.doJob([QH, "error"])
+            self.fromtabs = self.fromClause.doJob(QH, "error")
         print(str(self.fromtabs))
         return self.fromtabs
 
     def get_comTabs(self, QH):
         if self.comtabs is None:
-            self.comtabs = self.fromClause.doJob([QH, "rename"])
+            self.comtabs = self.fromClause.doJob(QH, "rename")
         return self.comtabs
 

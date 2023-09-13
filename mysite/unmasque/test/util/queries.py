@@ -144,16 +144,7 @@ UNION ALL
 FROM supplier, partsupp where s_suppkey = ps_suppkey
 and ps_availqty > 200);
 
-(SELECT r_regionkey, r_name
-FROM region 
-WHERE r_comment LIKE '%America%')
-UNION ALL
-(SELECT n_nationkey, n_name
-FROM nation, region  where n_regionkey = r_regionkey
-and r_name = 'AMERICA')
-UNION ALL
-(SELECT s_suppkey, s_name FROM supplier, nation where s_nationkey = n_nationkey
-and n_name = 'UNITED STATES');
+
 
 
 
