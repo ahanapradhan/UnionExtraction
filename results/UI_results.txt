@@ -394,3 +394,121 @@ NEP:                                  0 ms.
 Result Comparator:                    0 ms.
 Number of Times Executable called:    0
 
+
+Hidden Query
+
+(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905 limit 2)
+union
+all(select
+l_orderkey as key
+from lineitem, orders
+where
+l_orderkey = o_orderkey and o_totalprice <= 905 limit 2) union
+all(select
+o_orderkey as key
+from customer, orders
+where
+c_custkey = o_custkey and o_totalprice <= 890 limit 3);
+
+Extracted Query
+
+(Select o_orderkey as key
+From customer, orders
+Where c_custkey = o_custkey and o_totalprice  <= 890.0
+Limit 3)
+ UNION ALL
+(Select p_partkey as key
+From lineitem, part
+Where p_partkey = l_partkey and l_extendedprice  <= 905.0
+Group By p_partkey
+Limit 2)
+ UNION ALL
+(Select o_orderkey as key
+From lineitem, orders
+Where o_orderkey = l_orderkey and o_totalprice  <= 905.0
+Group By o_orderkey
+Limit 2);
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      22924 ms.
+Correlated Sampling:                  25109 ms.
+View Minimization:                    29126 ms.
+Where Clause:                         2694 ms.
+Projection:                           18 ms.
+Group BY:                             430 ms.
+Aggregation:                          0 ms.
+Order by:                             8 ms.
+Limit:                                2108 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    0
+
+
+Hidden Query
+
+(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905 limit 2)
+union
+all(select
+l_orderkey as key
+from lineitem, orders
+where
+l_orderkey = o_orderkey and o_totalprice <= 905 limit 2) union
+all(select
+o_orderkey as key
+from customer, orders
+where
+c_custkey = o_custkey and o_totalprice <= 890 limit 3);
+
+Extracted Query
+
+(Select o_orderkey as key
+From lineitem, orders
+Where o_orderkey = l_orderkey and o_totalprice  <= 905.0
+Group By o_orderkey
+Limit 2)
+ UNION ALL
+(Select p_partkey as key
+From lineitem, part
+Where p_partkey = l_partkey and l_extendedprice  <= 905.0
+Group By p_partkey
+Limit 2)
+ UNION ALL
+(Select o_orderkey as key
+From customer, orders
+Where c_custkey = o_custkey and o_totalprice  <= 890.0
+Limit 3);
+
+Performance
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      65349 ms.
+Correlated Sampling:                  17278 ms.
+View Minimization:                    16878 ms.
+Where Clause:                         1075 ms.
+Projection:                           14 ms.
+Group BY:                             622 ms.
+Aggregation:                          0 ms.
+Order by:                             10 ms.
+Limit:                                3742 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    0
+
+
+--------------Extraction Time per Module in the Pipeline------------------:
+Union Detection:                      93445 ms.
+Correlated Sampling:                  7250 ms.
+View Minimization:                    52081 ms.
+Where Clause:                         443 ms.
+Projection:                           11 ms.
+Group BY:                             327 ms.
+Aggregation:                          8 ms.
+Order by:                             31 ms.
+Limit:                                1962 ms.
+NEP:                                  0 ms.
+Result Comparator:                    0 ms.
+Number of Times Executable called:    0

@@ -1,0 +1,122 @@
+Subject: [PATCH] Minus pipeline Q1 extraction
+---
+Index: mysite/unmasque/src/core/MinusPipeLine.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/mysite/unmasque/src/core/MinusPipeLine.py b/mysite/unmasque/src/core/MinusPipeLine.py
+new file mode 100644
+--- /dev/null	(revision 76478d1cb1d939407bc869be46644bcd0ab79d6c)
++++ b/mysite/unmasque/src/core/MinusPipeLine.py	(revision 76478d1cb1d939407bc869be46644bcd0ab79d6c)
+@@ -0,0 +1,38 @@
++from mysite.unmasque.refactored.util.common_queries import alter_table_rename_to, create_table_like, get_tabname_un, \
++    drop_table
++from mysite.unmasque.src.core import algorithm1, OldPipeLine
++from mysite.unmasque.src.core.UN1_from_clause import UN1FromClause
++
++
++def extract(connectionHelper, query):
++    connectionHelper.connectUsingParams()
++
++    db = UN1FromClause(connectionHelper)
++    global_pk_dict = db.fromClause.init.global_pk_dict
++    parttabs, comtabs = algorithm1.algo(db, query)
++    all_relations = db.get_relations()
++    key_lists = db.fromClause.init.global_key_lists
++
++    nullify_relations(connectionHelper, parttabs)
++    eq, _ = OldPipeLine.extract(connectionHelper, query,
++                                all_relations,
++                                comtabs,
++                                key_lists,
++                                global_pk_dict)
++    revert_nullifications(connectionHelper, parttabs)
++    connectionHelper.closeConnection()
++
++    return eq, comtabs
++
++
++def nullify_relations(connectionHelper, relations):
++    for tab in relations:
++        connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_un(tab)),
++                                      create_table_like(tab, get_tabname_un(tab))])
++
++
++def revert_nullifications(connectionHelper, relations):
++    for tab in relations:
++        connectionHelper.execute_sql([drop_table(tab),
++                                      alter_table_rename_to(get_tabname_un(tab), tab),
++                                      drop_table(get_tabname_un(tab))])
+Index: mysite/unmasque/src/core/algorithm1.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/mysite/unmasque/src/core/algorithm1.py b/mysite/unmasque/src/core/algorithm1.py
+--- a/mysite/unmasque/src/core/algorithm1.py	(revision 766b42947f88fce1b20f31a03269f378a2b1f974)
++++ b/mysite/unmasque/src/core/algorithm1.py	(revision 76478d1cb1d939407bc869be46644bcd0ab79d6c)
+@@ -4,12 +4,20 @@
+ from ..util.utils import get_combs, construct_maxNonNulls
+ 
+ 
++def isMinusQuery(QH, s, db):
++    Res = nullify_and_runQuery(QH, db, s)
++    return not db.isEmpty(Res)
++
++
+ def algo(db, QH):
+     Partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S = init(db, QH)
+ 
+     if len(Partial_QH) == 0:
+         return {frozenset(db.fromtabs)}, construct_pretty_print_string({frozenset(db.fromtabs)})
+ 
++    if isMinusQuery(QH, Partial_QH, db):
++        return db.doJob(QH), db.comtabs
++
+     NonNulls = construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db)
+ 
+     MaxNonNulls = construct_maxNonNulls(MaxNonNulls, NonNulls)
+Index: mysite/unmasque/test/MinusPipeLineTest.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/mysite/unmasque/test/MinusPipeLineTest.py b/mysite/unmasque/test/MinusPipeLineTest.py
+new file mode 100644
+--- /dev/null	(revision 76478d1cb1d939407bc869be46644bcd0ab79d6c)
++++ b/mysite/unmasque/test/MinusPipeLineTest.py	(revision 76478d1cb1d939407bc869be46644bcd0ab79d6c)
+@@ -0,0 +1,33 @@
++import unittest
++
++from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
++from mysite.unmasque.src.core import MinusPipeLine
++
++
++class MyTestCase(unittest.TestCase):
++    conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
++
++    def test_something(self):
++        query = "(SELECT c_name as name, o_totalprice as balance, c_phone as phone " \
++                "FROM   customer, lineitem, orders " \
++                "WHERE  l_orderkey = o_orderkey " \
++                "and o_custkey = c_custkey " \
++                "and o_orderdate > DATE '1996-01-03' " \
++                "and l_quantity >= 50 " \
++                "and l_shipinstruct = 'COLLECT COD'" \
++                "Group By o_totalprice, c_name, c_phone) " \
++                "EXCEPT " \
++                "(SELECT c_name as name, s_acctbal as balance, s_phone as phone " \
++                "FROM   supplier, customer, nation " \
++                "WHERE  s_nationkey = n_nationkey " \
++                "and c_nationkey = s_nationkey " \
++                "and c_mktsegment = 'MACHINERY' " \
++                "and c_phone like '25%');"
++
++        Q_E, comtabs = MinusPipeLine.extract(self.conn, query)
++        self.assertTrue(len(comtabs) > 0)
++        print(Q_E)
++
++
++if __name__ == '__main__':
++    unittest.main()
