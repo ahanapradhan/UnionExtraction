@@ -1,15 +1,15 @@
 import datetime
 import unittest
 
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.nep import NEP
 from mysite.unmasque.refactored.util.common_queries import get_restore_name, create_table_as_select_star_from
 from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
-from mysite.unmasque.test import tpchSettings
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.test.util import tpchSettings
 
 
 class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+    conn = ConnectionHelper()
 
     def test_something(self):
         self.conn.connectUsingParams()

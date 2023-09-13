@@ -4,8 +4,7 @@ import unittest
 import sys
 sys.path.append("../../../")
 from mysite.unmasque.refactored.aggregation import Aggregation
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
-from mysite.unmasque.test import tpchSettings, queries
+from mysite.unmasque.test.util import tpchSettings, queries
 
 
 class MyTestCase(unittest.TestCase):

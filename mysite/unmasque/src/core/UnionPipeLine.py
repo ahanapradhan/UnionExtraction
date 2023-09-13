@@ -1,9 +1,8 @@
 import time
 
-from . import algorithm1, OldPipeLine
-from .UN1_from_clause import UN1FromClause
+from . import algorithm1, ExtractionPipeLine
 from .elapsed_time import create_zero_time_profile
-from ...refactored.result_comparator import ResultComparator
+from .union_from_clause import UnionFromClause
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
 
@@ -13,8 +12,7 @@ def extract(connectionHelper, query):
     # opening and closing connection actions are vital.
     connectionHelper.connectUsingParams()
 
-    db = UN1FromClause(connectionHelper)
-    global_pk_dict = db.fromClause.init.global_pk_dict
+    db = UnionFromClause(connectionHelper)
     start_time = time.time()
     p, pstr = algorithm1.algo(db, query)
 
@@ -38,11 +36,7 @@ def extract(connectionHelper, query):
 
         connectionHelper.connectUsingParams()
         nullify_relations(connectionHelper, nullify)
-        eq, time_profile = OldPipeLine.extract(connectionHelper, query,
-                                               all_relations,
-                                               core_relations,
-                                               key_lists,
-                                               global_pk_dict)
+        eq, time_profile = ExtractionPipeLine.after_from_clause_extract(connectionHelper, query, all_relations, core_relations, key_lists)
         revert_nullifications(connectionHelper, nullify)
         connectionHelper.closeConnection()
 

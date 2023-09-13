@@ -5,7 +5,7 @@ import numpy as np
 import random
 
 from ..src.util import constants
-from ..refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
+from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
     get_val_plus_delta, get_char, get_dummy_val_for
 
@@ -75,7 +75,7 @@ def add_value_used_for_one_filtered_attrib(attrib_types_dict,
             curr_attrib.append(entry)
 
 
-class Projection(AfterWhereClauseBase):
+class Projection(GenerationPipeLineBase):
     def __init__(self, connectionHelper,
                  global_attrib_types,
                  core_relations,

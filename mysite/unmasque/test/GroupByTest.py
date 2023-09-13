@@ -1,13 +1,13 @@
 import datetime
 import unittest
 
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.groupby_clause import GroupBy
-from mysite.unmasque.test import tpchSettings, queries
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.test.util import tpchSettings, queries
 
 
 class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+    conn = ConnectionHelper()
 
     def test_gb_Q1(self):
         self.conn.connectUsingParams()

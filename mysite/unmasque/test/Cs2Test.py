@@ -2,7 +2,7 @@ import unittest
 
 from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.cs2 import Cs2
-from mysite.unmasque.test import queries, tpchSettings
+from mysite.unmasque.test.util import tpchSettings, queries
 
 
 class MyTestCase(unittest.TestCase):

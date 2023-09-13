@@ -1,14 +1,16 @@
 import datetime
 import unittest
 import sys
+
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+
 sys.path.append("../../../")
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.projection import Projection
-from mysite.unmasque.test import queries, tpchSettings
+from mysite.unmasque.test.util import tpchSettings, queries
 
 
 class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+    conn = ConnectionHelper()
 
     def test_projection_Q1(self):
         self.conn.connectUsingParams()

@@ -1,4 +1,5 @@
 import datetime
+
 min_numeric_val = -2147483648.88
 max_numeric_val = 2147483647.88
 min_int_val = -2147483648
@@ -29,3 +30,12 @@ IDENTICAL_EXPR = "identical_expr_nc"
 # we use 1 and 999 to limit, otw overflow can occur
 pr_min = 1
 pr_max = 999
+
+DATABASE_SECTION = "database"
+SUPPORT_SECTION = "support"
+HOST = "host"
+PORT = "port"
+USER = "user"
+PASSWORD = "password"
+DBNAME = "dbname"
+SCHEMA = "schema"

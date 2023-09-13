@@ -2,27 +2,23 @@ import unittest
 
 import sys
 
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+
 sys.path.append("../../../")
 
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.from_clause import FromClause
-from mysite.unmasque.test import queries
+from mysite.unmasque.test.util import queries
 
 
 class MyTestCase(unittest.TestCase):
-    db_name = "tpch"
-    user = "postgres"
-    password = "postgres"
-    port = "5432"
-    host = "localhost"
-    conn = ConnectionHelper(db_name, user, password, port, host)
+    conn = ConnectionHelper()
 
     def test_like_tpchq1(self):
         query = queries.tpch_query1
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         fc = FromClause(self.conn)
-        rels = fc.doJob([query, "error"])
+        rels = fc.doJob(query, "error")
         print("Rels", rels)
         self.assertEqual(len(rels), 1)
         self.assertTrue('lineitem' in rels)
@@ -33,7 +29,7 @@ class MyTestCase(unittest.TestCase):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         fc = FromClause(self.conn)
-        rels = fc.doJob([query, "error"])
+        rels = fc.doJob(query, "error")
         self.assertEqual(len(rels), 3)
         self.assertTrue('lineitem' in rels)
         self.assertTrue('customer' in rels)
@@ -45,7 +41,7 @@ class MyTestCase(unittest.TestCase):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         fc = FromClause(self.conn)
-        rels = fc.doJob([query, "error"])
+        rels = fc.doJob(query, "error")
         self.assertTrue(not rels)
         self.conn.closeConnection()
 
@@ -54,7 +50,7 @@ class MyTestCase(unittest.TestCase):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         fc = FromClause(self.conn)
-        rels = fc.doJob([query, "error"])
+        rels = fc.doJob(query, "error")
         self.assertEqual(len(rels), 2)
         self.assertTrue('lineitem' in rels)
         self.assertTrue('part' in rels)
@@ -68,7 +64,7 @@ class MyTestCase(unittest.TestCase):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         fc = FromClause(self.conn)
-        rels = fc.doJob([query, "error"])
+        rels = fc.doJob(query, "error")
         self.assertEqual(len(rels), 3)
         self.assertTrue('lineitem' in rels)
         self.assertTrue('part' in rels)

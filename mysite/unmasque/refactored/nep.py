@@ -1,12 +1,12 @@
 import ast
 
-from .abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
+from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .util.common_queries import get_restore_name
 from .util.utils import get_dummy_val_for, get_format, get_char
 
 
-class NEP(Minimizer, AfterWhereClauseBase):
+class NEP(Minimizer, GenerationPipeLineBase):
 
     def __init__(self, connectionHelper, core_relations, all_sizes,
                  global_pk_dict,
@@ -16,12 +16,12 @@ class NEP(Minimizer, AfterWhereClauseBase):
                  global_key_attributes,
                  query_generator):
         Minimizer.__init__(self, connectionHelper, core_relations, all_sizes, "NEP")
-        AfterWhereClauseBase.__init__(self, connectionHelper, "NEP",
-                                      core_relations,
-                                      global_all_attribs,
-                                      global_attrib_types,
-                                      None,
-                                      filter_predicates)
+        GenerationPipeLineBase.__init__(self, connectionHelper, "NEP",
+                                        core_relations,
+                                        global_all_attribs,
+                                        global_attrib_types,
+                                        None,
+                                        filter_predicates)
         self.Q_E = ""
         self.global_pk_dict = global_pk_dict  # from initialization
         self.global_key_attributes = global_key_attributes

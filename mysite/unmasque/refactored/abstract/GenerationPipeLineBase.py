@@ -3,7 +3,7 @@ from ...refactored.executable import Executable
 from ...refactored.util.utils import get_escape_string
 
 
-class AfterWhereClauseBase(Base):
+class GenerationPipeLineBase(Base):
 
     def __init__(self, connectionHelper,
                  name,
@@ -50,11 +50,11 @@ class AfterWhereClauseBase(Base):
         att_order, esc_string = get_escape_string(att_order, attrib_list_inner)
         insert_query = "INSERT INTO " + tabname_inner + att_order + " VALUES " + esc_string
         self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
-    
+
     def update_attrib_in_table(self, attrib, value, tabname):
-        #print("Update Query")
-        update_query = "UPDATE "+ tabname +" SET " + attrib+ "="+str(value)+";"
-        #print(update_query)
+        # print("Update Query")
+        update_query = "UPDATE " + tabname + " SET " + attrib + "=" + str(value) + ";"
+        # print(update_query)
         self.connectionHelper.execute_sql([update_query])
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):

@@ -1,13 +1,15 @@
 import unittest
 
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.src.core import algorithm1
-from mysite.unmasque.src.core.UN1_from_clause import UN1FromClause
+from mysite.unmasque.src.core.union_from_clause import UnionFromClause
 from mysite.unmasque.src.mocks.database import TPCH
 from mysite.unmasque.src.util import utils
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 
 
 class MyTestCase(unittest.TestCase):
+    conn = ConnectionHelper()
+
     def test_init(self):
         query = "(select * from part) union all (select * from customer)"
         db = TPCH()
@@ -127,26 +129,25 @@ class MyTestCase(unittest.TestCase):
                 "union all " \
                 "(select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey limit 2)"
 
-        conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
-        conn.connectUsingParams()
-        self.assertTrue(conn.conn is not None)
-        db = UN1FromClause(conn)
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+        db = UnionFromClause(self.conn)
 
         p, pstr = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'lineitem', 'orders'})})
-        conn.closeConnection()
+        self.conn.closeConnection()
 
     def test_no_union(self):
         query = "select l_partkey as key from lineitem, part where l_partkey = p_partkey limit 2"
-        conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
-        conn.connectUsingParams()
-        self.assertTrue(conn.conn is not None)
-        db = UN1FromClause(conn)
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+        db = UnionFromClause(self.conn)
 
         p, pstr = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'part'})})
         self.assertTrue("FROM(q1)" in pstr)
         self.assertTrue("FROM(q2)" not in pstr)
+        self.conn.closeConnection()
 
     def test_3_case(self):
         query = "(select l_partkey as key from lineitem,part where l_partkey = p_partkey and l_extendedprice <= 905) " \
@@ -154,10 +155,9 @@ class MyTestCase(unittest.TestCase):
                 "(select l_orderkey as key from lineitem,orders where l_orderkey = o_orderkey and o_totalprice <= 905) " \
                 "union all " \
                 "(select o_orderkey as key from customer,orders where c_custkey = o_custkey and o_totalprice <= 890);"
-        conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
-        conn.connectUsingParams()
-        self.assertTrue(conn.conn is not None)
-        db = UN1FromClause(conn)
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+        db = UnionFromClause(self.conn)
         #db = TPCH()
 
         p, pstr = algorithm1.algo(db, query)
@@ -166,7 +166,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue("FROM(q1)" in pstr)
         self.assertTrue("FROM(q2)" in pstr)
         self.assertTrue("FROM(q3)" in pstr)
-        conn.closeConnection()
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':

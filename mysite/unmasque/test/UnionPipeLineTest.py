@@ -1,13 +1,13 @@
 import unittest
 
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.src.core import UnionPipeLine, algorithm1
-from mysite.unmasque.src.core.UN1_from_clause import UN1FromClause
-from mysite.unmasque.test import queries
+from mysite.unmasque.src.core.union_from_clause import UnionFromClause
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.test.util import queries
 
 
 class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+    conn = ConnectionHelper()
 
     def test_nonUnion_query(self):
         key = 'tpch_query1'
@@ -67,7 +67,7 @@ class MyTestCase(unittest.TestCase):
                 "(SELECT p_partkey as key, p_name as name FROM part , lineitem where p_partkey = l_partkey " \
                 "and l_quantity > 35);"
 
-        db = UN1FromClause(self.conn)
+        db = UnionFromClause(self.conn)
         p, pstr = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'customer', 'nation'}), frozenset({'part', 'lineitem'})})
         self.assertTrue(pstr is not None)

@@ -1,15 +1,16 @@
 import unittest
 
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.initialization import Initiator
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 
 
 class MyTestCase(unittest.TestCase):
+    conn = ConnectionHelper()
+
     def test_init(self):
-        conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
-        conn.connectUsingParams()
-        self.assertTrue(conn.conn is not None)
-        initor = Initiator(conn)
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+        initor = Initiator(self.conn)
         initor.doJob()
         self.assertEqual(len(initor.global_index_dict), 8)
 
@@ -32,6 +33,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(initor.global_pk_dict['nation'], 'n_nationkey')
         self.assertEqual(initor.global_pk_dict['region'], 'r_regionkey')
         self.assertEqual(initor.global_pk_dict['lineitem'], 'l_orderkey,l_linenumber')
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':

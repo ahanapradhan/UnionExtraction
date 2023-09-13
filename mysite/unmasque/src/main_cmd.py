@@ -1,21 +1,18 @@
-from core import algorithm1
-from mocks.database import TPCH
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
-    query = "(select * from part,lineitem) union all (select * from orders,customer)" \
-            " union all (select * from nation,region,part)"
-    db = TPCH()
-    p, pstr = algorithm1.algo(db, query)
-    return pstr
-
+from mysite.unmasque.src.core import ExtractionPipeLine
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    p = print_hi('PyCharm')
-    print("...... Result...")
-    print(p)
+    hq = "select c_mktsegment, l_orderkey, sum(l_extendedprice) as revenue, " \
+         "o_orderdate, o_shippriority from customer, orders, lineitem where c_custkey = o_custkey " \
+         "and l_orderkey = o_orderkey and o_orderdate > date '1995-10-11' " \
+         "group by l_orderkey, o_orderdate, o_shippriority, c_mktsegment limit 4;"
+
+    conn = ConnectionHelper()
+    eq, time = ExtractionPipeLine.extract(conn, hq)
+
+    print("=========== Extracted Query =============")
+    print(eq)
+    time.print()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

@@ -18,6 +18,7 @@ def create_zero_time_profile():
 
 class ElapsedTime:
     clause_keys = ["Union Detection:",
+                   "From Clause:",
                    "Correlated Sampling:",
                    "View Minimization:",
                    "Where Clause:",
@@ -42,6 +43,8 @@ class ElapsedTime:
 
     executable_call_count = 0
     t_union = 0
+    t_from_clause = 0
+
     t_result_comp = 0
 
     display_string = ''
@@ -66,7 +69,11 @@ class ElapsedTime:
             self.t_nep += nep.local_elapsed_time
         self.executable_call_count = app.method_call_count
         self.t_union = 0
+        self.t_from_clause = 0
         self.t_result_comp = 0
+
+    def update_for_from_clause(self, t_u):
+        self.t_from_clause += t_u
 
     def update_for_union(self, t_u):
         self.t_union += t_u
@@ -146,7 +153,7 @@ class ElapsedTime:
         return ds
 
     def get_times(self):
-        times = [self.t_union, self.t_sampling, self.t_view_min, self.t_where_clause, self.t_projection,
+        times = [self.t_union, self.t_from_clause, self.t_sampling, self.t_view_min, self.t_where_clause, self.t_projection,
                  self.t_groupby, self.t_aggregate, self.t_orderby, self.t_limit, self.t_nep,
                  self.t_result_comp,
                  self.executable_call_count]

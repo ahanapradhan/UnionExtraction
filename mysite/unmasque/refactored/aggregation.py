@@ -2,7 +2,7 @@ import ast
 import copy
 import math
 
-from ..refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
+from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import is_number, get_val_plus_delta, get_dummy_val_for, get_format, \
     get_char, isQ_result_empty
 from ..src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
@@ -91,7 +91,7 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
     return a, agg_array, b, k_value
 
 
-class Aggregation(AfterWhereClauseBase):
+class Aggregation(GenerationPipeLineBase):
     def __init__(self, connectionHelper,
                  global_key_attributes,
                  global_attrib_types,

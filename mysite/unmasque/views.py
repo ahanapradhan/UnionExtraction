@@ -2,8 +2,8 @@ import psycopg2
 from django.shortcuts import render, redirect
 from psycopg2 import OperationalError
 
-from .refactored.ConnectionHelper import ConnectionHelper
 from .src.core import UnionPipeLine
+from .src.util.ConnectionHelper import ConnectionHelper
 
 
 # Create your views here.
@@ -32,7 +32,7 @@ def login_view(request):
             error_message = 'Invalid credentials. Please try again.'
             return render(request, 'unmasque/login.html', {'error_message': error_message})
 
-        connHelper = ConnectionHelper(database, username, password, port, host)
+        connHelper = ConnectionHelper(dbname=database, user=username, password=password, port=port, host=host)
         doExtraction(connHelper, query, request)
         return redirect('result')
 

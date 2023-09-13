@@ -1,7 +1,7 @@
 import copy
 
 from .util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char, isQ_result_empty
-from ..refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
+from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 
 
 class CandidateAttribute():
@@ -34,7 +34,7 @@ def checkOrdering(obj, result):
     return None
 
 
-class OrderBy(AfterWhereClauseBase):
+class OrderBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper,
                  global_key_attributes,
                  global_attrib_types,

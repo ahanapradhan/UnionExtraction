@@ -2,11 +2,11 @@ import ast
 import copy
 import itertools
 
-from .abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
+from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_format, get_dummy_val_for, get_char
 
 
-class Limit(AfterWhereClauseBase):
+class Limit(GenerationPipeLineBase):
 
     def __init__(self, connectionHelper,
                  global_attrib_types,

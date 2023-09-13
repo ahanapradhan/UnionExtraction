@@ -2,26 +2,57 @@ from .QueryStringGenerator import QueryStringGenerator
 from .elapsed_time import create_zero_time_profile
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
+from ...refactored.equi_join import EquiJoin
+from ...refactored.filter import Filter
+from ...refactored.from_clause import FromClause
 from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
 from ...refactored.view_minimizer import ViewMinimizer
-from ...refactored.where_clause import WhereClause
 
 
-def extract(connectionHelper,
-            query,
-            all_relations,
-            core_relations,
-            key_lists,
-            global_pk_dict):  # get core_relations, key_lists from from clause
+def extract(connectionHelper, query):
+    connectionHelper.connectUsingParams()
 
     time_profile = create_zero_time_profile()
 
+    '''
+    From Clause Extraction
+    '''
+    fc = FromClause(connectionHelper)
+    check = fc.doJob(query, "rename")
+    time_profile.update_for_from_clause(fc.local_elapsed_time)
+    if not check or not fc.done:
+        print("Some problem while extracting from clause. Aborting!")
+        return None, time_profile
+
+    eq, t = after_from_clause_extract(connectionHelper,
+                                      query,
+                                      fc.all_relations,
+                                      fc.core_relations,
+                                      fc.get_key_lists())
+    connectionHelper.closeConnection()
+    time_profile.update(t)
+    return eq, time_profile
+
+
+def after_from_clause_extract(connectionHelper,
+                              query,
+                              all_relations,
+                              core_relations,
+                              key_lists):  # get core_relations, key_lists from from clause
+
+    time_profile = create_zero_time_profile()
+
+    '''
+    Correlated Sampling
+    '''
     cs2 = Cs2(connectionHelper, all_relations, core_relations, key_lists)
-    cs2.doJob(query)
+    check = cs2.doJob(query)
     time_profile.update_for_cs2(cs2.local_elapsed_time)
+    if not check or not cs2.done:
+        print("Sampling failed!")
 
     vm = ViewMinimizer(connectionHelper, core_relations, cs2.sizes, cs2.passed)
     check = vm.doJob(query)
@@ -33,27 +64,46 @@ def extract(connectionHelper,
         print("Some problem while view minimization. Aborting extraction!")
         return None, time_profile
 
-    wc = WhereClause(connectionHelper,
-                     key_lists,
-                     core_relations,
-                     vm.global_other_info_dict,
-                     vm.global_result_dict,
-                     vm.global_min_instance_dict)
-    check = wc.doJob(query)
-    time_profile.update_for_where_clause(wc.local_elapsed_time)
+    '''
+        Join Graph Extraction
+        '''
+    ej = EquiJoin(connectionHelper,
+                  key_lists,
+                  core_relations,
+                  vm.global_min_instance_dict)
+    check = ej.doJob(query)
+    time_profile.update_for_where_clause(ej.local_elapsed_time)
     if not check:
-        print("Cannot find where clause.")
-        return None, time_profile
-    if not wc.done:
-        print("Some error while where clause extraction. Aborting extraction!")
+        print("Cannot find Join Predicates.")
+    if not ej.done:
+        print("Some error while Join Predicate extraction. Aborting extraction!")
         return None, time_profile
 
+    '''
+    Filters Extraction
+    '''
+    fl = Filter(connectionHelper,
+                key_lists,
+                core_relations,
+                vm.global_min_instance_dict,
+                ej.global_key_attributes)
+    check = fl.doJob(query)
+    time_profile.update_for_where_clause(fl.local_elapsed_time)
+    if not check:
+        print("Cannot find Filter Predicates.")
+    if not fl.done:
+        print("Some error while Filter Predicate extraction. Aborting extraction!")
+        return None, time_profile
+
+    '''
+    Projection Extraction
+    '''
     pj = Projection(connectionHelper,
-                    wc.global_attrib_types,
+                    ej.global_attrib_types,
                     core_relations,
-                    wc.filter_predicates,
-                    wc.global_join_graph,
-                    wc.global_all_attribs)
+                    fl.filter_predicates,
+                    ej.global_join_graph,
+                    ej.global_all_attribs)
     check = pj.doJob(query)
     time_profile.update_for_projection(pj.local_elapsed_time)
     if not check:
@@ -64,11 +114,11 @@ def extract(connectionHelper,
         return None, time_profile
 
     gb = GroupBy(connectionHelper,
-                 wc.global_attrib_types,
+                 ej.global_attrib_types,
                  core_relations,
-                 wc.filter_predicates,
-                 wc.global_all_attribs,
-                 wc.global_join_graph,
+                 fl.filter_predicates,
+                 ej.global_all_attribs,
+                 ej.global_join_graph,
                  pj.projected_attribs)
     check = gb.doJob(query)
     time_profile.update_for_group_by(gb.local_elapsed_time)
@@ -80,12 +130,12 @@ def extract(connectionHelper,
         return None, time_profile
 
     agg = Aggregation(connectionHelper,
-                      wc.global_key_attributes,
-                      wc.global_attrib_types,
+                      ej.global_key_attributes,
+                      ej.global_attrib_types,
                       core_relations,
-                      wc.filter_predicates,
-                      wc.global_all_attribs,
-                      wc.global_join_graph,
+                      fl.filter_predicates,
+                      ej.global_all_attribs,
+                      ej.global_join_graph,
                       pj.projected_attribs,
                       gb.has_groupby,
                       gb.group_by_attrib,
@@ -101,12 +151,12 @@ def extract(connectionHelper,
         return None, time_profile
 
     ob = OrderBy(connectionHelper,
-                 wc.global_key_attributes,
-                 wc.global_attrib_types,
+                 ej.global_key_attributes,
+                 ej.global_attrib_types,
                  core_relations,
-                 wc.filter_predicates,
-                 wc.global_all_attribs,
-                 wc.global_join_graph,
+                 fl.filter_predicates,
+                 ej.global_all_attribs,
+                 ej.global_join_graph,
                  pj.projected_attribs,
                  pj.projection_names,
                  agg.global_aggregated_attributes)
@@ -120,11 +170,11 @@ def extract(connectionHelper,
         return None, time_profile
 
     lm = Limit(connectionHelper,
-               wc.global_attrib_types,
-               wc.global_key_attributes,
+               ej.global_attrib_types,
+               ej.global_key_attributes,
                core_relations,
-               wc.filter_predicates,
-               wc.global_all_attribs,
+               fl.filter_predicates,
+               ej.global_all_attribs,
                gb.group_by_attrib)
 
     lm.doJob(query)
@@ -136,34 +186,10 @@ def extract(connectionHelper,
         return None, time_profile
 
     # last component in the pipeline should do this
-    time_profile.update_for_app(lm.app.local_elapsed_time)
+    time_profile.update_for_app(lm.app.method_call_count)
 
     q_generator = QueryStringGenerator(connectionHelper)
-    eq = q_generator.generate_query_string(core_relations, wc, pj, gb, agg, ob, lm)
-    print("extracted query without NEP:\n", eq)
-
-    '''
-    if eq is not None or eq != '':
-        
-        nep = NEP(connectionHelper, core_relations, cs2.sizes,
-                  global_pk_dict,
-                  wc.global_all_attribs,
-                  wc.global_attrib_types,
-                  wc.filter_predicates,
-                  wc.global_key_attributes,
-                  q_generator)
-        check = nep.doJob([query, eq])
-        if not check:
-            print("NEP is not there.")
-        if not nep.done:
-            print("Some error while extrating NEPs. Aborting extraction!")
-            return None
-    else:
-        nep = None
-        
-    eq = nep.Q_E
-   '''
-    nep = None  # disable NEP now
-    # time_profile = ElapsedTime(cs2, vm, wc, pj, gb, agg, ob, lm, nep, vm.app)
+    eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
+    print("extracted query:\n", eq)
 
     return eq, time_profile

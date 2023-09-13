@@ -1,13 +1,14 @@
 import unittest
 
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.refactored.equi_join import EquiJoin
+from mysite.unmasque.refactored.filter import Filter
 from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
-from mysite.unmasque.refactored.where_clause import WhereClause
-from mysite.unmasque.test import tpchSettings, queries
+from mysite.unmasque.test.util import queries, tpchSettings
 
 
 class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+    conn = ConnectionHelper()
 
     def test_init_data(self):
         self.conn.connectUsingParams()
@@ -18,9 +19,8 @@ class MyTestCase(unittest.TestCase):
         check = minimizer.doJob(queries.tpch_query1)
         self.assertTrue(check)
 
-        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
-                         minimizer.global_other_info_dict, minimizer.global_result_dict,
-                         minimizer.global_min_instance_dict)
+        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
+                      minimizer.global_min_instance_dict)
 
         self.assertEqual(wc.global_attrib_types, [])
         self.assertEqual(wc.global_all_attribs, [])
@@ -57,25 +57,25 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q17']
-        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
         check = minimizer.doJob(queries.Q17)
         self.assertTrue(check)
 
-        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
-                         minimizer.global_other_info_dict, minimizer.global_result_dict,
-                         minimizer.global_min_instance_dict)
+        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
+                      minimizer.global_min_instance_dict)
 
-        wc.do_init()
+        wc.doJob(queries.Q17)
         self.assertEqual(len(wc.global_all_attribs), 2)  # per table 1 attrib, Q17 has 2 tables
-
-        wc.get_join_graph(queries.Q17)
         self.assertEqual(len(wc.global_join_graph), 1)
         self.assertEqual(set(wc.global_join_graph[0]), {'p_partkey', 'l_partkey'})
         self.assertEqual(len(wc.global_key_attributes), 2)
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('l_partkey' in wc.global_key_attributes)
 
-        filters = wc.get_filter_predicates(queries.Q17)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
+                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+
+        filters = wc.doJob(queries.Q17)
         print(filters)
         self.assertEqual(len(filters), 2)
 
@@ -97,18 +97,15 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q21']
-        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
         check = minimizer.doJob(queries.Q21)
         self.assertTrue(check)
 
-        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
-                         minimizer.global_other_info_dict, minimizer.global_result_dict,
-                         minimizer.global_min_instance_dict)
+        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
+                      minimizer.global_min_instance_dict)
 
-        wc.do_init()
+        wc.doJob(queries.Q21)
         self.assertEqual(len(wc.global_all_attribs), 4)  # per table 1 attrib, Q17 has 2 tables
-
-        wc.get_join_graph(queries.Q21)
         self.assertEqual(len(wc.global_join_graph), 3)
         join_edges = frozenset({frozenset({'l_suppkey', 's_suppkey'}),
                                 frozenset({'l_orderkey', 'o_orderkey'}),
@@ -131,18 +128,16 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q23_1']
-        minimizer = ViewMinimizer(self.conn, from_rels,tpchSettings.all_size, False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
         check = minimizer.doJob(queries.Q23_1)
         self.assertTrue(check)
 
-        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
-                         minimizer.global_other_info_dict, minimizer.global_result_dict,
-                         minimizer.global_min_instance_dict)
+        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
+                      minimizer.global_min_instance_dict)
 
-        wc.do_init()
+        wc.doJob(queries.Q23_1)
+
         self.assertEqual(len(wc.global_all_attribs), 4)  # per table 1 attrib, Q17 has 2 tables
-
-        wc.get_join_graph(queries.Q23_1)
         self.assertEqual(len(wc.global_join_graph), 3)
         join_edges = frozenset({frozenset({'ps_suppkey', 's_suppkey'}),
                                 frozenset({'n_regionkey', 'r_regionkey'}),
@@ -160,7 +155,11 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue('r_regionkey' in wc.global_key_attributes)
         self.assertTrue('n_regionkey' in wc.global_key_attributes)
 
-        filters = wc.get_filter_predicates(queries.Q23_1)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
+                    minimizer.global_min_instance_dict,
+                    wc.global_key_attributes)
+
+        filters = wc.doJob(queries.Q23_1)
         print(filters)
         f = filters[0]
 
@@ -177,25 +176,26 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q18_test']
-        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
         check = minimizer.doJob(queries.Q18_test)
         self.assertTrue(check)
 
-        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
-                         minimizer.global_other_info_dict, minimizer.global_result_dict,
-                         minimizer.global_min_instance_dict)
+        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
+                      minimizer.global_min_instance_dict)
 
-        wc.do_init()
+        wc.doJob(queries.Q18_test)
         self.assertEqual(len(wc.global_all_attribs), 2)  # per table 1 attrib, Q17 has 2 tables
 
-        wc.get_join_graph(queries.Q18_test)
         self.assertEqual(len(wc.global_join_graph), 1)
         self.assertEqual(set(wc.global_join_graph[0]), {'p_partkey', 'ps_partkey'})
         self.assertEqual(len(wc.global_key_attributes), 2)
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('ps_partkey' in wc.global_key_attributes)
 
-        filters = wc.get_filter_predicates(queries.Q18_test)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
+                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+
+        filters = wc.doJob(queries.Q18_test)
         # print(filters)
         self.assertEqual(len(filters), 1)
         f = filters[0]
@@ -210,25 +210,26 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q18_test1']
-        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
         check = minimizer.doJob(queries.Q18_test1)
         self.assertTrue(check)
 
-        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
-                         minimizer.global_other_info_dict, minimizer.global_result_dict,
-                         minimizer.global_min_instance_dict)
+        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
+                      minimizer.global_min_instance_dict)
+        wc.doJob(queries.Q18_test1)
 
-        wc.do_init()
         self.assertEqual(len(wc.global_all_attribs), 2)  # per table 1 attrib, Q17 has 2 tables
 
-        wc.get_join_graph(queries.Q18_test1)
         self.assertEqual(len(wc.global_join_graph), 1)
         self.assertEqual(set(wc.global_join_graph[0]), {'p_partkey', 'ps_partkey'})
         self.assertEqual(len(wc.global_key_attributes), 2)
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('ps_partkey' in wc.global_key_attributes)
 
-        filters = wc.get_filter_predicates(queries.Q18_test1)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
+                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+
+        filters = wc.doJob(queries.Q18_test1)
         print(filters)
         self.assertEqual(len(filters), 2)
         f = filters[0]
@@ -251,18 +252,16 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q3']
-        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size,False)
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
         check = minimizer.doJob(queries.Q3)
         self.assertTrue(check)
 
-        wc = WhereClause(self.conn, tpchSettings.key_lists, from_rels,
-                         minimizer.global_other_info_dict, minimizer.global_result_dict,
-                         minimizer.global_min_instance_dict)
+        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
+                      minimizer.global_min_instance_dict)
+        wc.doJob(queries.Q3)
 
-        wc.do_init()
         self.assertEqual(len(wc.global_all_attribs), 3)  # per table 1 attrib, Q17 has 2 tables
 
-        wc.get_join_graph(queries.Q3)
         self.assertEqual(len(wc.global_join_graph), 2)
         join_edges = frozenset({frozenset({'o_custkey', 'c_custkey'}),
                                 frozenset({'o_orderkey', 'l_orderkey'})})
@@ -273,7 +272,10 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(len(wc.global_key_attributes), 4)
 
-        filters = wc.get_filter_predicates(queries.Q3)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
+                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+
+        filters = wc.doJob(queries.Q3)
         print(filters)
         self.assertEqual(len(filters), 3)
         f = filters[0]

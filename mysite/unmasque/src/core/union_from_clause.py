@@ -6,7 +6,7 @@ from ...refactored.util.utils import isQ_result_empty
 from ..mocks.database import Schema
 
 
-class UN1FromClause(Schema, Base):
+class UnionFromClause(Schema, Base):
     relations = []
 
     def __init__(self, connectionHelper):

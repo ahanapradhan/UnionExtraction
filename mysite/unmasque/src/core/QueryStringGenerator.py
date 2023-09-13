@@ -53,18 +53,18 @@ class QueryStringGenerator(Base):
         self.order_by_op = ''
         self.limit_op = None
 
-    def generate_query_string(self, core_relations, wc, pj, gb, agg, ob, lm):
+    def generate_query_string(self, core_relations, ej, fl, pj, gb, agg, ob, lm):
         self.from_op = ", ".join(core_relations)
         joins = []
-        for edge in wc.global_join_graph:
+        for edge in ej.global_join_graph:
             joins.append(" = ".join(edge))
         self.where_op = " and ".join(joins)
 
-        if len(joins) > 0 and len(wc.filter_predicates) > 0:
+        if len(joins) > 0 and len(fl.filter_predicates) > 0:
             self.where_op += " and "
-        self.where_op = self.add_filters(wc)
+        self.where_op = self.add_filters(fl)
 
-        eq = self.refine_Query1(wc, pj, gb, agg, ob, lm)
+        eq = self.refine_Query1(ej.global_key_attributes, pj, gb, agg, ob, lm)
         return eq
 
     def add_filters(self, wc):
@@ -100,11 +100,11 @@ class QueryStringGenerator(Base):
         output = output + ";"
         return output
     
-    def refine_Query1(self, wc, pj, gb, agg, ob, lm):
+    def refine_Query1(self, global_key_attributes, pj, gb, agg, ob, lm):
         print("inside:   reveal_proc_support.refine_Query")
         for i in range(len(agg.global_projected_attributes)):
             attrib = agg.global_projected_attributes[i]
-            if attrib in wc.global_key_attributes and attrib in agg.global_groupby_attributes:
+            if attrib in global_key_attributes and attrib in agg.global_groupby_attributes:
                 if not (SUM in agg.global_aggregated_attributes[i][1] or COUNT in
                         agg.global_aggregated_attributes[i][1]):
                     agg.global_aggregated_attributes[i] = (agg.global_aggregated_attributes[i][0], '')

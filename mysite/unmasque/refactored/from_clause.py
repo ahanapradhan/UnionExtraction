@@ -61,7 +61,7 @@ class FromClause(Base):
                 self.connectionHelper.execute_sql(["ROLLBACK;"])
 
     def extract_params_from_args(self, args):
-        return args[0][0], args[0][1]
+        return args[0], args[1]
 
     def doJob(self, *args):
         check = self.init.result
@@ -81,7 +81,5 @@ class FromClause(Base):
             self.get_core_relations_by_error(query)
         return self.core_relations
 
-
-def getCoreRelations(connHelper, *args):
-    fc = FromClause(connHelper)
-    return fc.doJob(args)
+    def get_key_lists(self):
+        return self.init.global_key_lists

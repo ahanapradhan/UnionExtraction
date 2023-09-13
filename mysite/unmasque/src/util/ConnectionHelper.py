@@ -1,9 +1,12 @@
 import psycopg2
 import psycopg2.extras
 
+from .configParser import Config
+from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA
+
 
 def cus_execute_sqls(cur, sqls):
-    #print(cur)
+    print(cur)
     for sql in sqls:
         print("..cur execute.." + sql)
         cur.execute(sql)
@@ -33,14 +36,41 @@ def cur_execute_sql_fetch_one(cur, sql):
 
 
 class ConnectionHelper:
+    config = None
     conn = None
     paramString = None
     db = None
 
-    def __init__(self, dbname, user, password, port, host="localhost"):
-        self.db = dbname
-        self.paramString = "dbname=" + dbname + " user=" + user + \
-                           " password=" + password + " host=" + host + " port=" + port
+    def __init__(self, **kwargs):
+        """
+        Default configs are loaded first
+        """
+        self.config = Config()
+
+        """
+        If config.ini available in the backend, prioritize it
+        """
+        self.config.parse_config()
+
+        """
+        If configs come from the caller (e.g. UI), prioritize it
+        """
+        for key, value in kwargs.items():
+            if key == DBNAME:
+                self.config.dbname = value
+            elif key == HOST:
+                self.config.host = value
+            elif key == PORT:
+                self.config.port = value
+            elif key == USER:
+                self.config.user = value
+            elif key == PASSWORD:
+                self.config.password = value
+            elif key == SCHEMA:
+                self.config.schema = value
+        self.db = self.config.dbname
+        self.paramString = "dbname=" + self.config.dbname + " user=" + self.config.user + \
+                           " password=" + self.config.password + " host=" + self.config.host + " port=" + self.config.port
 
     def closeConnection(self):
         if self.conn is not None:
