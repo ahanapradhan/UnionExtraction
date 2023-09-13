@@ -94,6 +94,28 @@ class MyTestCase(unittest.TestCase):
         tp.print()
         self.conn.closeConnection()
 
+    def test_extraction_Q3_1(self):
+        self.conn.connectUsingParams()
+        key = 'Q3_1'
+        from_rels = tpchSettings.from_rels[key]
+        query = queries.queries_dict[key]
+        print(query)
+        app = Executable(self.conn)
+        result = app.doJob(query)
+        if isQ_result_empty(result):
+            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
+                  "query!")
+            self.assertTrue(False)
+
+        eq, tp = OldPipeLine.extract(self.conn, query,
+                                     tpchSettings.relations,
+                                     from_rels,
+                                     tpchSettings.key_lists, tpchSettings.global_pk_dict)
+        self.assertTrue(eq is not None)
+        print(eq)
+        tp.print()
+        self.conn.closeConnection()
+
     def test_extraction_Q4(self):
         self.conn.connectUsingParams()
         key = 'Q4'

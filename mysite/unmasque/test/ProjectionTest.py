@@ -8,7 +8,7 @@ from mysite.unmasque.test import queries, tpchSettings
 
 
 class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper("tpch", "leftnomemes", "root", "5432", "localhost")
+    conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
 
     def test_projection_Q1(self):
         self.conn.connectUsingParams()
