@@ -29,6 +29,9 @@ class ViewMinimizer(Minimizer):
     max_row_no = 1
     working_dir = "/Users/ahanapradhan/Desktop/Projects/UNMASQUE/reduced_data/"
 
+    def set_max_row_no(self, no):
+        self.max_row_no = no
+
     def __init__(self, connectionHelper,
                  core_relations, core_sizes,
                  sampling_status):

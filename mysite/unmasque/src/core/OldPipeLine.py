@@ -18,14 +18,8 @@ def extract(connectionHelper,
             global_pk_dict):  # get core_relations, key_lists from from clause
 
     time_profile = create_zero_time_profile()
+    check, vm = dmin(all_relations, connectionHelper, core_relations, key_lists, query, time_profile)
 
-    cs2 = Cs2(connectionHelper, all_relations, core_relations, key_lists)
-    cs2.doJob(query)
-    time_profile.update_for_cs2(cs2.local_elapsed_time)
-
-    vm = ViewMinimizer(connectionHelper, core_relations, cs2.sizes, cs2.passed)
-    check = vm.doJob(query)
-    time_profile.update_for_view_minimization(vm.local_elapsed_time)
     if not check:
         print("Cannot do database minimization. ")
         return None, time_profile
@@ -164,3 +158,14 @@ def extract(connectionHelper,
     # time_profile = ElapsedTime(cs2, vm, wc, pj, gb, agg, ob, lm, nep, vm.app)
 
     return eq, time_profile
+
+
+def dmin(all_relations, connectionHelper, core_relations, key_lists, query, time_profile, no=1):
+    cs2 = Cs2(connectionHelper, all_relations, core_relations, key_lists)
+    cs2.doJob(query)
+    time_profile.update_for_cs2(cs2.local_elapsed_time)
+    vm = ViewMinimizer(connectionHelper, core_relations, cs2.sizes, cs2.passed)
+    vm.set_max_row_no(no)
+    check = vm.doJob(query)
+    time_profile.update_for_view_minimization(vm.local_elapsed_time)
+    return check, vm

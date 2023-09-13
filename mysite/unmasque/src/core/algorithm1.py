@@ -16,7 +16,7 @@ def algo(db, QH):
         return {frozenset(db.fromtabs)}, construct_pretty_print_string({frozenset(db.fromtabs)})
 
     if isMinusQuery(QH, Partial_QH, db):
-        return db.doJob(QH), db.comtabs
+        return db.doJob(QH), db.fromtabs
 
     NonNulls = construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db)
 
