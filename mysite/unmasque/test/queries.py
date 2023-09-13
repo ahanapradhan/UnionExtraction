@@ -14,12 +14,12 @@ Q2 = "select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s
      "partsupp, nation, region where p_partkey = ps_partkey and s_suppkey = ps_suppkey and p_size = 38 and p_type " \
      "like '%TIN' and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'MIDDLE EAST' order by " \
      "s_acctbal desc, n_name, s_name limit 100;"
-Q3 = "select l_orderkey as orderkey, sum(l_discount) as revenue, o_orderdate as orderdate, o_shippriority as " \
+Q3 = "select l_orderkey as orderkey, sum(l_discount) as revenue, sum(o_totalprice) as totalprice, o_shippriority as " \
      "shippriority from customer, orders, " \
      "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate " \
-     "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
-     "desc, o_orderdate limit 10;"
-Q3_1 = "select l_orderkey as orderkey, sum(l_extendedprice * (1-l_discount)) as revenue, o_orderdate as orderdate, " \
+     "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_totalprice, o_shippriority order by revenue " \
+     "desc limit 10;"
+Q3_1 = "select l_orderkey as orderkey, sum(l_extendedprice * (1-l_discount) + l_quantity) as revenue, o_orderdate as orderdate, " \
        "o_shippriority as " \
        "shippriority from customer, orders, " \
        "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate " \
@@ -159,4 +159,9 @@ and n_name = 'UNITED STATES');
 TPCDS Q14: INTERSECT, UNION ALL
 Q38: INTERSECT
 
+'''
+
+
+'''
+select l_orderkey as orderkey, sum(l_discount) as revenue, sum(o_totalprice) as totalprice, o_shippriority as shippriority from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_totalprice, o_shippriority order by revenue desc limit 10;
 '''

@@ -1,10 +1,13 @@
 import ast
 import copy
+import datetime
+import numpy as np
+import random
 
 from ..src.util import constants
 from ..refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClauseBase
 from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
-    get_val_plus_delta, get_char
+    get_val_plus_delta, get_char, get_dummy_val_for
 
 
 def cover_special_chars(curr_str, value_used):
@@ -87,6 +90,11 @@ class Projection(AfterWhereClauseBase):
                          filter_predicates)
         self.projection_names = None
         self.projected_attribs = None
+        self.dependencies = None
+        self.solution = None
+        # List of list of all the subsets of the dependencies of an output column (having more than one dependencies)
+        # Suppose a column is dependent on a and b, corresponding index of that column in param_list will contain, [a,b,a*b]
+        self.param_list = []
 
     def construct_values_used(self, attrib_types_dict):
         vu = []
@@ -167,8 +175,15 @@ class Projection(AfterWhereClauseBase):
         if not check:
             return False
 
+        #projection_dep = [[] for i in projected_attrib]
+        projection_dep = self.find_dependencies_on_multi(attrib_types_dict, projected_attrib, projection_names, query)
+        projection_sol = self.find_solution_on_multi(attrib_types_dict, projected_attrib, projection_names, projection_dep, query)
+        self.build_equation(projected_attrib, projection_dep, projection_sol)
         self.projected_attribs = projected_attrib
         self.projection_names = projection_names
+        self.dependencies = projection_dep
+        self.solution = projection_sol
+        print("Result", projection_names, projected_attrib, projection_sol, self.param_list)
         return True
 
     def find_projection_on_filtered_attribs(self, attrib_types_dict, projected_attrib, query, value_used):
@@ -196,7 +211,9 @@ class Projection(AfterWhereClauseBase):
     def find_projection_on_unfiltered_attribs(self, attrib_types_dict, query):
         self.truncate_core_relations()
         value_used = self.construct_values_used(attrib_types_dict)
+        #print("Values 1", value_used)
         value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+        #print("Values 2", value_used)
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
             print("Unmasque: \n some error in generating new database. Result is empty. Can not identify "
@@ -237,6 +254,7 @@ class Projection(AfterWhereClauseBase):
         if new_val in value_used and not (
                 any(value_used[value_used.index(new_val) - 1] in i for i in self.global_filter_predicates)):
             projectedAttrib1.append(value_used[value_used.index(new_val) - 1])
+
         else:
             projectedAttrib1.append('')
 
@@ -256,3 +274,233 @@ class Projection(AfterWhereClauseBase):
                     del (curr_attrib[0])
         for val in curr_attrib:
             newfilterList.remove(val)
+
+    def find_dependencies_on_multi(self, attrib_types_dict, projected_attrib, projection_names, query):
+        self.truncate_core_relations()
+        projection_dep = []
+        indices_to_check = []
+        print("Projected Attrib", projected_attrib)
+        for i in range(len(projected_attrib)):
+            # Construct the initial dependency list
+            if projected_attrib[i] != '':
+                # If identical, add a single tuple list, ("identical_expr_nc", attrib)
+                projection_dep.append([(constants.IDENTICAL_EXPR, projected_attrib[i])])
+            else:
+                # Otherwise initialize an empty list, and add the index to be checked
+                projection_dep.append([])
+                indices_to_check.append(i)
+        #print("Indices To check", indices_to_check)
+        value_used = self.construct_values_used(attrib_types_dict)
+        value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+        # Prev Result to check for changes
+        prev_result = self.app.doJob(query)
+        for idx in indices_to_check:
+            projection_dep[idx] = self.get_dependence(idx, projection_names, query, prev_result, attrib_types_dict, value_used)
+        print("Dependencies", projection_dep)
+        return projection_dep
+
+    def get_dependence(self, index, names, query, prev_res, attrib_types_dict, value_used):
+        dep_list = []
+        for tab_idx in range(len(self.core_relations)):
+            tabname = self.core_relations[tab_idx]
+            attrib_list = self.global_all_attribs[tab_idx]
+            coinc = 0 # Coincidence
+            update_value = None
+            attrib_idx = 0
+            while attrib_idx < len(attrib_list):
+                attrib = attrib_list[attrib_idx]
+                fil = 0
+                join = 0
+
+                # Check if the attribute is part of Filter or Join Predicates
+                for pred in self.global_filter_predicates:
+                    if pred[0] == tabname and pred[1] == attrib:
+                        fil = pred
+                        break
+                for elt in self.global_join_graph:
+                    for val in elt:
+                        if val == attrib:
+                            join = elt
+                            break
+                    if join != 0:
+                        break
+                
+
+                if fil:
+                    # Handle attributes involved in filter predicates.
+                    if not coinc:
+                        update_value = fil[3] # Min Value for first test
+                    else:
+                        # Take Max value for to check for coincidence
+                        if 'date' in attrib_types_dict[(tabname, attrib)]: 
+                            update_value = fil[4]- datetime.timedelta(days=1)
+                        else: 
+                            update_value = fil[4]
+                update_multi = []
+                if join:
+                    # Code to be added later for attribs involved in join
+                    attrib_idx += 1
+                    continue
+                    dummy_val = get_dummy_val_for('int')
+                    if fil:
+                        dummy_val = update_value
+                    for val in join:
+                        update_multi.append(val)
+                        update_multi.append(dummy_val)
+                #print("Join Update", update_multi)
+                if not fil and not join:
+                    if 'int' in attrib_types_dict[(tabname, attrib)] or 'numeric' in attrib_types_dict[(tabname, attrib)]:
+                        update_value = get_unused_dummy_val('int', value_used)
+                        value_used[value_used.index(attrib)+1] = update_value
+                            
+                    elif 'date' in attrib_types_dict[(tabname, attrib)]:
+                        update_value = get_unused_dummy_val('date', value_used)
+                        value_used[value_used.index(attrib)+1] = update_value
+
+                    elif 'boolean' in attrib_types_dict[(tabname, attrib)]:
+                        if not coinc:
+                            update_value = constants.dummy_boolean
+                        else: 
+                            update_value = not update_value
+                    elif 'bit varying' in attrib_types_dict[(tabname, attrib)]: 
+                        if not coinc:
+                            update_value = constants.dummy_varbit
+                        else:
+                            update_value += format(1, 'b')
+                    else:
+                        update_value = get_unused_dummy_val('char', value_used)
+                        #print("Char", update_value)
+                        value_used[value_used.index(attrib)+1] = update_value
+                if 'char' in attrib_types_dict[(tabname, attrib)] or 'date' in attrib_types_dict[(tabname, attrib)]:
+                    update_value = f"'{update_value}'"
+
+                self.update_attrib_in_table(attrib, update_value, tabname)
+                # Current Problem with joins, if the attribute is part of join change the corresponding ones as well.
+                #print("Prev", prev_res)
+                new_result = self.app.doJob(query)
+                #print("New", new_result)
+                if prev_res[1][index] != new_result[1][index]:
+                    dep_list.append((tabname, attrib))
+                    prev_res = new_result
+                    attrib_idx+=1
+                    coinc = 0
+                elif coinc == 0:
+                    # Try again to check for coincidence
+                    coinc = 1
+                else:
+                    # Not a coincidence
+                    coinc = 0
+                    attrib_idx +=1
+        return dep_list
+                
+    def find_solution_on_multi(self, attrib_types_dict, projected_attrib, projection_names, projection_dep, query):
+        solution = []
+        for idx_pro, ele in enumerate(projected_attrib):
+            print("ele being checked", ele, idx_pro)
+            if projection_dep[idx_pro] == [] or (len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == constants.IDENTICAL_EXPR):
+                print("Simple Projection, Continue")
+                # Identical output column, so append empty list and continue
+                solution.append([])
+                self.param_list.append([])
+            else:
+                self.truncate_core_relations()
+                value_used = self.construct_values_used(attrib_types_dict)
+                value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)  
+                prev_result = self.app.doJob(query)
+                solution.append(self.get_solution(attrib_types_dict,projection_dep, projection_names, idx_pro, prev_result, value_used, query))
+        return solution
+
+    # Solve Ax=b to get the expression of the output column
+    def get_solution(self, attrib_types_dict, projection_dep, projection_names, idx, prev_res, value_used, query):
+        dep = projection_dep[idx]
+        n = len(dep)
+        fil_check = []
+        local_param_list = [] # param_list for only this output column
+        
+        for ele in dep:
+            # Construct a list of list that will be used to check if the attrib belongs to filter predicate
+            fil = 0
+            for pred in self.global_filter_predicates:
+                if pred[0] == ele[0] and pred[1] == ele[1]:
+                    fil = pred
+                    break
+            if fil == 0:
+                fil_check.append(False)
+            else:
+                fil_check.append(fil)
+
+        coeff = np.zeros((2**n, 2**n))
+
+        for i in range(n):
+            coeff[0][i] = value_used[value_used.index(dep[i][1]) +1]
+            local_param_list.append(value_used[value_used.index(dep[i][1])])
+        ele = 1
+        for i in range(n, 2**n-1):
+            # Given the values of the n dependencies, we form the rest 2^n - n combinations
+            ele = int(i/n)
+            coeff[0][i] = coeff[0][(i-n)]*coeff[0][(i+ele)%n]
+            local_param_list.append(local_param_list[(i-n)] + "*" + local_param_list[(i+ele)%n])
+        
+        coeff[0][2**n-1] = 1
+        print("Param List", local_param_list)
+        self.param_list.append(local_param_list)
+        curr_rank = 1
+        outer_idx = 1
+        while outer_idx < 2**n and curr_rank < 2**n:
+            # Same algorithm as above with insertion of random values
+            # Additionally checking if rank of the matrix has become 2^n
+            for j in  range(n):
+                mi = constants.pr_min
+                ma = constants.pr_max
+                if fil_check[j]:
+                    mi = fil_check[j][3]
+                    ma = fil_check[j][4]
+                coeff[outer_idx][j] = random.randrange(mi, ma)
+            ele = 1
+            for j in range(n, 2**n-1):
+                ele = int(j/n)
+                coeff[outer_idx][j] = coeff[outer_idx][(j-n)]*coeff[outer_idx][(j+ele)%n]
+            coeff[outer_idx][2**n-1] = 1
+            if np.linalg.matrix_rank(coeff) > curr_rank:
+                curr_rank += 1
+                outer_idx+=1
+            
+        b = np.zeros((2**n, 1))
+        for i in range(2**n):
+            for j in range(n):
+                tabname = dep[j][0]
+                col = dep[j][1]
+                value = coeff[i][j]
+                self.update_attrib_in_table(col, value, tabname)
+            b[i][0] = self.app.doJob(query)[1][idx]
+            
+        solution = np.linalg.solve(coeff, b)
+        solution = np.around(solution, decimals=0)
+        print("Equation", coeff, b)
+        print("Solution", solution)
+        return solution
+
+    def build_equation(self, projected_attrib, projection_dep, projection_sol):
+        for idx_pro, ele in enumerate(projected_attrib):
+            if projection_dep[idx_pro] == [] or (len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == constants.IDENTICAL_EXPR):
+                continue
+            else:
+                projected_attrib[idx_pro] = self.build_equation_helper(projection_sol[idx_pro], projection_dep[idx_pro], self.param_list[idx_pro])
+    
+    def build_equation_helper(self, solution, dependencies, param_l):
+        res_str = ""
+        for i in range(len(solution)):
+            if solution[i][0] == 0:
+                continue
+            if i==0:
+                res_str += (str(solution[i][0])+"*"+param_l[i]) if solution[i][0]!=1 else param_l[i]
+            elif i == len(solution)-1:
+                if solution[i][0] > 0:
+                    res_str += "+"
+                res_str += str(solution[i][0])
+            else:
+                if solution[i][0] > 0:
+                    res_str += "+"
+                res_str += (str(solution[i][0])+"*"+param_l[i]) if solution[i][0]!=1 else param_l[i]
+        print("Result String", res_str)
+        return res_str

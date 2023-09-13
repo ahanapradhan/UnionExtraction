@@ -11,7 +11,8 @@ class Initiator(Base):
     global_pk_dict = {}
     all_relations = []
     error = None
-    resource_path = "/Users/ahanapradhan/PycharmProjects/Union_extraction/mysite/unmasque/refactored/"
+    #resource_path = "/Users/ahanapradhan/PycharmProjects/Union_extraction/mysite/unmasque/refactored/"
+    resource_path = "/home/leftnomemes/UnionExtraction/mysite/unmasque/refactored/"
     pkfkfilename = resource_path + "pkfkrelations.csv"
     create_index_filename = resource_path + "create_indexes.sql"
 

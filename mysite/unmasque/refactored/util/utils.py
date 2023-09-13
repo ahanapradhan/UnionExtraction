@@ -68,8 +68,8 @@ def get_unused_dummy_val(datatype, value_used):
     elif datatype == 'date':
         constants.dummy_date = dint
     elif datatype == 'char':
+        dint = get_char(dint)
         constants.dummy_char = get_int(dint)
-
     return dint
 
 

@@ -6,7 +6,7 @@ from ..refactored.abstract.AfterWhereClauseExtractorBase import AfterWhereClause
 from ..refactored.util.utils import is_number, get_val_plus_delta, get_dummy_val_for, get_format, \
     get_char, isQ_result_empty
 from ..src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
-
+from ..src.util.constants import min_int_val, max_int_val
 
 def get_k_value_for_number(a, b):
     if a == b:
@@ -101,7 +101,10 @@ class Aggregation(AfterWhereClauseBase):
                  join_graph,
                  projected_attribs,
                  has_groupby,
-                 groupby_attribs):
+                 groupby_attribs,
+                 dependencies,
+                 solution,
+                 param_list):
         super().__init__(connectionHelper, "Aggregation",
                          core_relations,
                          global_all_attribs,
@@ -113,6 +116,9 @@ class Aggregation(AfterWhereClauseBase):
         self.global_projected_attributes = projected_attribs
         self.has_groupby = has_groupby
         self.global_groupby_attributes = groupby_attribs
+        self.dependencies = dependencies
+        self.solution = solution
+        self.param_list = param_list
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
         # AsSUMing NO DISTINCT IN AGGREGATION
@@ -129,12 +135,21 @@ class Aggregation(AfterWhereClauseBase):
                 key_list = next((elt for elt in self.global_join_graph if attrib in elt), [])
 
                 # Attribute Filtering
-                if (attrib not in self.global_projected_attributes) \
-                        or \
-                        (attrib in self.global_groupby_attributes):
+                if attrib in self.global_groupby_attributes:
                     continue
-                else:
-                    result_index_list = [j for j, x in enumerate(self.global_projected_attributes) if x == attrib]
+                l = 0
+                
+                result_index_list = []
+
+                for j, dep in enumerate(self.dependencies):
+                    for i in dep:
+                        if attrib in i:
+                            result_index_list.append(j)
+                            break
+                # if l==0:
+                #     continue
+                # else:
+                #     result_index_list = [j for j, x in enumerate(self.global_projected_attributes) if x == attrib]
 
                 groupby_key_flag = False
                 if attrib in self.global_key_attributes and attrib in self.global_groupby_attributes:
@@ -145,7 +160,7 @@ class Aggregation(AfterWhereClauseBase):
                                                            groupby_key_flag, tabname)
 
                     self.truncate_core_relations()
-
+                    temp_vals = []
                     # For this table (tabname) and this attribute (attrib), fill all tables now
                     for j in range(len(self.core_relations)):
                         tabname_inner = self.core_relations[j]
@@ -193,18 +208,62 @@ class Aggregation(AfterWhereClauseBase):
                                         plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 2))
                                     insert_values.append(plus_val)
                             insert_rows.append(tuple(insert_values))
+                            
                             flag = True
-
+                        print("Attribute Ordering: ", att_order)
+                        print("Rows: ", insert_rows)
+                        temp_vals.append(insert_rows)
                         self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
-
+                    #print("Debug", self.dependencies, result_index)
+                    if len(self.dependencies[result_index]) > 1:
+                        #print("Temp values", temp_vals)
+                        s = 0
+                        mi = max_int_val
+                        ma = min_int_val
+                        av = 0
+                        temp_ar = []
+                        local_sol = self.solution[result_index]
+                        for ele in self.dependencies[result_index]:
+                            local_tabname = ele[0]
+                            local_attrib = ele[1]
+                            local_attrib_index = self.global_all_attribs[self.core_relations.index(local_tabname)].index(local_attrib)
+                            vals_sp = temp_vals[self.core_relations.index(local_tabname)]
+                            l = []
+                            for row in vals_sp:
+                                l.append(row[local_attrib_index])
+                            temp_ar.append((local_attrib, tuple(l)))
+                        for i in range(no_of_rows):
+                            inter_val = []
+                            eqn = 0
+                            for j in range(len(self.dependencies[result_index])):
+                                inter_val.append(int(temp_ar[j][1][i]))
+                            ele = 1
+                            n = len(self.dependencies[result_index])
+                            for j in range(n , len(self.param_list[result_index])):
+                                ele = int(j/n)
+                                # coeff[0][j] = coeff[0][(j-n)]*coeff[0][(j+ele)%n]
+                                inter_val.append(inter_val[(j-n)]*inter_val[(j+ele)%n])
+                            inter_val.append(1)
+                            print("Intermediate Values of all", inter_val)
+                            for j, val in enumerate(inter_val):
+                                eqn += (val*local_sol[j][0])
+                            s += eqn
+                            mi = eqn if eqn < mi else mi
+                            ma = eqn if eqn > ma else ma
+                        av = (s/no_of_rows)
+                        # print("Temp Array", temp_ar)
+                        # print("SUM, AV, MIN, MAX", s, av, mi, ma)
+                        agg_array = [SUM, s, AVG, av, MIN, mi, MAX, ma, COUNT, no_of_rows]
                     new_result = self.app.doJob(query)
+                    print("New Result", new_result)
+                    print("Comaparison", agg_array)
                     if isQ_result_empty(new_result):
                         print('some error in generating new database. Result is empty. Can not identify aggregation')
                         return False
                     elif len(new_result) > 2:
                         continue
 
-                    self.analyze(agg_array, attrib, new_result, result_index)
+                    self.analyze(agg_array, self.global_projected_attributes[result_index], new_result, result_index)
 
         for i in range(len(self.global_projected_attributes)):
             if self.global_projected_attributes[i] == '':
