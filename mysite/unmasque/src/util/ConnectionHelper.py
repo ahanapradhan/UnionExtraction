@@ -36,10 +36,6 @@ def cur_execute_sql_fetch_one(cur, sql):
 
 
 class ConnectionHelper:
-    config = None
-    conn = None
-    paramString = None
-    db = None
 
     def __init__(self, **kwargs):
         """
@@ -68,6 +64,8 @@ class ConnectionHelper:
                 self.config.password = value
             elif key == SCHEMA:
                 self.config.schema = value
+
+        self.conn = None
         self.db = self.config.dbname
         self.paramString = "dbname=" + self.config.dbname + " user=" + self.config.user + \
                            " password=" + self.config.password + " host=" + self.config.host + " port=" + self.config.port

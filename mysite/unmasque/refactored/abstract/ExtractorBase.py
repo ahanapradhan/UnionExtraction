@@ -3,14 +3,6 @@ import time
 
 class Base:
     _instance = None
-    method_call_count = 0
-    connectionHelper = None
-    local_start_time = None
-    local_end_time = None
-    local_elapsed_time = None
-    extractor_name = "Base"
-    done = False
-    result = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -20,6 +12,12 @@ class Base:
     def __init__(self, connectionHelper, name):
         self.connectionHelper = connectionHelper
         self.extractor_name = name
+        self.method_call_count = 0
+        self.local_start_time = None
+        self.local_end_time = None
+        self.local_elapsed_time = None
+        self.done = False
+        self.result = None
 
     def doJob(self, *args):
         self.local_start_time = time.time()

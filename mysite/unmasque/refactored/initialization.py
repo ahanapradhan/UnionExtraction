@@ -6,11 +6,6 @@ from ..refactored.util.common_queries import drop_table
 
 
 class Initiator(Base):
-    global_index_dict = {}
-    global_key_lists = [[]]
-    global_pk_dict = {}
-    all_relations = []
-    error = None
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Initiator")
@@ -18,6 +13,11 @@ class Initiator(Base):
         self.pkfk_file_path = (self.resource_path / connectionHelper.config.pkfk).resolve()
         self.create_index_filepath = (self.resource_path / connectionHelper.config.index_maker).resolve()
         self.schema = connectionHelper.config.schema
+        self.global_index_dict = {}
+        self.global_key_lists = [[]]
+        self.global_pk_dict = {}
+        self.all_relations = []
+        self.error = None
 
     def reset(self):
         self.global_index_dict = {}

@@ -2,6 +2,7 @@ import psycopg2
 from django.shortcuts import render, redirect
 from psycopg2 import OperationalError
 
+from .src.pipeline import PipeLineFactory
 from .src.pipeline.UnionPipeLine import UnionPipeLine
 from .src.util.ConnectionHelper import ConnectionHelper
 
@@ -33,15 +34,15 @@ def login_view(request):
             return render(request, 'unmasque/login.html', {'error_message': error_message})
 
         connHelper = ConnectionHelper(dbname=database, user=username, password=password, port=port, host=host)
-        doExtraction(connHelper, query, request)
+        run_extraction_pipeline(connHelper, query, request)
         return redirect('result')
 
     return render(request, 'unmasque/login.html')
 
 
-def doExtraction(connHelper, query, request):
-    pipeline = UnionPipeLine(connHelper)
-    data = pipeline.extract(query)
+def run_extraction_pipeline(connHelper, query, request):
+    pipeline = PipeLineFactory.get(connHelper)
+    data = pipeline.doJob(query)
     tp = pipeline.time_profile
     to_pass = [query]
     if data is not None:

@@ -9,22 +9,12 @@ def parse_config_field(config_object, field, section, field_name):
     try:
         field = config_object.get(section, field_name)
     except KeyError:
-        print("hostname not found in config. Using default config!")
+        print(field_name, " config not found. Using default config!")
     return field
 
 
 class Config:
     _instance = None
-    user = None
-    password = None
-    port = None
-    dbname = None
-    schema = None
-    pkfk = None
-    index_maker = None
-    host = None
-    config_loaded = False
-    base_path = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -32,9 +22,6 @@ class Config:
         return cls._instance
 
     def __init__(self):
-        self.load_default()
-
-    def load_default(self):
         # default values
         self.index_maker = "create_indexes.sql"
         self.pkfk = "pkfkrelations.csv"
@@ -44,6 +31,9 @@ class Config:
         self.password = "postgres"
         self.user = "postgres"
         self.host = "localhost"
+        self.config_loaded = False
+        self.base_path = None
+        self.detect_union = True
 
     def parse_config(self):
         if self.config_loaded:

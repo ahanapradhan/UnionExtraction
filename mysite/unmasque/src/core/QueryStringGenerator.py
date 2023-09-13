@@ -1,6 +1,6 @@
 import copy
 
-from ..util.constants import COUNT, SUM
+from ..util.constants import COUNT, SUM, max_str_len
 from ...refactored.abstract.ExtractorBase import Base
 from ...refactored.executable import Executable
 from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val
@@ -41,7 +41,6 @@ def handle_range_preds(datatype, pred, pred_op):
 
 
 class QueryStringGenerator(Base):
-    max_str_len = 500
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Query String Generator")
@@ -191,7 +190,7 @@ class QueryStringGenerator(Base):
                 predicate = elt[1] + " " + str(elt[2]) + " '" + str(elt[3]) + "' "
 
             elif isinstance(elt[3], str):
-                output = self.getStrFilterValue(query, elt[0], elt[1], elt[3], self.max_str_len)
+                output = self.getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
                 if '%' in output or '_' in output:
                     predicate = elt[1] + " NOT LIKE '" + str(output) + "' "
                 else:
@@ -277,7 +276,6 @@ class QueryStringGenerator(Base):
                 temp.append('a')
             temp = ''.join(temp)
 
-            # updatequery
             u_query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
             self.connectionHelper.execute_sql([u_query])
             new_result = self.app.doJob(query)

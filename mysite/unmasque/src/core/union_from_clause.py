@@ -7,7 +7,6 @@ from ..mocks.database import Schema
 
 
 class UnionFromClause(Schema, Base):
-    relations = []
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Old Unmasque")
@@ -15,6 +14,7 @@ class UnionFromClause(Schema, Base):
         self.fromtabs = None
         self.to_nullify = None
         self.fromClause = FromClause(connectionHelper)
+        self.relations = []
 
     def get_relations(self):
         if not self.fromClause.init.done:

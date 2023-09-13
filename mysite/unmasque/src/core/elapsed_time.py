@@ -1,19 +1,8 @@
 import copy
 
-from ...src.util import constants
-
 
 def create_zero_time_profile():
-    return ElapsedTime(constants,
-                       constants,
-                       constants,
-                       constants,
-                       constants,
-                       constants,
-                       constants,
-                       constants,
-                       constants,
-                       constants)
+    return ElapsedTime()
 
 
 class ElapsedTime:
@@ -31,46 +20,22 @@ class ElapsedTime:
                    "Result Comparator:",
                    "Number of Times Executable called: "
                    ]
-    t_sampling = 0
-    t_view_min = 0
-    t_where_clause = 0
-    t_projection = 0
-    t_groupby = 0
-    t_aggregate = 0
-    t_orderby = 0
-    t_limit = 0
-    t_nep = 0
 
-    executable_call_count = 0
-    t_union = 0
-    t_from_clause = 0
-
-    t_result_comp = 0
-
-    display_string = ''
-
-    def __init__(self, cs2,
-                 vm,
-                 wc,
-                 pj,
-                 gb,
-                 agg,
-                 ob, lm, nep,
-                 app):
-        self.t_sampling += cs2.local_elapsed_time
-        self.t_view_min += vm.local_elapsed_time
-        self.t_where_clause += wc.local_elapsed_time
-        self.t_projection += pj.local_elapsed_time
-        self.t_groupby += gb.local_elapsed_time
-        self.t_aggregate += agg.local_elapsed_time
-        self.t_orderby += ob.local_elapsed_time
-        self.t_limit += lm.local_elapsed_time
-        if nep is not None:
-            self.t_nep += nep.local_elapsed_time
-        self.executable_call_count = app.method_call_count
+    def __init__(self):
+        self.t_sampling = 0
+        self.t_view_min = 0
+        self.t_where_clause = 0
+        self.t_projection = 0
+        self.t_groupby = 0
+        self.t_aggregate = 0
+        self.t_orderby = 0
+        self.t_limit = 0
+        self.t_nep = 0
+        self.executable_call_count = 0
         self.t_union = 0
         self.t_from_clause = 0
         self.t_result_comp = 0
+        self.display_string = ''
 
     def update_for_from_clause(self, t_u):
         self.t_from_clause += t_u
@@ -153,8 +118,17 @@ class ElapsedTime:
         return ds
 
     def get_times(self):
-        times = [self.t_union, self.t_from_clause, self.t_sampling, self.t_view_min, self.t_where_clause, self.t_projection,
-                 self.t_groupby, self.t_aggregate, self.t_orderby, self.t_limit, self.t_nep,
+        times = [self.t_union,
+                 self.t_from_clause,
+                 self.t_sampling,
+                 self.t_view_min,
+                 self.t_where_clause,
+                 self.t_projection,
+                 self.t_groupby,
+                 self.t_aggregate,
+                 self.t_orderby,
+                 self.t_limit,
+                 self.t_nep,
                  self.t_result_comp,
                  self.executable_call_count]
         return times

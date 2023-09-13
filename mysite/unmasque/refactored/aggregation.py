@@ -8,6 +8,7 @@ from ..refactored.util.utils import is_number, get_val_plus_delta, get_dummy_val
 from ..src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ..src.util.constants import min_int_val, max_int_val
 
+
 def get_k_value_for_number(a, b):
     if a == b:
         k_value = 1
@@ -138,7 +139,7 @@ class Aggregation(GenerationPipeLineBase):
                 if attrib in self.global_groupby_attributes:
                     continue
                 l = 0
-                
+
                 result_index_list = []
 
                 for j, dep in enumerate(self.dependencies):
@@ -208,15 +209,15 @@ class Aggregation(GenerationPipeLineBase):
                                         plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 2))
                                     insert_values.append(plus_val)
                             insert_rows.append(tuple(insert_values))
-                            
+
                             flag = True
                         print("Attribute Ordering: ", att_order)
                         print("Rows: ", insert_rows)
                         temp_vals.append(insert_rows)
                         self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
-                    #print("Debug", self.dependencies, result_index)
+                    # print("Debug", self.dependencies, result_index)
                     if len(self.dependencies[result_index]) > 1:
-                        #print("Temp values", temp_vals)
+                        # print("Temp values", temp_vals)
                         s = 0
                         mi = max_int_val
                         ma = min_int_val
@@ -226,7 +227,8 @@ class Aggregation(GenerationPipeLineBase):
                         for ele in self.dependencies[result_index]:
                             local_tabname = ele[0]
                             local_attrib = ele[1]
-                            local_attrib_index = self.global_all_attribs[self.core_relations.index(local_tabname)].index(local_attrib)
+                            local_attrib_index = self.global_all_attribs[
+                                self.core_relations.index(local_tabname)].index(local_attrib)
                             vals_sp = temp_vals[self.core_relations.index(local_tabname)]
                             l = []
                             for row in vals_sp:
@@ -239,18 +241,18 @@ class Aggregation(GenerationPipeLineBase):
                                 inter_val.append(int(temp_ar[j][1][i]))
                             ele = 1
                             n = len(self.dependencies[result_index])
-                            for j in range(n , len(self.param_list[result_index])):
-                                ele = int(j/n)
+                            for j in range(n, len(self.param_list[result_index])):
+                                ele = int(j / n)
                                 # coeff[0][j] = coeff[0][(j-n)]*coeff[0][(j+ele)%n]
-                                inter_val.append(inter_val[(j-n)]*inter_val[(j+ele)%n])
+                                inter_val.append(inter_val[(j - n)] * inter_val[(j + ele) % n])
                             inter_val.append(1)
                             print("Intermediate Values of all", inter_val)
                             for j, val in enumerate(inter_val):
-                                eqn += (val*local_sol[j][0])
+                                eqn += (val * local_sol[j][0])
                             s += eqn
                             mi = eqn if eqn < mi else mi
                             ma = eqn if eqn > ma else ma
-                        av = (s/no_of_rows)
+                        av = (s / no_of_rows)
                         # print("Temp Array", temp_ar)
                         # print("SUM, AV, MIN, MAX", s, av, mi, ma)
                         agg_array = [SUM, s, AVG, av, MIN, mi, MAX, ma, COUNT, no_of_rows]

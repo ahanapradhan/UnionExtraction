@@ -3,8 +3,6 @@ import copy
 import pandas as pd
 
 from .abstract.MinimizerBase import Minimizer
-from ..refactored.abstract.ExtractorBase import Base
-from ..refactored.executable import Executable
 from ..refactored.util.common_queries import get_row_count, alter_table_rename_to, get_min_max_ctid, \
     drop_view, drop_table, create_table_as_select_star_from, get_ctid_from, get_tabname_1, \
     create_view_as_select_star_where_ctid, create_table_as_select_star_from_ctid, get_tabname_4, get_star, \

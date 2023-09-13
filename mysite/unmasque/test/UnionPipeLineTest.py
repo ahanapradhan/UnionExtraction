@@ -53,7 +53,7 @@ class MyTestCase(unittest.TestCase):
                 "905) " \
                 "union all " \
                 "(select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);"
-        u_Q = self.pipeline.extract(query)
+        u_Q = self.pipeline.doJob(query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
         self.pipeline.time_profile.print()

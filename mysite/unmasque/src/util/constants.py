@@ -31,6 +31,8 @@ IDENTICAL_EXPR = "identical_expr_nc"
 pr_min = 1
 pr_max = 999
 
+max_str_len = 500
+
 DATABASE_SECTION = "database"
 SUPPORT_SECTION = "support"
 HOST = "host"
@@ -39,3 +41,6 @@ USER = "user"
 PASSWORD = "password"
 DBNAME = "dbname"
 SCHEMA = "schema"
+
+
+BACKEND_BUSY = "Some Shady guy is waiting to reveal his true colors... please wait..."
