@@ -65,6 +65,8 @@ class ConnectionHelper:
             elif key == SCHEMA:
                 self.config.schema = value
 
+        self.config.config_loaded = True
+
         self.conn = None
         self.db = self.config.dbname
         self.paramString = "dbname=" + self.config.dbname + " user=" + self.config.user + \

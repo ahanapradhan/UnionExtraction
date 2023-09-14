@@ -32,27 +32,29 @@ class Config:
         self.user = "postgres"
         self.host = "localhost"
         self.config_loaded = False
-        self.base_path = None
         self.detect_union = True
 
     def parse_config(self):
         if self.config_loaded:
             return
 
-        self.base_path = Path(__file__).parent.parent.parent.parent
-        config_file = (self.base_path / "config.ini").resolve()
-        config_object = configparser.ConfigParser()
-        with open(config_file, "r") as file_object:
-            config_object.read_file(file_object)
+        try:
+            base_path = Path(__file__).parent.parent.parent.parent
+            config_file = (base_path / "config.ini").resolve()
+            config_object = configparser.ConfigParser()
+            with open(config_file, "r") as file_object:
+                config_object.read_file(file_object)
 
-            database_field_names = [HOST, PORT, USER, PASSWORD, DBNAME, SCHEMA]
-            database_fields = [self.host, self.port, self.user, self.password, self.dbname, self.schema]
-            for i in range(len(database_fields)):
-                parse_config_field(config_object, database_fields[i], DATABASE_SECTION, database_field_names[i])
+                database_field_names = [HOST, PORT, USER, PASSWORD, DBNAME, SCHEMA]
+                database_fields = [self.host, self.port, self.user, self.password, self.dbname, self.schema]
+                for i in range(len(database_fields)):
+                    parse_config_field(config_object, database_fields[i], DATABASE_SECTION, database_field_names[i])
 
-            support_field_names = ["pkfk", "index_maker"]
-            support_fields = [self.pkfk, self.index_maker]
-            for i in range(len(support_fields)):
-                parse_config_field(config_object, support_fields[i], SUPPORT_SECTION, support_field_names[i])
+                support_field_names = ["pkfk", "index_maker"]
+                support_fields = [self.pkfk, self.index_maker]
+                for i in range(len(support_fields)):
+                    parse_config_field(config_object, support_fields[i], SUPPORT_SECTION, support_field_names[i])
+        except FileNotFoundError:
+            print("config.ini not found. Default configs loaded!")
 
         self.config_loaded = True

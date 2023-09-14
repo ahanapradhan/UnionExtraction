@@ -41,9 +41,7 @@ def login_view(request):
 
 
 def run_extraction_pipeline(connHelper, query, request):
-    pipeline = PipeLineFactory.get(connHelper)
-    data = pipeline.doJob(query)
-    tp = pipeline.time_profile
+    data, tp = PipeLineFactory.doJob(query, connHelper)
     to_pass = [query]
     if data is not None:
         to_pass.append(data)

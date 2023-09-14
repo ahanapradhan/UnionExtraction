@@ -2,10 +2,10 @@ from .ExtractionPipeLine import ExtractionPipeLine
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
 from ..core.union import Union
-from .abstract.rate_limited_pipeline import RateLimitedPipeLine
+from .abstract.generic_pipeline import GenericPipeLine
 
 
-class UnionPipeLine(RateLimitedPipeLine):
+class UnionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Union PipeLine")

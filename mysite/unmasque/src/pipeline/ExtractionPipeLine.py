@@ -10,10 +10,10 @@ from ...refactored.limit import Limit
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
 from ...refactored.view_minimizer import ViewMinimizer
-from .abstract.rate_limited_pipeline import RateLimitedPipeLine
+from .abstract.generic_pipeline import GenericPipeLine
 
 
-class ExtractionPipeLine(RateLimitedPipeLine):
+class ExtractionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Extraction PipeLine")
