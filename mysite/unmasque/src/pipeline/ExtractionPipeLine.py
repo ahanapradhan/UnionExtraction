@@ -1,5 +1,7 @@
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
+from ..util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
+    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.equi_join import EquiJoin
@@ -17,6 +19,39 @@ class ExtractionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Extraction PipeLine")
+        self.state_sequence = [WAITING,
+                               FROM_CLAUSE + START,
+                               FROM_CLAUSE + RUNNING,
+                               FROM_CLAUSE + DONE,
+                               SAMPLING + START,
+                               SAMPLING + RUNNING,
+                               SAMPLING + DONE,
+                               DB_MINIMIZATION + START,
+                               DB_MINIMIZATION + RUNNING,
+                               DB_MINIMIZATION + DONE,
+                               EQUI_JOIN + START,
+                               EQUI_JOIN + RUNNING,
+                               EQUI_JOIN + DONE,
+                               FILTER + START,
+                               FILTER + RUNNING,
+                               FILTER + DONE,
+                               PROJECTION + START,
+                               PROJECTION + RUNNING,
+                               PROJECTION + DONE,
+                               GROUP_BY + START,
+                               GROUP_BY + RUNNING,
+                               GROUP_BY + DONE,
+                               AGGREGATE + START,
+                               AGGREGATE + RUNNING,
+                               AGGREGATE + DONE,
+                               ORDER_BY + START,
+                               ORDER_BY + RUNNING,
+                               ORDER_BY + DONE,
+                               LIMIT + START,
+                               LIMIT + RUNNING,
+                               LIMIT + DONE,
+                               DONE
+                               ]
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()

@@ -1,6 +1,8 @@
 from .ExtractionPipeLine import ExtractionPipeLine
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
+from ..util.constants import WAITING, UNION, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
+    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
 from ..core.union import Union
 from .abstract.generic_pipeline import GenericPipeLine
 
@@ -9,6 +11,39 @@ class UnionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Union PipeLine")
+        self.state_sequence = [WAITING,
+                               UNION + START,
+                               UNION + RUNNING,
+                               UNION + DONE,
+                               SAMPLING + START,
+                               SAMPLING + RUNNING,
+                               SAMPLING + DONE,
+                               DB_MINIMIZATION + START,
+                               DB_MINIMIZATION + RUNNING,
+                               DB_MINIMIZATION + DONE,
+                               EQUI_JOIN + START,
+                               EQUI_JOIN + RUNNING,
+                               EQUI_JOIN + DONE,
+                               FILTER + START,
+                               FILTER + RUNNING,
+                               FILTER + DONE,
+                               PROJECTION + START,
+                               PROJECTION + RUNNING,
+                               PROJECTION + DONE,
+                               GROUP_BY + START,
+                               GROUP_BY + RUNNING,
+                               GROUP_BY + DONE,
+                               AGGREGATE + START,
+                               AGGREGATE + RUNNING,
+                               AGGREGATE + DONE,
+                               ORDER_BY + START,
+                               ORDER_BY + RUNNING,
+                               ORDER_BY + DONE,
+                               LIMIT + START,
+                               LIMIT + RUNNING,
+                               LIMIT + DONE,
+                               DONE
+                               ]
 
     def extract(self, query):
         # opening and closing connection actions are vital.

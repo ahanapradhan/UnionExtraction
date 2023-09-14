@@ -13,19 +13,24 @@ class PipeLineFactory:
             cls._instance = super(PipeLineFactory, cls).__new__(cls)
         return cls._instance
 
+    def __init__(self):
+        self.pipeline = None
+
     def doJob(self, query, connectionHelper):
         print("lock: ", query)
         self.q.put("locked", True)
-        pipeline = self.get_element(connectionHelper)
-        qe = pipeline.doJob(query)
+        self.create_pipeline(connectionHelper)
+        qe = self.pipeline.doJob(query)
         self.q.get_nowait()
         print("unlocked: ", query)
-        return qe, pipeline.time_profile
+        return qe, self.pipeline.time_profile
 
-    def get_element(self, connectionHelper):
+    def create_pipeline(self, connectionHelper):
         detect_union = connectionHelper.config.detect_union
         if detect_union:
-            pipeline = UnionPipeLine(connectionHelper)
+            self.pipeline = UnionPipeLine(connectionHelper)
         else:
-            pipeline = ExtractionPipeLine(connectionHelper)
-        return pipeline
+            self.pipeline = ExtractionPipeLine(connectionHelper)
+
+    def get_pipeline_state(self):
+        return self.pipeline.get_state()
