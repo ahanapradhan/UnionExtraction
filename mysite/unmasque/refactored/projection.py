@@ -1,13 +1,13 @@
 import ast
 import copy
-import datetime
-import numpy as np
 import random
 
-from ..src.util import constants
+import numpy as np
+
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
     get_val_plus_delta, get_char, get_dummy_val_for
+from ..src.util import constants
 
 
 def cover_special_chars(curr_str, value_used):
@@ -214,9 +214,7 @@ class Projection(GenerationPipeLineBase):
     def find_projection_on_unfiltered_attribs(self, attrib_types_dict, query):
         self.truncate_core_relations()
         value_used = self.construct_values_used(attrib_types_dict)
-        # print("Values 1", value_used)
         value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
-        # print("Values 2", value_used)
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
             print("Unmasque: \n some error in generating new database. Result is empty. Can not identify "
@@ -326,7 +324,7 @@ class Projection(GenerationPipeLineBase):
                         if val == attrib:
                             join = elt
                             break
-                    if join != 0:
+                    if join:
                         break
 
                 if fil:
@@ -336,7 +334,7 @@ class Projection(GenerationPipeLineBase):
                     else:
                         # Take Max value for to check for coincidence
                         if 'date' in attrib_types_dict[(tabname, attrib)]:
-                            update_value = fil[4] - datetime.timedelta(days=1)
+                            update_value = get_val_plus_delta('date', fil[4], -1)
                         else:
                             update_value = fil[4]
                 update_multi = []
@@ -431,7 +429,7 @@ class Projection(GenerationPipeLineBase):
                 if pred[0] == ele[0] and pred[1] == ele[1]:
                     fil = pred
                     break
-            if fil == 0:
+            if not fil:
                 fil_check.append(False)
             else:
                 fil_check.append(fil)

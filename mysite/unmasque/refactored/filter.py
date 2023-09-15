@@ -45,7 +45,7 @@ class Filter(WhereClause):
                     self.extract_filter_on_attrib(attrib, attrib_max_length, d_plus_value, filter_attribs,
                                                   query, tabname)
 
-                    print("filter_attribs", filter_attribs)
+                    # print("filter_attribs", filter_attribs)
         return filter_attribs
 
     def extract_filter_on_attrib(self, attrib, attrib_max_length, d_plus_value, filter_attribs, query, tabname):
@@ -168,12 +168,12 @@ class Filter(WhereClause):
 
     def run_app_with_mid_val(self, datatype, high, low, query, q_front, q_back):
         mid_val = get_mid_val(datatype, high, low)
-        print("[low,high,mid]", low, high, mid_val)
+        # print("[low,high,mid]", low, high, mid_val)
         # updatequery
         update_query = q_front + " " + get_format(datatype, mid_val) + q_back
         self.connectionHelper.execute_sql([update_query])
         new_result = self.app.doJob(query)
-        print(new_result, mid_val)
+        # print(new_result, mid_val)
         return mid_val, new_result
 
         # mukul

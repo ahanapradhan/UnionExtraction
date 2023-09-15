@@ -157,3 +157,11 @@ Q38: INTERSECT
 '''
 select l_orderkey as orderkey, sum(l_discount) as revenue, sum(o_totalprice) as totalprice, o_shippriority as shippriority from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_totalprice, o_shippriority order by revenue desc limit 10;
 '''
+
+'''
+select
+o_orderkey as key
+from customer, orders
+where
+c_custkey = o_custkey and o_totalprice <= 890 limit 3;
+'''

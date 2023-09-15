@@ -6,11 +6,11 @@ from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA
 
 
 def cus_execute_sqls(cur, sqls):
-    print(cur)
+    # print(cur)
     for sql in sqls:
-        print("..cur execute.." + sql)
+        # print("..cur execute.." + sql)
         cur.execute(sql)
-        print("..done")
+        # print("..done")
     cur.close()
 
 
@@ -82,9 +82,9 @@ class ConnectionHelper:
 
     def getConnection(self):
         if self.conn is None:
-            print("connecting...")
+            # print("connecting...")
             self.connectUsingParams()
-            print("done!")
+            # print("done!")
         return self.conn
 
     def execute_sql(self, sqls):
@@ -113,7 +113,7 @@ class ConnectionHelper:
 
     def execute_sql_fetchall(self, sql):
         cur = self.get_cursor()
-        print("...", sql, "...")
+        # print("...", sql, "...")
         cur.execute(sql)
         res = cur.fetchall()
         des = cur.description
