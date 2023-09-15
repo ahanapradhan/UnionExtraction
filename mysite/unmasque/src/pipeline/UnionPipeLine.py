@@ -1,56 +1,26 @@
 from .ExtractionPipeLine import ExtractionPipeLine
+from .abstract.generic_pipeline import GenericPipeLine
+from ..core.union import Union
+from ..util.constants import UNION, START, DONE, RUNNING
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
-from ..util.constants import WAITING, UNION, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
-from ..core.union import Union
-from .abstract.generic_pipeline import GenericPipeLine
 
 
 class UnionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Union PipeLine")
-        self.state_sequence = [WAITING,
-                               UNION + START,
-                               UNION + RUNNING,
-                               UNION + DONE,
-                               SAMPLING + START,
-                               SAMPLING + RUNNING,
-                               SAMPLING + DONE,
-                               DB_MINIMIZATION + START,
-                               DB_MINIMIZATION + RUNNING,
-                               DB_MINIMIZATION + DONE,
-                               EQUI_JOIN + START,
-                               EQUI_JOIN + RUNNING,
-                               EQUI_JOIN + DONE,
-                               FILTER + START,
-                               FILTER + RUNNING,
-                               FILTER + DONE,
-                               PROJECTION + START,
-                               PROJECTION + RUNNING,
-                               PROJECTION + DONE,
-                               GROUP_BY + START,
-                               GROUP_BY + RUNNING,
-                               GROUP_BY + DONE,
-                               AGGREGATE + START,
-                               AGGREGATE + RUNNING,
-                               AGGREGATE + DONE,
-                               ORDER_BY + START,
-                               ORDER_BY + RUNNING,
-                               ORDER_BY + DONE,
-                               LIMIT + START,
-                               LIMIT + RUNNING,
-                               LIMIT + DONE,
-                               DONE
-                               ]
+        self.old_pipeline = ExtractionPipeLine(self.connectionHelper)
 
     def extract(self, query):
         # opening and closing connection actions are vital.
         self.connectionHelper.connectUsingParams()
 
+        self.update_state(UNION + START)
         union = Union(self.connectionHelper)
+        self.update_state(UNION + RUNNING)
         p, pstr = union.doJob(query)
+        self.update_state(UNION + DONE)
         self.time_profile.update_for_union(union.local_elapsed_time)
         all_relations = union.all_relations
         key_lists = union.key_lists
@@ -70,9 +40,8 @@ class UnionPipeLine(GenericPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.nullify_relations(nullify)
-            oldPipeLine = ExtractionPipeLine(self.connectionHelper)
-            eq, time_profile = oldPipeLine.after_from_clause_extract(query, all_relations,
-                                                                     core_relations, key_lists)
+            eq, time_profile = self.old_pipeline.after_from_clause_extract(query, all_relations,
+                                                                           core_relations, key_lists)
             self.revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
 
@@ -96,6 +65,7 @@ class UnionPipeLine(GenericPipeLine):
             result = "Could not extract the query due to errors.\nHere's what I have as a half-baked answer:\n" + pstr + "\n"
         result += u_Q
 
+        self.update_state(DONE)
         return result
 
     def nullify_relations(self, relations):
@@ -114,3 +84,7 @@ class UnionPipeLine(GenericPipeLine):
             self.connectionHelper.execute_sql([drop_table(tab),
                                                alter_table_rename_to(get_restore_name(tab), tab),
                                                drop_table(get_tabname_4(tab))])
+
+    def get_state(self):
+        if super().get_state() == UNION + DONE:
+            return self.old_pipeline.get_state()

@@ -1,6 +1,9 @@
+from time import sleep
+
+from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
-from ..util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
+from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
     PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
@@ -12,58 +15,29 @@ from ...refactored.limit import Limit
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
 from ...refactored.view_minimizer import ViewMinimizer
-from .abstract.generic_pipeline import GenericPipeLine
 
 
 class ExtractionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Extraction PipeLine")
-        self.state_sequence = [WAITING,
-                               FROM_CLAUSE + START,
-                               FROM_CLAUSE + RUNNING,
-                               FROM_CLAUSE + DONE,
-                               SAMPLING + START,
-                               SAMPLING + RUNNING,
-                               SAMPLING + DONE,
-                               DB_MINIMIZATION + START,
-                               DB_MINIMIZATION + RUNNING,
-                               DB_MINIMIZATION + DONE,
-                               EQUI_JOIN + START,
-                               EQUI_JOIN + RUNNING,
-                               EQUI_JOIN + DONE,
-                               FILTER + START,
-                               FILTER + RUNNING,
-                               FILTER + DONE,
-                               PROJECTION + START,
-                               PROJECTION + RUNNING,
-                               PROJECTION + DONE,
-                               GROUP_BY + START,
-                               GROUP_BY + RUNNING,
-                               GROUP_BY + DONE,
-                               AGGREGATE + START,
-                               AGGREGATE + RUNNING,
-                               AGGREGATE + DONE,
-                               ORDER_BY + START,
-                               ORDER_BY + RUNNING,
-                               ORDER_BY + DONE,
-                               LIMIT + START,
-                               LIMIT + RUNNING,
-                               LIMIT + DONE,
-                               DONE
-                               ]
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
         '''
         From Clause Extraction
         '''
+        self.update_state(FROM_CLAUSE + START)
         fc = FromClause(self.connectionHelper)
+        self.update_state(FROM_CLAUSE + RUNNING)
         check = fc.doJob(query, "rename")
+        self.update_state(FROM_CLAUSE + DONE)
         self.time_profile.update_for_from_clause(fc.local_elapsed_time)
         if not check or not fc.done:
             print("Some problem while extracting from clause. Aborting!")
             return None, self.time_profile
+
+        sleep(1)
 
         eq, t = self.after_from_clause_extract(query,
                                                fc.all_relations,
@@ -84,14 +58,22 @@ class ExtractionPipeLine(GenericPipeLine):
         '''
         Correlated Sampling
         '''
+        self.update_state(SAMPLING + START)
         cs2 = Cs2(self.connectionHelper, all_relations, core_relations, key_lists)
+        self.update_state(SAMPLING + RUNNING)
         check = cs2.doJob(query)
+        self.update_state(SAMPLING + DONE)
         time_profile.update_for_cs2(cs2.local_elapsed_time)
         if not check or not cs2.done:
             print("Sampling failed!")
 
+        sleep(1)
+
+        self.update_state(DB_MINIMIZATION + START)
         vm = ViewMinimizer(self.connectionHelper, core_relations, cs2.sizes, cs2.passed)
+        self.update_state(DB_MINIMIZATION + RUNNING)
         check = vm.doJob(query)
+        self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(vm.local_elapsed_time)
         if not check:
             print("Cannot do database minimization. ")
@@ -100,14 +82,19 @@ class ExtractionPipeLine(GenericPipeLine):
             print("Some problem while view minimization. Aborting extraction!")
             return None, time_profile
 
+        sleep(1)
+
         '''
         Join Graph Extraction
         '''
+        self.update_state(EQUI_JOIN + START)
         ej = EquiJoin(self.connectionHelper,
                       key_lists,
                       core_relations,
                       vm.global_min_instance_dict)
+        self.update_state(EQUI_JOIN + RUNNING)
         check = ej.doJob(query)
+        self.update_state(EQUI_JOIN + DONE)
         time_profile.update_for_where_clause(ej.local_elapsed_time)
         if not check:
             print("Cannot find Join Predicates.")
@@ -115,15 +102,20 @@ class ExtractionPipeLine(GenericPipeLine):
             print("Some error while Join Predicate extraction. Aborting extraction!")
             return None, time_profile
 
+        sleep(1)
+
         '''
         Filters Extraction
         '''
+        self.update_state(FILTER + START)
         fl = Filter(self.connectionHelper,
                     key_lists,
                     core_relations,
                     vm.global_min_instance_dict,
                     ej.global_key_attributes)
+        self.update_state(FILTER + RUNNING)
         check = fl.doJob(query)
+        self.update_state(FILTER + DONE)
         time_profile.update_for_where_clause(fl.local_elapsed_time)
         if not check:
             print("Cannot find Filter Predicates.")
@@ -131,16 +123,21 @@ class ExtractionPipeLine(GenericPipeLine):
             print("Some error while Filter Predicate extraction. Aborting extraction!")
             return None, time_profile
 
+        sleep(1)
+
         '''
         Projection Extraction
         '''
+        self.update_state(PROJECTION + START)
         pj = Projection(self.connectionHelper,
                         ej.global_attrib_types,
                         core_relations,
                         fl.filter_predicates,
                         ej.global_join_graph,
                         ej.global_all_attribs)
+        self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
+        self.update_state(PROJECTION + DONE)
         time_profile.update_for_projection(pj.local_elapsed_time)
         if not check:
             print("Cannot find projected attributes. ")
@@ -149,6 +146,9 @@ class ExtractionPipeLine(GenericPipeLine):
             print("Some error while projection extraction. Aborting extraction!")
             return None, time_profile
 
+        sleep(1)
+
+        self.update_state(GROUP_BY + START)
         gb = GroupBy(self.connectionHelper,
                      ej.global_attrib_types,
                      core_relations,
@@ -156,7 +156,9 @@ class ExtractionPipeLine(GenericPipeLine):
                      ej.global_all_attribs,
                      ej.global_join_graph,
                      pj.projected_attribs)
+        self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
+        self.update_state(GROUP_BY + DONE)
         time_profile.update_for_group_by(gb.local_elapsed_time)
         if not check:
             print("Cannot find group by attributes. ")
@@ -165,6 +167,9 @@ class ExtractionPipeLine(GenericPipeLine):
             print("Some error while group by extraction. Aborting extraction!")
             return None, time_profile
 
+        sleep(1)
+
+        self.update_state(AGGREGATE + START)
         agg = Aggregation(self.connectionHelper,
                           ej.global_key_attributes,
                           ej.global_attrib_types,
@@ -178,7 +183,9 @@ class ExtractionPipeLine(GenericPipeLine):
                           pj.dependencies,
                           pj.solution,
                           pj.param_list)
+        self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
+        self.update_state(AGGREGATE + DONE)
         time_profile.update_for_aggregate(agg.local_elapsed_time)
         if not check:
             print("Cannot find aggregations.")
@@ -186,6 +193,9 @@ class ExtractionPipeLine(GenericPipeLine):
             print("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
 
+        sleep(1)
+
+        self.update_state(ORDER_BY + START)
         ob = OrderBy(self.connectionHelper,
                      ej.global_key_attributes,
                      ej.global_attrib_types,
@@ -196,8 +206,9 @@ class ExtractionPipeLine(GenericPipeLine):
                      pj.projected_attribs,
                      pj.projection_names,
                      agg.global_aggregated_attributes)
-
+        self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
+        self.update_state(ORDER_BY + DONE)
         time_profile.update_for_order_by(ob.local_elapsed_time)
         if not ob.has_orderBy:
             print("Cannot find aggregations.")
@@ -205,6 +216,9 @@ class ExtractionPipeLine(GenericPipeLine):
             print("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
 
+        sleep(1)
+
+        self.update_state(LIMIT + START)
         lm = Limit(self.connectionHelper,
                    ej.global_attrib_types,
                    ej.global_key_attributes,
@@ -212,8 +226,9 @@ class ExtractionPipeLine(GenericPipeLine):
                    fl.filter_predicates,
                    ej.global_all_attribs,
                    gb.group_by_attrib)
-
+        self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
+        self.update_state(LIMIT + DONE)
         time_profile.update_for_limit(lm.local_elapsed_time)
         if lm.limit is None:
             print("Cannot find limit.")
@@ -221,11 +236,17 @@ class ExtractionPipeLine(GenericPipeLine):
             print("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
 
+        sleep(1)
+
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
 
         q_generator = QueryStringGenerator(self.connectionHelper)
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
         print("extracted query:\n", eq)
+
+        self.update_state(DONE)
+
+        sleep(1)
 
         return eq, time_profile

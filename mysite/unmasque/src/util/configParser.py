@@ -31,16 +31,17 @@ class Config:
         self.password = "postgres"
         self.user = "postgres"
         self.host = "localhost"
+        self.base_path = None
         self.config_loaded = False
-        self.detect_union = True
+        self.detect_union = False
 
     def parse_config(self):
         if self.config_loaded:
             return
 
         try:
-            base_path = Path(__file__).parent.parent.parent.parent
-            config_file = (base_path / "config.ini").resolve()
+            self.base_path = Path(__file__).parent.parent.parent.parent
+            config_file = (self.base_path / "config.ini").resolve()
             config_object = configparser.ConfigParser()
             with open(config_file, "r") as file_object:
                 config_object.read_file(file_object)

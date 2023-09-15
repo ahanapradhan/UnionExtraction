@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Progress...</title>
+</head>
+<body>
+    <h1>Hidden Query</h1>
+    <pre>{{ query }}</pre>
+    <br>
+    <hr>
+    <h1>Please Wait...</h1>
+    <div id='progress-updates'>{{ progress_message }}</div>
+    <br>
+    <hr>
+
+    <!-- Progress updates will be displayed here -->
+
+    <!-- Include jQuery library (you can use a different library if you prefer) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        // Function to fetch progress updates using AJAX
+        function fetchProgress() {
+            $.ajax({
+                url: "{% url 'check_progress' %}", // Update with your view's URL
+                type: "GET",
+                dataType: "json", // Change data type if necessary
+                success: function(data) {
+                    // Update the progress-updates div with the received data
+                    $("#progress-updates").html(data.progress-message);
+
+                    // Set a timeout to fetch progress again after 1 second
+                    setTimeout(fetchProgress, 1000);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                // Print the error details to the console
+                    console.error("AJAX Error:", textStatus, errorThrown);
+
+                // Set a timeout to retry the request after 1 second
+                    setTimeout(fetchProgress, 1000);
+                }
+            });
+        }
+
+        // Start fetching progress updates
+        $(document).ready(function() {
+            fetchProgress();
+        });
+    </script>
+</body>
+</html>

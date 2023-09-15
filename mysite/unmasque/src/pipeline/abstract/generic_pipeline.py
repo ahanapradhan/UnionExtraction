@@ -1,6 +1,5 @@
 import functools
 import threading
-import time
 
 from ...core.elapsed_time import create_zero_time_profile
 from ...util.constants import WAITING
@@ -25,6 +24,7 @@ def synchronized(wrapped):
                      threading.current_thread().name, time.time()))
             '''
             return result
+
     return _wrap
 
 
@@ -49,7 +49,7 @@ class GenericPipeLine:
         self.connectionHelper = connectionHelper
         self.pipeline_name = name
         self.time_profile = create_zero_time_profile()
-        self.state_sequence = []
+        self.token = None
 
     def doJob(self, args):
         self.update_state(WAITING)
