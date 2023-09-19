@@ -378,9 +378,9 @@ class Projection(GenerationPipeLineBase):
 
                 self.update_attrib_in_table(attrib, update_value, tabname)
                 # Current Problem with joins, if the attribute is part of join change the corresponding ones as well.
-                # print("Prev", prev_res)
+                print("Prev", prev_res)
                 new_result = self.app.doJob(query)
-                # print("New", new_result)
+                print("New", new_result)
                 if prev_res[1][index] != new_result[1][index]:
                     dep_list.append((tabname, attrib))
                     prev_res = new_result
@@ -437,16 +437,15 @@ class Projection(GenerationPipeLineBase):
         coeff = np.zeros((2 ** n, 2 ** n))
 
         for i in range(n):
-            coeff[0][i] = value_used[value_used.index(dep[i][1]) + 1]
-            local_param_list.append(value_used[value_used.index(dep[i][1])])
-        ele = 1
-        for i in range(n, 2 ** n - 1):
+            coeff[0][i] = value_used[value_used.index(dep[i][1]) +1]
+        temp_array = self.get_coeff_list(coeff[0][:n])
+        for i in range(2**n-1):
             # Given the values of the n dependencies, we form the rest 2^n - n combinations
-            ele = int(i / n)
-            coeff[0][i] = coeff[0][(i - n)] * coeff[0][(i + ele) % n]
-            local_param_list.append(local_param_list[(i - n)] + "*" + local_param_list[(i + ele) % n])
-
-        coeff[0][2 ** n - 1] = 1
+            coeff[0][i] = temp_array[i]
+        
+        coeff[0][2**n-1] = 1
+        
+        local_param_list = self.get_param_list([i[1] for i in dep])
         print("Param List", local_param_list)
         self.param_list.append(local_param_list)
         curr_rank = 1
@@ -461,11 +460,10 @@ class Projection(GenerationPipeLineBase):
                     mi = fil_check[j][3]
                     ma = fil_check[j][4]
                 coeff[outer_idx][j] = random.randrange(mi, ma)
-            ele = 1
-            for j in range(n, 2 ** n - 1):
-                ele = int(j / n)
-                coeff[outer_idx][j] = coeff[outer_idx][(j - n)] * coeff[outer_idx][(j + ele) % n]
-            coeff[outer_idx][2 ** n - 1] = 1
+            temp_array = self.get_coeff_list(coeff[outer_idx][:n])
+            for j in range(2**n-1):
+                coeff[outer_idx][j] = temp_array[j]
+            coeff[outer_idx][2**n-1] = 1
             if np.linalg.matrix_rank(coeff) > curr_rank:
                 curr_rank += 1
                 outer_idx += 1
@@ -511,3 +509,46 @@ class Projection(GenerationPipeLineBase):
                 res_str += (str(solution[i][0]) + "*" + param_l[i]) if solution[i][0] != 1 else param_l[i]
         print("Result String", res_str)
         return res_str
+
+    def get_param_list(self, deps):
+        print(deps)
+        subsets = get_subsets(deps)
+        subsets = sorted(subsets, key=len)
+        print(subsets)
+        final_lis = []
+        for i in subsets:
+            if len(i) < 2 and i == []:
+                continue
+            temp_str = ""
+            for j in range(len(i)):
+                temp_str += i[j]
+                if j != len(i)-1:
+                    temp_str += "*"
+            final_lis.append(temp_str)
+        return final_lis
+    def get_coeff_list(self, coeff_arr):
+        print(coeff_arr)
+        subsets = get_subsets(coeff_arr)
+        subsets = sorted(subsets, key=len)
+        print(subsets)
+        final_lis = []
+        for i in subsets:
+            temp_val = 1
+            if len(i) < 2 and i == []:
+                continue
+            for j in range(len(i)):
+                temp_val *= i[j]
+            final_lis.append(temp_val)
+        return final_lis
+
+def get_subsets(deps):
+    res = []
+    get_subsets_helper(deps, res, [], 0)
+    return res
+
+def get_subsets_helper(deps, res, curr, idx):
+    res.append(curr[:])
+    for i in range(idx, len(deps)):
+        curr.append(deps[i])
+        get_subsets_helper(deps, res, curr, i+1)
+        curr.pop()
