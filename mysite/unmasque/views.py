@@ -41,6 +41,11 @@ def login_view(request):
 
 
 def start_extraction_pipeline_async(connHelper, query, request):
+    func_start(connHelper, query, request)
+    return redirect('progress')
+
+
+def func_start(connHelper, query, request):
     request.session['hq'] = query
     factory = PipeLineFactory()
     token = factory.doJobAsync(query, connHelper)
@@ -49,10 +54,14 @@ def start_extraction_pipeline_async(connHelper, query, request):
     state_msg = factory.get_pipeline_state(token)
     to_pass = [query, state_msg, 'NA']
     request.session['partials'] = to_pass
-    return redirect('progress')
 
 
 def check_progress(request):
+    state_changed, state_msg = func_check_progress(request)
+    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg})
+
+
+def func_check_progress(request):
     print("...HIT...HIT...HIT...")
     state_changed = False
     factory = PipeLineFactory()
@@ -67,7 +76,7 @@ def check_progress(request):
         print("... still doing...", state_msg)
         to_pass = [request.session.get('hq'), state_msg, 'NA']
     request.session['partials'] = to_pass
-    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg})
+    return state_changed, state_msg
 
 
 def prepare_result(query):

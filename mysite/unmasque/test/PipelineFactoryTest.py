@@ -2,8 +2,10 @@ import threading
 import unittest
 from time import sleep
 
+from mysite.unmasque import views
 from mysite.unmasque.src.pipeline.PipeLineFactory import PipeLineFactory
 from mysite.unmasque.src.pipeline.abstract.generic_pipeline import GenericPipeLine
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.src.util.constants import START, WAITING, RUNNING, DONE
 
 EXTRACTION_TIME = 10
@@ -51,8 +53,26 @@ def monitor_func(factory, timeout, observed):
         sleep(1)
 
 
+class MockRequest:
+    session = {
+        'hq': "select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890 limit 3;",
+        'token': '',
+        'partials': ''}
+
+
 class MyTestCase(unittest.TestCase):
     timeout = EXTRACTION_TIME * NUM_THREADS + 1
+    connHelper = ConnectionHelper()
+
+    def test_state_changes(self):
+        req = MockRequest()
+        views.func_start(self.connHelper, MockRequest.session['hq'], req)
+        done = (req.session['partials'][2] != 'NA')
+        while not done:
+            sleep(70/1000)
+            views.func_check_progress(req)
+            done = (req.session['partials'][2] != 'NA')
+        self.assertTrue(True)
 
     def test_rate_limited_to_1(self):
         factory = MockPipeLineFactory()
