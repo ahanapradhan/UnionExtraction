@@ -80,8 +80,7 @@ Q10_simple = "select c_custkey, c_name, sum(l_extendedprice) as revenue, " \
              "and l_returnflag = 'R' and c_nationkey = n_nationkey group by " \
              "c_custkey, c_name, c_acctbal, c_phone, n_name, c_address, c_comment;"
 
-queries_dict = {'tpch_query1': tpch_query1,
-                'tpch_query3': tpch_query3,
+queries_dict = {'tpch_query3': tpch_query3,
                 'Q1': Q1,
                 'Q3': Q3,
                 'Q3_1': Q3_1,

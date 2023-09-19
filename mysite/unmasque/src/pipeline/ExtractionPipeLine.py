@@ -14,6 +14,7 @@ from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
+from ...refactored.result_comparator import ResultComparator
 from ...refactored.view_minimizer import ViewMinimizer
 
 
@@ -244,6 +245,17 @@ class ExtractionPipeLine(GenericPipeLine):
         q_generator = QueryStringGenerator(self.connectionHelper)
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
         print("extracted query:\n", eq)
+
+        self.update_state(DONE)
+
+        '''
+        rc_hash = ResultComparator(self.connectionHelper, True)
+        rc_compare = ResultComparator(self.connectionHelper, True)
+        matched_hash = rc_hash.doJob(query, eq)
+        matched_compare = rc_compare.doJob(query, eq)
+        print("Hash Matching:", matched_hash)
+        print("Comparison Matching:", matched_compare)
+        '''
 
         self.update_state(DONE)
 
