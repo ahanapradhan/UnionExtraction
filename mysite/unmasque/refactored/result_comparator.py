@@ -1,11 +1,19 @@
 from .abstract.ExtractorBase import Base
+from .util.common_queries import get_restore_name
 
 
 class ResultComparator(Base):
 
-    def __init__(self, connectionHelper, isHash):
+    def __init__(self, connectionHelper, isHash, core_relations):
         super().__init__(connectionHelper, "Result Comparator")
         self.isHash = isHash
+        self.core_relations = core_relations
+
+    def restore_tables(self):
+        for table in self.core_relations:
+            restore_name = get_restore_name(table)
+            self.connectionHelper.execute_sql(["Truncate Table " + table + ";",
+                                               "Insert into " + table + " select * from " + restore_name + ";"])
 
     def extract_params_from_args(self, args):
         return args[0], args[1]
@@ -33,24 +41,25 @@ class ResultComparator(Base):
         t = result[0]
         t1 = '(' + ', '.join(t) + ')'
 
-        if len(res) == 1 and len(res[0]) == 1:
-            if res is not None:
-                for row in res:
-                    if any(val is not None for val in row):
-                        ins = tuple(str(val) for val in row)
-                        self.connectionHelper.execute_sql(
-                            ['INSERT INTO r_h' + str(t1) + ' VALUES (' + str(ins[0]) + '); '])
-
-        else:
-            if res is not None:
-                for row in res:
-                    if all(val is None for val in row):
-                        continue
-                    ins = tuple(str(val) for val in row)
-                    values = str(ins)
-                    if values[-1] == ',':
-                        values = values[:-1]
-                    self.connectionHelper.execute_sql(['INSERT INTO r_h' + str(t1) + ' VALUES' + values + '; '])
+        if res is not None:
+            for row in res:
+                # CHECK IF THE WHOLE ROW IN NONE (SPJA Case)
+                nullrow = True
+                for val in row:
+                    if val is not None:
+                        nullrow = False
+                        break
+                if nullrow:
+                    continue
+                temp = []
+                for val in row:
+                    temp.append(str(val))
+                ins = (tuple(temp))
+                if len(res) == 1 and len(res[0]) == 1:
+                    self.connectionHelper.execute_sql(
+                        ['INSERT INTO r_h' + str(t1) + ' VALUES (' + str(ins[0]) + '); '])
+                else:
+                    self.connectionHelper.execute_sql(['INSERT INTO r_h' + str(t1) + ' VALUES' + str(ins) + '; '])
 
         len1 = self.connectionHelper.execute_sql_fetchone_0(
             "select sum(hashtext) from (select hashtext(r_e::TEXT) FROM r_e) "
@@ -67,6 +76,7 @@ class ResultComparator(Base):
 
     def doActualJob(self, args):
         Q_h, Q_E = self.extract_params_from_args(args)
+        self.restore_tables()
         if self.isHash:
             matched = self.match_hash_based(Q_h, Q_E)
         else:
@@ -92,43 +102,31 @@ class ResultComparator(Base):
         t = new_result[0]
         t1 = '(' + ', '.join(t) + ')'
 
-        if len(res) == 1 and len(res[0]) == 1:
-            if res is not None:
-                for row in res:
-                    # CHECK IF THE WHOLE ROW IN NONE (SPJA Case)
-                    nullrow = True
-                    for val in row:
-                        if val is not None:
-                            nullrow = False
-                            break
-                    if nullrow:
-                        continue
-                    temp = []
-                    for val in row:
-                        temp.append(str(val))
-                    ins = (tuple(temp))
+        if res is not None:
+            for row in res:
+                # CHECK IF THE WHOLE ROW IN NONE (SPJA Case)
+                nullrow = True
+                for val in row:
+                    if val is not None:
+                        nullrow = False
+                        break
+                if nullrow:
+                    continue
+                temp = []
+                for val in row:
+                    temp.append(str(val))
+                ins = (tuple(temp))
+                if len(res) == 1 and len(res[0]) == 1:
                     self.connectionHelper.execute_sql(['INSERT INTO temp2' + str(t1) + ' VALUES (' + str(ins[0]) + '); '])
-        else:
-            if res is not None:
-                for row in res:
-                    # CHECK IF THE WHOLE ROW IN NONE (SPJA Case)
-                    nullrow = True
-                    for val in row:
-                        if val is not None:
-                            nullrow = False
-                            break
-                    if nullrow:
-                        continue
-                    temp = []
-                    for val in row:
-                        temp.append(str(val))
-                    ins = (tuple(temp))
+                else:
                     self.connectionHelper.execute_sql(['INSERT INTO temp2' + str(t1) + ' VALUES' + str(ins) + '; '])
 
-        len1 = self.connectionHelper.execute_sql_fetchone_0('select count(*) from (select * from temp1 except all select * from temp2) as T;')
-        len2 = self.connectionHelper.execute_sql_fetchone_0('select count(*) from (select * from temp2 except all select * from temp1) as T;')
+        len1 = self.connectionHelper.execute_sql_fetchone_0(
+            'select count(*) from (select * from temp1 except all select * from temp2) as T;')
+        len2 = self.connectionHelper.execute_sql_fetchone_0(
+            'select count(*) from (select * from temp2 except all select * from temp1) as T;')
 
-        self.connectionHelper.execute_sql(["drop view temp1;","drop table temp2;"])
+        self.connectionHelper.execute_sql(["drop view temp1;", "drop table temp2;"])
 
         if not len1 and not len2:
             return True

@@ -4,7 +4,7 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
+    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.equi_join import EquiJoin
@@ -239,26 +239,25 @@ class ExtractionPipeLine(GenericPipeLine):
 
         sleep(1)
 
-        # last component in the pipeline should do this
-        time_profile.update_for_app(lm.app.method_call_count)
-
         q_generator = QueryStringGenerator(self.connectionHelper)
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
         print("extracted query:\n", eq)
 
+        self.update_state(RESULT_COMPARE + START)
+        rc_hash = ResultComparator(self.connectionHelper, True, core_relations)
+        self.update_state(RESULT_COMPARE + RUNNING)
+        check = rc_hash.doJob(query, eq)
+        time_profile.update_for_result_comparator(rc_hash.local_elapsed_time)
+        self.update_state(RESULT_COMPARE + DONE)
+        if not check:
+            print(query)
+            print("========Exracted Query seems different!========")
+            print(eq)
+            return None, time_profile
+
         self.update_state(DONE)
 
-        '''
-        rc_hash = ResultComparator(self.connectionHelper, True)
-        rc_compare = ResultComparator(self.connectionHelper, True)
-        matched_hash = rc_hash.doJob(query, eq)
-        matched_compare = rc_compare.doJob(query, eq)
-        print("Hash Matching:", matched_hash)
-        print("Comparison Matching:", matched_compare)
-        '''
-
-        self.update_state(DONE)
-
-        sleep(1)
+        # last component in the pipeline should do this
+        time_profile.update_for_app(lm.app.method_call_count)
 
         return eq, time_profile
