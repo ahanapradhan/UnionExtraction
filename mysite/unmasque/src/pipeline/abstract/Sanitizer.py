@@ -13,6 +13,8 @@ class Sanitizer:
         if res[0][0] > 8:
             print("Database needs to be restored!")
 
+        self.connectionHelper.execute_sql(['BEGIN;'])
+
         res, desc = self.connectionHelper.execute_sql_fetchall(
             "SELECT SPLIT_PART(table_name, '_', 1) as original_name" +
             " FROM information_schema.tables " +
@@ -30,4 +32,7 @@ class Sanitizer:
                                                                + "' and table_name ~ '^[a-zA-Z]+[0-9]+$';")
         for row in res:
             self.connectionHelper.execute_sql([drop_table(row[0])])
+
+        self.connectionHelper.execute_sql(['COMMIT;'])
+
 
