@@ -63,6 +63,16 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(matched_hash)
         return matched_hash, rc_hash.local_elapsed_time
 
+    def test_restore_tables(self):
+        rc_hash = ResultComparator(self.conn, True)
+        self.conn.connectUsingParams()
+        rc_hash.restore_tables()
+        res, desc = self.conn.execute_sql_fetchall(
+            "SELECT count(*) FROM information_schema.tables "
+            "WHERE table_schema = '" + self.conn.config.schema + "' and TABLE_CATALOG= '" + self.conn.db + "';")
+        self.assertEqual(res[0][0], 8)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

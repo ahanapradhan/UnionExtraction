@@ -244,7 +244,7 @@ class ExtractionPipeLine(GenericPipeLine):
         print("extracted query:\n", eq)
 
         self.update_state(RESULT_COMPARE + START)
-        rc_hash = ResultComparator(self.connectionHelper, True, core_relations)
+        rc_hash = ResultComparator(self.connectionHelper, True)
         self.update_state(RESULT_COMPARE + RUNNING)
         check = rc_hash.doJob(query, eq)
         time_profile.update_for_result_comparator(rc_hash.local_elapsed_time)

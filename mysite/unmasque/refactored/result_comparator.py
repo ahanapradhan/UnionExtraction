@@ -1,19 +1,13 @@
 from .abstract.ExtractorBase import Base
-from .util.common_queries import get_restore_name
+from .util.common_queries import get_restore_name, drop_table, alter_table_rename_to
+from ..src.pipeline.abstract.Sanitizer import Sanitizer
 
 
-class ResultComparator(Base):
+class ResultComparator(Base, Sanitizer):
 
-    def __init__(self, connectionHelper, isHash, core_relations):
+    def __init__(self, connectionHelper, isHash):
         super().__init__(connectionHelper, "Result Comparator")
         self.isHash = isHash
-        self.core_relations = core_relations
-
-    def restore_tables(self):
-        for table in self.core_relations:
-            restore_name = get_restore_name(table)
-            self.connectionHelper.execute_sql(["Truncate Table " + table + ";",
-                                               "Insert into " + table + " select * from " + restore_name + ";"])
 
     def extract_params_from_args(self, args):
         return args[0], args[1]
@@ -117,7 +111,8 @@ class ResultComparator(Base):
                     temp.append(str(val))
                 ins = (tuple(temp))
                 if len(res) == 1 and len(res[0]) == 1:
-                    self.connectionHelper.execute_sql(['INSERT INTO temp2' + str(t1) + ' VALUES (' + str(ins[0]) + '); '])
+                    self.connectionHelper.execute_sql(
+                        ['INSERT INTO temp2' + str(t1) + ' VALUES (' + str(ins[0]) + '); '])
                 else:
                     self.connectionHelper.execute_sql(['INSERT INTO temp2' + str(t1) + ' VALUES' + str(ins) + '; '])
 
