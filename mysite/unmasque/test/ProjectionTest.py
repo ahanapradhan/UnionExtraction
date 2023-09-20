@@ -2,9 +2,8 @@ import datetime
 import unittest
 import sys
 
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
-
 sys.path.append("../../../")
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.projection import Projection
 from mysite.unmasque.test.util import tpchSettings, queries
 
