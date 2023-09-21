@@ -378,9 +378,9 @@ class Projection(GenerationPipeLineBase):
 
                 self.update_attrib_in_table(attrib, update_value, tabname)
                 # Current Problem with joins, if the attribute is part of join change the corresponding ones as well.
-                print("Prev", prev_res)
+                # print("Prev", prev_res)
                 new_result = self.app.doJob(query)
-                print("New", new_result)
+                # print("New", new_result)
                 if prev_res[1][index] != new_result[1][index]:
                     dep_list.append((tabname, attrib))
                     prev_res = new_result
@@ -415,7 +415,10 @@ class Projection(GenerationPipeLineBase):
                                       value_used, query))
         return solution
 
-    # Solve Ax=b to get the expression of the output column
+    """
+    Solve Ax=b to get the expression of the output column
+    """
+
     def get_solution(self, attrib_types_dict, projection_dep, projection_names, idx, prev_res, value_used, query):
         dep = projection_dep[idx]
         n = len(dep)
