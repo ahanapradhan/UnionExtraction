@@ -87,7 +87,7 @@ class Cs2(Base):
 
         for table in self.core_relations:
             res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(table))
-            print(table, res)
+            # print(table, res)
             self.sample[table] = res
 
         # check for null free rows and not just nonempty results
@@ -108,7 +108,7 @@ class Cs2(Base):
                                                                     + " tablesample system("
                                                                     + str(self.seed_sample_size_per) + ");"])
                 res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(table))
-                print(table, res)
+                # print(table, res)
 
     def do_for_key_lists(self, sizes):
         for key_list in self.global_key_lists:
@@ -127,7 +127,7 @@ class Cs2(Base):
                     + base_key + ") from "
                     + base_table + ")  Limit " + str(limit_row) + " ;"])
                 res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(base_table))
-                print(base_table, res)
+                # print(base_table, res)
 
                 # sample remaining tables from key_list using the sampled base table
             for i in range(0, len(key_list)):
@@ -147,4 +147,4 @@ class Cs2(Base):
                         + key2 + ") from "
                         + tabname2 + " ) Limit " + str(limit_row) + " ;"])
                     res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname2))
-                    print(tabname2, res)
+                    # print(tabname2, res)

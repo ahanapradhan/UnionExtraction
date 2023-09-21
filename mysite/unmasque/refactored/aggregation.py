@@ -92,6 +92,23 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
     return a, agg_array, b, k_value
 
 
+def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner):
+    same_tab_flag = False
+    if tabname_inner == tabname:
+        no_of_rows = k_value + 1
+        same_tab_flag = True
+    else:
+        no_of_rows = 1
+    key_path_flag = False
+    for val in attrib_list_inner:
+        if val in key_list:
+            key_path_flag = True
+            break
+    if not same_tab_flag and key_path_flag:
+        no_of_rows = 2
+    return no_of_rows
+
+
 class Aggregation(GenerationPipeLineBase):
     def __init__(self, connectionHelper,
                  global_key_attributes,
@@ -162,65 +179,8 @@ class Aggregation(GenerationPipeLineBase):
 
                     self.truncate_core_relations()
                     temp_vals = []
-                    # For this table (tabname) and this attribute (attrib), fill all tables now
-                    for j in range(len(self.core_relations)):
-                        tabname_inner = self.core_relations[j]
-                        attrib_list_inner = self.global_all_attribs[j]
-
-                        insert_rows = []
-
-                        no_of_rows = k_value + 1 if tabname_inner == tabname else 1
-                        key_path_flag = False
-                        if tabname_inner != tabname:
-                            no_of_rows = 1
-                        for val in attrib_list_inner:
-                            if val in key_list:
-                                key_path_flag = True
-                                break
-                        if tabname_inner != tabname and key_path_flag:
-                            no_of_rows = 2
-
-                        att_order = '('
-                        flag = False
-                        for k in range(no_of_rows):
-                            insert_values = []
-
-                            for attrib_inner in attrib_list_inner:
-                                if not flag:
-                                    att_order += attrib_inner + ","
-                                if (attrib_inner == attrib or attrib_inner in key_list) and k == no_of_rows - 1:
-                                    insert_values.append(b)
-                                elif attrib_inner == attrib or attrib_inner in key_list:
-                                    insert_values.append(a)
-                                elif 'date' in attrib_types_dict[(tabname_inner, attrib_inner)]:
-                                    # check for filter
-                                    if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                                        date_val = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-                                    else:
-                                        date_val = get_val_plus_delta('date', get_dummy_val_for('date'), 2)
-                                    insert_values.append(ast.literal_eval(get_format('date', date_val)))
-                                elif 'int' in attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in \
-                                        attrib_types_dict[(tabname_inner, attrib_inner)]:
-                                    # check for filter
-                                    if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                                        number_val = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-                                    else:
-                                        number_val = get_dummy_val_for('int')
-                                    insert_values.append(get_format('int', number_val))
-                                else:
-                                    # check for filter
-                                    if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                                        plus_val = filter_attrib_dict[(tabname_inner, attrib_inner)].replace('%', '')
-                                    else:
-                                        plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 2))
-                                    insert_values.append(plus_val)
-                            insert_rows.append(tuple(insert_values))
-
-                            flag = True
-                        # print("Attribute Ordering: ", att_order)
-                        # print("Rows: ", insert_rows)
-                        temp_vals.append(insert_rows)
-                        self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
+                    max_no_of_rows = self.insert_for_inner(a, attrib, attrib_types_dict, b, filter_attrib_dict, k_value,
+                                                       key_list, tabname, temp_vals)
                     # print("Debug", self.dependencies, result_index)
                     if len(self.dependencies[result_index]) > 1:
                         # print("Temp values", temp_vals)
@@ -240,7 +200,7 @@ class Aggregation(GenerationPipeLineBase):
                             for row in vals_sp:
                                 l.append(row[local_attrib_index])
                             temp_ar.append((local_attrib, tuple(l)))
-                        for i in range(no_of_rows):
+                        for i in range(max_no_of_rows):
                             inter_val = []
                             eqn = 0
                             for j in range(len(self.dependencies[result_index])):
@@ -258,11 +218,11 @@ class Aggregation(GenerationPipeLineBase):
                             s += eqn
                             mi = eqn if eqn < mi else mi
                             ma = eqn if eqn > ma else ma
-                        print("no_of_rows ", no_of_rows)
-                        av = (s / no_of_rows)
+                        print("no_of_rows ", max_no_of_rows)
+                        av = (s / max_no_of_rows)
                         # print("Temp Array", temp_ar)
                         # print("SUM, AV, MIN, MAX", s, av, mi, ma)
-                        agg_array = [SUM, s, AVG, av, MIN, mi, MAX, ma, COUNT, no_of_rows]
+                        agg_array = [SUM, s, AVG, av, MIN, mi, MAX, ma, COUNT, max_no_of_rows]
                     new_result = self.app.doJob(query)
                     print("New Result", new_result)
                     print("Comaparison", agg_array)
@@ -279,6 +239,66 @@ class Aggregation(GenerationPipeLineBase):
                 self.global_aggregated_attributes[i] = ('', COUNT_STAR)
 
         return True
+
+    def insert_for_inner(self, a, attrib, attrib_types_dict, b, filter_attrib_dict, k_value, key_list, tabname,
+                         temp_vals):
+        max_no_of_rows = 0
+        # For this table (tabname) and this attribute (attrib), fill all tables now
+        for j in range(len(self.core_relations)):
+            tabname_inner = self.core_relations[j]
+            attrib_list_inner = self.global_all_attribs[j]
+
+            insert_rows = []
+
+            no_of_rows = get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner)
+
+            if no_of_rows > max_no_of_rows:
+                max_no_of_rows = no_of_rows
+
+            print("tabname ", tabname, " tabname_inner ", tabname_inner, " no_of_rows ", no_of_rows)
+
+            att_order = '('
+            flag = False
+            for k in range(no_of_rows):
+                insert_values = []
+
+                for attrib_inner in attrib_list_inner:
+                    if not flag:
+                        att_order += attrib_inner + ","
+                    if (attrib_inner == attrib or attrib_inner in key_list) and k == no_of_rows - 1:
+                        insert_values.append(b)
+                    elif attrib_inner == attrib or attrib_inner in key_list:
+                        insert_values.append(a)
+                    elif 'date' in attrib_types_dict[(tabname_inner, attrib_inner)]:
+                        # check for filter
+                        if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
+                            date_val = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                        else:
+                            date_val = get_val_plus_delta('date', get_dummy_val_for('date'), 2)
+                        insert_values.append(ast.literal_eval(get_format('date', date_val)))
+                    elif 'int' in attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in \
+                            attrib_types_dict[(tabname_inner, attrib_inner)]:
+                        # check for filter
+                        if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
+                            number_val = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                        else:
+                            number_val = get_dummy_val_for('int')
+                        insert_values.append(get_format('int', number_val))
+                    else:
+                        # check for filter
+                        if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
+                            plus_val = filter_attrib_dict[(tabname_inner, attrib_inner)].replace('%', '')
+                        else:
+                            plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 2))
+                        insert_values.append(plus_val)
+                insert_rows.append(tuple(insert_values))
+
+                flag = True
+            # print("Attribute Ordering: ", att_order)
+            # print("Rows: ", insert_rows)
+            temp_vals.append(insert_rows)
+            self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
+        return max_no_of_rows
 
     def analyze(self, agg_array, attrib, new_result, result_index):
         print("analyze")
