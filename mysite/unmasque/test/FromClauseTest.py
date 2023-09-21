@@ -1,8 +1,7 @@
+import sys
 import unittest
 
-import sys
-
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 sys.path.append("../../../")
 
@@ -10,8 +9,7 @@ from mysite.unmasque.refactored.from_clause import FromClause
 from mysite.unmasque.test.util import queries
 
 
-class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper()
+class MyTestCase(BaseTestCase):
 
     def test_like_tpchq1(self):
         query = queries.tpch_query1

@@ -4,10 +4,10 @@ from mysite.unmasque.refactored.cs2 import Cs2
 from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
 from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.test.util import tpchSettings, queries
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
-class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper()
+class MyTestCase(BaseTestCase):
 
     def test_for_cs2_pass_single_table(self):
         self.conn.connectUsingParams()

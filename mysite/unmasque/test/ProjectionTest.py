@@ -1,15 +1,15 @@
 import datetime
-import unittest
 import sys
+import unittest
+
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 sys.path.append("../../../")
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.projection import Projection
 from mysite.unmasque.test.util import tpchSettings, queries
 
 
-class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper()
+class MyTestCase(BaseTestCase):
 
     def test_projection_Q1(self):
         self.conn.connectUsingParams()

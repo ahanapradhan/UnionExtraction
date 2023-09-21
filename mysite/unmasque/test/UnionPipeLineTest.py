@@ -3,13 +3,15 @@ import unittest
 from mysite.unmasque.src.core import algorithm1
 from mysite.unmasque.src.core.union_from_clause import UnionFromClause
 from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.test.util import queries
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
-class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper()
-    pipeline = UnionPipeLine(conn)
+class MyTestCase(BaseTestCase):
+
+    def __init__(self):
+        super().__init__()
+        self.pipeline = UnionPipeLine(self.conn)
 
     def test_nonUnion_query(self):
         key = 'tpch_query1'

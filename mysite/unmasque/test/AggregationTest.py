@@ -1,14 +1,18 @@
 import datetime
+import signal
+import sys
 import unittest
 
-import sys
+from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+
 sys.path.append("../../../")
 from mysite.unmasque.refactored.aggregation import Aggregation
 from mysite.unmasque.test.util import tpchSettings, queries
 
 
-class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+class MyTestCase(BaseTestCase):
 
     def test_agg_Q1(self):
         self.conn.connectUsingParams()
@@ -45,8 +49,11 @@ class MyTestCase(unittest.TestCase):
 
         group_by_attribs = ['l_returnflag', 'l_linestatus']
         has_groupBy = True
-        dep = [[('identical_expr_nc', 'l_returnflag')], [('identical_expr_nc', 'l_linestatus')], [('identical_expr_nc', 'l_quantity')], [('identical_expr_nc', 'l_extendedprice')], [('identical_expr_nc', 'l_discount')],
-        [('identical_expr_nc', 'l_tax')], [('identical_expr_nc', 'l_quantity')], [('identical_expr_nc', 'l_extendedprice')], [('identical_expr_nc', 'l_discount')], []]
+        dep = [[('identical_expr_nc', 'l_returnflag')], [('identical_expr_nc', 'l_linestatus')],
+               [('identical_expr_nc', 'l_quantity')], [('identical_expr_nc', 'l_extendedprice')],
+               [('identical_expr_nc', 'l_discount')],
+               [('identical_expr_nc', 'l_tax')], [('identical_expr_nc', 'l_quantity')],
+               [('identical_expr_nc', 'l_extendedprice')], [('identical_expr_nc', 'l_discount')], []]
         sol = [[], [], [], []]
         p_list = [[], [], [], []]
 
@@ -139,8 +146,9 @@ class MyTestCase(unittest.TestCase):
         global_key_attribs = ['l_orderkey', 'c_custkey', 'o_custkey', 'o_orderkey', ]
         has_groupBy = True
         group_by_attribs = ['l_orderkey', 'o_totalprice', 'o_shippriority']
-        dep = [[('identical_expr_nc', 'o_orderkey')], [('identical_expr_nc', 'l_discount')], [('identical_expr_nc', 'o_orderdate')], [('identical_expr_nc', 'o_shippriority')]]
-        sol = [[], [[ 1.],[ 1.],[ 0.],[ 0.],[-1.],[-0.],[-0.],[ 0.]], [], []]
+        dep = [[('identical_expr_nc', 'o_orderkey')], [('identical_expr_nc', 'l_discount')],
+               [('identical_expr_nc', 'o_orderdate')], [('identical_expr_nc', 'o_shippriority')]]
+        sol = [[], [[1.], [1.], [0.], [0.], [-1.], [-0.], [-0.], [0.]], [], []]
 
         agg = Aggregation(self.conn, global_key_attribs,
                           global_attrib_types,
@@ -170,7 +178,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(avg_count, 0)
 
         self.conn.closeConnection()
-    
+
     def test_projections_Q3_1(self):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
@@ -224,13 +232,18 @@ class MyTestCase(unittest.TestCase):
                                ('lineitem', 'l_shipinstruct', 'character'),
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
-        projections = ['o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate', 'o_shippriority']
+        projections = ['o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate',
+                       'o_shippriority']
         global_key_attribs = ['l_orderkey', 'c_custkey', 'o_custkey', 'o_orderkey', ]
         has_groupBy = True
         group_by_attribs = ['l_orderkey', 'o_orderdate', 'o_shippriority']
-        dep = [[('identical_expr_nc', 'o_orderkey')], [('lineitem', 'l_quantity'), ('lineitem', 'l_extendedprice'), ('lineitem', 'l_discount')], [('identical_expr_nc', 'o_orderdate')], [('identical_expr_nc', 'o_shippriority')]]
-        sol = [[], [[ 1.],[ 1.],[ 0.],[ 0.],[-1.],[-0.],[-0.],[ 0.]], [], []]
-        p_list = [[], ['l_quantity', 'l_extendedprice', 'l_discount', 'l_quantity*l_extendedprice', 'l_extendedprice*l_discount', 'l_discount*l_quantity', 'l_quantity*l_extendedprice*l_discount'], [], []]
+        dep = [[('identical_expr_nc', 'o_orderkey')],
+               [('lineitem', 'l_quantity'), ('lineitem', 'l_extendedprice'), ('lineitem', 'l_discount')],
+               [('identical_expr_nc', 'o_orderdate')], [('identical_expr_nc', 'o_shippriority')]]
+        sol = [[], [[1.], [1.], [0.], [0.], [-1.], [-0.], [-0.], [0.]], [], []]
+        p_list = [[], ['l_quantity', 'l_extendedprice', 'l_discount', 'l_quantity*l_extendedprice',
+                       'l_extendedprice*l_discount', 'l_discount*l_quantity', 'l_quantity*l_extendedprice*l_discount'],
+                  [], []]
         agg = Aggregation(self.conn, global_key_attribs,
                           global_attrib_types,
                           from_rels,

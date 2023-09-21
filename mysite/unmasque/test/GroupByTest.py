@@ -2,12 +2,11 @@ import datetime
 import unittest
 
 from mysite.unmasque.refactored.groupby_clause import GroupBy
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.test.util import tpchSettings, queries
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
-class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper()
+class MyTestCase(BaseTestCase):
 
     def test_gb_Q1(self):
         self.conn.connectUsingParams()

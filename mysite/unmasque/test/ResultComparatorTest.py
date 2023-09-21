@@ -1,12 +1,11 @@
 import unittest
 
 from mysite.unmasque.refactored.result_comparator import ResultComparator
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.test.util import queries
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
-class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper()
+class MyTestCase(BaseTestCase):
 
     def test_all_same_hash_match_takes_less_time(self):
         hash_times = {}

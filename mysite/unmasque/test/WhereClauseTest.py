@@ -1,14 +1,13 @@
 import unittest
 
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.refactored.equi_join import EquiJoin
 from mysite.unmasque.refactored.filter import Filter
 from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
 from mysite.unmasque.test.util import queries, tpchSettings
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
-class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper()
+class MyTestCase(BaseTestCase):
 
     def test_init_data(self):
         self.conn.connectUsingParams()

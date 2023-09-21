@@ -4,11 +4,10 @@ from mysite.unmasque.src.core import algorithm1
 from mysite.unmasque.src.core.union_from_clause import UnionFromClause
 from mysite.unmasque.src.mocks.database import TPCH
 from mysite.unmasque.src.util import utils
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
-class MyTestCase(unittest.TestCase):
-    conn = ConnectionHelper()
+class MyTestCase(BaseTestCase):
 
     def test_init(self):
         query = "(select * from part) union all (select * from customer)"
