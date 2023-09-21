@@ -1,7 +1,9 @@
 import time
 
+from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 
-class Base:
+
+class Base(TpchSanitizer):
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -10,6 +12,7 @@ class Base:
         return cls._instance
 
     def __init__(self, connectionHelper, name):
+        super().__init__(connectionHelper)
         self.connectionHelper = connectionHelper
         self.extractor_name = name
         self.method_call_count = 0
@@ -30,6 +33,9 @@ class Base:
 
     def doActualJob(self, args):
         pass
+
+    def sanitize(self):
+        super().doJob()
 
     def extract_params_from_args(self, args):
         pass

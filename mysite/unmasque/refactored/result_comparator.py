@@ -1,9 +1,9 @@
 from .abstract.ExtractorBase import Base
 from .util.common_queries import get_restore_name, drop_table, alter_table_rename_to
-from ..src.pipeline.abstract.Sanitizer import Sanitizer
+from ..src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 
 
-class ResultComparator(Base, Sanitizer):
+class ResultComparator(Base, TpchSanitizer):
 
     def __init__(self, connectionHelper, isHash):
         super().__init__(connectionHelper, "Result Comparator")
@@ -70,7 +70,7 @@ class ResultComparator(Base, Sanitizer):
 
     def doActualJob(self, args):
         Q_h, Q_E = self.extract_params_from_args(args)
-        self.restore_tables()
+        self.sanitize()
         if self.isHash:
             matched = self.match_hash_based(Q_h, Q_E)
         else:

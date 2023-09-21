@@ -3,10 +3,10 @@ import os.path
 
 from ..refactored.abstract.ExtractorBase import Base
 from ..refactored.util.common_queries import drop_table
-from ..src.pipeline.abstract.Sanitizer import Sanitizer
+from ..src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 
 
-class Initiator(Base, Sanitizer):
+class Initiator(Base):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Initiator")
@@ -57,7 +57,7 @@ class Initiator(Base, Sanitizer):
 
     def doActualJob(self, args):
         print("inside -- initialization.initialization")
-        self.restore_tables()
+        self.sanitize()
         self.reset()
 
         tables_check = self.get_all_relations()
