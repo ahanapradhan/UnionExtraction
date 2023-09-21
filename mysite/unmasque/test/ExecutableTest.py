@@ -1,13 +1,13 @@
 import unittest
 
 from mysite.unmasque.refactored import executable
-from mysite.unmasque.refactored.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 
 
 class MyTestCase(unittest.TestCase):
     def test_execute_query_on_db(self):
         query = "select count(*) from public.region;"
-        conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
+        conn = ConnectionHelper()
         conn.connectUsingParams()
         self.assertTrue(conn.conn is not None)
         result, count = executable.getExecOutput(conn, query)
