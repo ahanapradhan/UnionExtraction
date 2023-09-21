@@ -10,8 +10,8 @@ from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_extraction_tpch_query1(self):

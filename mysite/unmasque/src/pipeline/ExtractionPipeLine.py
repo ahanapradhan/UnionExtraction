@@ -1,3 +1,5 @@
+import copy
+
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
@@ -51,6 +53,7 @@ class ExtractionPipeLine(GenericPipeLine):
                                   key_lists):  # get core_relations, key_lists from from clause
 
         time_profile = create_zero_time_profile()
+        # core_relations = ["customer", "orders", "lineitem"]
 
         '''
         Correlated Sampling
@@ -99,11 +102,13 @@ class ExtractionPipeLine(GenericPipeLine):
         Filters Extraction
         '''
         self.update_state(FILTER + START)
+        global_key_attributes = copy.deepcopy(ej.global_key_attributes)
+
         fl = Filter(self.connectionHelper,
                     key_lists,
                     core_relations,
                     vm.global_min_instance_dict,
-                    ej.global_key_attributes)
+                    global_key_attributes)
         self.update_state(FILTER + RUNNING)
         check = fl.doJob(query)
         self.update_state(FILTER + DONE)
@@ -118,12 +123,17 @@ class ExtractionPipeLine(GenericPipeLine):
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
+        global_attrib_types = copy.deepcopy(ej.global_attrib_types)
+        filter_predicates = copy.deepcopy(fl.filter_predicates)
+        global_join_graph = copy.deepcopy(ej.global_join_graph)
+        global_all_attribs = copy.deepcopy(ej.global_all_attribs)
+
         pj = Projection(self.connectionHelper,
-                        ej.global_attrib_types,
+                        global_attrib_types,
                         core_relations,
-                        fl.filter_predicates,
+                        filter_predicates,
                         ej.global_join_graph,
-                        ej.global_all_attribs)
+                        global_all_attribs)
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
         self.update_state(PROJECTION + DONE)
@@ -136,11 +146,12 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(GROUP_BY + START)
+
         gb = GroupBy(self.connectionHelper,
-                     ej.global_attrib_types,
+                     global_attrib_types,
                      core_relations,
-                     fl.filter_predicates,
-                     ej.global_all_attribs,
+                     filter_predicates,
+                     global_all_attribs,
                      ej.global_join_graph,
                      pj.projected_attribs)
         self.update_state(GROUP_BY + RUNNING)
@@ -155,19 +166,26 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(AGGREGATE + START)
+        projected_attribs = copy.deepcopy(pj.projected_attribs)
+        has_groupby = gb.has_groupby
+        group_by_attrib = copy.deepcopy(gb.group_by_attrib)
+        dependencies = copy.deepcopy(pj.dependencies)
+        solution = copy.deepcopy(pj.solution)
+        param_list = copy.deepcopy(pj.param_list)
+
         agg = Aggregation(self.connectionHelper,
-                          ej.global_key_attributes,
-                          ej.global_attrib_types,
+                          global_key_attributes,
+                          global_attrib_types,
                           core_relations,
-                          fl.filter_predicates,
-                          ej.global_all_attribs,
+                          filter_predicates,
+                          global_all_attribs,
                           ej.global_join_graph,
-                          pj.projected_attribs,
-                          gb.has_groupby,
-                          gb.group_by_attrib,
-                          pj.dependencies,
-                          pj.solution,
-                          pj.param_list)
+                          projected_attribs,
+                          has_groupby,
+                          group_by_attrib,
+                          dependencies,
+                          solution,
+                          param_list)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
         self.update_state(AGGREGATE + DONE)
@@ -179,16 +197,18 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(ORDER_BY + START)
+        projection_names = copy.deepcopy(pj.projection_names)
+        global_aggregated_attributes = copy.deepcopy(agg.global_aggregated_attributes)
         ob = OrderBy(self.connectionHelper,
-                     ej.global_key_attributes,
-                     ej.global_attrib_types,
+                     global_key_attributes,
+                     global_attrib_types,
                      core_relations,
-                     fl.filter_predicates,
-                     ej.global_all_attribs,
+                     filter_predicates,
+                     global_all_attribs,
                      ej.global_join_graph,
-                     pj.projected_attribs,
-                     pj.projection_names,
-                     agg.global_aggregated_attributes)
+                     projected_attribs,
+                     projection_names,
+                     global_aggregated_attributes)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
         self.update_state(ORDER_BY + DONE)
@@ -201,11 +221,11 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.update_state(LIMIT + START)
         lm = Limit(self.connectionHelper,
-                   ej.global_attrib_types,
-                   ej.global_key_attributes,
+                   global_attrib_types,
+                   global_key_attributes,
                    core_relations,
-                   fl.filter_predicates,
-                   ej.global_all_attribs,
+                   filter_predicates,
+                   global_all_attribs,
                    gb.group_by_attrib)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
@@ -222,7 +242,7 @@ class ExtractionPipeLine(GenericPipeLine):
         print("extracted query:\n", eq)
 
         self.update_state(RESULT_COMPARE + START)
-        rc_hash = ResultComparator(self.connectionHelper, True)
+        rc_hash = ResultComparator(self.connectionHelper, False)
         self.update_state(RESULT_COMPARE + RUNNING)
         check = rc_hash.doJob(query, eq)
         time_profile.update_for_result_comparator(rc_hash.local_elapsed_time)

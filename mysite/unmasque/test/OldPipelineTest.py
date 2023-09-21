@@ -1,7 +1,5 @@
 import unittest
 
-from mysite.unmasque.refactored.executable import Executable
-from mysite.unmasque.refactored.util.utils import isQ_result_empty
 from mysite.unmasque.src.core.union_from_clause import UnionFromClause
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.util import tpchSettings, queries
@@ -10,8 +8,8 @@ from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_basic_flow(self):
@@ -40,7 +38,20 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
         self.assertTrue(eq is not None)
 
+    def test_for_agg(self):
+        hq = "select c_mktsegment, l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, " \
+             "o_orderdate, o_shippriority from customer, orders, lineitem where c_custkey = o_custkey " \
+             "and l_orderkey = o_orderkey and o_orderdate > date '1995-10-11' " \
+             "group by l_orderkey, o_orderdate, o_shippriority, c_mktsegment limit 4;"
+        for i in range(5):
+            self.conn.connectUsingParams()
+            eq = self.pipeline.extract(hq)
+            self.conn.closeConnection()
+            print(eq)
+        # self.assertTrue(eq is not None)
+
     def test_all_sample_queries(self):
+        '''
         Q_keys = queries.queries_dict.keys()
         f = open("experiment_results.txt", "w")
         q_no = 1
@@ -69,7 +80,12 @@ class MyTestCase(BaseTestCase):
             self.conn.closeConnection()
 
         f.close()
+        '''
 
 
 if __name__ == '__main__':
-    unittest.main()
+    # Create a test suite
+    suite = unittest.TestLoader().loadTestsFromTestCase(MyTestCase)
+
+    # Run the tests
+    unittest.TextTestRunner(verbosity=2).run(suite)

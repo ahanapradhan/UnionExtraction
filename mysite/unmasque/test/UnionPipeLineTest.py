@@ -9,12 +9,12 @@ from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
         self.pipeline = UnionPipeLine(self.conn)
 
     def test_nonUnion_query(self):
-        key = 'tpch_query1'
+        key = 'Q1'
         query = queries.queries_dict[key]
         u_Q = self.pipeline.extract(query)
         self.assertTrue(u_Q is not None)

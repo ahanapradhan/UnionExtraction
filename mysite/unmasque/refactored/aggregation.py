@@ -170,7 +170,13 @@ class Aggregation(GenerationPipeLineBase):
                         insert_rows = []
 
                         no_of_rows = k_value + 1 if tabname_inner == tabname else 1
-                        key_path_flag = any(val in key_list for val in attrib_list_inner)
+                        key_path_flag = False
+                        if tabname_inner != tabname:
+                            no_of_rows = 1
+                        for val in attrib_list_inner:
+                            if val in key_list:
+                                key_path_flag = True
+                                break
                         if tabname_inner != tabname and key_path_flag:
                             no_of_rows = 2
 
@@ -211,8 +217,8 @@ class Aggregation(GenerationPipeLineBase):
                             insert_rows.append(tuple(insert_values))
 
                             flag = True
-                        print("Attribute Ordering: ", att_order)
-                        print("Rows: ", insert_rows)
+                        # print("Attribute Ordering: ", att_order)
+                        # print("Rows: ", insert_rows)
                         temp_vals.append(insert_rows)
                         self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
                     # print("Debug", self.dependencies, result_index)
@@ -246,12 +252,13 @@ class Aggregation(GenerationPipeLineBase):
                                 # coeff[0][j] = coeff[0][(j-n)]*coeff[0][(j+ele)%n]
                                 inter_val.append(inter_val[(j - n)] * inter_val[(j + ele) % n])
                             inter_val.append(1)
-                            print("Intermediate Values of all", inter_val)
+                            # print("Intermediate Values of all", inter_val)
                             for j, val in enumerate(inter_val):
                                 eqn += (val * local_sol[j][0])
                             s += eqn
                             mi = eqn if eqn < mi else mi
                             ma = eqn if eqn > ma else ma
+                        print("no_of_rows ", no_of_rows)
                         av = (s / no_of_rows)
                         # print("Temp Array", temp_ar)
                         # print("SUM, AV, MIN, MAX", s, av, mi, ma)
@@ -274,9 +281,10 @@ class Aggregation(GenerationPipeLineBase):
         return True
 
     def analyze(self, agg_array, attrib, new_result, result_index):
+        print("analyze")
         new_result = list(new_result[1])
         new_result = [x.strip() for x in new_result]
-        check_value = 0
+
         if is_number(new_result[result_index]):
             check_value = round(float(new_result[result_index]), 2)
             if check_value / int(check_value) == 1:
@@ -285,6 +293,8 @@ class Aggregation(GenerationPipeLineBase):
             check_value = str(new_result[result_index])
         j = 0
         while j < len(agg_array) - 1:
+            print(str(attrib), " ", agg_array[j])
+            print(check_value, " ", agg_array[j + 1])
             if check_value == agg_array[j + 1]:
                 self.global_aggregated_attributes[result_index] = (str(attrib), agg_array[j])
                 break

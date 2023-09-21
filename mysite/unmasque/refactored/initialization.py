@@ -28,7 +28,8 @@ class Initiator(Base):
         self.error = None
 
     def get_all_relations(self):
-        self.all_relations = set()
+        self.all_relations = set(TpchSanitizer.TABLES)
+        """
         try:
             res, desc = self.connectionHelper.execute_sql_fetchall(
                 "SELECT table_name FROM information_schema.tables "
@@ -45,6 +46,7 @@ class Initiator(Base):
             return False
 
         self.connectionHelper.execute_sql([drop_table("temp")])
+        """
         return True
 
     def verify_support_files(self):

@@ -147,6 +147,10 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
+    def test_proj_Q3_1(self):
+        for i in range(10):
+            self.test_projections_Q3_1()
+
     def test_projections_Q3_1(self):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)

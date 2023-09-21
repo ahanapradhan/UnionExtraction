@@ -40,4 +40,6 @@ class TpchSanitizer:
         for row in res:
             self.connectionHelper.execute_sql([drop_table(row[0])])
 
+        self.connectionHelper.execute_sql([drop_table("temp")])
+
         self.commit_transaction()

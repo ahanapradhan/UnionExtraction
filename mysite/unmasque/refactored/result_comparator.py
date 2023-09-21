@@ -1,3 +1,5 @@
+from psycopg2 import Error
+
 from .abstract.ExtractorBase import Base
 from .util.common_queries import get_restore_name, drop_table, alter_table_rename_to
 from ..src.pipeline.abstract.TpchSanitizer import TpchSanitizer
@@ -78,8 +80,12 @@ class ResultComparator(Base, TpchSanitizer):
         return matched
 
     def match_comparison_based(self, Q_h, Q_E):
-        # Run the extracted query Q_E .
-        self.connectionHelper.execute_sql(['create view temp1 as ' + Q_E])
+        try:
+            # Run the extracted query Q_E .
+            self.connectionHelper.execute_sql(['create view temp1 as ' + Q_E])
+        except Error:
+            print("Extracted Query is not valid!")
+            return False
 
         # Size of the table
         res = self.connectionHelper.execute_sql_fetchone_0('select count(*) from temp1;')
