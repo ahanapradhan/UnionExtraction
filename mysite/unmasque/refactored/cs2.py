@@ -53,7 +53,7 @@ class Cs2(Base):
         while self.iteration_count > 0:
             done = self.correlated_sampling(query, sizes)
             if not done:
-                print('sampling failed in iteraation', self.iteration_count)
+                print('sampling failed ...on attempt no: ', self.iteration_count)
                 self.seed_sample_size_per *= self.sample_per_multiplier
                 self.iteration_count -= 1
             else:
@@ -61,7 +61,7 @@ class Cs2(Base):
                 return True
 
         self.restore()
-        print("correlated sampling failed totally starting with halving based minimization")
+        print("correlated sampling failed!.. starting with halving based minimization..")
         return False
 
     def take_backup(self):
@@ -74,7 +74,7 @@ class Cs2(Base):
             self.connectionHelper.execute_sqls_with_DictCursor([alter_table_rename_to(get_restore_name(table), table)])
 
     def correlated_sampling(self, query, sizes):
-        print("Starting correlated sampling ")
+        # print("Starting correlated sampling ")
 
         # choose base table from each key list> sample it> sample remaining tables based on base table
         for table in self.core_relations:
@@ -93,7 +93,7 @@ class Cs2(Base):
         # check for null free rows and not just nonempty results
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
-            print('sampling failed in iteraation')
+            # print('sampling failed in iteraation')
             for table in self.core_relations:
                 self.connectionHelper.execute_sqls_with_DictCursor([drop_table(table)])
                 self.sample[table] = sizes[table]
