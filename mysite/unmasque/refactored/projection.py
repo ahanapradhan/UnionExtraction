@@ -545,6 +545,20 @@ class Projection(GenerationPipeLineBase):
             final_lis.append(temp_val)
         return final_lis
 
+def get_param_values_external(coeff_arr):
+        print(coeff_arr)
+        subsets = get_subsets(coeff_arr)
+        subsets = sorted(subsets, key=len)
+        print(subsets)
+        final_lis = []
+        for i in subsets:
+            temp_val = 1
+            if len(i) < 2 and i == []:
+                continue
+            for j in range(len(i)):
+                temp_val *= i[j]
+            final_lis.append(temp_val)
+        return final_lis
 
 def get_subsets(deps):
     res = []

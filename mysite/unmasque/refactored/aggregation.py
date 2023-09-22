@@ -7,6 +7,7 @@ from ..refactored.util.utils import is_number, get_val_plus_delta, get_dummy_val
     get_char, isQ_result_empty
 from ..src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ..src.util.constants import min_int_val, max_int_val
+from .projection import get_param_values_external
 
 
 def get_k_value_for_number(a, b):
@@ -172,7 +173,7 @@ class Aggregation(GenerationPipeLineBase):
                 groupby_key_flag = False
                 if attrib in self.global_key_attributes and attrib in self.global_groupby_attributes:
                     groupby_key_flag = True
-
+                print("Result Index List", result_index_list)
                 for result_index in result_index_list:
                     a, agg_array, b, k_value = get_k_value(attrib, attrib_types_dict, filter_attrib_dict,
                                                            groupby_key_flag, tabname)
@@ -207,13 +208,19 @@ class Aggregation(GenerationPipeLineBase):
                                 inter_val.append(int(temp_ar[j][1][i]))
                             ele = 1
                             n = len(self.dependencies[result_index])
-                            for j in range(n, len(self.param_list[result_index])):
-                                ele = int(j / n)
-                                # coeff[0][j] = coeff[0][(j-n)]*coeff[0][(j+ele)%n]
-                                inter_val.append(inter_val[(j - n)] * inter_val[(j + ele) % n])
+                            
+                            # for j in range(len(self.param_list[result_index])):
+                            #     ele = int(j / n)
+                            #     # coeff[0][j] = coeff[0][(j-n)]*coeff[0][(j+ele)%n]
+                            #     inter_val.append(inter_val[(j - n)] * inter_val[(j + ele) % n])
+                            temp_arr = get_param_values_external(inter_val)
+                            inter_val = [0 for j in range(len(self.param_list[result_index]))]
+                            for j in range(len(self.param_list[result_index])):
+                                inter_val[j] = temp_arr[j]
                             inter_val.append(1)
                             # print("Intermediate Values of all", inter_val)
                             for j, val in enumerate(inter_val):
+                                print("Ele", eqn, j)
                                 eqn += (val * local_sol[j][0])
                             s += eqn
                             mi = eqn if eqn < mi else mi
