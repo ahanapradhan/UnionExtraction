@@ -31,6 +31,7 @@ class FromClause(Base):
                 new_result = self.app.doJob(query)
                 if isQ_result_empty(new_result):
                     self.core_relations.append(tabname)
+                    print("Table ", tabname, " is in from clause..")
 
             except Exception as error:
                 print("Error Occurred in table extraction. Error: " + str(error))

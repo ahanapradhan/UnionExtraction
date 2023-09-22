@@ -7,6 +7,14 @@ class TpchSanitizer:
     def __init__(self, connectionHelper):
         self.connectionHelper = connectionHelper
 
+    def get_all_relations(self):
+        res, desc = self.connectionHelper.execute_sql_fetchall("SELECT table_name"
+                                                               + self.from_where_catalog() + ";")
+        tables = []
+        for row in res:
+            tables.append(row[0])
+        return tables
+
     def from_where_catalog(self):
         return " FROM information_schema.tables " + \
             "WHERE table_schema = '" + self.connectionHelper.config.schema + "' and TABLE_CATALOG= '" \

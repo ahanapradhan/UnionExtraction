@@ -27,28 +27,6 @@ class Initiator(Base):
         self.all_relations = []
         self.error = None
 
-    def get_all_relations(self):
-        self.all_relations = set(TpchSanitizer.TABLES)
-        """
-        try:
-            res, desc = self.connectionHelper.execute_sql_fetchall(
-                "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema = '" + self.schema + "' and TABLE_CATALOG= '" + self.connectionHelper.db + "';")
-            self.connectionHelper.execute_sql(["SET search_path = '" + self.schema + "';"])
-            for val in res:
-                self.all_relations.add(val[0])
-        except Exception as error:
-            print("Can not obtain table names. Error: " + str(error))
-            return False
-
-        if not self.all_relations:
-            print("No table in the selected instance. Please select another instance.")
-            return False
-
-        self.connectionHelper.execute_sql([drop_table("temp")])
-        """
-        return True
-
     def verify_support_files(self):
         check_pkfk = os.path.isfile(self.pkfk_file_path)
         check_idx = os.path.isfile(self.create_index_filepath)
@@ -60,13 +38,14 @@ class Initiator(Base):
     def doActualJob(self, args):
         print("inside -- initialization.initialization")
         self.sanitize()
+        print("sanitized!")
         self.reset()
 
-        tables_check = self.get_all_relations()
-        if not tables_check:
-            return False
+        self.all_relations = self.get_all_relations()
 
         check = self.verify_support_files()
+        print("support files verified..")
+
         if not check:
             return False
 
@@ -75,8 +54,10 @@ class Initiator(Base):
         self.make_pkfk_complete_graph(all_pkfk)
 
         self.do_refinement()
+        print("loaded pk-fk..")
 
         self.make_index_dict()
+        print("index dict done..!")
         return True
 
     def make_index_dict(self):

@@ -14,6 +14,47 @@ class MyTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.pipeline = ExtractionPipeLine(self.conn)
 
+    def test_extraction_tpch_q1(self):
+        self.conn.connectUsingParams()
+        key = 'q1'
+        query = queries.queries_dict[key]
+        app = Executable(self.conn)
+        result = app.doJob(query)
+        if isQ_result_empty(result):
+            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
+                  "query!")
+            self.assertTrue(False)
+
+        eq = self.pipeline.extract(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.conn.closeConnection()
+
+    def test_in_loop(self):
+        for i in range(5):
+            self.test_extraction_tpch_q1_filter()
+
+    def test_extraction_tpch_q1_simple(self):
+        self.conn.connectUsingParams()
+        key = 'q1_simple'
+        query = queries.queries_dict[key]
+        eq = self.pipeline.extract(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.conn.closeConnection()
+
+    def test_extraction_tpch_q1_filter(self):
+        self.conn.connectUsingParams()
+        key = 'q1_filter'
+        query = queries.queries_dict[key]
+        eq = self.pipeline.extract(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.conn.closeConnection()
+
     def test_extraction_tpch_query1(self):
         self.conn.connectUsingParams()
         key = 'tpch_query1'

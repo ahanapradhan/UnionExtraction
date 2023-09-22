@@ -6,6 +6,28 @@ tpch_query3 = "select c_mktsegment, l_orderkey, sum(l_extendedprice) as revenue,
               "and l_orderkey = o_orderkey and o_orderdate > date '1995-10-11' " \
               "group by l_orderkey, o_orderdate, o_shippriority, c_mktsegment limit 4;"
 
+q1 = "select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, " \
+     "sum(l_extendedprice) as sum_base_price, " \
+     "sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, " \
+     "sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, " \
+     "avg(l_quantity) as avg_qty," \
+     "avg(l_extendedprice) as avg_price, " \
+     "avg(l_discount) as avg_disc, " \
+     "count(*) as count_order " \
+     "from lineitem where l_shipdate <= date '1998-12-01' group by " \
+     "l_returnflag, l_linestatus order by l_returnflag, l_linestatus LIMIT 10;"
+
+q1_simple = "select l_returnflag, l_linestatus, " \
+            "sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, " \
+            "count(*) as count_order " \
+            "from lineitem group by " \
+            "l_returnflag, l_linestatus order by l_returnflag, l_linestatus LIMIT 10;"
+
+q1_filter = "select l_returnflag, l_linestatus, " \
+            "count(*) as count_order " \
+            "from lineitem where l_shipdate >= date '1998-12-01' and l_shipdate < date '1999-12-05' group by " \
+            "l_returnflag, l_linestatus order by l_returnflag, l_linestatus LIMIT 10;"
+
 Q1 = "select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, " \
      "sum(l_discount) as sum_disc_price, sum(l_tax) as sum_charge, avg(l_quantity) as avg_qty, avg(l_extendedprice) " \
      "as avg_price, avg(l_discount) as avg_disc, count(*) as count_order from lineitem where l_shipdate <= date " \
@@ -95,7 +117,10 @@ queries_dict = {'tpch_query3': tpch_query3,
                 'Q21': Q21,
                 'Q23_1': Q23_1,
                 'Q9_simple': Q9_simple,
-                'Q10_simple': Q10_simple
+                'Q10_simple': Q10_simple,
+                'q1': q1,
+                'q1_simple': q1_simple,
+                'q1_filter': q1_filter
                 }
 '''
 (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905 limit 3)
@@ -151,7 +176,6 @@ TPCDS Q14: INTERSECT, UNION ALL
 Q38: INTERSECT
 
 '''
-
 
 '''
 select l_orderkey as orderkey, sum(l_discount) as revenue, sum(o_totalprice) as totalprice, o_shippriority as shippriority from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_totalprice, o_shippriority order by revenue desc limit 10;
