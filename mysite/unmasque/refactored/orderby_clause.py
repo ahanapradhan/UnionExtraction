@@ -26,14 +26,24 @@ class CandidateAttribute():
         print('')
 
 
+def tryConvertToInt(val):
+    temp = 0
+    try:
+        temp = int(val)
+    except ValueError as e:
+        print("Not int error, ", e)
+        temp = val
+    return temp
+
+
 def checkOrdering(obj, result):
     if len(result) < 2:
         return None
-    reference_value = result[1][obj.index]
+    reference_value = tryConvertToInt(result[1][obj.index])
     for i in range(2, len(result)):
         print(result)
-        if result[i][obj.index] != reference_value:
-            return 'asc' if result[i][obj.index] > reference_value else 'desc'
+        if tryConvertToInt(result[i][obj.index]) != reference_value:
+            return 'asc' if tryConvertToInt(result[i][obj.index]) > reference_value else 'desc'
     return None
 
 

@@ -1,10 +1,10 @@
 import copy
-
+from time import sleep
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE
+    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, ERROR, WRONG
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.equi_join import EquiJoin
@@ -138,6 +138,8 @@ class ExtractionPipeLine(GenericPipeLine):
         if not pj.done:
             print("Some error while projection extraction. Aborting extraction!")
             return None, time_profile
+        print("Projection", pj.projected_attribs, pj.param_list, pj.dependencies)
+        sleep(1)
 
         self.update_state(GROUP_BY + START)
 
@@ -182,6 +184,8 @@ class ExtractionPipeLine(GenericPipeLine):
         if not agg.done:
             print("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
+        print("Aggregation", agg.global_aggregated_attributes)
+        sleep(1)
 
         self.update_state(ORDER_BY + START)
         ob = OrderBy(self.connectionHelper,
@@ -193,6 +197,7 @@ class ExtractionPipeLine(GenericPipeLine):
                      ej.global_join_graph,
                      pj.projected_attribs,
                      pj.projection_names,
+                     pj.dependencies,
                      agg.global_aggregated_attributes)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
@@ -236,6 +241,7 @@ class ExtractionPipeLine(GenericPipeLine):
             print(query)
             print("========Exracted Query seems different!========")
             print(eq)
+            self.update_state(WRONG)
             return None, time_profile
 
         self.update_state(DONE)
