@@ -1,10 +1,8 @@
 import datetime
 import sys
 import unittest
-
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-
 sys.path.append("../../../")
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from mysite.unmasque.refactored.projection import Projection
 from mysite.unmasque.test.util import tpchSettings, queries
 

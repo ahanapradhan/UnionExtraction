@@ -1,10 +1,10 @@
 import sys
 import unittest
 
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-
 sys.path.append("../../../")
 
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from mysite.unmasque.refactored.from_clause import FromClause
 from mysite.unmasque.test.util import queries
 

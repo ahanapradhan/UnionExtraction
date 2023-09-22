@@ -1,5 +1,6 @@
 import unittest
-
+import sys
+sys.path.append("../../../")
 from mysite.unmasque.src.core import algorithm1
 from mysite.unmasque.src.core.union_from_clause import UnionFromClause
 from mysite.unmasque.src.mocks.database import TPCH

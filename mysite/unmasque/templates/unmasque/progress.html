@@ -27,8 +27,12 @@
                 dataType: "json", // Change data type if necessary
                 success: function(data) {
                     // Update the progress-updates div with the received data
-                    $("#progress-updates").html(data.progress-message);
-
+                    console.log(data.progress_message)
+                    $("#progress-updates").html(data.progress_message);
+                    if(data.progress_message == "_DONE" || data.progress_message == "_WRONG"){
+                        console.log("Done")
+                        return
+                    }
                     // Set a timeout to fetch progress again after 1 second
                     setTimeout(fetchProgress, 1000);
                 },

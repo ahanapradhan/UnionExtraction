@@ -7,11 +7,12 @@ from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 class CandidateAttribute():
     """docstring for CandidateAttribute"""
 
-    def __init__(self, attrib, aggregation, dependency, dependencyList, index, name):
+    def __init__(self, attrib, aggregation, dependency, dependencyList, attrib_dependency, index, name):
         self.attrib = attrib
         self.aggregation = aggregation
         self.dependency = dependency
         self.dependencyList = copy.deepcopy(dependencyList)
+        self.attrib_dependency = copy.deepcopy(attrib_dependency)
         self.index = index
         self.name = name
 
@@ -20,17 +21,29 @@ class CandidateAttribute():
         print(self.aggregation)
         print(self.dependency)
         print(self.dependencyList)
+        print(self.attrib_dependency)
         print(self.index)
         print('')
+
+
+def tryConvertToInt(val):
+    temp = 0
+    try:
+        temp = int(val)
+    except ValueError as e:
+        print("Not int error, ", e)
+        temp = val
+    return temp
 
 
 def checkOrdering(obj, result):
     if len(result) < 2:
         return None
-    reference_value = result[1][obj.index]
+    reference_value = tryConvertToInt(result[1][obj.index])
     for i in range(2, len(result)):
-        if result[i][obj.index] != reference_value:
-            return 'asc' if result[i][obj.index] > reference_value else 'desc'
+        print(result)
+        if tryConvertToInt(result[i][obj.index]) != reference_value:
+            return 'asc' if tryConvertToInt(result[i][obj.index]) > reference_value else 'desc'
     return None
 
 
@@ -44,6 +57,7 @@ class OrderBy(GenerationPipeLineBase):
                  join_graph,
                  projected_attribs,
                  global_projection_names,
+                 global_dependencies,
                  global_aggregated_attributes):
         super().__init__(connectionHelper, "Order By",
                          core_relations,
@@ -56,6 +70,7 @@ class OrderBy(GenerationPipeLineBase):
         self.global_aggregated_attributes = global_aggregated_attributes
         self.global_key_attributes = global_key_attributes
         self.orderby_list = []
+        self.global_dependencies = global_dependencies
         self.orderBy_string = ''
         self.has_orderBy = True
 
@@ -63,7 +78,6 @@ class OrderBy(GenerationPipeLineBase):
         # ORDERBY ON PROJECTED COLUMNS ONLY
         # ASSUMING NO ORDER ON JOIN ATTRIBUTES
         cand_list = self.construct_candidate_list()
-
         # CHECK ORDER BY ON COUNT
         self.orderBy_string = self.remove_equality_predicates(cand_list, filter_attrib_dict, query)
         self.check_order_by_on_count(cand_list, self.orderBy_string, filter_attrib_dict, query)
@@ -129,7 +143,9 @@ class OrderBy(GenerationPipeLineBase):
             cand_list.append(CandidateAttribute(self.global_aggregated_attributes[i][0],
                                                 self.global_aggregated_attributes[i][1],
                                                 not (not dependencyList),
-                                                dependencyList, i, self.global_projection_names[i]))
+                                                dependencyList, self.global_dependencies[i], i, self.global_projection_names[i]))
+        for i in cand_list:
+            i.print()
         return cand_list
 
     def generateData(self, obj, orderby_list, filter_attrib_dict, curr_orderby, query):
@@ -138,6 +154,7 @@ class OrderBy(GenerationPipeLineBase):
             attrib_types_dict[(entry[0], entry[1])] = entry[2]
         # check if it is a key attribute, #NO CHECKING ON KEY ATTRIBUTES
         if obj.attrib in self.global_key_attributes:
+            print("Skipping on key")
             return None
         if not obj.dependency:
             # if obj.name not in self.global_attrib_dict['order by']:
@@ -149,14 +166,14 @@ class OrderBy(GenerationPipeLineBase):
             # Fill 3 rows in any one table (with a b b values) and 2 in all others (with a b values) in D2
             same_value_list = []
             for elt in orderby_list:
-                same_value_list.append(elt[0].attrib)
+                for i in elt[0].attrib_dependency:
+                    same_value_list.append(i)
             no_of_db = 2
             order = [None, None]
             # For this attribute (obj.attrib), fill all tables now
             for k in range(no_of_db):
                 # Truncate all core relations
                 self.truncate_core_relations()
-
                 for j in range(len(self.core_relations)):
                     first_rel = self.core_relations[0]
                     tabname_inner = self.core_relations[j]
@@ -211,10 +228,15 @@ class OrderBy(GenerationPipeLineBase):
                                 second = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 1))
                         insert_values1.append(first)
                         insert_values2.append(second)
-                        if k == no_of_db - 1 and (attrib_inner == obj.attrib or 'Count' in obj.aggregation):
+                        if k == no_of_db - 1 and (any([(attrib_inner in i) for i in obj.attrib_dependency]) or 'Count' in obj.aggregation):
                             # swap first and second
+                            #print("Swapping", attrib_inner) # FOR DEBUG
+                            #print("Attribute Order", att_order) # FOR DEBUG
+                            #print("Prev", insert_values1, insert_values2) # FOR DEBUG
                             insert_values2[-1], insert_values1[-1] = insert_values1[-1], insert_values2[-1]
-                        if attrib_inner in same_value_list:
+                            #print("New", insert_values1, insert_values2) # FOR DEBUG
+                        #print("same value", same_value_list) # FOR DEBUG
+                        if any([(attrib_inner in i) for i in same_value_list]):
                             insert_values2[-1] = insert_values1[-1]
                     flag = True
                     if 'Count' in obj.aggregation and tabname_inner == first_rel:
@@ -224,10 +246,13 @@ class OrderBy(GenerationPipeLineBase):
                     else:
                         insert_rows.append(tuple(insert_values1))
                         insert_rows.append(tuple(insert_values2))
-
+                    #print(att_order) # FOR DEBUG
+                    #print("Insert 1", insert_values1) # FOR DEGUB
+                    #print("Insert 2", insert_values2) # FOR DEBUG
                     self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
 
                 new_result = self.app.doJob(query)
+                #print("New Result",k, new_result) # FOR DEBUG
                 if isQ_result_empty(new_result):
                     print('some error in generating new database. Result is empty. Can not identify Ordering')
                     return None

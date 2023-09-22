@@ -441,7 +441,7 @@ class Projection(GenerationPipeLineBase):
 
         for i in range(n):
             coeff[0][i] = value_used[value_used.index(dep[i][1]) + 1]
-        temp_array = self.get_coeff_list(coeff[0][:n])
+        temp_array = get_param_values_external(coeff[0][:n])
         for i in range(2 ** n - 1):
             # Given the values of the n dependencies, we form the rest 2^n - n combinations
             coeff[0][i] = temp_array[i]
@@ -463,7 +463,7 @@ class Projection(GenerationPipeLineBase):
                     mi = fil_check[j][3]
                     ma = fil_check[j][4]
                 coeff[outer_idx][j] = random.randrange(mi, ma)
-            temp_array = self.get_coeff_list(coeff[outer_idx][:n])
+            temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]
             coeff[outer_idx][2 ** n - 1] = 1
@@ -530,11 +530,11 @@ class Projection(GenerationPipeLineBase):
             final_lis.append(temp_str)
         return final_lis
 
-    def get_coeff_list(self, coeff_arr):
-        # print(coeff_arr)
+def get_param_values_external(coeff_arr):
+        print(coeff_arr)
         subsets = get_subsets(coeff_arr)
         subsets = sorted(subsets, key=len)
-        # print(subsets)
+        print(subsets)
         final_lis = []
         for i in subsets:
             temp_val = 1
@@ -544,7 +544,6 @@ class Projection(GenerationPipeLineBase):
                 temp_val *= i[j]
             final_lis.append(temp_val)
         return final_lis
-
 
 def get_subsets(deps):
     res = []
