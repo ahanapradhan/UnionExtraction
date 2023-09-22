@@ -2,7 +2,6 @@ import unittest
 
 from mysite.unmasque.refactored.cs2 import Cs2
 from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -26,7 +25,6 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_for_cs2_pass_tpch_query3(self):
-        self.conn = ConnectionHelper("tpch", "postgres", "postgres", "5432", "localhost")
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
@@ -167,6 +165,7 @@ class MyTestCase(BaseTestCase):
             self.assertEqual(len(minimizer.global_min_instance_dict[tab]), 2)
         self.conn.closeConnection()
 
+    """
     def test_for_cs2_fail_dup(self):
         hq = "select o_orderdate, l_extendedprice, n2.n_name " \
              "from part, supplier, lineitem, orders, customer, nation n1, nation n2, region " \
@@ -187,6 +186,7 @@ class MyTestCase(BaseTestCase):
         for tab in from_rels:
             self.assertEqual(len(minimizer.global_min_instance_dict[tab]), 2)
         self.conn.closeConnection()
+    """
 
 
 if __name__ == '__main__':

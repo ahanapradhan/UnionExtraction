@@ -1,8 +1,8 @@
-import unittest
 import sys
+import unittest
+
 sys.path.append("../../../")
 from mysite.unmasque.refactored.initialization import Initiator
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 

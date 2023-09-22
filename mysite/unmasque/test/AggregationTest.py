@@ -1,16 +1,12 @@
 import datetime
-import signal
 import sys
 import unittest
 
-from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.src.util.constants import IDENTICAL_EXPR
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 sys.path.append("../../../")
 from mysite.unmasque.refactored.aggregation import Aggregation
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 from mysite.unmasque.test.util import tpchSettings, queries
 
 
