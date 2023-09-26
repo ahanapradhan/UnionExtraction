@@ -226,6 +226,8 @@ class ExtractionPipeLine(GenericPipeLine):
         q_generator = QueryStringGenerator(self.connectionHelper)
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
         self.logger.debug("extracted query:\n", eq)
+        # last component in the pipeline should do this
+        time_profile.update_for_app(lm.app.method_call_count)
 
         self.update_state(RESULT_COMPARE + START)
         rc_hash = ResultComparator(self.connectionHelper, False)
@@ -241,8 +243,5 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(DONE)
-
-        # last component in the pipeline should do this
-        time_profile.update_for_app(lm.app.method_call_count)
 
         return eq, time_profile

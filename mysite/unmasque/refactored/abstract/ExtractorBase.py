@@ -1,9 +1,7 @@
-import logging
 import time
 
 from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 from mysite.unmasque.src.util.Log import Log
-from mysite.unmasque.src.util.constants import LOG_FORMAT
 
 
 class Base(TpchSanitizer):
