@@ -29,7 +29,7 @@ NO_ORDER = 'noorder'
 
 IDENTICAL_EXPR = "identical_expr_nc"
 # we use 1 and 999 to limit, otw overflow can occur
-pr_min = -999
+pr_min = 1
 pr_max = 999
 
 max_str_len = 500
@@ -37,7 +37,6 @@ max_str_len = 500
 DATABASE_SECTION = "database"
 SUPPORT_SECTION = "support"
 LOGGING_SECTION = "logging"
-FEATURE_SECTION = "feature"
 HOST = "host"
 PORT = "port"
 USER = "user"
@@ -45,8 +44,6 @@ PASSWORD = "password"
 DBNAME = "dbname"
 SCHEMA = "schema"
 LEVEL = "level"
-DETECT_UNION = "union"
-DETECT_NEP = "nep"
 
 WAITING = "_WAITING"
 DONE = "_DONE"
@@ -68,6 +65,4 @@ DB_MINIMIZATION = "DB MINIMIZATION"
 RESULT_COMPARE = "RESULT COMPARATOR"
 
 LOG_FORMAT = '%(name)s -- %(levelname)s -- %(message)s'
-
-NO_REDUCTION = "NO_REDUCTION"
 

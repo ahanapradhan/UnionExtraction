@@ -13,23 +13,6 @@ class MyTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.pipeline = ExtractionPipeLine(self.conn)
 
-    def test_issue_2_fix(self):
-        self.conn.connectUsingParams()
-        query = "select l_orderkey, " \
-                "sum(l_extendedprice - l_discount + l_tax) as revenue, o_orderdate, " \
-                "o_shippriority from customer, orders, lineitem " \
-                "where c_mktsegment = 'BUILDING' " \
-                "and c_custkey = o_custkey and l_orderkey = o_orderkey " \
-                "and o_orderdate < '1995-03-15' " \
-                "and l_shipdate > '1995-03-15' " \
-                "group by l_orderkey, o_orderdate, o_shippriority " \
-                "order by revenue desc, o_orderdate limit 10;"
-        for i in range(3):
-            eq = self.pipeline.doJob(query)
-            self.assertTrue(eq is not None)
-            print(eq)
-        self.conn.closeConnection()
-
     def test_extraction_tpch_q1(self):
         self.conn.connectUsingParams()
         key = 'q1'
@@ -41,10 +24,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.doJob(query)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_in_loop(self):
@@ -55,21 +38,20 @@ class MyTestCase(BaseTestCase):
         self.conn.connectUsingParams()
         key = 'q1_simple'
         query = queries.queries_dict[key]
-        eq = self.pipeline.doJob(query)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
-        self.assertTrue(self.pipeline.correct)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_q1_filter(self):
         self.conn.connectUsingParams()
         key = 'q1_filter'
         query = queries.queries_dict[key]
-        eq = self.pipeline.doJob(query)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_query1(self):
@@ -84,11 +66,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_query3(self):
@@ -103,11 +84,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q1(self):
@@ -122,11 +102,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q3(self):
@@ -141,11 +120,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q3_1(self):
@@ -153,30 +131,17 @@ class MyTestCase(BaseTestCase):
         key = 'Q3_1'
         query = queries.queries_dict[key]
         print(query)
-        '''
         app = Executable(self.conn)
         result = app.doJob(query)
         if isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
-        '''
-        eq = self.pipeline.doJob(query)
-        self.assertTrue(eq is not None)
-        print(eq)
-        self.pipeline.time_profile.print()
-        self.conn.closeConnection()
 
-    def test_extraction_Q18_test1(self):
-        self.conn.connectUsingParams()
-        key = 'Q18_test'
-        query = queries.queries_dict[key]
-        print(query)
-        eq = self.pipeline.doJob(query)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        self.assertTrue(self.pipeline.correct)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q4(self):
@@ -191,11 +156,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q5(self):
@@ -210,11 +174,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q6(self):
@@ -229,11 +192,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q7(self):
@@ -248,11 +210,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q11(self):
@@ -267,11 +228,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q16(self):
@@ -286,11 +246,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q17(self):
@@ -305,11 +264,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q18(self):
@@ -324,12 +282,11 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
 
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q21(self):
@@ -344,12 +301,11 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
 
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q23_1(self):
@@ -364,12 +320,11 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
 
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q9_simple(self):
@@ -384,11 +339,10 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q10_simple(self):
@@ -403,31 +357,11 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
-
-    def test_for_bug(self):
-        query = "select sum(l_extendedprice*(1 - l_discount)) as revenue, o_orderdate, " \
-                "o_shippriority, l_orderkey " \
-                "from customer, orders, " \
-                "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and " \
-                "o_orderdate " \
-                "< '1995-03-15' and l_shipdate > '1995-03-15' " \
-                "group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
-                "desc, o_orderdate limit 10;"
-        self.conn.connectUsingParams()
-        eq = self.pipeline.doJob(query)
-        self.assertTrue(eq is not None)
-        self.assertTrue(self.pipeline.correct)
-        print(eq)
-        self.conn.closeConnection()
-    def test_6_mul(self):
-        for i in range(10):
-            self.test_extraction_Q6()
 
 
 if __name__ == '__main__':

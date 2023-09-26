@@ -2,7 +2,7 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
+    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, WRONG
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.equi_join import EquiJoin
@@ -12,6 +12,7 @@ from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
+from ...refactored.result_comparator import ResultComparator
 from ...refactored.view_minimizer import ViewMinimizer
 
 
@@ -35,9 +36,8 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some problem while extracting from clause. Aborting!")
             return None, self.time_profile
 
-        self.all_relations = fc.all_relations
-
-        eq, t = self.after_from_clause_extract(query, self.all_relations,
+        eq, t = self.after_from_clause_extract(query,
+                                               fc.all_relations,
                                                fc.core_relations,
                                                fc.get_key_lists())
         self.connectionHelper.closeConnection()
@@ -45,11 +45,13 @@ class ExtractionPipeLine(GenericPipeLine):
         return eq
 
     def after_from_clause_extract(self,
-                                  query, all_relations,
+                                  query,
+                                  all_relations,
                                   core_relations,
                                   key_lists):  # get core_relations, key_lists from from clause
 
         time_profile = create_zero_time_profile()
+        # core_relations = ["customer", "orders", "lineitem"]
 
         '''
         Correlated Sampling
@@ -118,8 +120,12 @@ class ExtractionPipeLine(GenericPipeLine):
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
-        pj = Projection(self.connectionHelper, ej.global_attrib_types, core_relations, fl.filter_predicates,
-                        ej.global_join_graph, ej.global_all_attribs, vm.global_min_instance_dict)
+        pj = Projection(self.connectionHelper,
+                        ej.global_attrib_types,
+                        core_relations,
+                        fl.filter_predicates,
+                        ej.global_join_graph,
+                        ej.global_all_attribs)
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
         self.update_state(PROJECTION + DONE)
@@ -134,8 +140,13 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.update_state(GROUP_BY + START)
 
-        gb = GroupBy(self.connectionHelper, ej.global_attrib_types, core_relations, fl.filter_predicates,
-                     ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs, vm.global_min_instance_dict)
+        gb = GroupBy(self.connectionHelper,
+                     ej.global_attrib_types,
+                     core_relations,
+                     fl.filter_predicates,
+                     ej.global_all_attribs,
+                     ej.global_join_graph,
+                     pj.projected_attribs)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
         self.update_state(GROUP_BY + DONE)
@@ -148,10 +159,19 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(AGGREGATE + START)
-        agg = Aggregation(self.connectionHelper, ej.global_key_attributes, ej.global_attrib_types, core_relations,
-                          fl.filter_predicates, ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs,
-                          gb.has_groupby, gb.group_by_attrib, pj.dependencies, pj.solution, pj.param_list,
-                          vm.global_min_instance_dict)
+        agg = Aggregation(self.connectionHelper,
+                          ej.global_key_attributes,
+                          ej.global_attrib_types,
+                          core_relations,
+                          fl.filter_predicates,
+                          ej.global_all_attribs,
+                          ej.global_join_graph,
+                          pj.projected_attribs,
+                          gb.has_groupby,
+                          gb.group_by_attrib,
+                          pj.dependencies,
+                          pj.solution,
+                          pj.param_list)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
         self.update_state(AGGREGATE + DONE)
@@ -164,9 +184,17 @@ class ExtractionPipeLine(GenericPipeLine):
         self.logger.debug("Aggregation", agg.global_aggregated_attributes)
 
         self.update_state(ORDER_BY + START)
-        ob = OrderBy(self.connectionHelper, ej.global_key_attributes, ej.global_attrib_types, core_relations,
-                     fl.filter_predicates, ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs,
-                     pj.projection_names, pj.dependencies, agg.global_aggregated_attributes, vm.global_min_instance_dict)
+        ob = OrderBy(self.connectionHelper,
+                     ej.global_key_attributes,
+                     ej.global_attrib_types,
+                     core_relations,
+                     fl.filter_predicates,
+                     ej.global_all_attribs,
+                     ej.global_join_graph,
+                     pj.projected_attribs,
+                     pj.projection_names,
+                     pj.dependencies,
+                     agg.global_aggregated_attributes)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
         self.update_state(ORDER_BY + DONE)
@@ -178,8 +206,13 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(LIMIT + START)
-        lm = Limit(self.connectionHelper, ej.global_attrib_types, ej.global_key_attributes, core_relations,
-                   fl.filter_predicates, ej.global_all_attribs, gb.group_by_attrib, vm.global_min_instance_dict)
+        lm = Limit(self.connectionHelper,
+                   ej.global_attrib_types,
+                   ej.global_key_attributes,
+                   core_relations,
+                   fl.filter_predicates,
+                   ej.global_all_attribs,
+                   gb.group_by_attrib)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
         self.update_state(LIMIT + DONE)
@@ -193,8 +226,23 @@ class ExtractionPipeLine(GenericPipeLine):
         q_generator = QueryStringGenerator(self.connectionHelper)
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
         self.logger.debug("extracted query:\n", eq)
+
+        self.update_state(RESULT_COMPARE + START)
+        rc_hash = ResultComparator(self.connectionHelper, False)
+        self.update_state(RESULT_COMPARE + RUNNING)
+        check = rc_hash.doJob(query, eq)
+        time_profile.update_for_result_comparator(rc_hash.local_elapsed_time)
+        self.update_state(RESULT_COMPARE + DONE)
+        if not check:
+            self.logger.error(query)
+            self.logger.error("========Exracted Query seems different!========")
+            self.logger.error(eq)
+            self.update_state(WRONG)
+            return None, time_profile
+
+        self.update_state(DONE)
+
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
 
-        self.update_state(DONE)
         return eq, time_profile
