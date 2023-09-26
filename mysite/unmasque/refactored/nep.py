@@ -79,7 +79,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.logger.info("all views dropped.")
 
     def nep_db_minimizer(self, matched, query, tabname, Q_E, tab_size, partition_dict, i):
-        self.logger.debug(matched)
         """
         Base Case
         """
@@ -101,8 +100,10 @@ class NEP(Minimizer, GenerationPipeLineBase):
         Run the hidden query on this updated database instance with table T_u
         """
         matched = self.result_comparator.check_matching(query, Q_E)
+        self.logger.debug(matched)
         if not matched:
             Q_E_ = self.nep_db_minimizer(matched, query, tabname, Q_E, limit, (offset, limit), i)
+            return Q_E_
         else:
             Q_E_ = Q_E
 
@@ -116,6 +117,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         Run the hidden query on this updated database instance with table T_l
         """
         matched = self.result_comparator.check_matching(query, Q_E_)
+        self.logger.debug(matched)
         if not matched:
             Q_E__ = self.nep_db_minimizer(matched, query, tabname, Q_E_, limit, (offset, limit), i)
             return Q_E__
