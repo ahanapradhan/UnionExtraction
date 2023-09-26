@@ -1,7 +1,7 @@
 import time
 
-from ...src.pipeline.abstract.TpchSanitizer import TpchSanitizer
-from ...src.util.Log import Log
+from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
+from mysite.unmasque.src.util.Log import Log
 
 
 class Base(TpchSanitizer):
@@ -35,6 +35,9 @@ class Base(TpchSanitizer):
 
     def doActualJob(self, args):
         pass
+
+    def sanitize(self):
+        super().doJob()
 
     def extract_params_from_args(self, args):
         pass
