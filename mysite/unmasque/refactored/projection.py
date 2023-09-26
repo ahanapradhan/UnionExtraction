@@ -186,7 +186,7 @@ class Projection(GenerationPipeLineBase):
         self.projection_names = projection_names
         self.dependencies = projection_dep
         self.solution = projection_sol
-        # print("Result", projection_names, projected_attrib, projection_sol, self.param_list)
+        self.logger.debug("Result ", projection_names, projected_attrib, projection_sol, self.param_list)
         return True
 
     def find_projection_on_filtered_attribs(self, attrib_types_dict, projected_attrib, query, value_used):
@@ -205,8 +205,9 @@ class Projection(GenerationPipeLineBase):
             value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
             new_result = self.app.doJob(query)
             if isQ_result_empty(new_result):
-                print("Unmasque: \n some error in generating new database. Result is empty. Can not identify "
-                      "projections completely.")
+                self.logger.error("Unmasque: \n some error in generating new database. "
+                                  "Result is empty. Can not identify "
+                                  "projections completely.")
                 return False
             self.analyze2(curr_attrib, curr_value, new_result, newfilterList, projected_attrib)
         return True
@@ -217,8 +218,9 @@ class Projection(GenerationPipeLineBase):
         value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
-            print("Unmasque: \n some error in generating new database. Result is empty. Can not identify "
-                  "projections completely.")
+            self.logger.error("Unmasque: \n some error in generating new database. "
+                              "Result is empty. Can not identify "
+                              "projections completely.")
             return [], [], value_used, False
         projection_names = list(new_result[0])
         new_result = list(new_result[1])
@@ -280,7 +282,7 @@ class Projection(GenerationPipeLineBase):
         self.truncate_core_relations()
         projection_dep = []
         indices_to_check = []
-        # print("Projected Attrib", projected_attrib)
+        self.logger.debug("Projected Attrib", projected_attrib)
         for i in range(len(projected_attrib)):
             # Construct the initial dependency list
             if projected_attrib[i] != '':
@@ -290,7 +292,7 @@ class Projection(GenerationPipeLineBase):
                 # Otherwise initialize an empty list, and add the index to be checked
                 projection_dep.append([])
                 indices_to_check.append(i)
-        # print("Indices To check", indices_to_check)
+        self.logger.debug("Indices To check", indices_to_check)
         value_used = self.construct_values_used(attrib_types_dict)
         value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
         # Prev Result to check for changes
@@ -298,7 +300,7 @@ class Projection(GenerationPipeLineBase):
         for idx in indices_to_check:
             projection_dep[idx] = self.get_dependence(idx, projection_names, query, prev_result, attrib_types_dict,
                                                       value_used)
-        # print("Dependencies", projection_dep)
+        self.logger.debug("Dependencies", projection_dep)
         return projection_dep
 
     def get_dependence(self, index, names, query, prev_res, attrib_types_dict, value_used):
@@ -348,10 +350,10 @@ class Projection(GenerationPipeLineBase):
                     for val in join:
                         update_multi.append(val)
                         update_multi.append(dummy_val)
-                # print("Join Update", update_multi)
+                self.logger.debug("Join Update", update_multi)
                 if not fil and not join:
-                    if 'int' in attrib_types_dict[(tabname, attrib)] or 'numeric' in attrib_types_dict[
-                        (tabname, attrib)]:
+                    if 'int' in attrib_types_dict[(tabname, attrib)] \
+                            or 'numeric' in attrib_types_dict[(tabname, attrib)]:
                         update_value = get_unused_dummy_val('int', value_used)
                         value_used[value_used.index(attrib) + 1] = update_value
 
@@ -371,16 +373,16 @@ class Projection(GenerationPipeLineBase):
                             update_value += format(1, 'b')
                     else:
                         update_value = get_unused_dummy_val('char', value_used)
-                        # print("Char", update_value)
+                        self.logger.debug("Char", update_value)
                         value_used[value_used.index(attrib) + 1] = update_value
                 if 'char' in attrib_types_dict[(tabname, attrib)] or 'date' in attrib_types_dict[(tabname, attrib)]:
                     update_value = f"'{update_value}'"
 
                 self.update_attrib_in_table(attrib, update_value, tabname)
                 # Current Problem with joins, if the attribute is part of join change the corresponding ones as well.
-                # print("Prev", prev_res)
+                self.logger.debug("Prev", prev_res)
                 new_result = self.app.doJob(query)
-                # print("New", new_result)
+                self.logger.debug("New", new_result)
                 if prev_res[1][index] != new_result[1][index]:
                     dep_list.append((tabname, attrib))
                     prev_res = new_result
@@ -398,10 +400,10 @@ class Projection(GenerationPipeLineBase):
     def find_solution_on_multi(self, attrib_types_dict, projected_attrib, projection_names, projection_dep, query):
         solution = []
         for idx_pro, ele in enumerate(projected_attrib):
-            print("ele being checked", ele, idx_pro)
+            self.logger.debug("ele being checked", ele, idx_pro)
             if projection_dep[idx_pro] == [] or (
                     len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == constants.IDENTICAL_EXPR):
-                print("Simple Projection, Continue")
+                self.logger.debug("Simple Projection, Continue")
                 # Identical output column, so append empty list and continue
                 solution.append([])
                 self.param_list.append([])
@@ -449,7 +451,7 @@ class Projection(GenerationPipeLineBase):
         coeff[0][2 ** n - 1] = 1
 
         local_param_list = self.get_param_list([i[1] for i in dep])
-        # print("Param List", local_param_list)
+        self.logger.debug("Param List", local_param_list)
         self.param_list.append(local_param_list)
         curr_rank = 1
         outer_idx = 1
@@ -482,8 +484,8 @@ class Projection(GenerationPipeLineBase):
 
         solution = np.linalg.solve(coeff, b)
         solution = np.around(solution, decimals=0)
-        # print("Equation", coeff, b)
-        # print("Solution", solution)
+        self.logger.debug("Equation", coeff, b)
+        self.logger.debug("Solution", solution)
         return solution
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
@@ -510,14 +512,14 @@ class Projection(GenerationPipeLineBase):
                 if solution[i][0] > 0:
                     res_str += "+"
                 res_str += (str(solution[i][0]) + "*" + param_l[i]) if solution[i][0] != 1 else param_l[i]
-        # print("Result String", res_str)
+        self.logger.debug("Result String", res_str)
         return res_str
 
     def get_param_list(self, deps):
-        # print(deps)
+        self.logger.debug(deps)
         subsets = get_subsets(deps)
         subsets = sorted(subsets, key=len)
-        # print(subsets)
+        self.logger.debug(subsets)
         final_lis = []
         for i in subsets:
             if len(i) < 2 and i == []:
@@ -530,20 +532,22 @@ class Projection(GenerationPipeLineBase):
             final_lis.append(temp_str)
         return final_lis
 
+
 def get_param_values_external(coeff_arr):
-        print(coeff_arr)
-        subsets = get_subsets(coeff_arr)
-        subsets = sorted(subsets, key=len)
-        print(subsets)
-        final_lis = []
-        for i in subsets:
-            temp_val = 1
-            if len(i) < 2 and i == []:
-                continue
-            for j in range(len(i)):
-                temp_val *= i[j]
-            final_lis.append(temp_val)
-        return final_lis
+    print(coeff_arr)
+    subsets = get_subsets(coeff_arr)
+    subsets = sorted(subsets, key=len)
+    print(subsets)
+    final_lis = []
+    for i in subsets:
+        temp_val = 1
+        if len(i) < 2 and i == []:
+            continue
+        for j in range(len(i)):
+            temp_val *= i[j]
+        final_lis.append(temp_val)
+    return final_lis
+
 
 def get_subsets(deps):
     res = []

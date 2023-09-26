@@ -25,6 +25,7 @@ MIN = 'Min'
 MAX = 'Max'
 COUNT = 'Count'
 COUNT_STAR = 'Count(*)'
+NO_ORDER = 'noorder'
 
 IDENTICAL_EXPR = "identical_expr_nc"
 # we use 1 and 999 to limit, otw overflow can occur
@@ -35,12 +36,14 @@ max_str_len = 500
 
 DATABASE_SECTION = "database"
 SUPPORT_SECTION = "support"
+LOGGING_SECTION = "logging"
 HOST = "host"
 PORT = "port"
 USER = "user"
 PASSWORD = "password"
 DBNAME = "dbname"
 SCHEMA = "schema"
+LEVEL = "level"
 
 WAITING = "_WAITING"
 DONE = "_DONE"
@@ -60,4 +63,6 @@ UNION = "UNION"
 SAMPLING = "SAMPLING"
 DB_MINIMIZATION = "DB MINIMIZATION"
 RESULT_COMPARE = "RESULT COMPARATOR"
+
+LOG_FORMAT = '%(name)s -- %(levelname)s -- %(message)s'
 

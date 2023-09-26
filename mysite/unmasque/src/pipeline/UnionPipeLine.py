@@ -34,7 +34,7 @@ class UnionPipeLine(GenericPipeLine):
             core_relations = []
             for r in rels:
                 core_relations.append(r)
-            print(core_relations)
+            self.logger.debug(core_relations)
 
             nullify = set(all_relations).difference(core_relations)
 
@@ -46,7 +46,7 @@ class UnionPipeLine(GenericPipeLine):
             self.connectionHelper.closeConnection()
 
             if eq is not None:
-                print(eq)
+                self.logger.debug(eq)
                 eq = eq.replace('Select', '(Select')
                 eq = eq.replace(';', ')')
                 u_eq.append(eq)

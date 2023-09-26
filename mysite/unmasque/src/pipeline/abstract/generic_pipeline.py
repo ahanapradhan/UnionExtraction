@@ -1,8 +1,10 @@
 import functools
+import logging
 import threading
 
 from ...core.elapsed_time import create_zero_time_profile
-from ...util.constants import WAITING
+from ...util.Log import Log
+from ...util.constants import WAITING, LOG_FORMAT
 
 
 def synchronized(wrapped):
@@ -50,6 +52,7 @@ class GenericPipeLine:
         self.pipeline_name = name
         self.time_profile = create_zero_time_profile()
         self.token = None
+        self.logger = Log(name, connectionHelper.config.log_level)
 
     def doJob(self, args):
         self.update_state(WAITING)

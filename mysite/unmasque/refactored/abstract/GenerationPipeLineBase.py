@@ -52,9 +52,9 @@ class GenerationPipeLineBase(Base):
         self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
 
     def update_attrib_in_table(self, attrib, value, tabname):
-        # print("Update Query")
+        self.logger.debug("Update Query")
         update_query = "UPDATE " + tabname + " SET " + attrib + "=" + str(value) + ";"
-        # print(update_query)
+        self.logger.debug(update_query)
         self.connectionHelper.execute_sql([update_query])
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):

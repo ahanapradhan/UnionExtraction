@@ -2,8 +2,7 @@ import configparser
 from pathlib import Path
 
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
-    SUPPORT_SECTION
-
+    SUPPORT_SECTION, LEVEL, LOGGING_SECTION
 
 
 class Config:
@@ -24,6 +23,7 @@ class Config:
         self.password = "postgres"
         self.user = "postgres"
         self.host = "localhost"
+        self.log_level = 'INFO'
         self.base_path = None
         self.config_loaded = False
         self.detect_union = False
@@ -47,6 +47,8 @@ class Config:
 
                 self.pkfk = config_object.get(SUPPORT_SECTION, "pkfk")
                 self.index_maker = config_object.get(SUPPORT_SECTION, "index_maker")
+
+                self.log_level = config_object.get(LOGGING_SECTION, LEVEL)
         except FileNotFoundError:
             print("config.ini not found. Default configs loaded!")
         except KeyError:

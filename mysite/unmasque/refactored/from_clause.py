@@ -31,10 +31,10 @@ class FromClause(Base):
                 new_result = self.app.doJob(query)
                 if isQ_result_empty(new_result):
                     self.core_relations.append(tabname)
-                    print("Table ", tabname, " is in from clause..")
+                    self.logger.info("Table ", tabname, " is in from clause..")
 
             except Exception as error:
-                print("Error Occurred in table extraction. Error: " + str(error))
+                self.logger.error("Error Occurred in table extraction. Error: " + str(error))
                 self.connectionHelper.execute_sql(["ROLLBACK;"])
                 exit(1)
 
@@ -56,7 +56,7 @@ class FromClause(Base):
                         raise
 
             except Exception as error:
-                print("Error Occurred in table extraction. Error: " + str(error))
+                self.logger.error("Error Occurred in table extraction. Error: " + str(error))
 
             finally:
                 self.connectionHelper.execute_sql(["ROLLBACK;"])

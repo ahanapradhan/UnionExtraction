@@ -72,6 +72,14 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(res[0][0], 8)
         self.conn.closeConnection()
 
+    def test_for_some_query(self):
+        q = "SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100;"
+        self.conn.connectUsingParams()
+        rc_hash = ResultComparator(self.conn, False)
+        matched_hash = rc_hash.doJob(q, q)
+        self.assertTrue(matched_hash)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

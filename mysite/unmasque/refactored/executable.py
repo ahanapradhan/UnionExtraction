@@ -32,6 +32,6 @@ class Executable(Base):
                 result = get_result_as_tuple_1(res, result)
 
         except Exception as error:
-            print('Executable could not be run. Error: ' + str(error))
+            self.logger.error("Executable could not be run. Error: " + str(error))
             raise error
         return result

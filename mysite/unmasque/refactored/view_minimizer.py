@@ -10,12 +10,12 @@ from ..refactored.util.common_queries import get_row_count, alter_table_rename_t
 from ..refactored.util.utils import isQ_result_empty
 
 
-def extract_start_and_end_page(rctid):
+def extract_start_and_end_page(logger, rctid):
     min_ctid = rctid[0]
     min_ctid2 = min_ctid.split(",")
     start_page = int(min_ctid2[0][1:])
     max_ctid = rctid[1]
-    # print(max_ctid)
+    logger.debug(max_ctid)
     max_ctid2 = max_ctid.split(",")
     end_page = int(max_ctid2[0][1:])
     start_ctid = min_ctid
@@ -50,7 +50,7 @@ class ViewMinimizer(Minimizer):
                           tabname,
                           rctid,
                           tabname1):
-        end_ctid, end_page, start_ctid, start_page = extract_start_and_end_page(rctid)
+        end_ctid, end_page, start_ctid, start_page = extract_start_and_end_page(self.logger, rctid)
         while start_page < end_page - 1:
             mid_page = int((start_page + end_page) / 2)
             mid_ctid1 = "(" + str(mid_page) + ",1)"
@@ -72,7 +72,7 @@ class ViewMinimizer(Minimizer):
              drop_table(tabname1)])
         size = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
         core_sizes[tabname] = size
-        # print("REMAINING TABLE SIZE", core_sizes[tabname])
+        self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
         return core_sizes
 
     def create_view_execute_app_drop_view(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname, tabname1):
@@ -92,7 +92,7 @@ class ViewMinimizer(Minimizer):
         # SANITY CHECK
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
-            print("Error: Query out of extractable domain\n")
+            self.logger.error("Error: Query out of extractable domain\n")
             return False
         return True
 
@@ -115,7 +115,7 @@ class ViewMinimizer(Minimizer):
             res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
             self.connectionHelper.execute_sql([drop_table(get_tabname_4(tabname)),
                                                create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
-            # print(tabname, "==", res)
+            self.logger.debug(tabname, "==", res)
 
         if not self.sanity_check(query):
             return False

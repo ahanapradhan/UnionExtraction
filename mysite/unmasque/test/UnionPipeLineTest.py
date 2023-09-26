@@ -19,7 +19,7 @@ class MyTestCase(BaseTestCase):
         u_Q = self.pipeline.extract(query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
 
     def test_nonUnion_query_Q2(self):
         key = 'Q3'
@@ -27,7 +27,7 @@ class MyTestCase(BaseTestCase):
         u_Q = self.pipeline.extract(query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
 
     def test_nonUnion_queries(self):
         Q_keys = queries.queries_dict.keys()
@@ -44,7 +44,7 @@ class MyTestCase(BaseTestCase):
             f.write("\n*** Extracted Query:\n")
             f.write(u_Q)
             f.write("\n---------------------------------------\n")
-            self.pipeline.time_profile.print()
+            self.pipeline.time_profile.debug_print()
             q_no += 1
         f.close()
 
@@ -58,7 +58,7 @@ class MyTestCase(BaseTestCase):
         u_Q = self.pipeline.doJob(query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
 
     def test_unionQuery_ui_caught_case(self):
         self.conn.connectUsingParams()
