@@ -45,7 +45,7 @@ class Filter(WhereClause):
                     self.extract_filter_on_attrib(attrib, attrib_max_length, d_plus_value, filter_attribs,
                                                   query, tabname)
 
-                    # print("filter_attribs", filter_attribs)
+                    self.logger.debug("filter_attribs", filter_attribs)
         return filter_attribs
 
     def extract_filter_on_attrib(self, attrib, attrib_max_length, d_plus_value, filter_attribs, query, tabname):
@@ -119,7 +119,7 @@ class Filter(WhereClause):
         if operator == '<=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, query_back)
-                # print("low ", low, " high ", high, " mid ", mid_val)
+                self.logger.debug("low ", low, " high ", high, " mid ", mid_val)
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
                     # break

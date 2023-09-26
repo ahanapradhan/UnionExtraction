@@ -180,10 +180,10 @@ class Aggregation(GenerationPipeLineBase):
                     self.truncate_core_relations()
                     temp_vals = []
                     max_no_of_rows = self.insert_for_inner(a, attrib, attrib_types_dict, b, filter_attrib_dict, k_value,
-                                                       key_list, tabname, temp_vals)
-                    # print("Debug", self.dependencies, result_index)
+                                                           key_list, tabname, temp_vals)
+                    self.logger.debug(self.dependencies, result_index)
                     if len(self.dependencies[result_index]) > 1:
-                        # print("Temp values", temp_vals) # FOR DEBUG
+                        self.logger.debug("Temp values", temp_vals)  # FOR DEBUG
                         s = 0
                         mi = max_int_val
                         ma = min_int_val
@@ -207,7 +207,7 @@ class Aggregation(GenerationPipeLineBase):
                                 inter_val.append(int(temp_ar[j][1][i]))
                             ele = 1
                             n = len(self.dependencies[result_index])
-                            
+
                             # for j in range(len(self.param_list[result_index])):
                             #     ele = int(j / n)
                             #     # coeff[0][j] = coeff[0][(j-n)]*coeff[0][(j+ele)%n]
@@ -217,22 +217,23 @@ class Aggregation(GenerationPipeLineBase):
                             for j in range(len(self.param_list[result_index])):
                                 inter_val[j] = temp_arr[j]
                             inter_val.append(1)
-                            # print("Intermediate Values of all", inter_val) # FOR DEBUG
+                            self.logger.debug("Intermediate Values of all", inter_val)  # FOR DEBUG
                             for j, val in enumerate(inter_val):
                                 eqn += (val * local_sol[j][0])
                             s += eqn
                             mi = eqn if eqn < mi else mi
                             ma = eqn if eqn > ma else ma
-                        print("no_of_rows ", max_no_of_rows)
+                        self.logger.debug("no_of_rows ", max_no_of_rows)
                         av = (s / max_no_of_rows)
-                        # print("Temp Array", temp_ar)
-                        # print("SUM, AV, MIN, MAX", s, av, mi, ma)
+                        self.logger.debug("Temp Array", temp_ar)
+                        self.logger.debug("SUM, AV, MIN, MAX", s, av, mi, ma)
                         agg_array = [SUM, s, AVG, av, MIN, mi, MAX, ma, COUNT, max_no_of_rows]
                     new_result = self.app.doJob(query)
-                    #print("New Result", new_result) # FOR DEBUG
-                    #print("Comaparison", agg_array) # FOR DEBUG
+                    self.logger.debug("New Result", new_result) # FOR DEBUG
+                    self.logger.debug("Comaparison", agg_array) # FOR DEBUG
                     if isQ_result_empty(new_result):
-                        print('some error in generating new database. Result is empty. Can not identify aggregation')
+                        self.logger.error('some error in generating new database. '
+                                          'Result is empty. Can not identify aggregation')
                         return False
                     elif len(new_result) > 2:
                         continue
@@ -260,7 +261,7 @@ class Aggregation(GenerationPipeLineBase):
             if no_of_rows > max_no_of_rows:
                 max_no_of_rows = no_of_rows
 
-            print("tabname ", tabname, " tabname_inner ", tabname_inner, " no_of_rows ", no_of_rows)
+            self.logger.debug("tabname ", tabname, " tabname_inner ", tabname_inner, " no_of_rows ", no_of_rows)
 
             att_order = '('
             flag = False
@@ -299,14 +300,14 @@ class Aggregation(GenerationPipeLineBase):
                 insert_rows.append(tuple(insert_values))
 
                 flag = True
-            # print("Attribute Ordering: ", att_order) # FOR DEBUG
-            # print("Rows: ", insert_rows) # FOR DEBUG
+            self.logger.debug("Attribute Ordering: ", att_order)  # FOR DEBUG
+            self.logger.debug("Rows: ", insert_rows)  # FOR DEBUG
             temp_vals.append(insert_rows)
             self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
         return max_no_of_rows
 
     def analyze(self, agg_array, attrib, new_result, result_index):
-        print("analyze")
+        self.logger.debug("analyze")
         new_result = list(new_result[1])
         new_result = [x.strip() for x in new_result]
 
@@ -318,8 +319,8 @@ class Aggregation(GenerationPipeLineBase):
             check_value = str(new_result[result_index])
         j = 0
         while j < len(agg_array) - 1:
-            print(str(attrib), " ", agg_array[j])
-            print(check_value, " ", agg_array[j + 1])
+            self.logger.debug(str(attrib), " ", agg_array[j])
+            self.logger.debug(check_value, " ", agg_array[j + 1])
             if check_value == agg_array[j + 1]:
                 self.global_aggregated_attributes[result_index] = (str(attrib), agg_array[j])
                 break

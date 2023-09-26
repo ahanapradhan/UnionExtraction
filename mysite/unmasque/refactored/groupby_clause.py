@@ -126,7 +126,8 @@ class GroupBy(GenerationPipeLineBase):
                 new_result = self.app.doJob(query)
 
                 if isQ_result_empty(new_result):
-                    print('some error in generating new database. Result is empty. Can not identify Grouping')
+                    self.logger.error('some error in generating new database. '
+                                      'Result is empty. Can not identify Grouping')
                     return False
                 elif len(new_result) == 3:
                     # 3 is WITH HEADER so it is checking for two rows

@@ -81,7 +81,7 @@ class EquiJoin(WhereClause):
             if len(join_keys) <= 1:
                 global_key_lists.remove(curr_list)
                 continue
-            print("... checking for: ", join_keys)
+            self.logger.debug("... checking for: ", join_keys)
 
             # Try for all possible combinations
             for elt in combo_dict_of_lists[len(join_keys)]:

@@ -1,4 +1,3 @@
-from ..util.common_queries import get_row_count
 from ...refactored.abstract.ExtractorBase import Base
 from ...refactored.executable import Executable
 

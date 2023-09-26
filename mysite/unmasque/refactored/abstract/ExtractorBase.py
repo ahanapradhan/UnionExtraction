@@ -1,6 +1,9 @@
+import logging
 import time
 
 from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
+from mysite.unmasque.src.util.Log import Log
+from mysite.unmasque.src.util.constants import LOG_FORMAT
 
 
 class Base(TpchSanitizer):
@@ -21,6 +24,7 @@ class Base(TpchSanitizer):
         self.local_elapsed_time = None
         self.done = False
         self.result = None
+        self.logger = Log(name, connectionHelper.config.log_level)
 
     def doJob(self, *args):
         self.local_start_time = time.time()

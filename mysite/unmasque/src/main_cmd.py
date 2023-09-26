@@ -24,7 +24,6 @@ if __name__ == '__main__':
          "and l_orderkey = o_orderkey and o_orderdate > date '1995-10-11' " \
          "group by l_orderkey, o_orderdate, o_shippriority, c_mktsegment limit 4;"
 
-
     conn = ConnectionHelper()
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)

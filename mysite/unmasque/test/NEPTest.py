@@ -1,8 +1,8 @@
 import datetime
 import unittest
 
+from mysite.unmasque.refactored.cs2 import Cs2
 from mysite.unmasque.refactored.nep import NEP
-from mysite.unmasque.refactored.util.common_queries import get_restore_name, create_table_as_select_star_from
 from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -22,16 +22,14 @@ class MyTestCase(BaseTestCase):
 
         Q_E = "Select l_shipmode, sum(l_extendedprice) as revenue " \
               "From lineitem " \
-              "Where l_shipdate <= '1993-12-30' " \
+              "Where l_shipdate <= '1993-12-31' " \
               "and l_quantity < 24 " \
               "Group By l_shipmode Limit 100; "
-
-        self.conn.execute_sql(["create view test1 as " + Q_E, "drop view if exists test1;"])
 
         core_rels = ['lineitem']
 
         filters = [('lineitem', 'l_quantity', '<=', -2147483648.88, 23.0),
-                   ('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1), datetime.date(1993, 12, 30))]
+                   ('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1), datetime.date(1993, 12, 31))]
 
         global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
                                  ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
@@ -59,14 +57,22 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-30'"
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict,
-                global_all_attribs, global_attrib_types, filters, tpchSettings.key_lists, q_gen)
+        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
+        cs2.take_backup()
 
-        for tabname in core_rels:
-            self.conn.execute_sql([create_table_as_select_star_from(get_restore_name(tabname), tabname)])
+        o = NEP(self.conn,
+                core_rels,
+                tpchSettings.all_size,
+                tpchSettings.global_pk_dict,
+                global_all_attribs,
+                global_attrib_types,
+                filters,
+                tpchSettings.key_lists,
+                q_gen)
 
-        check = o.doJob([query, Q_E])
+        check = o.doJob(query, Q_E)
         self.assertTrue(check)
+        print(o.Q_E)
 
         self.conn.closeConnection()
 
