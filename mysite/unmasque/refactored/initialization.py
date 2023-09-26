@@ -2,8 +2,6 @@ import csv
 import os.path
 
 from ..refactored.abstract.ExtractorBase import Base
-from ..refactored.util.common_queries import drop_table
-from ..src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 
 
 class Initiator(Base):
