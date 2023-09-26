@@ -243,5 +243,4 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(DONE)
-
         return eq, time_profile

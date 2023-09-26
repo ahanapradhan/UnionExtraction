@@ -58,6 +58,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                     self.Q_E = self.nep_db_minimizer(query, tabname, Q_E, core_sizes[tabname], partition_dict[tabname],
                                                      i)
                     matched = self.result_comparator.check_matching(query, self.Q_E)
+                    self.logger.debug(matched)
             nep_exists = True
 
         self.drop_all_views()
@@ -77,12 +78,13 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                                "drop view " + tabname + "3 CASCADE;"])
         self.logger.info("all views dropped.")
 
-    def nep_db_minimizer(self, query, tabname, Q_E, core_sizes, partition_dict, i):
+    def nep_db_minimizer(self, query, tabname, Q_E, tab_size, partition_dict, i):
+        self.logger.debug("nep_db_minimizer", tabname, tab_size, partition_dict, i)
         # Run the hidden query on this updated database instance with table T_u
         matched = self.result_comparator.check_matching(query, Q_E)
 
         # Base Case
-        if core_sizes == 1 and not matched:
+        if tab_size == 1 and not matched:
             val = self.extract_NEP_value(query, tabname, i)
             if val:
                 self.logger.info("Extracting NEP value")
@@ -118,18 +120,21 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
     def create_view_with_lower_half(self, partition_dict, tabname):
         self.logger.info("Creating view with lower half.")
+        offset = int(partition_dict[0]) + int(partition_dict[1] / 2)
+        limit = int(partition_dict[1]) - int(partition_dict[1] / 2)
+        return self.create_view_from_offset_limit(limit, offset, tabname)
+
+    def create_view_from_offset_limit(self, limit, offset, tabname):
+        self.logger.debug("offset ", offset, " limit ", limit)
         return "create view " + tabname + " as select * from " + get_restore_name(
-            tabname) + " order by " + self.global_pk_dict[tabname] + " offset " + str(
-            int(partition_dict[0]) + int(
-                partition_dict[1] / 2)) + " limit " + str(
-            int(partition_dict[1]) - int(partition_dict[1] / 2)) + ";"
+            tabname) + " order by " + self.global_pk_dict[tabname] + " offset " + str(offset) \
+            + " limit " + str(limit) + ";"
 
     def create_view_with_upper_half(self, partition_dict, tabname):
         self.logger.info("Creating view with upper half.")
-        return "create view " + tabname + " as select * from " + get_restore_name(tabname) \
-            + " order by " + self.global_pk_dict[tabname] + " offset " + str(
-                int(partition_dict[0])) + " limit " + str(
-                int(partition_dict[1] / 2)) + ";"
+        offset = int(partition_dict[0])
+        limit = int(partition_dict[1] / 2)
+        return self.create_view_from_offset_limit(limit, offset, tabname)
 
     def extract_NEP_value(self, query, tabname, i):
         # Return if hidden executable is giving non-empty output on the reduced database
