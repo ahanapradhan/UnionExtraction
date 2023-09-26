@@ -1,7 +1,6 @@
 from psycopg2 import Error
 
 from .abstract.ExtractorBase import Base
-from .util.common_queries import get_restore_name, drop_table, alter_table_rename_to
 from ..src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 
 
@@ -15,7 +14,7 @@ class ResultComparator(Base, TpchSanitizer):
         return args[0], args[1]
 
     def match_hash_based(self, Q_h, Q_E):
-        self.connectionHelper.execute_sql(["drop view if exists r_e cascade;",
+        self.connectionHelper.execute_sql(["drop view if exists r_e;",
                                            "create view r_e as " + Q_E])
 
         res1 = self.connectionHelper.execute_sql_fetchone_0("Select count(*) from r_e")
@@ -66,6 +65,7 @@ class ResultComparator(Base, TpchSanitizer):
                                                             "FROM r_h) as T;")
 
         self.connectionHelper.execute_sql(['DROP view r_e;', 'DROP TABLE r_h;'])
+        self.logger.debug(len1, len2)
         if len1 == len2:
             return True
         else:
