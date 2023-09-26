@@ -100,7 +100,7 @@ class QueryStringGenerator(Base):
         return output
     
     def refine_Query1(self, global_key_attributes, pj, gb, agg, ob, lm):
-        print("inside:   reveal_proc_support.refine_Query")
+        self.logger.debug("inside:   reveal_proc_support.refine_Query")
         for i in range(len(agg.global_projected_attributes)):
             attrib = agg.global_projected_attributes[i]
             if attrib in global_key_attributes and attrib in agg.global_groupby_attributes:

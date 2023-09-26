@@ -31,20 +31,19 @@ class Initiator(Base):
         check_pkfk = os.path.isfile(self.pkfk_file_path)
         check_idx = os.path.isfile(self.create_index_filepath)
         if (not check_idx) or (not check_pkfk):
-            self.error = 'Unmasque Error: \n Support File Not Accessible. '
-            print(self.error)
+            self.logger.error("Unmasque Error: \n Support File Not Accessible. ")
         return check_pkfk and check_idx
 
     def doActualJob(self, args):
-        print("inside -- initialization.initialization")
+        self.logger.debug("inside -- initialization.initialization")
         self.sanitize()
-        print("sanitized!")
+        self.logger.info("sanitized!")
         self.reset()
 
         self.all_relations = self.get_all_relations()
 
         check = self.verify_support_files()
-        print("support files verified..")
+        self.logger.info("support files verified..")
 
         if not check:
             return False
@@ -54,10 +53,10 @@ class Initiator(Base):
         self.make_pkfk_complete_graph(all_pkfk)
 
         self.do_refinement()
-        print("loaded pk-fk..")
+        self.logger.info("loaded pk-fk..", all_pkfk)
 
         self.make_index_dict()
-        print("index dict done..!")
+        self.logger.info("index dict done..!")
         return True
 
     def make_index_dict(self):

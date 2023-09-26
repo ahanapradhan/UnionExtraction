@@ -15,7 +15,8 @@ class ResultComparator(Base, TpchSanitizer):
         return args[0], args[1]
 
     def match_hash_based(self, Q_h, Q_E):
-        self.connectionHelper.execute_sql(["create view r_e as " + Q_E])
+        self.connectionHelper.execute_sql(["drop view if exists r_e cascade;",
+                                           "create view r_e as " + Q_E])
 
         res1 = self.connectionHelper.execute_sql_fetchone_0("Select count(*) from r_e")
 
@@ -28,7 +29,7 @@ class ResultComparator(Base, TpchSanitizer):
             return False
 
         result = [tuple(colnames)]
-        # print(result) it will print 8 times for from clause
+        self.logger.debug(result) # it will print 8 times for from clause
         # it will append attribute name in the result
 
         self.connectionHelper.execute_sql(['Create unlogged table r_h (like r_e);'])
@@ -73,6 +74,10 @@ class ResultComparator(Base, TpchSanitizer):
     def doActualJob(self, args):
         Q_h, Q_E = self.extract_params_from_args(args)
         self.sanitize()
+        matched = self.check_matching(Q_h, Q_E)
+        return matched
+
+    def check_matching(self, Q_h, Q_E):
         if self.isHash:
             matched = self.match_hash_based(Q_h, Q_E)
         else:
@@ -84,7 +89,7 @@ class ResultComparator(Base, TpchSanitizer):
             # Run the extracted query Q_E .
             self.connectionHelper.execute_sql(['create view temp1 as ' + Q_E])
         except Error:
-            print("Extracted Query is not valid!")
+            self.logger.error("Extracted Query is not valid!")
             return False
 
         # Size of the table

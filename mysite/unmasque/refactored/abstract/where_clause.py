@@ -45,7 +45,9 @@ class WhereClause(Base):
             res, desc = self.connectionHelper.execute_sql_fetchall("select column_name, data_type, "
                                                                    "character_maximum_length from "
                                                                    "information_schema.columns "
-                                                                   "where table_schema = 'public' and "
+                                                                   "where table_schema = '"
+                                                                   + self.connectionHelper.config.schema
+                                                                   + "' and "
                                                                    "table_name = '" + tabname + "';")
             tab_attribs = []
             tab_attribs.extend(row[0] for row in res)

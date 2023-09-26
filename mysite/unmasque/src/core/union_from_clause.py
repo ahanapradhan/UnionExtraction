@@ -23,7 +23,7 @@ class UnionFromClause(Schema, Base):
 
     def nullify_except(self, s_set):
         self.to_nullify = s_set.difference(self.comtabs)
-        print("to nullify " + str(self.to_nullify))
+        self.logger.debug("to nullify " + str(self.to_nullify))
         for tab in self.to_nullify:
             self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab)),
                                                create_table_like(tab, get_tabname_1(tab))])
@@ -56,7 +56,7 @@ class UnionFromClause(Schema, Base):
     def get_fromTabs(self, QH):
         if self.fromtabs is None:
             self.fromtabs = self.fromClause.doJob(QH, "error")
-        print(str(self.fromtabs))
+        self.logger.debug(str(self.fromtabs))
         return self.fromtabs
 
     def get_comTabs(self, QH):

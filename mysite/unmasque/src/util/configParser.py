@@ -2,15 +2,7 @@ import configparser
 from pathlib import Path
 
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
-    SUPPORT_SECTION
-
-
-def parse_config_field(config_object, field, section, field_name):
-    try:
-        field = config_object.get(section, field_name)
-    except KeyError:
-        print(field_name, " config not found. Using default config!")
-    return field
+    SUPPORT_SECTION, LEVEL, LOGGING_SECTION
 
 
 class Config:
@@ -31,6 +23,7 @@ class Config:
         self.password = "postgres"
         self.user = "postgres"
         self.host = "localhost"
+        self.log_level = 'INFO'
         self.base_path = None
         self.config_loaded = False
         self.detect_union = False
@@ -45,17 +38,21 @@ class Config:
             config_object = configparser.ConfigParser()
             with open(config_file, "r") as file_object:
                 config_object.read_file(file_object)
+                self.host = config_object.get(DATABASE_SECTION, HOST)
+                self.port = config_object.get(DATABASE_SECTION, PORT)
+                self.user = config_object.get(DATABASE_SECTION, USER)
+                self.password = config_object.get(DATABASE_SECTION, PASSWORD)
+                self.dbname = config_object.get(DATABASE_SECTION, DBNAME)
+                self.schema = config_object.get(DATABASE_SECTION, SCHEMA)
 
-                database_field_names = [HOST, PORT, USER, PASSWORD, DBNAME, SCHEMA]
-                database_fields = [self.host, self.port, self.user, self.password, self.dbname, self.schema]
-                for i in range(len(database_fields)):
-                    parse_config_field(config_object, database_fields[i], DATABASE_SECTION, database_field_names[i])
+                self.pkfk = config_object.get(SUPPORT_SECTION, "pkfk")
+                self.index_maker = config_object.get(SUPPORT_SECTION, "index_maker")
 
-                support_field_names = ["pkfk", "index_maker"]
-                support_fields = [self.pkfk, self.index_maker]
-                for i in range(len(support_fields)):
-                    parse_config_field(config_object, support_fields[i], SUPPORT_SECTION, support_field_names[i])
+                self.log_level = config_object.get(LOGGING_SECTION, LEVEL)
+
         except FileNotFoundError:
             print("config.ini not found. Default configs loaded!")
+        except KeyError:
+            print(" config not found. Using default config!")
 
         self.config_loaded = True
