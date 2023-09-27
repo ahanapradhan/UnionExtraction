@@ -3,7 +3,7 @@ import ast
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
-from .util.common_queries import get_restore_name, drop_table
+from .util.common_queries import get_restore_name, drop_table, get_star
 from .util.utils import get_dummy_val_for, get_format, get_char
 
 
@@ -59,6 +59,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                                      partition_dict[tabname], i)
                     matched = self.result_comparator.check_matching(query, self.Q_E)
                     self.logger.debug(matched)
+                    self.logger.debug(self.Q_E)
             nep_exists = True
 
         self.drop_all_views()
@@ -145,6 +146,9 @@ class NEP(Minimizer, GenerationPipeLineBase):
     def extract_NEP_value(self, query, tabname, i):
         # Return if hidden executable is giving non-empty output on the reduced database
         # It means that the current table doesnot contain NEP source column
+        res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
+        self.logger.debug(res)
+
         new_result = self.app.doJob(query)
         if len(new_result) > 1:
             return False
