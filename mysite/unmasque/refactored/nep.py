@@ -89,6 +89,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 self.logger.info("Extracting NEP value")
                 return self.query_generator.updateExtractedQueryWithNEPVal(query, val)
             else:
+                self.logger.debug(Q_E)
                 return Q_E
 
         """
@@ -104,6 +105,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.logger.debug(matched)
         if not matched:
             Q_E_ = self.nep_db_minimizer(matched, query, tabname, Q_E, limit, (offset, limit), i)
+            self.logger.debug(Q_E_)
             return Q_E_
         else:
             Q_E_ = Q_E
@@ -121,6 +123,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.logger.debug(matched)
         if not matched:
             Q_E__ = self.nep_db_minimizer(matched, query, tabname, Q_E_, limit, (offset, limit), i)
+            self.logger.debug(Q_E__)
             return Q_E__
         else:
             return Q_E_

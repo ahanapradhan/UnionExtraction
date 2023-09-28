@@ -1,7 +1,5 @@
 import logging
 
-from mysite.unmasque.src.util.constants import LOG_FORMAT
-
 
 def get_format_args(msg, args):
     f_msg = format(str(msg))

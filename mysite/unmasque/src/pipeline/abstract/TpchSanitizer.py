@@ -1,4 +1,4 @@
-from mysite.unmasque.refactored.util.common_queries import get_restore_name, drop_table, alter_table_rename_to
+from ....refactored.util.common_queries import get_restore_name, drop_table, alter_table_rename_to
 
 
 class TpchSanitizer:

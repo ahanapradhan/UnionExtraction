@@ -55,7 +55,7 @@ class MyTestCase(BaseTestCase):
         q_gen.method_call_count = 0
         q_gen.order_by_op = 'l_shipmode asc'
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
-        q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-30'"
+        q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31'"
 
         cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
         cs2.take_backup()

@@ -1,9 +1,9 @@
 import signal
 import sys
 
-from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
-from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from .pipeline.ExtractionPipeLine import ExtractionPipeLine
+from .pipeline.abstract.TpchSanitizer import TpchSanitizer
+from .util.ConnectionHelper import ConnectionHelper
 
 
 def signal_handler(signum, frame):
