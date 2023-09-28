@@ -6,6 +6,10 @@ def alter_table_rename_to(tab, retab):
     return "Alter table " + tab + " rename to " + retab + ";"
 
 
+def alter_view_rename_to(tab, retab):
+    return "Alter view " + tab + " rename to " + retab + ";"
+
+
 def create_table_like(tab, ctab):
     return "Create table " + tab + " (like " + ctab + ");"
 
@@ -44,6 +48,10 @@ def get_tabname_4(tab):
 
 def get_tabname_un(tab):
     return tab + "_un"
+
+
+def get_tabname_nep(tab):
+    return tab + "_nep"
 
 
 def create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, tabname, tabname1):

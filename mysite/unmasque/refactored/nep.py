@@ -2,7 +2,8 @@ import ast
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
-from .util.common_queries import get_restore_name, drop_table, get_star
+from .util.common_queries import get_restore_name, drop_table, get_star, get_tabname_nep, alter_view_rename_to, \
+    create_table_as_select_star_from
 from .util.utils import get_dummy_val_for, get_format, get_char
 from ..src.pipeline.abstract.Comparator import Comparator
 from ..src.util.utils import get_header_from_cursour_desc
@@ -74,6 +75,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                         global_attrib_types,
                                         None,
                                         filter_predicates)
+        self.filter_attrib_dict = {}
+        self.attrib_types_dict = {}
         self.Q_E = ""
         self.global_pk_dict = global_pk_dict  # from initialization
         self.global_key_attributes = global_key_attributes
@@ -92,6 +95,10 @@ class NEP(Minimizer, GenerationPipeLineBase):
         for key in core_sizes.keys():
             partition_dict[key] = (0, core_sizes[key])
 
+        self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
+
+        self.filter_attrib_dict = self.construct_filter_attribs_dict()
+
         self.create_all_views()
 
         # Run the hidden query on the original database instance
@@ -103,17 +110,21 @@ class NEP(Minimizer, GenerationPipeLineBase):
         else:
             self.logger.info("NEP may exists")
             while not matched:
-                for i in range(len(self.core_relations)):
-                    tabname = self.core_relations[i]
-                    self.Q_E = self.nep_db_minimizer(matched, query, tabname, Q_E, core_sizes[tabname],
-                                                     partition_dict[tabname], i)
-                    matched = self.nep_comparator.check_matching(query, self.Q_E)
-                    self.logger.debug(matched)
-                    self.logger.debug(self.Q_E)
+                matched = self.extract_one_nep(Q_E, core_sizes, matched, partition_dict, query)
             nep_exists = True
 
         self.drop_all_views()
         return nep_exists
+
+    def extract_one_nep(self, Q_E, core_sizes, matched, partition_dict, query):
+        for i in range(len(self.core_relations)):
+            tabname = self.core_relations[i]
+            self.Q_E = self.nep_db_minimizer(matched, query, tabname, Q_E, core_sizes[tabname],
+                                             partition_dict[tabname], i)
+            matched = self.nep_comparator.check_matching(query, self.Q_E)
+            self.logger.debug(matched)
+            self.logger.debug(self.Q_E)
+        return matched
 
     def create_all_views(self):
         for tabname in self.core_relations:
@@ -134,7 +145,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
         Base Case
         """
         if tab_size == 1 and not matched:
-            val = self.extract_NEP_value(query, tabname, i)
+            val = self.extract_NEP_value(query, tabname)
+            self.logger.debug("NEP val", val)
             if val:
                 self.logger.info("Extracting NEP value")
                 return self.query_generator.updateExtractedQueryWithNEPVal(query, val)
@@ -196,73 +208,85 @@ class NEP(Minimizer, GenerationPipeLineBase):
             tabname) + " order by " + self.global_pk_dict[tabname] + " offset " + str(offset) \
                                            + " limit " + str(limit) + ";"])
 
-    def extract_NEP_value(self, query, tabname, i):
+    def extract_NEP_value(self, query, tabname):
         # Return if hidden executable is giving non-empty output on the reduced database
-        # It means that the current table doesnot contain NEP source column
-        res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
-        self.logger.debug(get_header_from_cursour_desc(desc))
-        self.logger.debug(res)
-
+        # It means that the current table does not contain NEP source column
         new_result = self.app.doJob(query)
         if len(new_result) > 1:
             return False
 
+        # convert the view into a table
+        self.connectionHelper.execute_sql([alter_view_rename_to(tabname, get_tabname_nep(tabname)),
+                                           create_table_as_select_star_from(tabname, get_tabname_nep(tabname))])
+
         # check nep for every non-key attribute by changing its value to different s value and run the executable.
         # If the output came out non- empty. It means that nep is present on that attribute with previous value.
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
+        for i in range(len(self.core_relations)):
+            tabname = self.core_relations[i]
+            attrib_list = self.global_all_attribs[i]
+            filterAttribs = []
+            filterAttribs = self.check_per_attrib(attrib_list,
+                                                  tabname,
+                                                  query,
+                                                  filterAttribs)
+            if filterAttribs is not None and len(filterAttribs):
+                return filterAttribs
 
-        filter_attrib_dict = self.construct_filter_attribs_dict()
+        # convert the table back to view
+        self.connectionHelper.execute_sql([drop_table(tabname),
+                                           alter_view_rename_to(get_tabname_nep(tabname), tabname)])
+        return False
 
-        attrib_list = [self.global_all_attribs[i]]
-        filterAttribs = []
-
-        # convert the view into a table
-        self.connectionHelper.execute_sql(["alter view " + tabname + " rename to " + tabname + "_nep ;",
-                                           "create table " + tabname + " as select * from " + tabname + "_nep ;"])
-
+    def check_per_attrib(self, attrib_list, tabname, query, filterAttribs):
         for attrib in attrib_list:
             if attrib not in self.global_key_attributes:
-                if 'date' in attrib_types_dict[(tabname, attrib)]:
-                    if (tabname, attrib) in filter_attrib_dict.keys():
-                        val = min(filter_attrib_dict[(tabname, attrib)][0],
-                                  filter_attrib_dict[(tabname, attrib)][1])
-                    else:
-                        val = get_dummy_val_for('date')
-                    val = ast.literal_eval(get_format(val))
+                val = self.get_val(attrib, tabname)
 
-                elif ('int' in attrib_types_dict[(tabname, attrib)] or 'numeric' in attrib_types_dict[
-                    (tabname, attrib)]):
-                    # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-                    if (tabname, attrib) in filter_attrib_dict.keys():
-                        val = min(filter_attrib_dict[(tabname, attrib)][0],
-                                  filter_attrib_dict[(tabname, attrib)][1])
-                    else:
-                        val = get_dummy_val_for('int')
-                else:
-                    if (tabname, attrib) in filter_attrib_dict.keys():
-                        val = (filter_attrib_dict[(tabname, attrib)].replace('%', ''))
-                    else:
-                        val = get_char(get_dummy_val_for('char'))
+                prev = self.connectionHelper.execute_sql_fetchone_0("SELECT " + attrib + " FROM " + tabname + ";")
 
-                # prev = self.connectionHelper.execute_sql_fetchone_0("SELECT " + attrib + " FROM " + tabname + ";")
-
-                if 'date' in attrib_types_dict[(tabname, attrib)]:
-                    update_q = "UPDATE " + tabname + " SET " + attrib + " = " + val + ";"
-                elif 'int' in attrib_types_dict[(tabname, attrib)] or 'numeric' in attrib_types_dict[(tabname, attrib)]:
-                    update_q = "UPDATE " + tabname + " SET " + attrib + " = " + str(val) + ";"
-                else:
-                    update_q = "UPDATE " + tabname + " SET " + attrib + " = '" + val + "';"
-                self.connectionHelper.execute_sql([update_q])
+                self.update_with_val(attrib, tabname, val)
+                self.logger.debug("update ", tabname, attrib, "with value ", val)
 
                 new_result = self.app.doJob(query)
 
                 if len(new_result) > 1:
+                    filterAttribs.append((tabname, attrib, '<>', prev))
+                    self.logger.debug(filterAttribs, '++++++_______++++++')
                     # convert the table back to view
-                    self.connectionHelper.execute_sql(["drop table " + tabname + ";",
-                                                       "alter view " + tabname + "_nep rename to " + tabname + ";"])
+                    self.connectionHelper.execute_sql([drop_table(tabname),
+                                                       alter_view_rename_to(get_tabname_nep(tabname), tabname)])
                     return filterAttribs
 
-        # convert the table back to view
-        self.connectionHelper.execute_sql(["drop table " + tabname + ";",
-                                           "alter view " + tabname + "_nep rename to " + tabname + ";"])
-        return False
+    def update_with_val(self, attrib, tabname, val):
+        if 'date' in self.attrib_types_dict[(tabname, attrib)]:
+            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + val + ";"
+        elif 'int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
+            (tabname, attrib)]:
+            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + str(val) + ";"
+        else:
+            update_q = "UPDATE " + tabname + " SET " + attrib + " = '" + val + "';"
+        self.connectionHelper.execute_sql([update_q])
+
+    def get_val(self, attrib, tabname):
+        if 'date' in self.attrib_types_dict[(tabname, attrib)]:
+            if (tabname, attrib) in self.filter_attrib_dict.keys():
+                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
+                          self.filter_attrib_dict[(tabname, attrib)][1])
+            else:
+                val = get_dummy_val_for('date')
+            val = ast.literal_eval(get_format(val))
+
+        elif ('int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
+            (tabname, attrib)]):
+            # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
+            if (tabname, attrib) in self.filter_attrib_dict.keys():
+                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
+                          self.filter_attrib_dict[(tabname, attrib)][1])
+            else:
+                val = get_dummy_val_for('int')
+        else:
+            if (tabname, attrib) in self.filter_attrib_dict.keys():
+                val = (self.filter_attrib_dict[(tabname, attrib)].replace('%', ''))
+            else:
+                val = get_char(get_dummy_val_for('char'))
+        return val

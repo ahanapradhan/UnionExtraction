@@ -32,28 +32,26 @@ class MyTestCase(BaseTestCase):
                    ('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1), datetime.date(1993, 12, 31))]
 
         global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
-                                 ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
-                                 ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
-                                 ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
-                                 ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
-                                 ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
-                                 ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
-                                 ('lineitem', 'l_shipmode', 'character'),
-                                 ('lineitem', 'l_comment', 'character varying')
-                                 }
+                               ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
+                               ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
+                               ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
+                               ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
+                               ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
+                               ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
+                               ('lineitem', 'l_shipmode', 'character'),
+                               ('lineitem', 'l_comment', 'character varying')
+                               }
 
-        global_all_attribs = ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
-                              'l_discount',
-                              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate',
-                              'l_shipinstruct',
-                              'l_shipmode', 'l_comment']
+        global_all_attribs = [['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
+             'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
+             'l_shipmode', 'l_comment']]
 
         q_gen = QueryStringGenerator(self.conn)
         q_gen.from_op = 'lineitem'
-        q_gen.group_by_op = ''
+        q_gen.group_by_op = 'l_shipmode'
         q_gen.limit_op = '100'
         q_gen.method_call_count = 0
-        q_gen.order_by_op = 'l_shipmode asc'
+        q_gen.order_by_op = ''
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31'"
 
