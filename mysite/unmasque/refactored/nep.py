@@ -274,7 +274,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                           self.filter_attrib_dict[(tabname, attrib)][1])
             else:
                 val = get_dummy_val_for('date')
-            val = ast.literal_eval(get_format(val))
+            val = ast.literal_eval(get_format('date',val))
 
         elif ('int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
             (tabname, attrib)]):
