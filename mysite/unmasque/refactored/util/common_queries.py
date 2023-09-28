@@ -31,7 +31,7 @@ def get_min_max_ctid(tab):
 
 
 def drop_view(tab):
-    return "drop view " + tab + ";"
+    return "drop view if exists " + tab + ";"
 
 
 def get_tabname_1(tab):

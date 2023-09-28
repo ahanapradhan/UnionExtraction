@@ -17,7 +17,7 @@ class MyTestCase(BaseTestCase):
                 "From lineitem " \
                 "Where l_shipdate  < '1994-01-01' " \
                 "and l_quantity < 24 " \
-                "and l_quantity != 12 " \
+                "and l_linenumber != 4 " \
                 "Group By l_shipmode Limit 100; "
 
         Q_E = "Select l_shipmode, sum(l_extendedprice) as revenue " \

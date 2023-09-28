@@ -1,23 +1,19 @@
 from psycopg2 import Error
 
-from .abstract.ExtractorBase import Base
-from ..src.pipeline.abstract.TpchSanitizer import TpchSanitizer
+from .util.common_queries import drop_view, get_row_count
+from ..src.pipeline.abstract.Comparator import Comparator
 
 
-class ResultComparator(Base, TpchSanitizer):
+class ResultComparator(Comparator):
 
     def __init__(self, connectionHelper, isHash):
-        super().__init__(connectionHelper, "Result Comparator")
-        self.isHash = isHash
-
-    def extract_params_from_args(self, args):
-        return args[0], args[1]
+        super().__init__(connectionHelper, "Result Comparator", isHash)
 
     def match_hash_based(self, Q_h, Q_E):
-        self.connectionHelper.execute_sql(["drop view if exists r_e;",
+        self.connectionHelper.execute_sql([drop_view("r_e"),
                                            "create view r_e as " + Q_E])
 
-        res1 = self.connectionHelper.execute_sql_fetchone_0("Select count(*) from r_e")
+        res1 = self.connectionHelper.execute_sql_fetchone_0(get_row_count("r_e"))
 
         res, des = self.connectionHelper.execute_sql_fetchall(
             Q_h)  # fetchone always return a tuple whereas fetchall return list
@@ -28,7 +24,7 @@ class ResultComparator(Base, TpchSanitizer):
             return False
 
         result = [tuple(colnames)]
-        self.logger.debug(result) # it will print 8 times for from clause
+        self.logger.debug(result)  # it will print 8 times for from clause
         # it will append attribute name in the result
 
         self.connectionHelper.execute_sql(['Create unlogged table r_h (like r_e);'])
@@ -71,44 +67,11 @@ class ResultComparator(Base, TpchSanitizer):
         else:
             return False
 
-    def doActualJob(self, args):
-        Q_h, Q_E = self.extract_params_from_args(args)
-        self.sanitize()
-        matched = self.check_matching(Q_h, Q_E)
-        return matched
-
-    def check_matching(self, Q_h, Q_E):
-        if self.isHash:
-            matched = self.match_hash_based(Q_h, Q_E)
-        else:
-            matched = self.match_comparison_based(Q_h, Q_E)
-        return matched
-
-    def match_comparison_based(self, Q_h, Q_E):
-        try:
-            # Run the extracted query Q_E .
-            self.connectionHelper.execute_sql(['create view temp1 as ' + Q_E])
-        except Error:
-            self.logger.error("Extracted Query is not valid!")
-            return False
-
-        # Size of the table
-        res = self.connectionHelper.execute_sql_fetchone_0('select count(*) from temp1;')
-
-        # Create an empty table with name temp2
-        self.connectionHelper.execute_sql(['Create table temp2 (like temp1);'])
-
-        res, desc = self.connectionHelper.execute_sql_fetchall(Q_h)
-        colnames = [d[0] for d in desc]
-
-        new_result = [tuple(colnames)]
-
-        # Header of temp2
-        t = new_result[0]
-        t1 = '(' + ', '.join(t) + ')'
-
-        if res is not None:
-            for row in res:
+    def insert_data_into_Qh_table(self, res_Qh):
+        header = res_Qh[0]
+        res_Qh_ = res_Qh[1:]
+        if res_Qh_ is not None:
+            for row in res_Qh_:
                 # CHECK IF THE WHOLE ROW IN NONE (SPJA Case)
                 nullrow = True
                 for val in row:
@@ -121,20 +84,9 @@ class ResultComparator(Base, TpchSanitizer):
                 for val in row:
                     temp.append(str(val))
                 ins = (tuple(temp))
-                if len(res) == 1 and len(res[0]) == 1:
-                    self.connectionHelper.execute_sql(
-                        ['INSERT INTO temp2' + str(t1) + ' VALUES (' + str(ins[0]) + '); '])
+                if len(res_Qh_) == 1 and len(res_Qh_[0]) == 1:
+                    self.insert_into_temp2_values(header, ins[0])
                 else:
-                    self.connectionHelper.execute_sql(['INSERT INTO temp2' + str(t1) + ' VALUES' + str(ins) + '; '])
+                    self.insert_into_temp2_values(header, ins)
 
-        len1 = self.connectionHelper.execute_sql_fetchone_0(
-            'select count(*) from (select * from temp1 except all select * from temp2) as T;')
-        len2 = self.connectionHelper.execute_sql_fetchone_0(
-            'select count(*) from (select * from temp2 except all select * from temp1) as T;')
 
-        self.connectionHelper.execute_sql(["drop view temp1;", "drop table temp2;"])
-
-        if not len1 and not len2:
-            return True
-        else:
-            return False

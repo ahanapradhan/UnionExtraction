@@ -2,9 +2,60 @@ import ast
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
-from .result_comparator import ResultComparator
 from .util.common_queries import get_restore_name, drop_table, get_star
 from .util.utils import get_dummy_val_for, get_format, get_char
+from ..src.pipeline.abstract.Comparator import Comparator
+from ..src.util.utils import get_header_from_cursour_desc
+
+
+class NepComparator(Comparator):
+    def __init__(self, connectionHelper):
+        super().__init__(connectionHelper, "NEP Result Comparator", False)
+
+    def match_comparison_based(self, Q_h, Q_E):
+        count_star_Q_E = self.create_view_from_Q_E(Q_E)
+        self.logger.debug(count_star_Q_E)
+        """
+        if not count_star_Q_E:
+            return False
+        """
+        self.create_table_from_Qh(Q_h)
+        """
+        if count_star_Q_E < self.smaller_match_threshold:
+            check = self.check_smaller_match(Q_E, res_Qh)
+            if not check:
+                return False
+        """
+        check = self.run_except_query_match_and_dropViews()
+        return check
+
+    def check_smaller_match(self, Q_E, res_Qh):
+        # Drop the temporary table and view created.
+        self.connectionHelper.execute_sql(["drop view temp1;"])
+        res_Q_E = self.app.doJob(Q_E)
+        res_Qh_ = res_Qh
+        for i in range(len(res_Q_E)):
+            flag = False
+            temp = ()
+            for ele in (res_Q_E[i]):
+                ele = str(ele)
+                temp += (ele,)
+            self.logger.debug("res_Q_E", temp)
+            for j in range(len(res_Qh)):
+                self.logger.debug(res_Qh_[j])
+                if temp == res_Qh_[j]:
+                    res_Qh_[j] = []
+                    flag = True
+                    break
+            if not flag:
+                return False
+        return True
+
+    def insert_data_into_Qh_table(self, res_Qh):
+        # Filling the table temp2
+        header = res_Qh[0]
+        for i in range(1, len(res_Qh)):
+            self.insert_into_temp2_values(header, res_Qh[i])
 
 
 class NEP(Minimizer, GenerationPipeLineBase):
@@ -27,10 +78,9 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.global_pk_dict = global_pk_dict  # from initialization
         self.global_key_attributes = global_key_attributes
         self.query_generator = query_generator
-        self.result_comparator = ResultComparator(self.connectionHelper, True)
+        self.nep_comparator = NepComparator(self.connectionHelper)
 
     def extract_params_from_args(self, args):
-        print(args)
         return args[0], args[1]
 
     def doActualJob(self, args):
@@ -45,7 +95,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.create_all_views()
 
         # Run the hidden query on the original database instance
-        matched = self.result_comparator.check_matching(query, Q_E)
+        matched = self.nep_comparator.check_matching(query, Q_E)
         if matched:
             nep_exists = False
             self.Q_E = Q_E
@@ -57,7 +107,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                     tabname = self.core_relations[i]
                     self.Q_E = self.nep_db_minimizer(matched, query, tabname, Q_E, core_sizes[tabname],
                                                      partition_dict[tabname], i)
-                    matched = self.result_comparator.check_matching(query, self.Q_E)
+                    matched = self.nep_comparator.check_matching(query, self.Q_E)
                     self.logger.debug(matched)
                     self.logger.debug(self.Q_E)
             nep_exists = True
@@ -101,7 +151,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         """
         Run the hidden query on this updated database instance with table T_u
         """
-        matched = self.result_comparator.check_matching(query, Q_E)
+        matched = self.nep_comparator.check_matching(query, Q_E)
         self.logger.debug(matched)
         if not matched:
             Q_E_ = self.nep_db_minimizer(matched, query, tabname, Q_E, limit, (offset, limit), i)
@@ -119,7 +169,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         """
         Run the hidden query on this updated database instance with table T_l
         """
-        matched = self.result_comparator.check_matching(query, Q_E_)
+        matched = self.nep_comparator.check_matching(query, Q_E_)
         self.logger.debug(matched)
         if not matched:
             Q_E__ = self.nep_db_minimizer(matched, query, tabname, Q_E_, limit, (offset, limit), i)
@@ -144,12 +194,13 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.logger.debug("table", tabname, "offset ", offset, " limit ", limit)
         self.connectionHelper.execute_sql(["create view " + tabname + " as select * from " + get_restore_name(
             tabname) + " order by " + self.global_pk_dict[tabname] + " offset " + str(offset) \
-            + " limit " + str(limit) + ";"])
+                                           + " limit " + str(limit) + ";"])
 
     def extract_NEP_value(self, query, tabname, i):
         # Return if hidden executable is giving non-empty output on the reduced database
         # It means that the current table doesnot contain NEP source column
         res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
+        self.logger.debug(get_header_from_cursour_desc(desc))
         self.logger.debug(res)
 
         new_result = self.app.doJob(query)
