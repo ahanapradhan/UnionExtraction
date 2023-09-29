@@ -41,12 +41,11 @@ Q3 = "select l_orderkey as orderkey, sum(l_discount) as revenue, o_totalprice as
      "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate " \
      "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_totalprice, o_shippriority order by revenue " \
      "desc, totalprice limit 10;"
-Q3_1 = "select l_orderkey as orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate as orderdate, " \
-       "o_shippriority as " \
-       "shippriority from customer, orders, " \
+Q3_1 = "select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, " \
+       "o_shippriority  from customer, orders, " \
        "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate " \
        "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
-       "desc, o_orderdate asc, l_orderkey limit 10;"
+       "desc, o_orderdate limit 10;"
 
 Q4 = "Select o_orderdate, o_orderpriority, count(*) as order_count From orders Where o_orderdate >= date '1997-07-01' " \
      "and o_orderdate < date '1997-07-01' + interval '3' month Group By o_orderdate, o_orderpriority Order By " \

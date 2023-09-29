@@ -1,5 +1,5 @@
 (Select o_orderkey as order_id, Avg(l_quantity) as total
-From lineitem, orders
+From orders, lineitem
 Where o_orderkey = l_orderkey and o_orderdate  <= '1996-06-30'
 Group By o_orderkey
 Order By total desc

@@ -1,6 +1,6 @@
 (Select o_orderkey, l_shipdate as o_orderdate
-From lineitem, orders
-Where o_orderkey = l_orderkey and l_quantity  >= 20.5 and l_extendedprice  >= 1000.04 and o_orderdate  <= '1994-01-01')
+From orders, lineitem
+Where o_orderkey = l_orderkey and o_orderdate  <= '1993-12-31' and l_quantity  >= 20.5 and l_extendedprice  >= 1000.09)
  UNION ALL 
 (Select o_orderkey, o_orderdate
 From orders, customer
