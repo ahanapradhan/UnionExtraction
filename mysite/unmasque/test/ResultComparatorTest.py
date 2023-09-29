@@ -65,7 +65,7 @@ class MyTestCase(BaseTestCase):
     def test_restore_tables(self):
         rc_hash = ResultComparator(self.conn, True)
         self.conn.connectUsingParams()
-        rc_hash.doJob()
+        rc_hash.sanitize()
         res, desc = self.conn.execute_sql_fetchall(
             "SELECT count(*) FROM information_schema.tables "
             "WHERE table_schema = '" + self.conn.config.schema + "' and TABLE_CATALOG= '" + self.conn.db + "';")
