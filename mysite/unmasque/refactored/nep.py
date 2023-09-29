@@ -2,17 +2,19 @@ import ast
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
-from .util.common_queries import get_restore_name, drop_table, get_star, get_tabname_nep, alter_view_rename_to, \
+from .result_comparator import ResultComparator
+from .util.common_queries import get_restore_name, drop_table, get_tabname_nep, alter_view_rename_to, \
     create_table_as_select_star_from
 from .util.utils import get_dummy_val_for, get_format, get_char
 from ..src.pipeline.abstract.Comparator import Comparator
-from ..src.util.utils import get_header_from_cursour_desc
 
 
-class NepComparator(Comparator):
+class NepComparator(ResultComparator):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "NEP Result Comparator")
+        self.earlyExit = False
 
+    """
     def match(self, Q_h, Q_E):
         count_star_Q_E = self.create_view_from_Q_E(Q_E)
         self.logger.debug(count_star_Q_E)
@@ -21,6 +23,7 @@ class NepComparator(Comparator):
 
         check = self.run_diff_query_match_and_dropViews()
         return check
+    """
 
 
 class NEP(Minimizer, GenerationPipeLineBase):
@@ -66,7 +69,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.create_all_views()
 
         # Run the hidden query on the original database instance
-        matched = self.nep_comparator.check_matching(query, Q_E)
+        matched = self.nep_comparator.match(query, Q_E)
         if matched:
             nep_exists = False
             self.Q_E = Q_E
@@ -85,7 +88,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
             tabname = self.core_relations[i]
             self.Q_E = self.nep_db_minimizer(matched, query, tabname, Q_E, core_sizes[tabname],
                                              partition_dict[tabname], i)
-            matched = self.nep_comparator.check_matching(query, self.Q_E)
+            matched = self.nep_comparator.match(query, self.Q_E)
             self.logger.debug(matched)
             self.logger.debug(self.Q_E)
         return matched
@@ -109,8 +112,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         Base Case
         """
         if tab_size == 1 and not matched:
-            val = self.extract_NEP_value(query, tabname)
-            self.logger.debug("NEP val", val)
+            val = self.get_NEP_val(query, tabname, i)
             if val:
                 self.logger.info("Extracting NEP value")
                 return self.query_generator.updateExtractedQueryWithNEPVal(query, val)
@@ -127,7 +129,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         """
         Run the hidden query on this updated database instance with table T_u
         """
-        matched = self.nep_comparator.check_matching(query, Q_E)
+        matched = self.nep_comparator.match(query, Q_E)
         self.logger.debug(matched)
         if not matched:
             Q_E_ = self.nep_db_minimizer(matched, query, tabname, Q_E, limit, (offset, limit), i)
@@ -145,7 +147,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         """
         Run the hidden query on this updated database instance with table T_l
         """
-        matched = self.nep_comparator.check_matching(query, Q_E_)
+        matched = self.nep_comparator.match(query, Q_E_)
         self.logger.debug(matched)
         if not matched:
             Q_E__ = self.nep_db_minimizer(matched, query, tabname, Q_E_, limit, (offset, limit), i)
@@ -153,6 +155,21 @@ class NEP(Minimizer, GenerationPipeLineBase):
             return Q_E__
         else:
             return Q_E_
+
+    def get_NEP_val(self, query, tabname, i):
+        # convert the view into a table
+        self.connectionHelper.execute_sql([alter_view_rename_to(tabname, get_tabname_nep(tabname)),
+                                           create_table_as_select_star_from(tabname, get_tabname_nep(tabname))])
+        self.logger.debug(tabname, " is now a table")
+
+        val = self.extract_NEP_value(query, tabname, i)
+        self.logger.debug("NEP val", val)
+
+        # convert the table back to view
+        self.connectionHelper.execute_sql([drop_table(tabname),
+                                           alter_view_rename_to(get_tabname_nep(tabname), tabname)])
+        self.logger.debug(tabname, " is now a view")
+        return val
 
     def create_view_with_upper_half(self, partition_dict, tabname):
         offset = int(partition_dict[0])
@@ -172,53 +189,41 @@ class NEP(Minimizer, GenerationPipeLineBase):
             tabname) + " order by " + self.global_pk_dict[tabname] + " offset " + str(offset) \
                                            + " limit " + str(limit) + ";"])
 
-    def extract_NEP_value(self, query, tabname):
+    def extract_NEP_value(self, query, tabname, i):
         # Return if hidden executable is giving non-empty output on the reduced database
         # It means that the current table does not contain NEP source column
         new_result = self.app.doJob(query)
         if len(new_result) > 1:
             return False
 
-        # convert the view into a table
-        self.connectionHelper.execute_sql([alter_view_rename_to(tabname, get_tabname_nep(tabname)),
-                                           create_table_as_select_star_from(tabname, get_tabname_nep(tabname))])
-
         # check nep for every non-key attribute by changing its value to different s value and run the executable.
         # If the output came out non- empty. It means that nep is present on that attribute with previous value.
-        for i in range(len(self.core_relations)):
-            tabname = self.core_relations[i]
-            attrib_list = self.global_all_attribs[i]
-            filterAttribs = []
-            filterAttribs = self.check_per_attrib(attrib_list,
-                                                  tabname,
-                                                  query,
-                                                  filterAttribs)
-            if filterAttribs is not None and len(filterAttribs):
-                return filterAttribs
-
-        # convert the table back to view
-        self.connectionHelper.execute_sql([drop_table(tabname),
-                                           alter_view_rename_to(get_tabname_nep(tabname), tabname)])
+        # for i in range(len(self.core_relations)):
+        #    tabname = self.core_relations[i]
+        attrib_list = self.global_all_attribs[i]
+        filterAttribs = []
+        filterAttribs = self.check_per_attrib(attrib_list,
+                                              tabname,
+                                              query,
+                                              filterAttribs)
+        if filterAttribs is not None and len(filterAttribs):
+            return filterAttribs
         return False
 
     def check_per_attrib(self, attrib_list, tabname, query, filterAttribs):
         for attrib in attrib_list:
+            self.logger.debug(tabname, attrib)
             if attrib not in self.global_key_attributes:
                 val = self.get_val(attrib, tabname)
 
                 prev = self.connectionHelper.execute_sql_fetchone_0("SELECT " + attrib + " FROM " + tabname + ";")
-
+                self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
                 self.update_with_val(attrib, tabname, val)
-                self.logger.debug("update ", tabname, attrib, "with value ", val)
 
                 new_result = self.app.doJob(query)
-
                 if len(new_result) > 1:
                     filterAttribs.append((tabname, attrib, '<>', prev))
                     self.logger.debug(filterAttribs, '++++++_______++++++')
-                    # convert the table back to view
-                    self.connectionHelper.execute_sql([drop_table(tabname),
-                                                       alter_view_rename_to(get_tabname_nep(tabname), tabname)])
                     return filterAttribs
 
     def update_with_val(self, attrib, tabname, val):

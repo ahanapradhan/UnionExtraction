@@ -1,6 +1,7 @@
 import copy
 import math
 
+from .util.common_queries import get_tabname_4
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
     get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff
 from .abstract.where_clause import WhereClause
@@ -239,7 +240,7 @@ class Filter(WhereClause):
 
     def revert_filter_changes(self, tabname):
         self.connectionHelper.execute_sql(["Truncate table " + tabname + ';',
-                                           "Insert into " + tabname + " Select * from " + tabname + "4;"])
+                                           "Insert into " + tabname + " Select * from " + get_tabname_4(tabname)+";"])
 
     def checkStringPredicate(self, query, tabname, attrib):
         # updatequery

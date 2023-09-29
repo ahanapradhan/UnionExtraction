@@ -1,6 +1,3 @@
-from psycopg2 import Error
-
-from .util.common_queries import drop_view, get_row_count
 from ..src.pipeline.abstract.Comparator import Comparator
 
 
@@ -13,7 +10,7 @@ class ResultComparator(Comparator):
     hash_r_h = "r_h"
 
     def __init__(self, connectionHelper, isHash):
-        super().__init__(connectionHelper, "Result Comparator")
+        super().__init__(connectionHelper, "Result Comparator", True)
         self.isHash = isHash
 
     def is_match(self, len1, len2):
@@ -25,12 +22,6 @@ class ResultComparator(Comparator):
         else:
             return super().is_match(len1, len2)
 
-    def match(self, Q_h, Q_E):
-        if self.isHash:
-            self.r_e = "r_e"
-            self.r_h = "r_h"
-        return super().match(Q_h, Q_E)
-
     def run_diff_queries(self):
         if self.isHash:
             return self.run_hash_diff_queries()
@@ -39,7 +30,6 @@ class ResultComparator(Comparator):
     def run_hash_diff_queries(self):
         len1 = self.connectionHelper.execute_sql_fetchone_0(hashtext_query(self.r_e))
         len2 = self.connectionHelper.execute_sql_fetchone_0(hashtext_query(self.r_h))
-        self.logger.debug("---")
         return len1, len2
 
     def insert_data_into_Qh_table(self, res_Qh):

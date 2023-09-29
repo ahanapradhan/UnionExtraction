@@ -2,7 +2,7 @@ import configparser
 from pathlib import Path
 
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
-    SUPPORT_SECTION, LEVEL, LOGGING_SECTION
+    SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP
 
 
 class Config:
@@ -27,6 +27,7 @@ class Config:
         self.base_path = None
         self.config_loaded = False
         self.detect_union = False
+        self.detect_nep = False
 
     def parse_config(self):
         if self.config_loaded:
@@ -49,6 +50,18 @@ class Config:
                 self.index_maker = config_object.get(SUPPORT_SECTION, "index_maker")
 
                 self.log_level = config_object.get(LOGGING_SECTION, LEVEL)
+                detect_union = config_object.get(FEATURE_SECTION, DETECT_UNION)
+                if detect_union.lower() == "no":
+                    self.detect_union = False
+                elif detect_union.lower() == "yes":
+                    self.detect_union = True
+
+                detect_nep = config_object.get(FEATURE_SECTION, DETECT_NEP)
+                if detect_nep.lower() == "no":
+                    self.detect_nep = False
+                elif detect_nep.lower() == "yes":
+                    self.detect_nep = True
+
         except FileNotFoundError:
             print("config.ini not found. Default configs loaded!")
         except KeyError:

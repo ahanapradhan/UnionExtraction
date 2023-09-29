@@ -8,12 +8,13 @@ from ....refactored.util.common_queries import drop_table, get_row_count, drop_v
 
 
 class Comparator(Base, TpchSanitizer):
-    r_e = "temp1"
-    r_h = "temp2"
+    r_e = "r_e"
+    r_h = "r_h"
 
-    def __init__(self, connectionHelper, name):
+    def __init__(self, connectionHelper, name, earlyExit):
         super().__init__(connectionHelper, name)
         self.app = Executable(connectionHelper)
+        self.earlyExit = earlyExit
 
     def extract_params_from_args(self, args):
         return args[0], args[1]
@@ -21,10 +22,6 @@ class Comparator(Base, TpchSanitizer):
     def doActualJob(self, args):
         Q_h, Q_E = self.extract_params_from_args(args)
         self.sanitize()
-        matched = self.check_matching(Q_h, Q_E)
-        return matched
-
-    def check_matching(self, Q_h, Q_E):
         matched = self.match(Q_h, Q_E)
         return matched
 
@@ -67,14 +64,11 @@ class Comparator(Base, TpchSanitizer):
         result = self.app.doJob(Q_h)
         self.insert_data_into_Qh_table(result)
 
-    def match_hash_based(self, Q_h, Q_E):
-        return True
-
     def match(self, Q_h, Q_E):
         count_star_Q_E = self.create_view_from_Q_E(Q_E)
         self.logger.debug(count_star_Q_E)
 
-        if not count_star_Q_E:
+        if self.earlyExit and not count_star_Q_E:
             return False
 
         self.create_table_from_Qh(Q_h)

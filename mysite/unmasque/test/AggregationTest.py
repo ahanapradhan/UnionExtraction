@@ -141,7 +141,7 @@ class MyTestCase(BaseTestCase):
 
         projections = ['l_orderkey', 'l_discount', 'o_totalprice', 'o_shippriority']
 
-        global_key_attribs = ['l_orderkey', 'c_custkey', 'o_custkey', 'o_orderkey', ]
+        global_key_attribs = ['l_orderkey', 'c_custkey', 'o_custkey', 'o_orderkey' ]
         has_groupBy = True
         group_by_attribs = ['l_orderkey', 'o_totalprice', 'o_shippriority']
         dep = [[('identical_expr_nc', 'o_orderkey')], [('identical_expr_nc', 'l_discount')],
