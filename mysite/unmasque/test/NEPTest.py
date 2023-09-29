@@ -42,7 +42,8 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_comment', 'character varying')
                                }
 
-        global_all_attribs = [['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
+        global_all_attribs = [
+            ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
 
@@ -82,7 +83,7 @@ class MyTestCase(BaseTestCase):
                 "From lineitem Where l_shipdate >= " \
                 "'1994-01-01' and l_quantity < 24 " \
                 "and l_shipmode " \
-                "not like '%AIR%' and l_shipdate <> '1994-01-03' Group By l_shipmode Limit 100;"
+                "not like '%AIR%' and l_shipdate <> '1995-01-03' Group By l_shipmode Limit 100;"
 
         Q_E = "Select l_shipmode, sum(l_extendedprice) as revenue " \
               "From lineitem " \
@@ -118,7 +119,7 @@ class MyTestCase(BaseTestCase):
         q_gen.method_call_count = 0
         q_gen.order_by_op = ''
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
-        q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and  l_shipdate <= \'1993-12-31\' and l_quantity <= 23.0 '
+        q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
         cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
         cs2.take_backup()
@@ -136,9 +137,10 @@ class MyTestCase(BaseTestCase):
         check = o.doJob(query, Q_E)
         self.assertTrue(check)
         print(o.Q_E)
+        self.assertTrue("and l_shipmode NOT LIKE '%AIR%'" in o.Q_E)
+        self.assertTrue("and l_shipdate <> '1994-01-03'" in o.Q_E)
 
         self.conn.closeConnection()
-
 
 
 if __name__ == '__main__':

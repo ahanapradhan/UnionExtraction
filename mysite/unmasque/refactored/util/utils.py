@@ -116,7 +116,6 @@ def get_min_and_max_val(datatype):
         return constants.min_int_val, constants.max_int_val
 
 
-
 def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
     if datatype == 'date':
         yes = int((right - left).days) > cutoff
@@ -127,7 +126,7 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
 
 def get_format(datatype, val):
     if datatype == 'date' or datatype == 'char' \
-        or datatype == 'character' \
+            or datatype == 'character' \
             or datatype == 'character varying':
         return "'" + str(val) + "'"
     elif datatype == 'float' or datatype == 'numeric':

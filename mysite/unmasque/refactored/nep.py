@@ -11,52 +11,16 @@ from ..src.util.utils import get_header_from_cursour_desc
 
 class NepComparator(Comparator):
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "NEP Result Comparator", False)
+        super().__init__(connectionHelper, "NEP Result Comparator")
 
-    def match_comparison_based(self, Q_h, Q_E):
+    def match(self, Q_h, Q_E):
         count_star_Q_E = self.create_view_from_Q_E(Q_E)
         self.logger.debug(count_star_Q_E)
-        """
-        if not count_star_Q_E:
-            return False
-        """
+
         self.create_table_from_Qh(Q_h)
-        """
-        if count_star_Q_E < self.smaller_match_threshold:
-            check = self.check_smaller_match(Q_E, res_Qh)
-            if not check:
-                return False
-        """
-        check = self.run_except_query_match_and_dropViews()
+
+        check = self.run_diff_query_match_and_dropViews()
         return check
-
-    def check_smaller_match(self, Q_E, res_Qh):
-        # Drop the temporary table and view created.
-        self.connectionHelper.execute_sql(["drop view temp1;"])
-        res_Q_E = self.app.doJob(Q_E)
-        res_Qh_ = res_Qh
-        for i in range(len(res_Q_E)):
-            flag = False
-            temp = ()
-            for ele in (res_Q_E[i]):
-                ele = str(ele)
-                temp += (ele,)
-            self.logger.debug("res_Q_E", temp)
-            for j in range(len(res_Qh)):
-                self.logger.debug(res_Qh_[j])
-                if temp == res_Qh_[j]:
-                    res_Qh_[j] = []
-                    flag = True
-                    break
-            if not flag:
-                return False
-        return True
-
-    def insert_data_into_Qh_table(self, res_Qh):
-        # Filling the table temp2
-        header = res_Qh[0]
-        for i in range(1, len(res_Qh)):
-            self.insert_into_temp2_values(header, res_Qh[i])
 
 
 class NEP(Minimizer, GenerationPipeLineBase):
@@ -259,7 +223,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
     def update_with_val(self, attrib, tabname, val):
         if 'date' in self.attrib_types_dict[(tabname, attrib)]:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + val + ";"
+            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + get_format('date', val) + ";"
         elif 'int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
             (tabname, attrib)]:
             update_q = "UPDATE " + tabname + " SET " + attrib + " = " + str(val) + ";"
@@ -274,7 +238,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                           self.filter_attrib_dict[(tabname, attrib)][1])
             else:
                 val = get_dummy_val_for('date')
-            val = ast.literal_eval(get_format('date',val))
+            val = ast.literal_eval(get_format('date', val))
 
         elif ('int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
             (tabname, attrib)]):

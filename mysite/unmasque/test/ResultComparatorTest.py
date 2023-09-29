@@ -80,6 +80,67 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(matched_hash)
         self.conn.closeConnection()
 
+    def test_Q(self):
+        q = "Select l_shipmode, sum(l_extendedprice) as revenue " \
+              "From lineitem " \
+              "Where l_shipdate >= '1994-01-01' " \
+              "and l_quantity <= 23.0 " \
+              "Group By l_shipmode Limit 100; "
+        self.conn.connectUsingParams()
+        rc_hash = ResultComparator(self.conn, True)
+        matched_hash = rc_hash.doJob(q, q)
+        self.assertTrue(matched_hash)
+        self.conn.closeConnection()
+        self.conn.connectUsingParams()
+        rc_diff = ResultComparator(self.conn, False)
+        matched_diff = rc_diff.doJob(q, q)
+        self.assertTrue(matched_diff)
+        self.conn.closeConnection()
+
+    def test_Q_groupby_change(self):
+        q = "Select l_shipmode, sum(l_extendedprice) as revenue, l_returnflag " \
+              "From lineitem " \
+              "Where l_shipdate >= '1994-01-01' " \
+              "and l_quantity <= 23.0 " \
+              "Group By l_shipmode, l_returnflag; "
+        eq = "Select l_shipmode, sum(l_extendedprice) as revenue, l_returnflag " \
+            "From lineitem " \
+            "Where l_shipdate >= '1994-01-01' " \
+            "and l_quantity <= 23.0 " \
+            "Group By l_returnflag, l_shipmode; "
+        self.conn.connectUsingParams()
+        rc_hash = ResultComparator(self.conn, True)
+        matched_hash = rc_hash.doJob(q, eq)
+        self.assertTrue(matched_hash)
+        self.conn.closeConnection()
+        self.conn.connectUsingParams()
+        rc_diff = ResultComparator(self.conn, False)
+        matched_diff = rc_diff.doJob(q, eq)
+        self.assertTrue(matched_diff)
+        self.conn.closeConnection()
+
+    def test_Q_nep(self):
+        q = "Select l_shipmode, sum(l_extendedprice) as revenue " \
+              "From lineitem " \
+              "Where l_shipdate >= '1994-01-01' " \
+              "and l_quantity <= 23.0 " \
+              "Group By l_shipmode Limit 100; "
+        eq = "Select l_shipmode, sum(l_extendedprice) as revenue " \
+              "From lineitem " \
+              "Where l_shipdate >= '1994-01-01' " \
+              "and l_quantity <= 23.0 and l_linenumber <> 4" \
+              "Group By l_shipmode Limit 100; "
+        self.conn.connectUsingParams()
+        rc_hash = ResultComparator(self.conn, True)
+        matched_hash = rc_hash.doJob(q, eq)
+        self.assertFalse(matched_hash)
+        self.conn.closeConnection()
+        self.conn.connectUsingParams()
+        rc_diff = ResultComparator(self.conn, False)
+        matched_diff = rc_diff.doJob(q, eq)
+        self.assertFalse(matched_diff)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

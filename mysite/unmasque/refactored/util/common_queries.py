@@ -26,6 +26,10 @@ def get_star(tab):
     return "select * from " + tab + ";"
 
 
+def get_star_from_except_all_get_star_from(tab1, tab2):
+    return "(select * from " + tab1 + " except all select * from " + tab2 + ")"
+
+
 def get_restore_name(tab):
     return tab + "_restore"
 
