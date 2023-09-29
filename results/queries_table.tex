@@ -1,0 +1,29 @@
+{\tiny
+\begin{longtable}{|p{0.5cm}|p{7cm}|p{7cm}|}
+\hline
+{\bf Q. No.} & {\bf Hidden Query} & {\bf Extracted Query} \\\hline\hline
+UQ6&
+(SELECT o\_clerk as name, SUM(l\_extendedprice) AS total\_price FROM orders, lineitem where o\_orderkey = l\_orderkey and o\_orderdate <= '1995-01-01' GROUP BY o\_clerk ORDER BY total\_price DESC LIMIT 10) UNION ALL (SELECT n\_name as name, SUM(s\_acctbal) AS total\_price FROM nation ,supplier where n\_nationkey = s\_nationkey and n\_name like '\%UNITED\%' GROUP BY n\_name ORDER BY n\_name DESC);&
+(Select o\_clerk as name, Sum(l\_extendedprice) as total\_price From lineitem, orders Where o\_orderkey = l\_orderkey and o\_orderdate  <= '1995-01-01' Group By o\_clerk Order By total\_price desc, name desc Limit 10)  UNION ALL  (Select n\_name as name, Sum(s\_acctbal) as total\_price From supplier, nation Where s\_nationkey = n\_nationkey and n\_name LIKE '\%UNITED\%' Group By n\_name Order By name desc);\\\hline
+UQ7&
+SELECT     l\_orderkey as key,     l\_extendedprice as price,     l\_partkey as s\_key FROM     lineitem WHERE     l\_shipdate >= DATE '1994-01-01'     AND l\_shipdate < DATE '1995-01-01'     AND l\_quantity > 30  UNION ALL  SELECT     ps\_partkey as key,     p\_retailprice as price,     ps\_suppkey as s\_key FROM     partsupp,supplier,part where ps\_suppkey = s\_suppkey and ps\_partkey = p\_partkey     AND ps\_supplycost < 100;&
+(Select p\_partkey as key, p\_retailprice as price, s\_suppkey as s\_key From part, supplier, partsupp Where p\_partkey = ps\_partkey and s\_suppkey = ps\_suppkey and ps\_supplycost  <= 99.0)  UNION ALL  (Select l\_orderkey as key, l\_extendedprice as price, l\_partkey as s\_key From lineitem Where l\_quantity  >= 30.5 and l\_shipdate  >= '1994-01-02' and l\_shipdate <= '1994-12-31');\\\hline
+UQ5&
+SELECT o\_orderkey, o\_orderdate FROM orders, customer where o\_custkey = c\_custkey and c\_name like '\%0001248\%'  AND o\_orderdate >= '1997-01-01' UNION ALL SELECT l\_orderkey, l\_shipdate FROM lineitem, orders where l\_orderkey = o\_orderkey and o\_orderdate < '1994-01-01'   AND l\_quantity > 20   AND l\_extendedprice > 1000;&
+(Select o\_orderkey, l\_shipdate as o\_orderdate From lineitem, orders Where o\_orderkey = l\_orderkey and l\_quantity  >= 20.5 and l\_extendedprice  >= 1000.04 and o\_orderdate  <= '1994-01-01')  UNION ALL  (Select o\_orderkey, o\_orderdate From orders, customer Where c\_custkey = o\_custkey and o\_orderdate  >= '1997-01-01' and c\_name LIKE '\%0001248\%');\\\hline
+UQ4&
+SELECT c\_custkey, c\_name FROM customer,  nation where c\_nationkey = n\_nationkey and n\_name = 'UNITED STATES' UNION ALL SELECT s\_suppkey, s\_name FROM supplier ,  nation where s\_nationkey = n\_nationkey and n\_name = 'CANADA' UNION ALL SELECT p\_partkey, p\_name FROM part ,  lineitem where p\_partkey = l\_partkey and l\_quantity > 20;&
+(Select p\_partkey as c\_custkey, p\_name as c\_name From part, lineitem Where p\_partkey = l\_partkey and l\_quantity  >= 20.5)  UNION ALL  (Select s\_suppkey as c\_custkey, s\_name as c\_name From nation, supplier Where s\_nationkey = n\_nationkey and n\_name  = 'CANADA')  UNION ALL  (Select c\_custkey, c\_name From nation, customer Where n\_nationkey = c\_nationkey and n\_name  = 'UNITED STATES');\\\hline
+UQ1&
+(SELECT p\_partkey, p\_name FROM part, partsupp where p\_partkey = ps\_partkey and ps\_availqty > 100) UNION ALL (SELECT s\_suppkey, s\_name FROM supplier, partsupp where s\_suppkey = ps\_suppkey and ps\_availqty > 200);&
+(Select s\_suppkey as p\_partkey, s\_name as p\_name From supplier, partsupp Where s\_suppkey = ps\_suppkey and ps\_availqty  >= 201)  UNION ALL  (Select p\_partkey, p\_name From part, partsupp Where p\_partkey = ps\_partkey and ps\_availqty  >= 101);\\\hline
+UQ3&
+SELECT c\_custkey as key, c\_name as name FROM customer, nation where c\_nationkey = n\_nationkey and  n\_name = 'UNITED STATES' UNION ALL SELECT p\_partkey as key, p\_name as name FROM part , lineitem where p\_partkey = l\_partkey and l\_quantity > 35;&
+(Select p\_partkey as key, p\_name as name From part, lineitem Where p\_partkey = l\_partkey and l\_quantity  >= 35.5)  UNION ALL  (Select c\_custkey as key, c\_name as name From nation, customer Where n\_nationkey = c\_nationkey and n\_name  = 'UNITED STATES');\\\hline
+UQ2&
+SELECT s\_suppkey, s\_name FROM supplier, nation where s\_nationkey = n\_nationkey and  n\_name = 'GERMANY' UNION ALL SELECT c\_custkey, c\_name FROM customer,  orders where c\_custkey = o\_custkey and o\_orderpriority = '1-URGENT';&
+(Select s\_suppkey, s\_name From supplier, nation Where s\_nationkey = n\_nationkey and n\_name  = 'GERMANY')  UNION ALL  (Select c\_custkey as s\_suppkey, c\_name as s\_name From customer, orders Where c\_custkey = o\_custkey and o\_orderpriority  = '1-URGENT');\\\hline
+UQ8&
+(SELECT     c\_custkey as order\_id,     COUNT(*) AS total FROM     customer, orders where c\_custkey = o\_custkey and     o\_orderdate >= '1995-01-01' GROUP BY     c\_custkey ORDER BY     total ASC LIMIT 10) UNION ALL (SELECT     l\_orderkey as order\_id,     AVG(l\_quantity) AS total FROM     orders, lineitem where l\_orderkey = o\_orderkey     AND o\_orderdate < DATE '1996-07-01' GROUP BY     l\_orderkey ORDER BY     total DESC LIMIT 10);&
+(Select o\_orderkey as order\_id, Avg(l\_quantity) as total From lineitem, orders Where o\_orderkey = l\_orderkey and o\_orderdate  <= '1996-06-30' Group By o\_orderkey Order By total desc Limit 10)  UNION ALL  (Select c\_custkey as order\_id, Count(*) as total From orders, customer Where c\_custkey = o\_custkey and o\_orderdate  >= '1995-01-01' Group By c\_custkey Limit 10);\\\hline
+\end{longtable}}

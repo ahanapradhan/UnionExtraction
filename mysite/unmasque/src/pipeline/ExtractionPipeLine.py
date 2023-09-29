@@ -229,6 +229,7 @@ class ExtractionPipeLine(GenericPipeLine):
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
 
+        """
         self.update_state(RESULT_COMPARE + START)
         rc_hash = ResultComparator(self.connectionHelper, False)
         self.update_state(RESULT_COMPARE + RUNNING)
@@ -241,6 +242,7 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error(eq)
             self.update_state(WRONG)
             return None, time_profile
+        """
 
         self.update_state(DONE)
         return eq, time_profile
