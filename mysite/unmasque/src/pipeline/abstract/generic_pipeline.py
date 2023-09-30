@@ -1,10 +1,10 @@
 import functools
-import logging
 import threading
 
+from ....refactored.result_comparator import ResultComparator
 from ...core.elapsed_time import create_zero_time_profile
 from ...util.Log import Log
-from ...util.constants import WAITING, LOG_FORMAT
+from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING
 
 
 def synchronized(wrapped):
@@ -53,10 +53,31 @@ class GenericPipeLine:
         self.time_profile = create_zero_time_profile()
         self.token = None
         self.logger = Log(name, connectionHelper.config.log_level)
+        self.correct = False
 
-    def doJob(self, args):
+    def doJob(self, query):
         self.update_state(WAITING)
-        return self.extract(args)
+        result = self.extract(query)
+        self.verify_correctness(query, result)
+        return result
+
+    def verify_correctness(self, query, result):
+        self.update_state(RESULT_COMPARE + START)
+        self.connectionHelper.connectUsingParams()
+        rc = ResultComparator(self.connectionHelper, True)
+        self.update_state(RESULT_COMPARE + RUNNING)
+        matched = rc.doJob(query, result)
+        self.connectionHelper.closeConnection()
+
+        self.time_profile.update_for_result_comparator(rc.local_elapsed_time)
+        if matched:
+            self.logger.info("Extracted Query is Correct.")
+            self.correct = True
+            self.update_state(DONE)
+        else:
+            self.logger.info("Extracted Query seems different!.")
+            self.correct = False
+            self.update_state(WRONG)
 
     def extract(self, query):
         pass

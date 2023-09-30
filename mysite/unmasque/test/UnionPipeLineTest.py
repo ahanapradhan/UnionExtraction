@@ -16,7 +16,7 @@ class MyTestCase(BaseTestCase):
     def test_nonUnion_query(self):
         key = 'Q1'
         query = queries.queries_dict[key]
-        u_Q = self.pipeline.extract(query)
+        u_Q = self.pipeline.doJob(query)
         self.assertTrue(u_Q is not None)
         print(u_Q)
         self.pipeline.time_profile.debug_print()
@@ -24,29 +24,23 @@ class MyTestCase(BaseTestCase):
     def test_nonUnion_query_Q2(self):
         key = 'Q3'
         query = queries.queries_dict[key]
-        u_Q = self.pipeline.extract(query)
+        u_Q = self.pipeline.doJob(query)
         self.assertTrue(u_Q is not None)
+        self.assertTrue(self.pipeline.correct)
         print(u_Q)
         self.pipeline.time_profile.debug_print()
 
     def test_nonUnion_queries(self):
         Q_keys = queries.queries_dict.keys()
-        f = open("UnionPipeLineTest_results.txt.txt", "w")
         q_no = 1
         for q_key in Q_keys:
             query = queries.queries_dict[q_key]
-            u_Q = self.pipeline.extract(query)
+            u_Q = self.pipeline.doJob(query)
             self.assertTrue(u_Q is not None)
+            self.assertTrue(self.pipeline.correct)
             print(u_Q)
-            f.write("\n" + str(q_no) + ":")
-            f.write("\tHidden Query:\n")
-            f.write(query)
-            f.write("\n*** Extracted Query:\n")
-            f.write(u_Q)
-            f.write("\n---------------------------------------\n")
             self.pipeline.time_profile.debug_print()
             q_no += 1
-        f.close()
 
     def test_unionQ(self):
         query = "(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) " \
@@ -78,12 +72,9 @@ class MyTestCase(BaseTestCase):
                 "FROM orders, lineitem where o_orderkey = l_orderkey " \
                 "and o_orderdate <= '1995-01-01' GROUP BY o_orderdate " \
                 "ORDER BY total_price DESC LIMIT 10;"
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         print(eq)
-        self.assertEqual(eq, "(Select o_orderdate, Sum(l_extendedprice) as total_price"
-                             "\nFrom orders, lineitem\n"
-                             "Where o_orderkey = l_orderkey and o_orderdate  <= '1995-01-02'\n"
-                             "Group By o_orderdate\nOrder By total_price desc, o_orderdate desc\nLimit 10;)")
+        self.assertTrue(self.pipeline.correct)
 
     def test_another(self):
         query = "SELECT l_orderkey as key, l_quantity as dummy, " \
@@ -95,8 +86,9 @@ class MyTestCase(BaseTestCase):
                 " partsupp.ps_suppkey = orders.o_custkey " \
                 "AND orders.o_orderdate >= DATE '1994-01-01' AND orders.o_orderdate < DATE '1995-01-01' " \
                 "AND partsupp.ps_supplycost < 100;"
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         print(eq)
+        self.assertTrue(self.pipeline.correct)
 
 
 if __name__ == '__main__':

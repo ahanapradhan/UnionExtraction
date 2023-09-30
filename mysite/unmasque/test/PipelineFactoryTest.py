@@ -32,6 +32,7 @@ class MockPipeLine(GenericPipeLine):
         print("... done!")
         bucket.append(query)
         print("Extracted Query: ", query)
+        return query
 
 
 class MockPipeLineFactory(PipeLineFactory):

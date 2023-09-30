@@ -47,7 +47,7 @@ class MyTestCase(BaseTestCase):
              "group by l_orderkey, o_orderdate, o_shippriority, c_mktsegment limit 4;"
         for i in range(3):
             self.conn.connectUsingParams()
-            eq = self.pipeline.extract(hq)
+            eq = self.pipeline.doJob(hq)
             self.conn.closeConnection()
             print(eq)
         # self.assertTrue(eq is not None)
