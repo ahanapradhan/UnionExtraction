@@ -1,4 +1,5 @@
-from ....refactored.util.common_queries import get_restore_name, drop_table, alter_table_rename_to
+from typing import Literal
+from ....refactored.util.common_queries import drop_view, get_restore_name, drop_table, alter_table_rename_to
 
 
 class TpchSanitizer:
@@ -20,6 +21,16 @@ class TpchSanitizer:
             "WHERE table_schema = '" + self.connectionHelper.config.schema + "' and TABLE_CATALOG= '" \
             + self.connectionHelper.db + "'"
 
+    def is_view_or_table(self, table_or_view_name: str) -> Literal['view', 'table']:
+        # Reference: https://www.postgresql.org/docs/current/infoschema-tables.html
+        check_query = "select table_type " + self.from_where_catalog() + f" and table_name = '{table_or_view_name}'"
+        res, _ = self.connectionHelper.execute_sql_fetchall(check_query)
+
+        if res[0][0] == 'VIEW':
+            return 'view'
+        else:
+            return 'table'
+
     def begin_transaction(self):
         self.connectionHelper.execute_sql(["BEGIN;"])
 
@@ -39,8 +50,9 @@ class TpchSanitizer:
                                                                + " and table_name like '%_restore';")
         for row in res:
             table = row[0]
+            drop_fn = drop_table if self.is_view_or_table(table) == 'table' else drop_view
             restore_name = get_restore_name(table)
-            self.connectionHelper.execute_sql([drop_table(table), alter_table_rename_to(restore_name, table)])
+            self.connectionHelper.execute_sql([drop_fn(table), alter_table_rename_to(restore_name, table)])
 
         res, desc = self.connectionHelper.execute_sql_fetchall("SELECT table_name"
                                                                + self.from_where_catalog()

@@ -229,20 +229,5 @@ class ExtractionPipeLine(GenericPipeLine):
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
 
-        """
-        self.update_state(RESULT_COMPARE + START)
-        rc_hash = ResultComparator(self.connectionHelper, False)
-        self.update_state(RESULT_COMPARE + RUNNING)
-        check = rc_hash.doJob(query, eq)
-        time_profile.update_for_result_comparator(rc_hash.local_elapsed_time)
-        self.update_state(RESULT_COMPARE + DONE)
-        if not check:
-            self.logger.error(query)
-            self.logger.error("========Exracted Query seems different!========")
-            self.logger.error(eq)
-            self.update_state(WRONG)
-            return None, time_profile
-        """
-
         self.update_state(DONE)
         return eq, time_profile
