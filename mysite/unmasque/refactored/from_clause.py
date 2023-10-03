@@ -13,6 +13,7 @@ except ImportError:
 class FromClause(Base):
     DEBUG_QUERY = "select pid, state, query from pg_stat_activity where datname = 'tpch';"
     TERMINATE_STUCK_QUERIES = "SELECT pg_terminate_backend(pid);"
+    temp_relation = "temp"
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "FromClause")
@@ -26,7 +27,8 @@ class FromClause(Base):
         for tabname in self.all_relations:
             try:
                 self.connectionHelper.execute_sql(
-                    ["BEGIN;", alter_table_rename_to(tabname, "temp"), create_table_like(tabname, "temp")])
+                    ["BEGIN;", alter_table_rename_to(tabname, self.temp_relation),
+                     create_table_like(tabname, self.temp_relation)])
 
                 new_result = self.app.doJob(query)
                 if isQ_result_empty(new_result):
@@ -43,7 +45,7 @@ class FromClause(Base):
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
             try:
-                self.connectionHelper.execute_sql(["BEGIN;", alter_table_rename_to(tabname, "temp")])
+                self.connectionHelper.execute_sql(["BEGIN;", alter_table_rename_to(tabname, self.temp_relation)])
 
                 try:
                     new_result = self.app.doJob(query)  # slow
@@ -84,3 +86,6 @@ class FromClause(Base):
 
     def get_key_lists(self):
         return self.init.global_key_lists
+
+    def get_temp_relation_names(self):
+        return [self.temp_relation]

@@ -6,8 +6,6 @@ def hashtext_query(tab):
 
 
 class ResultComparator(Comparator):
-    hash_r_e = "r_e"
-    hash_r_h = "r_h"
 
     def __init__(self, connectionHelper, isHash):
         super().__init__(connectionHelper, "Result Comparator", True)

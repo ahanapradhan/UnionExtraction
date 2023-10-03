@@ -54,6 +54,7 @@ class GenericPipeLine:
         self.token = None
         self.logger = Log(name, connectionHelper.config.log_level)
         self.correct = False
+        self.all_relations = []
 
     def doJob(self, query):
         self.update_state(WAITING)
@@ -65,6 +66,7 @@ class GenericPipeLine:
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams()
         rc = ResultComparator(self.connectionHelper, False)
+        rc.set_all_relations(self.all_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
         self.connectionHelper.closeConnection()

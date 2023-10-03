@@ -22,7 +22,7 @@ class UnionPipeLine(GenericPipeLine):
         p, pstr = union.doJob(query)
         self.update_state(UNION + DONE)
         self.time_profile.update_for_union(union.local_elapsed_time)
-        all_relations = union.all_relations
+        self.all_relations = union.all_relations
         key_lists = union.key_lists
 
         self.connectionHelper.closeConnection()
@@ -36,11 +36,11 @@ class UnionPipeLine(GenericPipeLine):
                 core_relations.append(r)
             self.logger.debug(core_relations)
 
-            nullify = set(all_relations).difference(core_relations)
+            nullify = set(self.all_relations).difference(core_relations)
 
             self.connectionHelper.connectUsingParams()
             self.nullify_relations(nullify)
-            eq, time_profile = self.old_pipeline.after_from_clause_extract(query, all_relations,
+            eq, time_profile = self.old_pipeline.after_from_clause_extract(query, self.all_relations,
                                                                            core_relations, key_lists)
             self.revert_nullifications(nullify)
             self.connectionHelper.closeConnection()

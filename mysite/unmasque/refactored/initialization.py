@@ -15,7 +15,6 @@ class Initiator(Base):
         self.global_index_dict = {}
         self.global_key_lists = [[]]
         self.global_pk_dict = {}
-        self.all_relations = []
         self.error = None
 
     def reset(self):
@@ -34,11 +33,9 @@ class Initiator(Base):
 
     def doActualJob(self, args):
         self.logger.debug("inside -- initialization.initialization")
-        self.sanitize()
+        # self.sanitize()
         self.logger.info("sanitized!")
         self.reset()
-
-        self.all_relations = self.get_all_relations()
 
         check = self.verify_support_files()
         self.logger.info("support files verified..")
@@ -55,6 +52,9 @@ class Initiator(Base):
 
         self.make_index_dict()
         self.logger.info("index dict done..!")
+
+        self.sanitize()
+
         return True
 
     def make_index_dict(self):
@@ -71,8 +71,10 @@ class Initiator(Base):
                                  self.global_key_lists if elt and len(elt) > 1]
 
     def make_pkfk_complete_graph(self, all_pkfk):
+        all_relations = []
         temp = []
         for row in all_pkfk:
+            all_relations.append(row[0])
             if row[2].upper() == 'Y':
                 self.global_pk_dict[row[0]] = self.global_pk_dict.get(row[0], '') + ("," if row[0] in temp else '') + \
                                               row[1]
@@ -92,6 +94,9 @@ class Initiator(Base):
                 self.global_key_lists.append([(row[0], row[1]), (row[4], row[5])])
             elif row[0]:
                 self.global_key_lists.append([(row[0], row[1])])
+
+        self.set_all_relations(list(set(all_relations)))
+        self.logger.debug("all relations: ", self.all_relations)
 
     def get_all_pkfk(self):
         all_pkfk = []

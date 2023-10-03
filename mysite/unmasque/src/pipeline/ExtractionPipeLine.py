@@ -36,8 +36,9 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some problem while extracting from clause. Aborting!")
             return None, self.time_profile
 
-        eq, t = self.after_from_clause_extract(query,
-                                               fc.all_relations,
+        self.all_relations = fc.all_relations
+
+        eq, t = self.after_from_clause_extract(query, self.all_relations,
                                                fc.core_relations,
                                                fc.get_key_lists())
         self.connectionHelper.closeConnection()
@@ -45,8 +46,7 @@ class ExtractionPipeLine(GenericPipeLine):
         return eq
 
     def after_from_clause_extract(self,
-                                  query,
-                                  all_relations,
+                                  query, all_relations,
                                   core_relations,
                                   key_lists):  # get core_relations, key_lists from from clause
 

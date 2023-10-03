@@ -1,13 +1,12 @@
 from psycopg2 import Error
 
-from .TpchSanitizer import TpchSanitizer
 from ....refactored.abstract.ExtractorBase import Base
 from ....refactored.executable import Executable
 from ....refactored.util.common_queries import drop_table, get_row_count, drop_view, \
     get_star_from_except_all_get_star_from
 
 
-class Comparator(Base, TpchSanitizer):
+class Comparator(Base):
     r_e = "r_e"
     r_h = "r_h"
 
