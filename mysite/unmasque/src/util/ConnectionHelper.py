@@ -113,7 +113,7 @@ class ConnectionHelper:
 
     def execute_sql_fetchall(self, sql):
         cur = self.get_cursor()
-        # print("...", sql, "...")
+        print("...", sql, "...")
         cur.execute(sql)
         res = cur.fetchall()
         des = cur.description

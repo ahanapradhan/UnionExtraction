@@ -29,7 +29,7 @@ class BaseTestCase(unittest.TestCase):
 
     def sanitize_db(self):
         self.sigconn.connectUsingParams()
-        self.sanitizer.doJob()
+        self.sanitizer.sanitize()
         self.sigconn.closeConnection()
 
     def tearDown(self):

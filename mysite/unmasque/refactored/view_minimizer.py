@@ -88,14 +88,6 @@ class ViewMinimizer(Minimizer):
         self.connectionHelper.execute_sql([drop_view(tabname)])
         return end_ctid, start_ctid
 
-    def sanity_check(self, query):
-        # SANITY CHECK
-        new_result = self.app.doJob(query)
-        if isQ_result_empty(new_result):
-            self.logger.error("Error: Query out of extractable domain\n")
-            return False
-        return True
-
     def reduce_Database_Instance(self, query, cs_pass):
 
         self.local_other_info_dict = {}
