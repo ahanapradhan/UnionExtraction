@@ -1,21 +1,14 @@
 from .ExtractorBase import Base
+from .MutationPipeLineBase import MutationPipeLineBase
 from ...refactored.executable import Executable
 from ...refactored.util.utils import get_escape_string
 
 
-class GenerationPipeLineBase(Base):
+class GenerationPipeLineBase(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper,
-                 name,
-                 core_relations,
-                 global_all_attribs,
-                 global_attrib_types,
-                 join_graph,
-                 filter_predicates):
-        super().__init__(connectionHelper, name)
-        self.app = Executable(connectionHelper)
-
-        self.core_relations = core_relations
+    def __init__(self, connectionHelper, name, core_relations, global_all_attribs, global_attrib_types, join_graph,
+                 filter_predicates, global_min_instance_dict):
+        super().__init__(connectionHelper, core_relations, global_min_instance_dict, name)
         self.global_all_attribs = global_all_attribs
         self.global_attrib_types = global_attrib_types
         self.global_join_graph = join_graph

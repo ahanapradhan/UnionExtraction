@@ -73,12 +73,8 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
 
-        pj = Projection(self.conn,
-                        global_attrib_types,
-                        from_rels,
-                        filter_predicates,
-                        join_graph,
-                        global_all_attribs)
+        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
+                        global_min_instance_dict)
 
         check = pj.doJob(query)
         self.assertTrue(check)
@@ -86,13 +82,8 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(frozenset({'o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount'
                                        , 'o_orderdate', 'o_shippriority'}), frozenset(set(pj.projected_attribs)))
 
-        gb = GroupBy(self.conn,
-                     global_attrib_types,
-                     from_rels,
-                     filter_predicates,
-                     global_all_attribs,
-                     join_graph,
-                     pj.projected_attribs)
+        gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
+                     pj.projected_attribs, global_min_instance_dict)
         check = gb.doJob(query)
         self.assertTrue(check)
 
@@ -146,14 +137,9 @@ class MyTestCase(BaseTestCase):
                                 or 'l_extendedprice*l_discount*l_quantity' in p)
         self.assertEqual(3, empty_p)
 
-        agg = Aggregation(self.conn,
-                          global_key_attribs,
-                          global_attrib_types,
-                          from_rels,
-                          filter_predicates,
-                          global_all_attribs, join_graph,
-                          pj.projected_attribs,
-                          gb.has_groupby, gb.group_by_attrib, pj.dependencies, pj.solution, pj.param_list)
+        agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
+                          global_all_attribs, join_graph, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
+                          pj.dependencies, pj.solution, pj.param_list, global_min_instance_dict)
 
         check = agg.doJob(query)
         self.assertTrue(check)

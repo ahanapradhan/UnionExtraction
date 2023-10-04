@@ -76,18 +76,10 @@ def add_value_used_for_one_filtered_attrib(attrib_types_dict,
 
 
 class Projection(GenerationPipeLineBase):
-    def __init__(self, connectionHelper,
-                 global_attrib_types,
-                 core_relations,
-                 filter_predicates,
-                 join_graph,
-                 global_all_attribs):
-        super().__init__(connectionHelper, "Projection",
-                         core_relations,
-                         global_all_attribs,
-                         global_attrib_types,
-                         join_graph,
-                         filter_predicates)
+    def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates, join_graph,
+                 global_all_attribs, global_min_instance_dict):
+        super().__init__(connectionHelper, "Projection", core_relations, global_all_attribs, global_attrib_types,
+                         join_graph, filter_predicates, global_min_instance_dict)
         self.projection_names = None
         self.projected_attribs = None
         self.dependencies = None

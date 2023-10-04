@@ -39,11 +39,8 @@ class MyTestCase(BaseTestCase):
 
         join_graph = []
 
-        pj = Projection(self.conn, global_attrib_types,
-                        from_rels,
-                        filter_predicates,
-                        join_graph,
-                        global_all_attribs)
+        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
+                        global_min_instance_dict)
 
         check = pj.doJob(queries.Q1)
         self.assertTrue(check)
@@ -129,11 +126,8 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
 
-        pj = Projection(self.conn, global_attrib_types,
-                        from_rels,
-                        filter_predicates,
-                        join_graph,
-                        global_all_attribs)
+        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
+                        global_min_instance_dict)
 
         check = pj.doJob(queries.Q3)
         self.assertTrue(check)
@@ -203,11 +197,8 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
 
-        pj = Projection(self.conn, global_attrib_types,
-                        from_rels,
-                        filter_predicates,
-                        join_graph,
-                        global_all_attribs)
+        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
+                        global_min_instance_dict)
 
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
@@ -239,11 +230,8 @@ class MyTestCase(BaseTestCase):
                                ('orders', 'o_shippriority', 'integer'),
                                ('orders', 'o_comment', 'character varying')]
 
-        pj = Projection(self.conn, global_attrib_types,
-                        from_rels,
-                        filter_predicates,
-                        join_graph,
-                        global_all_attribs)
+        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
+                        global_min_instance_dict)
 
         check = pj.doJob(queries.Q4)
         self.assertTrue(check)
@@ -329,11 +317,8 @@ class MyTestCase(BaseTestCase):
                       ['c_nationkey', 's_nationkey', 'n_nationkey'],
                       ['n_regionkey', 'r_regionkey']]
 
-        pj = Projection(self.conn, global_attrib_types,
-                        from_rels,
-                        filter_predicates,
-                        join_graph,
-                        global_all_attribs)
+        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
+                        global_min_instance_dict)
 
         check = pj.doJob(queries.Q5)
         self.assertTrue(check)

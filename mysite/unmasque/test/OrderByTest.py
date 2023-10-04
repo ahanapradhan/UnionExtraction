@@ -73,15 +73,9 @@ class MyTestCase(BaseTestCase):
         global_aggregated_attributes = [('l_orderkey', ''), ('l_discount', 'Sum'), ('o_totalprice', 'Sum'),
                                         ('o_shippriority', '')]
         dep = [[('identical_expr_nc', 'o_orderkey')], [('identical_expr_nc', 'l_discount')], [('identical_expr_nc', 'o_totalprice')], [('identical_expr_nc', 'o_shippriority')]]
-        ob = OrderBy(self.conn, global_key_attribs, global_attrib_types,
-                     from_rels,
-                     filter_predicates,
-                     global_all_attribs,
-                     join_graph,
-                     projections,
-                     names,
-                     dep,
-                     global_aggregated_attributes)
+        ob = OrderBy(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
+                     global_all_attribs, join_graph, projections, names, dep, global_aggregated_attributes,
+                     global_min_instance_dict)
         check = ob.doJob(queries.Q3)
         print("Order by ", ob.orderBy_string)
         self.assertTrue(check)
@@ -152,15 +146,9 @@ class MyTestCase(BaseTestCase):
         p_list = [[], ['l_quantity', 'l_extendedprice', 'l_discount', 'l_quantity*l_extendedprice', 'l_extendedprice*l_discount', 'l_discount*l_quantity', 'l_quantity*l_extendedprice*l_discount'], [], []]
         global_aggregated_attributes = [('l_orderkey', ''), ('l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'Sum'), ('o_orderdate', ''),
                                         ('o_shippriority', '')]
-        ob = OrderBy(self.conn, global_key_attribs, global_attrib_types,
-                     from_rels,
-                     filter_predicates,
-                     global_all_attribs,
-                     join_graph,
-                     projections,
-                     names,
-                     dep,
-                     global_aggregated_attributes)
+        ob = OrderBy(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
+                     global_all_attribs, join_graph, projections, names, dep, global_aggregated_attributes,
+                     global_min_instance_dict)
         check = ob.doJob(queries.Q3_1)
         print("Order by ", ob.orderBy_string)
         self.assertTrue(check)

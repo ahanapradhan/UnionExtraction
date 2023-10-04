@@ -8,19 +8,10 @@ from .util.utils import isQ_result_empty, get_val_plus_delta, get_format, get_du
 
 class Limit(GenerationPipeLineBase):
 
-    def __init__(self, connectionHelper,
-                 global_attrib_types,
-                 global_key_attributes,
-                 core_relations,
-                 filter_predicates,
-                 global_all_attribs,
-                 global_groupby_attributes):
-        super().__init__(connectionHelper, "Limit",
-                         core_relations,
-                         global_all_attribs,
-                         global_attrib_types,
-                         None,
-                         filter_predicates)
+    def __init__(self, connectionHelper, global_attrib_types, global_key_attributes, core_relations, filter_predicates,
+                 global_all_attribs, global_groupby_attributes, global_min_instance_dict):
+        super().__init__(connectionHelper, "Limit", core_relations, global_all_attribs, global_attrib_types, None,
+                         filter_predicates, global_min_instance_dict)
         self.limit = None
         self.global_groupby_attributes = global_groupby_attributes
         self.global_key_attributes = global_key_attributes

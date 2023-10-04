@@ -120,12 +120,8 @@ class ExtractionPipeLine(GenericPipeLine):
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
-        pj = Projection(self.connectionHelper,
-                        ej.global_attrib_types,
-                        core_relations,
-                        fl.filter_predicates,
-                        ej.global_join_graph,
-                        ej.global_all_attribs)
+        pj = Projection(self.connectionHelper, ej.global_attrib_types, core_relations, fl.filter_predicates,
+                        ej.global_join_graph, ej.global_all_attribs, vm.global_min_instance_dict)
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
         self.update_state(PROJECTION + DONE)
@@ -140,13 +136,8 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.update_state(GROUP_BY + START)
 
-        gb = GroupBy(self.connectionHelper,
-                     ej.global_attrib_types,
-                     core_relations,
-                     fl.filter_predicates,
-                     ej.global_all_attribs,
-                     ej.global_join_graph,
-                     pj.projected_attribs)
+        gb = GroupBy(self.connectionHelper, ej.global_attrib_types, core_relations, fl.filter_predicates,
+                     ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs, vm.global_min_instance_dict)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
         self.update_state(GROUP_BY + DONE)
@@ -159,19 +150,10 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(AGGREGATE + START)
-        agg = Aggregation(self.connectionHelper,
-                          ej.global_key_attributes,
-                          ej.global_attrib_types,
-                          core_relations,
-                          fl.filter_predicates,
-                          ej.global_all_attribs,
-                          ej.global_join_graph,
-                          pj.projected_attribs,
-                          gb.has_groupby,
-                          gb.group_by_attrib,
-                          pj.dependencies,
-                          pj.solution,
-                          pj.param_list)
+        agg = Aggregation(self.connectionHelper, ej.global_key_attributes, ej.global_attrib_types, core_relations,
+                          fl.filter_predicates, ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs,
+                          gb.has_groupby, gb.group_by_attrib, pj.dependencies, pj.solution, pj.param_list,
+                          vm.global_min_instance_dict)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
         self.update_state(AGGREGATE + DONE)
@@ -184,17 +166,9 @@ class ExtractionPipeLine(GenericPipeLine):
         self.logger.debug("Aggregation", agg.global_aggregated_attributes)
 
         self.update_state(ORDER_BY + START)
-        ob = OrderBy(self.connectionHelper,
-                     ej.global_key_attributes,
-                     ej.global_attrib_types,
-                     core_relations,
-                     fl.filter_predicates,
-                     ej.global_all_attribs,
-                     ej.global_join_graph,
-                     pj.projected_attribs,
-                     pj.projection_names,
-                     pj.dependencies,
-                     agg.global_aggregated_attributes)
+        ob = OrderBy(self.connectionHelper, ej.global_key_attributes, ej.global_attrib_types, core_relations,
+                     fl.filter_predicates, ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs,
+                     pj.projection_names, pj.dependencies, agg.global_aggregated_attributes, vm.global_min_instance_dict)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
         self.update_state(ORDER_BY + DONE)
@@ -206,13 +180,8 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(LIMIT + START)
-        lm = Limit(self.connectionHelper,
-                   ej.global_attrib_types,
-                   ej.global_key_attributes,
-                   core_relations,
-                   fl.filter_predicates,
-                   ej.global_all_attribs,
-                   gb.group_by_attrib)
+        lm = Limit(self.connectionHelper, ej.global_attrib_types, ej.global_key_attributes, core_relations,
+                   fl.filter_predicates, ej.global_all_attribs, gb.group_by_attrib, vm.global_min_instance_dict)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
         self.update_state(LIMIT + DONE)

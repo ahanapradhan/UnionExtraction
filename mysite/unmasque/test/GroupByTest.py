@@ -41,8 +41,8 @@ class MyTestCase(BaseTestCase):
 
         projections = ['l_returnflag', 'l_linestatus', 'l_quantity','l_extendedprice', 'l_discount'
             , 'l_tax', 'l_quantity', 'l_extendedprice', 'l_discount', '']
-        gb = GroupBy(self.conn, global_attrib_types, from_rels,
-                     filter_predicates, global_all_attribs, join_graph, projections)
+        gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
+                     projections, global_min_instance_dict)
 
         check = gb.doJob(queries.Q1)
         self.assertTrue(check)
@@ -110,8 +110,8 @@ class MyTestCase(BaseTestCase):
 
         projections = ['l_orderkey', 'l_discount', 'o_orderdate', 'o_shippriority']
 
-        gb = GroupBy(self.conn, global_attrib_types, from_rels,
-                     filter_predicates, global_all_attribs, join_graph, projections)
+        gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
+                     projections, global_min_instance_dict)
 
         check = gb.doJob(queries.Q3_1)
         self.assertTrue(check)
@@ -147,8 +147,8 @@ class MyTestCase(BaseTestCase):
 
         projections = ['o_orderdate', 'o_orderpriority', '']
 
-        gb = GroupBy(self.conn, global_attrib_types, from_rels,
-                     filter_predicates, global_all_attribs, join_graph, projections)
+        gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
+                     projections, global_min_instance_dict)
 
         check = gb.doJob(queries.Q4)
         self.assertTrue(check)
@@ -234,8 +234,8 @@ class MyTestCase(BaseTestCase):
 
         projections = ['n_name', 'l_extendedprice']
 
-        gb = GroupBy(self.conn, global_attrib_types, from_rels,
-                     filter_predicates, global_all_attribs, join_graph, projections)
+        gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
+                     projections, global_min_instance_dict)
 
         check = gb.doJob(queries.Q5)
         self.assertTrue(check)
