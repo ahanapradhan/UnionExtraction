@@ -12,6 +12,8 @@ from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 class MyTestCase(BaseTestCase):
 
     def test_something(self):
+        global_min_instance_dict = {}
+
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
@@ -76,6 +78,8 @@ class MyTestCase(BaseTestCase):
         ob = OrderBy(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
                      global_all_attribs, join_graph, projections, names, dep, global_aggregated_attributes,
                      global_min_instance_dict)
+        ob.mock = True
+
         check = ob.doJob(queries.Q3)
         print("Order by ", ob.orderBy_string)
         self.assertTrue(check)
@@ -84,6 +88,8 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
     
     def test_projections_Q3_1(self):
+        global_min_instance_dict = {}
+
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
@@ -149,6 +155,7 @@ class MyTestCase(BaseTestCase):
         ob = OrderBy(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
                      global_all_attribs, join_graph, projections, names, dep, global_aggregated_attributes,
                      global_min_instance_dict)
+        ob.mock = True
         check = ob.doJob(queries.Q3_1)
         print("Order by ", ob.orderBy_string)
         self.assertTrue(check)

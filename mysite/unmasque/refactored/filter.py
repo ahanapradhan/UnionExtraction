@@ -138,8 +138,8 @@ class Filter(WhereClause):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, query_back)
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
-                    # break
-                    return mid_val
+                    break
+                    # return mid_val
                 if isQ_result_empty(new_result):
                     new_val = get_val_plus_delta(datatype, mid_val, delta)
                     low = new_val

@@ -10,6 +10,7 @@ from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 class MyTestCase(BaseTestCase):
 
     def test_gb_Q1(self):
+        global_min_instance_dict = {}
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q1']
 
@@ -43,6 +44,7 @@ class MyTestCase(BaseTestCase):
             , 'l_tax', 'l_quantity', 'l_extendedprice', 'l_discount', '']
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
                      projections, global_min_instance_dict)
+        gb.mock = True
 
         check = gb.doJob(queries.Q1)
         self.assertTrue(check)
@@ -55,6 +57,8 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_gb_Q3(self):
+        global_min_instance_dict = {}
+
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
@@ -112,6 +116,8 @@ class MyTestCase(BaseTestCase):
 
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
                      projections, global_min_instance_dict)
+        gb.mock = True
+
 
         check = gb.doJob(queries.Q3_1)
         self.assertTrue(check)
@@ -125,6 +131,8 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_gb_Q4(self):
+        global_min_instance_dict = {}
+
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q4']
         filter_predicates = [('orders', 'o_orderdate', '<=', datetime.date(1997, 7, 1), datetime.date(1997, 10, 1))]
@@ -149,6 +157,8 @@ class MyTestCase(BaseTestCase):
 
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
                      projections, global_min_instance_dict)
+        gb.mock = True
+
 
         check = gb.doJob(queries.Q4)
         self.assertTrue(check)
@@ -161,6 +171,7 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_gb_Q5(self):
+        global_min_instance_dict = {}
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q5']
 
@@ -236,6 +247,8 @@ class MyTestCase(BaseTestCase):
 
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
                      projections, global_min_instance_dict)
+        gb.mock = True
+
 
         check = gb.doJob(queries.Q5)
         self.assertTrue(check)

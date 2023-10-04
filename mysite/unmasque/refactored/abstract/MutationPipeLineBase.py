@@ -15,11 +15,13 @@ class MutationPipeLineBase(Base):
         self.core_relations = core_relations
         # from view minimizer
         self.global_min_instance_dict = global_min_instance_dict
+        self.mock = False
 
     def doJob(self, args):
         super().doJob(args)
-        self.restore_d_min()
-        self.see_d_min()
+        if not self.mock:
+            self.restore_d_min()
+            self.see_d_min()
         return self.result
 
     def see_d_min(self):
