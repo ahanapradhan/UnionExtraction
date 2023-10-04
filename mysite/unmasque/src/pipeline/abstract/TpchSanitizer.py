@@ -34,11 +34,6 @@ class TpchSanitizer:
         query = re.sub(' +', ' ', query)
         return query
 
-    def from_where_catalog(self):
-        return " FROM information_schema.tables " + \
-            "WHERE table_schema = '" + self.connectionHelper.config.schema + "' and TABLE_CATALOG= '" \
-            + self.connectionHelper.db + "'"
-
     def is_view_or_table(self, table_or_view_name: str) -> Literal['view', 'table']:
         # Reference: https://www.postgresql.org/docs/current/infoschema-tables.html
         check_query = self.select_query(["table_type"], [f" table_name = '{table_or_view_name}'"])
