@@ -1,28 +1,17 @@
 import copy
 
-from .ExtractorBase import Base
-from ..executable import Executable
+from .MutationPipeLineBase import MutationPipeLineBase
 from ..util.utils import is_int
 
 
-class WhereClause(Base):
+class WhereClause(MutationPipeLineBase):
 
     def __init__(self, connectionHelper,
                  global_key_lists,
                  core_relations,
                  global_min_instance_dict):
-        super().__init__(connectionHelper, "Where_clause")
-        self.app = Executable(connectionHelper)
-
-        # from initiator
+        super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Where_clause")
         self.global_key_lists = global_key_lists
-
-        # from from clause
-        self.core_relations = core_relations
-
-        # from view minimizer
-        self.global_min_instance_dict = global_min_instance_dict
-
         # init data
         self.global_attrib_types = []
         self.global_all_attribs = []
@@ -31,9 +20,6 @@ class WhereClause(Base):
 
         self.global_attrib_types_dict = {}
         self.global_attrib_dict = {}
-
-    def extract_params_from_args(self, args):
-        return args[0]
 
     def get_init_data(self):
         if len(self.global_attrib_types) + len(self.global_all_attribs) + len(self.global_d_plus_value) + len(
@@ -48,7 +34,7 @@ class WhereClause(Base):
                                                                    "where table_schema = '"
                                                                    + self.connectionHelper.config.schema
                                                                    + "' and "
-                                                                   "table_name = '" + tabname + "';")
+                                                                     "table_name = '" + tabname + "';")
             tab_attribs = []
             tab_attribs.extend(row[0] for row in res)
             self.global_all_attribs.append(copy.deepcopy(tab_attribs))
@@ -64,4 +50,3 @@ class WhereClause(Base):
             for row in res:
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
-

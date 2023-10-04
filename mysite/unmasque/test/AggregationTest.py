@@ -56,12 +56,9 @@ class MyTestCase(BaseTestCase):
         p_list = [[], [], [], []]
 
         global_key_attribs = []
-        agg = Aggregation(self.conn, global_key_attribs,
-                          global_attrib_types,
-                          from_rels,
-                          filter_predicates,
-                          global_all_attribs, join_graph,
-                          projections, has_groupBy, group_by_attribs, dep, sol, p_list)
+        agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
+                          global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
+                          global_min_instance_dict)
 
         check = agg.doJob(queries.Q1)
         self.assertTrue(check)
@@ -148,12 +145,9 @@ class MyTestCase(BaseTestCase):
                [('identical_expr_nc', 'o_orderdate')], [('identical_expr_nc', 'o_shippriority')]]
         sol = [[], [[1.], [1.], [0.], [0.], [-1.], [-0.], [-0.], [0.]], [], []]
 
-        agg = Aggregation(self.conn, global_key_attribs,
-                          global_attrib_types,
-                          from_rels,
-                          filter_predicates,
-                          global_all_attribs, join_graph,
-                          projections, has_groupBy, group_by_attribs, dep, sol, [])
+        agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
+                          global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, [],
+                          global_min_instance_dict)
 
         check = agg.doJob(queries.Q3)
         self.assertTrue(check)
@@ -246,12 +240,9 @@ class MyTestCase(BaseTestCase):
         p_list = [[], ['l_quantity', 'l_extendedprice', 'l_discount', 'l_quantity*l_extendedprice',
                        'l_extendedprice*l_discount', 'l_discount*l_quantity', 'l_quantity*l_extendedprice*l_discount'],
                   [], []]
-        agg = Aggregation(self.conn, global_key_attribs,
-                          global_attrib_types,
-                          from_rels,
-                          filter_predicates,
-                          global_all_attribs, join_graph,
-                          projections, has_groupBy, group_by_attribs, dep, sol, p_list)
+        agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
+                          global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
+                          global_min_instance_dict)
 
         check = agg.doJob(queries.Q3_1)
         self.assertTrue(check)
