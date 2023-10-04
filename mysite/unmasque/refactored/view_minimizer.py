@@ -4,10 +4,9 @@ import pandas as pd
 
 from .abstract.MinimizerBase import Minimizer
 from ..refactored.util.common_queries import get_row_count, alter_table_rename_to, get_min_max_ctid, \
-    drop_view, drop_table, create_table_as_select_star_from, get_ctid_from, get_tabname_1, \
-    create_view_as_select_star_where_ctid, create_table_as_select_star_from_ctid, get_tabname_4, get_star, \
+    drop_table, create_table_as_select_star_from, get_tabname_1, \
+    create_table_as_select_star_from_ctid, get_tabname_4, get_star, \
     get_restore_name
-from ..refactored.util.utils import isQ_result_empty
 
 
 def extract_start_and_end_page(logger, rctid):
@@ -56,7 +55,8 @@ class ViewMinimizer(Minimizer):
             mid_ctid1 = "(" + str(mid_page) + ",1)"
             mid_ctid2 = "(" + str(mid_page) + ",2)"
 
-            end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid, mid_ctid1, mid_ctid2, query,
+            end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid,
+                                                                          mid_ctid1, mid_ctid2, query,
                                                                           start_ctid, tabname, tabname1)
             start_ctid2 = start_ctid.split(",")
             start_page = int(start_ctid2[0][1:])
@@ -65,28 +65,6 @@ class ViewMinimizer(Minimizer):
 
         core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
-
-    def update_with_remaining_size(self, core_sizes, end_ctid, start_ctid, tabname, tabname1):
-        self.connectionHelper.execute_sql(
-            [create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname, tabname1),
-             drop_table(tabname1)])
-        size = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
-        core_sizes[tabname] = size
-        self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
-        return core_sizes
-
-    def create_view_execute_app_drop_view(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname, tabname1):
-        self.connectionHelper.execute_sql(
-            [create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, tabname, tabname1)])
-        new_result = self.app.doJob(query)
-        if isQ_result_empty(new_result):
-            # Take the lower half
-            start_ctid = mid_ctid2
-        else:
-            # Take the upper half
-            end_ctid = mid_ctid1
-        self.connectionHelper.execute_sql([drop_view(tabname)])
-        return end_ctid, start_ctid
 
     def reduce_Database_Instance(self, query, cs_pass):
 
@@ -117,18 +95,7 @@ class ViewMinimizer(Minimizer):
 
     def do_binary_halving_1(self, core_sizes, query, tabname, tabname1):
         while int(core_sizes[tabname]) > self.max_row_no:
-            self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
-            start_page, start_row = self.get_boundary("min", tabname)
-            end_page, end_row = self.get_boundary("max", tabname)
-
-            start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
-            end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
-            mid_row = int(core_sizes[tabname] / 2)
-            mid_ctid1 = "(" + str(0) + "," + str(mid_row) + ")"
-            mid_ctid2 = "(" + str(0) + "," + str(mid_row + 1) + ")"
-
-            end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid, mid_ctid1, mid_ctid2, query,
-                                                                          start_ctid, tabname, tabname1)
+            end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
 
         return core_sizes
@@ -148,13 +115,3 @@ class ViewMinimizer(Minimizer):
         self.global_result_dict['min'] = copy.deepcopy(new_result)
         self.local_other_info_dict['Result Cardinality'] = str(len(new_result) - 1)
         self.global_other_info_dict['min'] = copy.deepcopy(self.local_other_info_dict)
-
-    def get_boundary(self, min_or_max, tabname):
-        m_ctid = self.connectionHelper.execute_sql_fetchone_0(
-            get_ctid_from(min_or_max, get_tabname_1(tabname)))
-        # max_ctid = max_ctid[0]
-        m_ctid = m_ctid[1:-1]
-        m_ctid2 = m_ctid.split(",")
-        row = int(m_ctid2[1])
-        page = int(m_ctid2[0])
-        return page, row
