@@ -1,5 +1,6 @@
 import copy
 
+from .util.common_queries import get_tabname_4
 from .util.utils import get_datatype_from_typesList, get_dummy_val_for, get_val_plus_delta, \
     get_all_combo_lists
 from .abstract.where_clause import WhereClause
@@ -104,7 +105,9 @@ class EquiJoin(WhereClause):
                     join_graph.append(copy.deepcopy(join_keys))
 
             for val in join_keys:
-                self.connectionHelper.execute_sql(["Insert into " + val[0] + " Select * from " + val[0] + "4;"])
+                tab = val[0]
+                self.connectionHelper.execute_sql(["Insert into " + f"{tab}" + " Select * from "
+                                                   + f"{get_tabname_4(tab)};"])
         self.refine_join_graph(join_graph)
 
     def refine_join_graph(self, join_graph):
