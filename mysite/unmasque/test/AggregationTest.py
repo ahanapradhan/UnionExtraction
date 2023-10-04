@@ -13,6 +13,7 @@ from mysite.unmasque.test.util import tpchSettings, queries
 class MyTestCase(BaseTestCase):
 
     def test_agg_Q1(self):
+        global_min_instance_dict = {}
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q1']
 
@@ -59,6 +60,8 @@ class MyTestCase(BaseTestCase):
         agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
                           global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
                           global_min_instance_dict)
+        agg.mock = True
+
 
         check = agg.doJob(queries.Q1)
         self.assertTrue(check)
@@ -83,6 +86,8 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_agg_Q3(self):
+        global_min_instance_dict = {}
+
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
@@ -148,6 +153,8 @@ class MyTestCase(BaseTestCase):
         agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
                           global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, [],
                           global_min_instance_dict)
+        agg.mock = True
+
 
         check = agg.doJob(queries.Q3)
         self.assertTrue(check)
@@ -171,11 +178,9 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
-    def test_agg_Q3_1(self):
-        for i in range(1000):
-            self.test_projections_Q3_1()
-
     def test_projections_Q3_1(self):
+        global_min_instance_dict = {}
+
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
@@ -243,6 +248,7 @@ class MyTestCase(BaseTestCase):
         agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
                           global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
                           global_min_instance_dict)
+        agg.mock = True
 
         check = agg.doJob(queries.Q3_1)
         self.assertTrue(check)

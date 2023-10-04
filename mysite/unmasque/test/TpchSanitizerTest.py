@@ -41,7 +41,5 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
 
-
-
 if __name__ == '__main__':
     unittest.main()

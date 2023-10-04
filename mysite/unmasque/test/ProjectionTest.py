@@ -10,6 +10,7 @@ from mysite.unmasque.test.util import tpchSettings, queries
 class MyTestCase(BaseTestCase):
 
     def test_projection_Q1(self):
+
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q1']
 
@@ -38,9 +39,10 @@ class MyTestCase(BaseTestCase):
         filter_predicates = [('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1),  datetime.date(1998, 9, 21))]
 
         join_graph = []
-
+        global_min_instance_dict = {}
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict)
+        pj.mock = True
 
         check = pj.doJob(queries.Q1)
         self.assertTrue(check)
@@ -73,6 +75,7 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_projections_Q3(self):
+        global_min_instance_dict = {}
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
@@ -128,6 +131,7 @@ class MyTestCase(BaseTestCase):
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict)
+        pj.mock = True
 
         check = pj.doJob(queries.Q3)
         self.assertTrue(check)
@@ -144,6 +148,8 @@ class MyTestCase(BaseTestCase):
             self.test_projections_Q3_1()
 
     def test_projections_Q3_1(self):
+        global_min_instance_dict = {}
+
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
@@ -199,6 +205,7 @@ class MyTestCase(BaseTestCase):
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict)
+        pj.mock = True
 
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
@@ -209,6 +216,8 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_projection_Q4(self):
+        global_min_instance_dict = {}
+
         self.conn.connectUsingParams()
         print("Q4")
         from_rels = tpchSettings.from_rels['Q4']
@@ -232,6 +241,7 @@ class MyTestCase(BaseTestCase):
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict)
+        pj.mock = True
 
         check = pj.doJob(queries.Q4)
         self.assertTrue(check)
@@ -246,6 +256,8 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_projection_Q5(self):
+        global_min_instance_dict = {}
+
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q5']
 
@@ -319,6 +331,7 @@ class MyTestCase(BaseTestCase):
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict)
+        pj.mock = True
 
         check = pj.doJob(queries.Q5)
         self.assertTrue(check)

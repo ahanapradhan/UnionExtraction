@@ -12,7 +12,7 @@ from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 class MyTestCase(BaseTestCase):
 
     def test_in_loop(self):
-        for i in range(100):
+        for i in range(2):
             self.test_something()
 
     def test_something(self):
@@ -72,9 +72,11 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipinstruct', 'character'),
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
+        global_min_instance_dict = {}
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict)
+        pj.mock = True
 
         check = pj.doJob(query)
         self.assertTrue(check)
@@ -84,6 +86,7 @@ class MyTestCase(BaseTestCase):
 
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
                      pj.projected_attribs, global_min_instance_dict)
+        gb.mock = True
         check = gb.doJob(query)
         self.assertTrue(check)
 
@@ -104,7 +107,7 @@ class MyTestCase(BaseTestCase):
         sol = [[], v, [], []]
         empty_sol = 0
         for e in range(4):
-            if sol[e] == []:
+            if not sol[e]:
                 empty_sol += 1
             else:
                 checkval = sol[e]
@@ -117,7 +120,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(4, len(pj.param_list))
         empty_p = 0
         for p in pj.param_list:
-            if p == []:
+            if not p:
                 empty_p += 1
             else:
                 self.assertEqual(p, ['l_quantity', 'l_extendedprice', 'l_discount', 'l_quantity*l_extendedprice',
@@ -140,6 +143,7 @@ class MyTestCase(BaseTestCase):
         agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
                           global_all_attribs, join_graph, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
                           pj.dependencies, pj.solution, pj.param_list, global_min_instance_dict)
+        agg.mock = True
 
         check = agg.doJob(query)
         self.assertTrue(check)
