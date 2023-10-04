@@ -59,15 +59,8 @@ class MyTestCase(BaseTestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
         cs2.take_backup()
 
-        o = NEP(self.conn,
-                core_rels,
-                tpchSettings.all_size,
-                tpchSettings.global_pk_dict,
-                global_all_attribs,
-                global_attrib_types,
-                filters,
-                global_key_attribs,
-                q_gen)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
+                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
         check = o.doJob(query, Q_E)
         self.assertTrue(check)
@@ -117,15 +110,8 @@ class MyTestCase(BaseTestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
         cs2.take_backup()
 
-        o = NEP(self.conn,
-                core_rels,
-                tpchSettings.all_size,
-                tpchSettings.global_pk_dict,
-                global_all_attribs,
-                global_attrib_types,
-                filters,
-                global_key_attribs,
-                q_gen)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
+                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
         check = o.doJob(query, Q_E)
         self.assertTrue(check)
@@ -185,15 +171,8 @@ class MyTestCase(BaseTestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
         cs2.take_backup()
 
-        o = NEP(self.conn,
-                core_rels,
-                tpchSettings.all_size,
-                tpchSettings.global_pk_dict,
-                global_all_attribs,
-                global_attrib_types,
-                filters,
-                global_key_attribs,
-                q_gen)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
+                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
         check = o.doJob(query, Q_E)
         self.assertTrue(check)
@@ -252,15 +231,8 @@ class MyTestCase(BaseTestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
         cs2.take_backup()
 
-        o = NEP(self.conn,
-                core_rels,
-                tpchSettings.all_size,
-                tpchSettings.global_pk_dict,
-                global_all_attribs,
-                global_attrib_types,
-                filters,
-                global_key_attribs,
-                q_gen)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
+                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
         check = o.doJob(query, Q_E)
         self.assertTrue(check)
@@ -356,15 +328,8 @@ class MyTestCase(BaseTestCase):
         cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
         cs2.take_backup()
 
-        o = NEP(self.conn,
-                core_rels,
-                tpchSettings.all_size,
-                tpchSettings.global_pk_dict,
-                global_all_attribs,
-                global_attrib_types,
-                filters,
-                global_key_attribs,
-                q_gen)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
+                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
         check = o.doJob(q, eq)
         self.assertTrue(check)
