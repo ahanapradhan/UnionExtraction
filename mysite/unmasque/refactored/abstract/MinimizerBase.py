@@ -60,6 +60,14 @@ class Minimizer(Base):
         start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
         end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
         mid_ctid1, mid_ctid2 = self.calculate_mid_ctids(start_page, end_page, core_sizes[tabname])
+
+        if start_ctid == mid_ctid1:
+            mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
+
+        if mid_ctid1 is None:
+            return None, None
+
+        self.logger.debug(start_ctid, mid_ctid1, mid_ctid2, end_ctid)
         end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid,
                                                                       mid_ctid1,
                                                                       mid_ctid2,
@@ -94,4 +102,24 @@ class Minimizer(Base):
         size = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
         core_sizes[tabname] = size
         self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
+        self.see_d_min_for_debug(core_sizes, tabname)
         return core_sizes
+
+    def see_d_min_for_debug(self, core_sizes, tabname):
+        if core_sizes[tabname] == 42:
+            res, _ = self.connectionHelper.execute_sql_fetchall(f"Select ctid, * from {tabname};")
+            for row in res:
+                self.logger.debug(row)
+
+    def determine_mid_ctid_from_db(self, tabname):
+        count = self.connectionHelper.execute_sql_fetchone_0(f"Select count(*) from {tabname};")
+        mid_idx = int(count / 2)
+        if not mid_idx:
+            return None, None
+        offset = str(mid_idx - 1)
+        mid_ctid1 = self.connectionHelper.execute_sql_fetchone_0(f"Select ctid from {tabname} offset {offset} Limit 1;")
+        self.logger.debug(mid_ctid1)
+        mid_ctid2 = self.connectionHelper.execute_sql_fetchone_0(f"Select Min(ctid) from {tabname} Where ctid > '{mid_ctid1}';")
+        self.logger.debug(mid_ctid2)
+        return mid_ctid1, mid_ctid2
+

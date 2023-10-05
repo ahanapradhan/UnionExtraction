@@ -97,7 +97,6 @@ class ViewMinimizer(Minimizer):
         while int(core_sizes[tabname]) > self.max_row_no:
             end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
-
         return core_sizes
 
     def populate_dict_info(self, query):
