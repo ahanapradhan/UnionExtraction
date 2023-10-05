@@ -1,8 +1,5 @@
+from .util.common_queries import hashtext_query
 from ..src.pipeline.abstract.Comparator import Comparator
-
-
-def hashtext_query(tab):
-    return "select sum(hashtext) from (select hashtext(" + tab + "::TEXT) FROM " + tab + ") as T;"
 
 
 class ResultComparator(Comparator):
