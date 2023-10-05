@@ -8,7 +8,7 @@ from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA
 def cus_execute_sqls(cur, sqls):
     # print(cur)
     for sql in sqls:
-        # print("..cur execute.." + sql)
+        print("..cur execute.." + sql)
         cur.execute(sql)
         # print("..done")
     cur.close()
