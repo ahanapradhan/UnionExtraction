@@ -1,4 +1,5 @@
 from .ExtractorBase import Base
+from ..util.common_queries import truncate_table, insert_into_tab_attribs_format, update_tab_attrib_with_value
 from .MutationPipeLineBase import MutationPipeLineBase
 from ...refactored.executable import Executable
 from ...refactored.util.utils import get_escape_string
@@ -37,17 +38,15 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def truncate_core_relations(self):
         # Truncate all core relations
         for table in self.core_relations:
-            self.connectionHelper.execute_sql(["Truncate Table " + table + ";"])
+            self.connectionHelper.execute_sql([truncate_table(table)])
 
     def insert_attrib_vals_into_table(self, att_order, attrib_list_inner, insert_rows, tabname_inner):
         att_order, esc_string = get_escape_string(att_order, attrib_list_inner)
-        insert_query = "INSERT INTO " + tabname_inner + att_order + " VALUES " + esc_string
+        insert_query = insert_into_tab_attribs_format(att_order, esc_string, tabname_inner)
         self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
 
     def update_attrib_in_table(self, attrib, value, tabname):
-        self.logger.debug("Update Query")
-        update_query = "UPDATE " + tabname + " SET " + attrib + "=" + str(value) + ";"
-        self.logger.debug(update_query)
+        update_query = update_tab_attrib_with_value(attrib, tabname, value)
         self.connectionHelper.execute_sql([update_query])
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):

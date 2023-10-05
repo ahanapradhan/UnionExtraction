@@ -169,7 +169,6 @@ class Projection(GenerationPipeLineBase):
         if not check:
             return False
 
-        # projection_dep = [[] for i in projected_attrib]
         projection_dep = self.find_dependencies_on_multi(attrib_types_dict, projected_attrib, projection_names, query)
         projection_sol = self.find_solution_on_multi(attrib_types_dict, projected_attrib, projection_names,
                                                      projection_dep, query)

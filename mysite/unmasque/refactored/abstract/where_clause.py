@@ -1,6 +1,7 @@
 import copy
 
 from .MutationPipeLineBase import MutationPipeLineBase
+from ..util.common_queries import get_column_details_for_table, select_attribs_from_relation
 from ..util.utils import is_int
 
 
@@ -28,13 +29,8 @@ class WhereClause(MutationPipeLineBase):
 
     def do_init(self):
         for tabname in self.core_relations:
-            res, desc = self.connectionHelper.execute_sql_fetchall("select column_name, data_type, "
-                                                                   "character_maximum_length from "
-                                                                   "information_schema.columns "
-                                                                   "where table_schema = '"
-                                                                   + self.connectionHelper.config.schema
-                                                                   + "' and "
-                                                                     "table_name = '" + tabname + "';")
+            res, desc = self.connectionHelper.execute_sql_fetchall(
+                get_column_details_for_table(self.connectionHelper.config.schema, tabname))
             tab_attribs = []
             tab_attribs.extend(row[0] for row in res)
             self.global_all_attribs.append(copy.deepcopy(tab_attribs))
@@ -44,9 +40,8 @@ class WhereClause(MutationPipeLineBase):
             self.global_attrib_max_length.update(
                 {(tabname, row[0]): int(str(row[2])) for row in res if is_int(str(row[2]))})
 
-            res, desc = self.connectionHelper.execute_sql_fetchall("select "
-                                                                   + ", ".join(tab_attribs)
-                                                                   + " from " + tabname + ";")
+            res, desc = self.connectionHelper.execute_sql_fetchall(
+                select_attribs_from_relation(tab_attribs, tabname))
             for row in res:
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
