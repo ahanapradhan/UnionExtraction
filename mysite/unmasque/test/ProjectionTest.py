@@ -320,7 +320,7 @@ class MyTestCase(BaseTestCase):
             ['n_nationkey', 'n_name', 'n_regionkey', 'n_comment'],
             ['r_regionkey', 'r_name', 'r_comment']]
 
-        filter_predicates = [('orders', 'o_orderdate', '<=', datetime.date(1994, 1, 1), datetime.date(1995, 2, 28)),
+        filter_predicates = [('orders', 'o_orderdate', '<=', datetime.date(1994, 1, 1), datetime.date(1994, 1, 2)),
                              ('region', 'r_name', 'equal', 'MIDDLE EAST', 'MIDDLE EAST')]
 
         join_graph = [['c_custkey', 'o_custkey'],
