@@ -2,7 +2,7 @@ from ...refactored.abstract.MinimizerBase import Minimizer
 from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view
 
 
-def is_less_than(x, end_ctid):
+def is_ctid_less_than(x, end_ctid):
     ex = x[1:-1]
     ec = end_ctid[1:-1]
     exes = ex.split(',')
@@ -10,7 +10,7 @@ def is_less_than(x, end_ctid):
     return int(exes[0]) < int(eces[0]) and int(exes[1]) < int(eces[1])
 
 
-def is_greater_than(x, end_ctid):
+def is_ctid_greater_than(x, end_ctid):
     ex = x[1:-1]
     ec = end_ctid[1:-1]
     exes = ex.split(',')
@@ -18,7 +18,7 @@ def is_greater_than(x, end_ctid):
     return (int(exes[0]) == int(eces[0]) and int(exes[1]) > int(eces[1])) or (int(exes[0]) > int(eces[0]))
 
 
-def get_one_less(ctid):
+def get_ctid_one_less(ctid):
     po = ctid[1:-1]
     idx = po.split(',')
     if int(idx[1]) > 1:
@@ -68,7 +68,7 @@ class NMinimizer(Minimizer):
                                                               start_ctid, tab, get_tabname_1(tab))
 
         self.may_exclude[tab] = []  # set of tuples that can be removed for getting non empty result
-        self.must_include[tab] = []  # set of tuples that can be removed for getting non empty result
+        self.must_include[tab] = []  # set of tuples that must be preserved for getting non empty result
 
         self.logger.debug(start_ctid, end_ctid)
 
@@ -99,19 +99,19 @@ class NMinimizer(Minimizer):
     def is_ok_without_tuple1(self, tab, query, start_ctid):
         end_ctid = self.must_include[tab][-1]
 
-        if is_greater_than(start_ctid, end_ctid):
+        if is_ctid_greater_than(start_ctid, end_ctid):
             self.must_include[tab].pop()
             return "DONE"
 
         exclude_ctids = ""
         for x in self.may_exclude[tab]:
-            if is_less_than(x, end_ctid):
+            if is_ctid_less_than(x, end_ctid):
                 exclude_ctids += f" and ctid != '{x})'"
 
         include_ctids = ""
         for x in self.must_include[tab]:
-            if is_greater_than(x, end_ctid):
-                include_ctids += f" or ctid != '{x}'"
+            if is_ctid_greater_than(x, end_ctid):
+                include_ctids += f" or ctid = '{x}'"
 
         create_cmd = f"Create view {tab} as Select * From {get_tabname_1(tab)} " \
                      f"Where ctid >= '{start_ctid}' and ctid <= '{end_ctid}' {exclude_ctids} {include_ctids};"
@@ -129,7 +129,7 @@ class NMinimizer(Minimizer):
         return False
 
     def get_previous_ctid(self, end_ctid, tab):
-        nctid = get_one_less(end_ctid)
+        nctid = get_ctid_one_less(end_ctid)
         if nctid is None:
             nctid = self.connectionHelper.execute_sql_fetchone_0(
                 f"Select MAX(ctid) from {get_tabname_1(tab)} Where ctid < '{end_ctid}';")
