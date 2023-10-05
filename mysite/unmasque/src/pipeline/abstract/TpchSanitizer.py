@@ -66,7 +66,7 @@ class TpchSanitizer:
             table = row[0]
             self.drop_derived_relations(table)
 
-            drop_fn = drop_table if self.is_view_or_table(table) == 'table' else drop_view
+            drop_fn = self.get_drop_fn(table)
             restore_name = get_restore_name(table)
             self.connectionHelper.execute_sql([drop_fn(table), alter_table_rename_to(restore_name, table)])
 
@@ -74,9 +74,12 @@ class TpchSanitizer:
                                            drop_view("r_e"), drop_table("r_h")])
         self.commit_transaction()
 
+    def get_drop_fn(self, table):
+        return drop_table if self.is_view_or_table(table) == 'table' else drop_view
+
     def drop_derived_relations(self, table):
         derived_objects = get_mutated_names(table)
-        drop_fns = [drop_table if self.is_view_or_table(tab) == 'table' else drop_view for tab in derived_objects]
+        drop_fns = [self.get_drop_fn(tab) for tab in derived_objects]
         for n in range(len(derived_objects)):
             drop_object = derived_objects[n]
             drop_command = drop_fns[n]

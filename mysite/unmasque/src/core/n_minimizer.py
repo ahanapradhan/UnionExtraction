@@ -1,7 +1,5 @@
 from ...refactored.abstract.MinimizerBase import Minimizer
-from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view, \
-    create_view_as_select_star_where_ctid
-from ...refactored.util.utils import isQ_result_empty
+from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view
 
 
 def is_less_than(x, end_ctid):

@@ -1,5 +1,6 @@
 from ..util.common_queries import create_view_as_select_star_where_ctid, drop_view, alter_table_rename_to, \
-    get_ctid_from, get_tabname_1, create_table_as_select_star_from_ctid, drop_table, get_row_count
+    get_ctid_from, get_tabname_1, create_table_as_select_star_from_ctid, drop_table, get_row_count, get_star, \
+    truncate_table, create_table_as_select_star_from, get_tabname_4
 from ..util.utils import isQ_result_empty
 from ...refactored.abstract.ExtractorBase import Base
 from ...refactored.executable import Executable
@@ -12,6 +13,7 @@ class Minimizer(Base):
         self.core_relations = core_relations
         self.app = Executable(connectionHelper)
         self.all_sizes = all_sizes
+        self.mock = False
 
     def getCoreSizes(self):
         core_sizes = {}
@@ -65,6 +67,7 @@ class Minimizer(Base):
             mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
 
         if mid_ctid1 is None:
+            self.connectionHelper.execute_sql([alter_table_rename_to(tabname1, tabname)])
             return None, None
 
         self.logger.debug(start_ctid, mid_ctid1, mid_ctid2, end_ctid)
@@ -75,7 +78,6 @@ class Minimizer(Base):
                                                                       start_ctid,
                                                                       tabname,
                                                                       tabname1)
-        # self.connectionHelper.execute_sql([alter_table_rename_to(tabname1, tabname)])
         return end_ctid, start_ctid
 
     def get_boundary(self, min_or_max, tabname):
@@ -102,17 +104,10 @@ class Minimizer(Base):
         size = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
         core_sizes[tabname] = size
         self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
-        self.see_d_min_for_debug(core_sizes, tabname)
         return core_sizes
 
-    def see_d_min_for_debug(self, core_sizes, tabname):
-        if core_sizes[tabname] == 42:
-            res, _ = self.connectionHelper.execute_sql_fetchall(f"Select ctid, * from {tabname};")
-            for row in res:
-                self.logger.debug(row)
-
     def determine_mid_ctid_from_db(self, tabname):
-        count = self.connectionHelper.execute_sql_fetchone_0(f"Select count(*) from {tabname};")
+        count = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
         mid_idx = int(count / 2)
         if not mid_idx:
             return None, None
@@ -122,4 +117,23 @@ class Minimizer(Base):
         mid_ctid2 = self.connectionHelper.execute_sql_fetchone_0(f"Select Min(ctid) from {tabname} Where ctid > '{mid_ctid1}';")
         self.logger.debug(mid_ctid2)
         return mid_ctid1, mid_ctid2
+
+    def doJob(self, *args):
+        super().doJob(*args)
+        if self.mock:
+            self.restore_d_min()
+            self.see_d_min()
+        return self.result
+
+    def see_d_min(self):
+        for tab in self.core_relations:
+            res, des = self.connectionHelper.execute_sql_fetchall(get_star(tab))
+            self.logger.debug(res)
+
+    def restore_d_min(self):
+        for tab in self.core_relations:
+            drop_fn = self.get_drop_fn(tab)
+            self.connectionHelper.execute_sql([create_table_as_select_star_from(get_tabname_4(tab), tab),
+                                               drop_fn(tab), alter_table_rename_to(get_tabname_4(tab), tab)])
+
 
