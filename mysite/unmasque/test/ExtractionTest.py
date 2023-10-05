@@ -167,6 +167,18 @@ class MyTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
         self.conn.closeConnection()
 
+    def test_extraction_Q18_test1(self):
+        self.conn.connectUsingParams()
+        key = 'Q18_test'
+        query = queries.queries_dict[key]
+        print(query)
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+        self.pipeline.time_profile.print()
+        self.conn.closeConnection()
+
     def test_extraction_Q4(self):
         self.conn.connectUsingParams()
         key = 'Q4'

@@ -120,7 +120,9 @@ queries_dict = {'tpch_query3': tpch_query3,
                 'Q10_simple': Q10_simple,
                 'q1': q1,
                 'q1_simple': q1_simple,
-                'q1_filter': q1_filter
+                'q1_filter': q1_filter,
+                'Q18_test1': Q18_test1,
+                'Q18_test': Q18_test
                 }
 '''
 (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905 limit 3)

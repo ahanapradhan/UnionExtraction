@@ -21,6 +21,9 @@ class Comparator(Base):
     def doActualJob(self, args):
         Q_h, Q_E = self.extract_params_from_args(args)
         self.sanitize()
+        if Q_E is None:
+            self.logger.info("Got None to compared. Cannot do anything...sorry!")
+            return False
         matched = self.match(Q_h, Q_E)
         return matched
 
