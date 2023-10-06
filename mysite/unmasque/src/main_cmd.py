@@ -18,9 +18,14 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    hq = "select l_returnflag, l_linestatus, sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge, " \
-         "count(*) as count_order from lineitem group by l_returnflag, l_linestatus order by l_returnflag, l_linestatus LIMIT 10;"
-
+    hq = "select sum(l_extendedprice*(1 - l_discount)) as revenue, o_orderdate, " \
+                "o_shippriority, l_orderkey " \
+                "from customer, orders, " \
+                "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and " \
+                "o_orderdate " \
+                "< '1995-03-15' and l_shipdate > '1995-03-15' " \
+                "group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
+                "desc, o_orderdate limit 10;"
     conn = ConnectionHelper()
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
