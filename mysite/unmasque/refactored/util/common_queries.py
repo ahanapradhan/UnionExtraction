@@ -8,6 +8,10 @@ def drop_table(tab):
     return f"drop table if exists {tab};"
 
 
+def drop_table_cascade(tab):
+    return f"drop table if exists {tab} CASCADE;"
+
+
 def alter_table_rename_to(tab, retab):
     return f"Alter table {tab} rename to {retab};"
 

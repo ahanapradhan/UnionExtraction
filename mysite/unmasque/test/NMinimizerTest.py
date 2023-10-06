@@ -75,7 +75,7 @@ class MyTestCase(BaseTestCase):
 
     def test_adonis_case_2_simple_on_orders(self):
         self.conn.connectUsingParams()
-        relations = [self.tab_orders]
+        relations = [self.tab_orders, self.tab_lineitem]
         nm = NMinimizer(self.conn, relations, tpchSettings.all_size)
         nm.mock = True
         query = "SELECT o_totalprice as price FROM orders , lineitem WHERE o_orderkey = l_orderkey " \
@@ -83,6 +83,7 @@ class MyTestCase(BaseTestCase):
         check = nm.doJob(query)
         self.assertTrue(check)
         self.assertEqual(1, nm.core_sizes[self.tab_orders])
+        self.assertEqual(1, nm.core_sizes[self.tab_lineitem])
         app = Executable(self.conn)
         res = app.doJob(query)
         self.assertTrue(not isQ_result_empty(query))
