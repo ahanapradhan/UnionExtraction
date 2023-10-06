@@ -1,7 +1,5 @@
-from .ExtractorBase import Base
-from ..util.common_queries import truncate_table, insert_into_tab_attribs_format, update_tab_attrib_with_value
 from .MutationPipeLineBase import MutationPipeLineBase
-from ...refactored.executable import Executable
+from ..util.common_queries import truncate_table, insert_into_tab_attribs_format, update_tab_attrib_with_value
 from ...refactored.util.utils import get_escape_string
 
 

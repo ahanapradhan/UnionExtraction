@@ -1,6 +1,6 @@
 import copy
 
-from .util.common_queries import get_tabname_4
+from .util.common_queries import get_tabname_4, insert_into_tab_select_star_fromtab, update_tab_attrib_with_value
 from .util.utils import get_datatype_from_typesList, get_dummy_val_for, get_val_plus_delta, \
     get_all_combo_lists
 from .abstract.where_clause import WhereClause
