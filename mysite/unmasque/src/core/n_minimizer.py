@@ -1,10 +1,10 @@
-from psycopg2._psycopg import Decimal
+from _decimal import Decimal
 
 from ..util.constants import DONE, NO_REDUCTION
 from ...refactored.abstract.MinimizerBase import Minimizer
 from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view, select_previous_ctid, \
-    select_max_ctid, select_start_ctid_of_any_table, alter_view_rename_to, create_table_as_select_star_from, \
-    get_tabname_2, get_star
+    alter_view_rename_to, create_table_as_select_star_from, \
+    get_tabname_2, get_star, drop_table, drop_table_cascade
 
 
 def is_ctid_less_than(x, end_ctid):
@@ -92,6 +92,7 @@ class NMinimizer(Minimizer):
                 fval = self.format_decimals(val)
                 self.connectionHelper.execute_sql([f"Insert into {tab} values {fval};"])
             if self.core_sizes[tab] < size:
+                self.connectionHelper.execute_sql([drop_table_cascade(get_tabname_1(tab))])
                 self.minimize_table(query, tab)
 
         self.core_sizes[tab] = len(self.must_include[tab])
@@ -108,7 +109,7 @@ class NMinimizer(Minimizer):
                 return DONE
             self.logger.debug("may exclude", self.may_exclude[tab])
             self.logger.debug("must include", self.must_include[tab])
-            if size == self.core_sizes[tab]:
+            if ok and size == self.core_sizes[tab]:
                 return NO_REDUCTION
             if not ok and self.must_include[tab][0] != mandatory_tuple:
                 '''
@@ -216,7 +217,13 @@ class NMinimizer(Minimizer):
     def format_decimals(self, val):
         lval = []
         for v in val:
+            self.logger.debug(v)
             if isinstance(v, Decimal):
-                lval.append(v)
+                v1 = "{0:0.2f}".format(v)
+                lval.append(v1)
+                self.logger.debug(v1)
             else:
+                lval.append(v)
+        return tuple(lval)
+
                 
