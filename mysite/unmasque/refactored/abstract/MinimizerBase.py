@@ -1,6 +1,6 @@
 from ..util.common_queries import create_view_as_select_star_where_ctid, drop_view, alter_table_rename_to, \
     get_ctid_from, create_table_as_select_star_from_ctid, drop_table, get_row_count, get_star, \
-    create_table_as_select_star_from, get_tabname_4
+    create_table_as_select_star_from, get_tabname_4, select_ctid_from_tabname_offset, select_next_ctid
 from ..util.utils import isQ_result_empty
 from ...refactored.abstract.ExtractorBase import Base
 from ...refactored.executable import Executable
@@ -98,11 +98,11 @@ class Minimizer(Base):
         return False  # this half does not work
 
     def update_with_remaining_size(self, core_sizes, end_ctid, start_ctid, tabname, tabname1):
+        self.logger.debug(start_ctid, end_ctid)
         self.connectionHelper.execute_sql(
             [create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname, tabname1),
              drop_table(tabname1)])
-        size = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
-        core_sizes[tabname] = size
+        core_sizes[tabname] = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
         self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
         return core_sizes
 
@@ -112,9 +112,9 @@ class Minimizer(Base):
         if not mid_idx:
             return None, None
         offset = str(mid_idx - 1)
-        mid_ctid1 = self.connectionHelper.execute_sql_fetchone_0(f"Select ctid from {tabname} offset {offset} Limit 1;")
+        mid_ctid1 = self.connectionHelper.execute_sql_fetchone_0(select_ctid_from_tabname_offset(tabname, offset))
         self.logger.debug(mid_ctid1)
-        mid_ctid2 = self.connectionHelper.execute_sql_fetchone_0(f"Select Min(ctid) from {tabname} Where ctid > '{mid_ctid1}';")
+        mid_ctid2 = self.connectionHelper.execute_sql_fetchone_0(select_next_ctid(tabname, mid_ctid1))
         self.logger.debug(mid_ctid2)
         return mid_ctid1, mid_ctid2
 
@@ -122,7 +122,7 @@ class Minimizer(Base):
         super().doJob(*args)
         if self.mock:
             self.restore_d_min()
-            self.see_d_min()
+            # self.see_d_min()
         return self.result
 
     def see_d_min(self):

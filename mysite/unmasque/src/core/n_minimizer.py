@@ -1,5 +1,10 @@
+from psycopg2._psycopg import Decimal
+
+from ..util.constants import DONE, NO_REDUCTION
 from ...refactored.abstract.MinimizerBase import Minimizer
-from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view
+from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view, select_previous_ctid, \
+    select_max_ctid, select_start_ctid_of_any_table, alter_view_rename_to, create_table_as_select_star_from, \
+    get_tabname_2, get_star
 
 
 def is_ctid_less_than(x, end_ctid):
@@ -47,61 +52,90 @@ class NMinimizer(Minimizer):
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
         for tab in self.core_relations:
-            self.minimize_one_relation1(query, tab)
+            self.minimize_table(query, tab)
+            res, des = self.connectionHelper.execute_sql_fetchall(get_star(tab))
+            for row in res:
+                self.logger.debug(row)
         return True
 
-    def minimize_one_relation1(self, query, tab):
-        sctid = '(0,1)'
-        ectid = self.connectionHelper.execute_sql_fetchone_0(f"Select MAX(ctid) from {tab};")
-        end_ctid, start_ctid = self.try_binary_halving(query, tab)
-        self.core_sizes = self.update_with_remaining_size(self.core_sizes,
-                                                          end_ctid,
-                                                          start_ctid, tab, get_tabname_1(tab))
-        while sctid != start_ctid or ectid != end_ctid:
-            sctid = start_ctid
-            ectid = end_ctid
-            end_ctid, start_ctid = self.try_binary_halving(query, tab)
-            if end_ctid is None:
-                return
-            self.core_sizes = self.update_with_remaining_size(self.core_sizes,
-                                                              end_ctid,
-                                                              start_ctid, tab, get_tabname_1(tab))
+    def minimize_table(self, query, tab):
+        end_ctid, start_ctid = self.do_binary_halving_till_possible(query, tab)
+        if end_ctid is None:
+            return
+
+        size = self.core_sizes[tab]
+        self.logger.debug(start_ctid, end_ctid)
 
         self.may_exclude[tab] = []  # set of tuples that can be removed for getting non empty result
         self.must_include[tab] = []  # set of tuples that must be preserved for getting non empty result
 
-        self.logger.debug(start_ctid, end_ctid)
-
         # first time
-
         self.may_exclude[tab].append(end_ctid)
-
-        c2tid = self.connectionHelper.execute_sql_fetchone_0(f"SELECT MAX(ctid) FROM {tab} WHERE ctid < '{end_ctid}';")
-        self.logger.debug(c2tid)
+        c2tid = self.connectionHelper.execute_sql_fetchone_0(select_previous_ctid(tab, end_ctid))
         self.must_include[tab].append(c2tid)
 
         self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab))])
-        size = self.core_sizes[tab]
-        while True:
-            self.connectionHelper.execute_sql([drop_view(tab)])
-            self.swicth_transaction(tab)
-            ok = self.is_ok_without_tuple1(tab, query, start_ctid)
-            if ok == "DONE":
-                break
-            self.logger.debug("may exclude", self.may_exclude[tab])
-            self.logger.debug("must include", self.must_include[tab])
-            if size == self.core_sizes[tab]:
-                break
+        check = self.do_row_by_row_elimination(query, start_ctid, tab)
+        if check == DONE or check == NO_REDUCTION:
+            self.connectionHelper.execute_sql([drop_view(tab),
+                                               alter_table_rename_to(get_tabname_1(tab), tab)])
+            return
+        else:
+            must_ctid = check
+            row, _ = self.connectionHelper.execute_sql_fetchall(f"select * from {get_tabname_1(tab)} where ctid = '{must_ctid}';")
+            # convert the view into a table
+            self.connectionHelper.execute_sql([alter_view_rename_to(tab, get_tabname_2(tab)),
+                                               create_table_as_select_star_from(tab, get_tabname_2(tab))])
+            self.logger.debug(tab, " is now a table")
+            for val in row:
+                self.logger.debug(val)
+                fval = self.format_decimals(val)
+                self.connectionHelper.execute_sql([f"Insert into {tab} values {fval};"])
+            if self.core_sizes[tab] < size:
+                self.minimize_table(query, tab)
 
         self.core_sizes[tab] = len(self.must_include[tab])
         self.logger.debug(self.core_sizes[tab])
 
-    def is_ok_without_tuple1(self, tab, query, start_ctid):
+    def do_row_by_row_elimination(self, query, start_ctid, tab):
+        mandatory_tuple = self.must_include[tab][-1]
+        size = self.core_sizes[tab]
+        while True:
+            self.connectionHelper.execute_sql([drop_view(tab)])
+            self.swicth_transaction(tab)
+            ok = self.is_ok_to_eliminate_previous_tuple(tab, query, start_ctid)
+            if ok == DONE:
+                return DONE
+            self.logger.debug("may exclude", self.may_exclude[tab])
+            self.logger.debug("must include", self.must_include[tab])
+            if size == self.core_sizes[tab]:
+                return NO_REDUCTION
+            if not ok and self.must_include[tab][0] != mandatory_tuple:
+                '''
+                found another tuple which needs to be preserved. 
+                Now we can try bin halving on the remaining data to speed up the rest of the search
+                '''
+                return self.must_include[tab][0]
+
+    def do_binary_halving_till_possible(self, query, tab):
+        while True:
+            tab_size = self.core_sizes[tab]
+            end_ctid, start_ctid = self.try_binary_halving(query, tab)
+            if end_ctid is None:  # could not reduce anymore
+                break
+            self.core_sizes = self.update_with_remaining_size(self.core_sizes, end_ctid,
+                                                              start_ctid, tab, get_tabname_1(tab))
+            self.logger.debug(tab_size, self.core_sizes[tab])
+            if tab_size == self.core_sizes[tab]:  # did not reduce anymore
+                break
+        return end_ctid, start_ctid
+
+    def is_ok_to_eliminate_previous_tuple(self, tab, query, start_ctid):
         end_ctid = self.must_include[tab][-1]
 
         if is_ctid_greater_than(start_ctid, end_ctid):
             self.must_include[tab].pop()
-            return "DONE"
+            return DONE  # tell caller to terminate
 
         exclude_ctids = ""
         for x in self.may_exclude[tab]:
@@ -121,18 +155,18 @@ class NMinimizer(Minimizer):
             self.core_sizes[tab] -= 1
             self.may_exclude[tab].pop()
             self.may_exclude[tab].append(self.must_include[tab].pop())
-            self.must_include[tab].append(self.get_previous_ctid(end_ctid, tab))
+            self.must_include[tab].append(self.calculate_previous_ctid(end_ctid, tab))
             return True
         else:
             self.must_include[tab].insert(0, self.may_exclude[tab].pop())
-            self.may_exclude[tab].append(self.get_previous_ctid(end_ctid, tab))
+            self.may_exclude[tab].append(self.calculate_previous_ctid(end_ctid, tab))
         return False
 
-    def get_previous_ctid(self, end_ctid, tab):
+    def calculate_previous_ctid(self, end_ctid, tab):
         nctid = get_ctid_one_less(end_ctid)
         if nctid is None:
             nctid = self.connectionHelper.execute_sql_fetchone_0(
-                f"Select MAX(ctid) from {get_tabname_1(tab)} Where ctid < '{end_ctid}';")
+                select_previous_ctid(get_tabname_1(tab), end_ctid))
         else:
             nctid = format_ctid(nctid)
         return nctid
@@ -178,3 +212,11 @@ class NMinimizer(Minimizer):
             start_ctid = mid_ctid2
         self.connectionHelper.execute_sql([drop_view(tabname)])
         return end_ctid, start_ctid
+
+    def format_decimals(self, val):
+        lval = []
+        for v in val:
+            if isinstance(v, Decimal):
+                lval.append(v)
+            else:
+                

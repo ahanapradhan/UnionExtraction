@@ -6,7 +6,6 @@ from .result_comparator import ResultComparator
 from .util.common_queries import get_restore_name, drop_table, get_tabname_nep, alter_view_rename_to, \
     create_table_as_select_star_from
 from .util.utils import get_dummy_val_for, get_format, get_char
-from ..src.pipeline.abstract.Comparator import Comparator
 
 
 class NepComparator(ResultComparator):

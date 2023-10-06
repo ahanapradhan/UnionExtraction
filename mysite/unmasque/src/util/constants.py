@@ -69,3 +69,5 @@ RESULT_COMPARE = "RESULT COMPARATOR"
 
 LOG_FORMAT = '%(name)s -- %(levelname)s -- %(message)s'
 
+NO_REDUCTION = "NO_REDUCTION"
+
