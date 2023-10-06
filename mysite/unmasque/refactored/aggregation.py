@@ -93,8 +93,9 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
     return a, agg_array, b, k_value
 
 
-def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner):
+def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner, result_index, deps):
     same_tab_flag = False
+    local_dep = deps[result_index]
     if tabname_inner == tabname:
         no_of_rows = k_value + 1
         same_tab_flag = True
@@ -131,7 +132,7 @@ class Aggregation(GenerationPipeLineBase):
         self.global_aggregated_attributes = [(element, '') for element in self.global_projected_attributes]
         if not self.has_groupby:
             return False
-
+        break_cond = False
         for i in range(len(self.core_relations)):
             tabname = self.core_relations[i]
             attrib_list = copy.deepcopy(self.global_all_attribs[i])
@@ -148,7 +149,7 @@ class Aggregation(GenerationPipeLineBase):
 
                 for j, dep in enumerate(self.dependencies):
                     for i in dep:
-                        if attrib in i:
+                        if attrib in i and self.global_aggregated_attributes[j][1] == '':
                             result_index_list.append(j)
                             break
                 # if l==0:
@@ -166,8 +167,10 @@ class Aggregation(GenerationPipeLineBase):
                     self.truncate_core_relations()
                     temp_vals = []
                     max_no_of_rows = self.insert_for_inner(a, attrib, attrib_types_dict, b, filter_attrib_dict, k_value,
-                                                           key_list, tabname, temp_vals)
-                    self.logger.debug(self.dependencies, result_index)
+                                                           key_list, tabname, temp_vals, result_index)
+                    self.logger.debug(self.dependencies, result_index, \
+                                                       key_list, tabname, temp_vals, result_index)
+                    # print("Debug", self.dependencies, result_index)
                     if len(self.dependencies[result_index]) > 1:
                         self.logger.debug("Temp values", temp_vals)  # FOR DEBUG
                         s = 0
@@ -186,12 +189,12 @@ class Aggregation(GenerationPipeLineBase):
                             for row in vals_sp:
                                 l.append(row[local_attrib_index])
                             temp_ar.append((local_attrib, tuple(l)))
+                        #print("Temp Arr", temp_ar) # FOR DEBUG
                         for i in range(max_no_of_rows):
                             inter_val = []
                             eqn = 0
                             for j in range(len(self.dependencies[result_index])):
                                 inter_val.append(int(temp_ar[j][1][i]))
-                            ele = 1
                             n = len(self.dependencies[result_index])
 
                             # for j in range(len(self.param_list[result_index])):
@@ -199,6 +202,7 @@ class Aggregation(GenerationPipeLineBase):
                             #     # coeff[0][j] = coeff[0][(j-n)]*coeff[0][(j+ele)%n]
                             #     inter_val.append(inter_val[(j - n)] * inter_val[(j + ele) % n])
                             temp_arr = get_param_values_external(inter_val)
+                            #print("Coeffs", temp_arr, local_sol) # FOR DEBUG
                             inter_val = [0 for j in range(len(self.param_list[result_index]))]
                             for j in range(len(self.param_list[result_index])):
                                 inter_val[j] = temp_arr[j]
@@ -206,10 +210,12 @@ class Aggregation(GenerationPipeLineBase):
                             self.logger.debug("Intermediate Values of all", inter_val)  # FOR DEBUG
                             for j, val in enumerate(inter_val):
                                 eqn += (val * local_sol[j][0])
+                            #print("Expression", eqn) # FOR DEBUG
                             s += eqn
                             mi = eqn if eqn < mi else mi
                             ma = eqn if eqn > ma else ma
                         self.logger.debug("no_of_rows ", max_no_of_rows)
+                        #print("no_of_rows ", max_no_of_rows) # FOR DEBUG
                         av = (s / max_no_of_rows)
                         self.logger.debug("Temp Array", temp_ar)
                         self.logger.debug("SUM, AV, MIN, MAX", s, av, mi, ma)
@@ -217,6 +223,12 @@ class Aggregation(GenerationPipeLineBase):
                     new_result = self.app.doJob(query)
                     self.logger.debug("New Result", new_result) # FOR DEBUG
                     self.logger.debug("Comaparison", agg_array) # FOR DEBUG
+                    # print("New Result", new_result) # FOR DEBUG
+                    # sele = self.app.doJob("select * from lineitem, orders where l_orderkey=o_orderkey;") # FOR DEBUG
+                    # print("Select query") # FOR DEBUG
+                    # for i in sele: # FOR DEBUG
+                    #     print(i) # FOR DEBUG
+                    #print("Comaparison", agg_array) # FOR DEBUG
                     if isQ_result_empty(new_result):
                         self.logger.error('some error in generating new database. '
                                           'Result is empty. Can not identify aggregation')
@@ -233,7 +245,7 @@ class Aggregation(GenerationPipeLineBase):
         return True
 
     def insert_for_inner(self, a, attrib, attrib_types_dict, b, filter_attrib_dict, k_value, key_list, tabname,
-                         temp_vals):
+                         temp_vals, result_index):
         max_no_of_rows = 0
         # For this table (tabname) and this attribute (attrib), fill all tables now
         for j in range(len(self.core_relations)):
@@ -242,7 +254,7 @@ class Aggregation(GenerationPipeLineBase):
 
             insert_rows = []
 
-            no_of_rows = get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner)
+            no_of_rows = get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner, result_index, self.dependencies)
 
             if no_of_rows > max_no_of_rows:
                 max_no_of_rows = no_of_rows
