@@ -10,7 +10,7 @@ def signal_handler(signum, frame):
     sigconn = ConnectionHelper()
     sigconn.connectUsingParams()
     sanitizer = TpchSanitizer(sigconn)
-    sanitizer.doJob()
+    sanitizer.sanitize()
     sigconn.closeConnection()
     print("database restored!")
     sys.exit(0)

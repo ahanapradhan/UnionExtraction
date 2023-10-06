@@ -28,9 +28,9 @@ class TpchSanitizer:
         wheres = " and ".join(predicate_strs)
         if len(predicate_strs) == 1:
             wheres = " and " + wheres
-        query = "Select " + f" {selections} " + " From information_schema.tables " + \
-                "WHERE table_schema = '" + self.connectionHelper.config.schema + "' and TABLE_CATALOG= '" \
-                + self.connectionHelper.db + "'" + f" {wheres} ;"
+        query = f"Select {selections}  From information_schema.tables " + \
+                f"WHERE table_schema = '{self.connectionHelper.config.schema}' and " \
+                f"TABLE_CATALOG= '{self.connectionHelper.db}' {wheres} ;"
         query = re.sub(' +', ' ', query)
         return query
 

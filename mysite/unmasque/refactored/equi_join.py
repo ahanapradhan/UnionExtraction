@@ -1,6 +1,6 @@
 import copy
 
-from .util.common_queries import get_tabname_4
+from .util.common_queries import get_tabname_4, insert_into_tab_select_star_fromtab, update_tab_attrib_with_value
 from .util.utils import get_datatype_from_typesList, get_dummy_val_for, get_val_plus_delta, \
     get_all_combo_lists
 from .abstract.where_clause import WhereClause
@@ -56,8 +56,7 @@ class EquiJoin(WhereClause):
 
     def assign_value_to_list(self, list1, temp_copy, val1):
         for val in list1:
-            self.connectionHelper.execute_sql(
-                ["update " + str(val[0]) + " set " + str(val[1]) + " = " + str(val1) + ";"])
+            self.connectionHelper.execute_sql([update_tab_attrib_with_value(str(val[1]), str(val[0]), val1)])
             index = temp_copy[val[0]][0].index(val[1])
             mutated_list = copy.deepcopy(list(temp_copy[val[0]][1]))
             mutated_list[index] = str(val1)
@@ -105,9 +104,7 @@ class EquiJoin(WhereClause):
                     join_graph.append(copy.deepcopy(join_keys))
 
             for val in join_keys:
-                tab = val[0]
-                self.connectionHelper.execute_sql(["Insert into " + f"{tab}" + " Select * from "
-                                                   + f"{get_tabname_4(tab)};"])
+                self.connectionHelper.execute_sql([insert_into_tab_select_star_fromtab(val[0], get_tabname_4(val[0]))])
         self.refine_join_graph(join_graph)
 
     def refine_join_graph(self, join_graph):
