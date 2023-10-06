@@ -167,7 +167,7 @@ class Aggregation(GenerationPipeLineBase):
                     self.truncate_core_relations()
                     temp_vals = []
                     max_no_of_rows = self.insert_for_inner(a, attrib, attrib_types_dict, b, filter_attrib_dict, k_value,
-                                                           key_list, tabname, temp_vals)
+                                                           key_list, tabname, temp_vals, result_index)
                     self.logger.debug(self.dependencies, result_index, \
                                                        key_list, tabname, temp_vals, result_index)
                     # print("Debug", self.dependencies, result_index)

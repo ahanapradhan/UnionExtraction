@@ -160,7 +160,7 @@ class Projection(GenerationPipeLineBase):
         return value_used
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
-        print(query)
+        #print(query)
         projected_attrib, projection_names, value_used, check = \
             self.find_projection_on_unfiltered_attribs(attrib_types_dict, query)
         if not check:
@@ -477,7 +477,7 @@ class Projection(GenerationPipeLineBase):
             if np.linalg.matrix_rank(coeff) > curr_rank:
                 curr_rank += 1
                 outer_idx += 1
-        print("N", n)
+        #print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
             for j in range(n):
@@ -506,7 +506,7 @@ class Projection(GenerationPipeLineBase):
                         self.update_attrib_in_table(update_multi[inner_i], update_multi[inner_i+2], update_multi[inner_i+1])
                         
                             
-            print(self.app.doJob(query), b)
+            #print(self.app.doJob(query), b)
             b[i][0] = self.app.doJob(query)[1][idx]
 
         solution = np.linalg.solve(coeff, b)
@@ -516,7 +516,7 @@ class Projection(GenerationPipeLineBase):
         return solution
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
-        print("Full list", self.param_list)
+        #print("Full list", self.param_list)
         for idx_pro, ele in enumerate(projected_attrib):
             if projection_dep[idx_pro] == [] or projection_sol[idx_pro] == []:
                 continue
@@ -561,10 +561,10 @@ class Projection(GenerationPipeLineBase):
 
 
 def get_param_values_external(coeff_arr):
-    print(coeff_arr)
+    #print(coeff_arr)
     subsets = get_subsets(coeff_arr)
     subsets = sorted(subsets, key=len)
-    print(subsets)
+    #print(subsets)
     final_lis = []
     for i in subsets:
         temp_val = 1
