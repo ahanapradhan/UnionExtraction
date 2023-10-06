@@ -1,4 +1,4 @@
-from mysite.unmasque.refactored.util.utils import get_format
+from ..util.utils import get_format
 
 DEBUG_QUERY = "select pid, state, query from pg_stat_activity where datname = 'tpch';"
 TERMINATE_STUCK_QUERIES = "SELECT pg_terminate_backend(pid);"
