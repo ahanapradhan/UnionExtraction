@@ -5,7 +5,7 @@ from ..util.constants import DONE, NO_REDUCTION
 from ...refactored.abstract.MinimizerBase import Minimizer
 from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view, select_previous_ctid, \
     alter_view_rename_to, create_table_as_select_star_from, \
-    get_tabname_2, get_star, drop_table_cascade
+    get_tabname_2, get_star, drop_table_cascade, select_start_ctid_of_any_table
 
 
 def is_ctid_less_than(x, end_ctid):
@@ -76,12 +76,18 @@ class NMinimizer(Minimizer):
         self.must_include[tab].append(c2tid)
 
         self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab))])
-        check = self.do_row_by_row_elimination(query, start_ctid, tab)
-        if check == DONE or check == NO_REDUCTION:
-            self.connectionHelper.execute_sql([drop_view(tab),
-                                               alter_table_rename_to(get_tabname_1(tab), tab)])
-            return
+        while str(self.may_exclude[tab][0]) != select_start_ctid_of_any_table():
+            check = self.do_row_by_row_elimination(query, start_ctid, tab)
+            if check == DONE or check == NO_REDUCTION:
+                self.connectionHelper.execute_sql([drop_view(tab),
+                                                   alter_table_rename_to(get_tabname_1(tab), tab)])
+                return
+        '''
         else:
+            while self.may_exclude[tab][0] != select_start_ctid_of_any_table():
+                self.do_row_by_row_elimination(query, start_ctid, tab)
+
+            
             must_ctid = check
             row, _ = self.connectionHelper.execute_sql_fetchall(f"select * from {get_tabname_1(tab)} where ctid = '{must_ctid}';")
             # convert the view into a table
@@ -93,9 +99,11 @@ class NMinimizer(Minimizer):
                 self.logger.debug(val)
                 fval = self.format_insert_values(val)
                 self.connectionHelper.execute_sql([f"Insert into {tab} values {fval};"])
+            
             if self.core_sizes[tab] < size:
                 self.connectionHelper.execute_sql([drop_table_cascade(get_tabname_1(tab))])
                 self.minimize_table(query, tab)
+            '''
 
         self.core_sizes[tab] = len(self.must_include[tab])
         self.logger.debug(self.core_sizes[tab])
@@ -113,12 +121,12 @@ class NMinimizer(Minimizer):
             self.logger.debug("must include", self.must_include[tab])
             if ok and size == self.core_sizes[tab]:
                 return NO_REDUCTION
+            '''
             if not ok and self.must_include[tab][0] != mandatory_tuple:
-                '''
                 found another tuple which needs to be preserved. 
                 Now we can try bin halving on the remaining data to speed up the rest of the search
-                '''
                 return self.must_include[tab][0]
+            '''
 
     def do_binary_halving_till_possible(self, query, tab):
         while True:
@@ -158,12 +166,17 @@ class NMinimizer(Minimizer):
             self.core_sizes[tab] -= 1
             self.may_exclude[tab].pop()
             self.may_exclude[tab].append(self.must_include[tab].pop())
-            self.must_include[tab].append(self.calculate_previous_ctid(end_ctid, tab))
+            self.insert_previous_ctid_list(self.must_include[tab], end_ctid, tab)
             return True
         else:
             self.must_include[tab].insert(0, self.may_exclude[tab].pop())
-            self.may_exclude[tab].append(self.calculate_previous_ctid(end_ctid, tab))
+            self.insert_previous_ctid_list(self.may_exclude[tab], end_ctid, tab)
         return False
+
+    def insert_previous_ctid_list(self, ctid_list, end_ctid, tab):
+        prev_ctid = self.calculate_previous_ctid(end_ctid, tab)
+        if prev_ctid is not None:
+            ctid_list.append(prev_ctid)
 
     def calculate_previous_ctid(self, end_ctid, tab):
         nctid = get_ctid_one_less(end_ctid)
@@ -230,4 +243,3 @@ class NMinimizer(Minimizer):
             else:
                 lval.append(v)
         return tuple(lval)
-
