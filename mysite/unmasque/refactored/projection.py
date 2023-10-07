@@ -4,6 +4,7 @@ import random
 
 import numpy as np
 
+from .util.common_queries import get_star
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
     get_val_plus_delta, get_char, get_dummy_val_for
@@ -160,7 +161,7 @@ class Projection(GenerationPipeLineBase):
         return value_used
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
-        #print(query)
+        # print(query)
         projected_attrib, projection_names, value_used, check = \
             self.find_projection_on_unfiltered_attribs(attrib_types_dict, query)
         if not check:
@@ -172,7 +173,7 @@ class Projection(GenerationPipeLineBase):
 
         projection_dep = self.find_dependencies_on_multi(attrib_types_dict, projected_attrib, projection_names, query)
         projection_sol = self.find_solution_on_multi(attrib_types_dict, projected_attrib, projection_names,
-                                                    projection_dep, query)
+                                                     projection_dep, query)
         self.build_equation(projected_attrib, projection_dep, projection_sol)
         self.projected_attribs = projected_attrib
         self.projection_names = projection_names
@@ -285,14 +286,15 @@ class Projection(GenerationPipeLineBase):
         # Prev Result to check for changes
         prev_result = self.app.doJob(query)
         for idx in indices_to_check:
-            projection_dep[idx], prev_result = self.get_dependence(idx, projection_names, query, prev_result, attrib_types_dict,
-                                                      value_used)
+            projection_dep[idx], prev_result = self.get_dependence(idx, projection_names, query, prev_result,
+                                                                   attrib_types_dict,
+                                                                   value_used)
         self.logger.debug("Dependencies", projection_dep)
         return projection_dep
 
     def get_dependence(self, index, names, query, prev_res, attrib_types_dict, value_used):
         dep_list = []
-        #print(index)
+        # print(index)
         to_be_skipped = []
         for tab_idx in range(len(self.core_relations)):
             tabname = self.core_relations[tab_idx]
@@ -303,9 +305,9 @@ class Projection(GenerationPipeLineBase):
             while attrib_idx < len(attrib_list):
                 attrib = attrib_list[attrib_idx]
                 if attrib in to_be_skipped:
-                    attrib_idx+=1
+                    attrib_idx += 1
                     continue
-                #print(attrib)
+                # print(attrib)
                 fil = 0
                 join = 0
 
@@ -374,19 +376,31 @@ class Projection(GenerationPipeLineBase):
                         value_used[value_used.index(attrib) + 1] = update_value
                 if 'char' in attrib_types_dict[(tabname, attrib)] or 'date' in attrib_types_dict[(tabname, attrib)]:
                     update_value = f"'{update_value}'"
-                #print("updated", attrib, update_value)
+                # print("updated", attrib, update_value)
                 if not join:
                     self.update_attrib_in_table(attrib, update_value, tabname)
                 else:
-                    for i in range(0,len(update_multi), 3):
-                        self.update_attrib_in_table(update_multi[i], update_multi[i+2], update_multi[i+1])
+                    for i in range(0, len(update_multi), 3):
+                        self.update_attrib_in_table(update_multi[i], update_multi[i + 2], update_multi[i + 1])
                 # Current Problem with joins, if the attribute is part of join change the corresponding ones as well.
+                '''
+                following code is for debugging. Once issue gets resolved, please delete it.
+                ------ DEBUG START
+                '''
+                res, _ = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
+                self.logger.debug("------ DEBUG START")
+                self.logger.debug(tabname, " has: ", res)
+                self.logger.debug("------ DEBUG END")
+                '''
+                ------ DEBUG END
+               '''
+
                 self.logger.debug("Prev", prev_res)
                 new_result = self.app.doJob(query)
                 self.logger.debug("New", new_result)
                 if prev_res[1][index] != new_result[1][index]:
                     dep_list.append((tabname, attrib))
-                    #prev_res = new_result
+                    # prev_res = new_result
                     attrib_idx += 1
                     coinc = 0
                 elif coinc == 0:
@@ -394,7 +408,7 @@ class Projection(GenerationPipeLineBase):
                     coinc = 1
                 else:
                     # Not a coincidence
-                    
+
                     coinc = 0
                     attrib_idx += 1
                 prev_res = new_result
@@ -429,7 +443,8 @@ class Projection(GenerationPipeLineBase):
         n = len(dep)
         fil_check = []
         local_param_list = []  # param_list for only this output column
-        if n == 1 and ('int' not in attrib_types_dict[(dep[0][0], dep[0][1])]) and ('numeric' not in attrib_types_dict[(dep[0][0], dep[0][1])]):
+        if n == 1 and ('int' not in attrib_types_dict[(dep[0][0], dep[0][1])]) and (
+                'numeric' not in attrib_types_dict[(dep[0][0], dep[0][1])]):
             self.param_list.append([])
             return []
         for ele in dep:
@@ -477,7 +492,7 @@ class Projection(GenerationPipeLineBase):
             if np.linalg.matrix_rank(coeff) > curr_rank:
                 curr_rank += 1
                 outer_idx += 1
-        #print("N", n)
+        # print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
             for j in range(n):
@@ -502,11 +517,11 @@ class Projection(GenerationPipeLineBase):
                                 update_multi.append(self.core_relations[l])
                                 break
                         update_multi.append(value)
-                    for inner_i in range(0,len(update_multi), 3):
-                        self.update_attrib_in_table(update_multi[inner_i], update_multi[inner_i+2], update_multi[inner_i+1])
-                        
-                            
-            #print(self.app.doJob(query), b)
+                    for inner_i in range(0, len(update_multi), 3):
+                        self.update_attrib_in_table(update_multi[inner_i], update_multi[inner_i + 2],
+                                                    update_multi[inner_i + 1])
+
+            # print(self.app.doJob(query), b)
             b[i][0] = self.app.doJob(query)[1][idx]
 
         solution = np.linalg.solve(coeff, b)
@@ -516,7 +531,7 @@ class Projection(GenerationPipeLineBase):
         return solution
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
-        #print("Full list", self.param_list)
+        # print("Full list", self.param_list)
         for idx_pro, ele in enumerate(projected_attrib):
             if projection_dep[idx_pro] == [] or projection_sol[idx_pro] == []:
                 continue
@@ -561,10 +576,10 @@ class Projection(GenerationPipeLineBase):
 
 
 def get_param_values_external(coeff_arr):
-    #print(coeff_arr)
+    # print(coeff_arr)
     subsets = get_subsets(coeff_arr)
     subsets = sorted(subsets, key=len)
-    #print(subsets)
+    # print(subsets)
     final_lis = []
     for i in subsets:
         temp_val = 1
