@@ -1,11 +1,11 @@
 from _decimal import Decimal
-from datetime import datetime, date
+from datetime import date
 
 from ..util.constants import DONE, NO_REDUCTION
 from ...refactored.abstract.MinimizerBase import Minimizer
 from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view, select_previous_ctid, \
     alter_view_rename_to, create_table_as_select_star_from, \
-    get_tabname_2, get_star, drop_table_cascade, get_tabname_un, create_table_like, drop_table
+    get_tabname_2, get_star, drop_table_cascade
 
 
 def is_ctid_less_than(x, end_ctid):
@@ -82,42 +82,23 @@ class NMinimizer(Minimizer):
                                                alter_table_rename_to(get_tabname_1(tab), tab)])
             return
         else:
-            self.do_row_by_row_elimination(query, start_ctid, tab)
-            """
             must_ctid = check
-            row, _ = self.connectionHelper.execute_sql_fetchall(
-                f"select * from {get_tabname_1(tab)} where ctid = '{must_ctid}';")
-            self.do_row_by_row_elimination(query, start_ctid, tab)
-
+            row, _ = self.connectionHelper.execute_sql_fetchall(f"select * from {get_tabname_1(tab)} where ctid = '{must_ctid}';")
             # convert the view into a table
             self.connectionHelper.execute_sql([alter_view_rename_to(tab, get_tabname_2(tab)),
                                                create_table_as_select_star_from(tab, get_tabname_2(tab))])
             self.logger.debug(tab, " is now a table")
-            
+
             for val in row:
                 self.logger.debug(val)
                 fval = self.format_insert_values(val)
                 self.connectionHelper.execute_sql([f"Insert into {tab} values {fval};"])
-            """
             if self.core_sizes[tab] < size:
-                self.connectionHelper.execute_sql([alter_view_rename_to(tab, get_tabname_2(tab)),
-                                                   create_table_as_select_star_from(tab, get_tabname_2(tab)),
-                                                   drop_table_cascade(get_tabname_1(tab))])
+                self.connectionHelper.execute_sql([drop_table_cascade(get_tabname_1(tab))])
                 self.minimize_table(query, tab)
 
         self.core_sizes[tab] = len(self.must_include[tab])
         self.logger.debug(self.core_sizes[tab])
-        self.finalize_dmin(tab)
-
-    def finalize_dmin(self, tab):
-        self.connectionHelper.execute_sql([create_table_like(get_tabname_un(tab), tab)])
-        for ctid in self.must_include[tab]:
-            row, _ = self.connectionHelper.execute_sql_fetchall(f"select * from {get_tabname_1(tab)} where ctid = '{ctid}';")
-            for val in row:
-                self.logger.debug(val)
-                fval = self.format_insert_values(val)
-                self.connectionHelper.execute_sql([f"Insert into {get_tabname_un(tab)} values {fval};"])
-        self.connectionHelper.execute_sql([self.get_drop_fn(tab)(tab), alter_table_rename_to(get_tabname_un(tab), tab)])
 
     def do_row_by_row_elimination(self, query, start_ctid, tab):
         mandatory_tuple = self.must_include[tab][-1]
@@ -142,7 +123,6 @@ class NMinimizer(Minimizer):
     def do_binary_halving_till_possible(self, query, tab):
         while True:
             tab_size = self.core_sizes[tab]
-
             end_ctid, start_ctid = self.try_binary_halving(query, tab)
             if end_ctid is None:  # could not reduce anymore
                 break
@@ -250,3 +230,4 @@ class NMinimizer(Minimizer):
             else:
                 lval.append(v)
         return tuple(lval)
+
