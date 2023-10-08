@@ -120,7 +120,7 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
     if datatype == 'date':
         yes = int((right - left).days) > cutoff
     else:
-        yes = int((right - left)) > cutoff
+        yes = (right - left) > cutoff
     return yes
 
 

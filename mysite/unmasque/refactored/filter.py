@@ -26,6 +26,7 @@ class Filter(WhereClause):
         query = self.extract_params_from_args(args)
         self.do_init()
         self.filter_predicates = self.get_filter_predicates(query)
+        self.logger.debug(self.filter_predicates)
         return self.filter_predicates
 
     def get_filter_predicates(self, query):
@@ -123,14 +124,22 @@ class Filter(WhereClause):
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
                     # break
-                    return mid_val
+                    if datatype=='numeric' or datatype=='float':
+                        return math.floor(mid_val)
+                    else:
+                        return mid_val
                 if isQ_result_empty(new_result):
                     new_val = get_val_plus_delta(datatype, mid_val, -1 * delta)
                     high = new_val
+                    self.logger.debug("high", high)
                 else:
                     low = mid_val
+                
                 self.revert_filter_changes(tabname)
-            return low
+            if (datatype=='numeric' or datatype=='float'):
+                return math.floor(low) 
+            else:
+                return low
 
         if operator == '>=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
@@ -145,7 +154,10 @@ class Filter(WhereClause):
                 else:
                     high = mid_val
                 self.revert_filter_changes(tabname)
-            return high
+            if (datatype=='numeric' or datatype=='float'):
+                return math.floor(high) 
+            else:
+                return high
 
         else:  # =, i.e. datatype == 'int', date
             is_low = True
