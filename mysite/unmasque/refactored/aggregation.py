@@ -8,7 +8,6 @@ from ..refactored.util.utils import is_number, get_val_plus_delta, get_dummy_val
 from ..src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ..src.util.constants import min_int_val, max_int_val
 from .projection import get_param_values_external
-from ..test.util.queries import Q3_2
 
 
 def get_k_value_for_number(a, b):
@@ -181,11 +180,8 @@ class Aggregation(GenerationPipeLineBase):
                     self.logger.debug(self.dependencies, result_index, \
                                                        key_list, tabname, temp_vals, result_index)
                     # print("Debug", self.dependencies, result_index)
-                    sele = self.app.doJob(Q3_2) # FOR DEBUG
-                    sele = self.app.doJob("select * from lineitem;")
-                    print("Select query") # FOR DEBUG
-                    for i in sele: # FOR DEBUG
-                        print(i) # FOR DEBUG
+                    #sele = self.app.doJob(Q3_2) # FOR DEBUG
+                    # 
                     
                     if len(self.dependencies[result_index]) > 1:
                         self.logger.debug("Temp values", temp_vals)  # FOR DEBUG
@@ -205,7 +201,7 @@ class Aggregation(GenerationPipeLineBase):
                             for row in vals_sp:
                                 l.append(row[local_attrib_index])
                             temp_ar.append((local_attrib, l))
-                        print("Temp Arr", temp_ar) # FOR DEBUG
+                        # print("Temp Arr", temp_ar) # FOR DEBUG
                         for i in range(len(temp_ar)):
                             if len(temp_ar[i][1]) < max_no_of_rows:
                                 while len(temp_ar[i][1]) < max_no_of_rows:
@@ -243,8 +239,8 @@ class Aggregation(GenerationPipeLineBase):
                     new_result = self.app.doJob(query)
                     self.logger.debug("New Result", new_result) # FOR DEBUG
                     self.logger.debug("Comaparison", agg_array) # FOR DEBUG
-                    print("New Result", new_result) # FOR DEBUG
-                    print("Comaparison", agg_array) # FOR DEBUG
+                    # print("New Result", new_result) # FOR DEBUG
+                    # print("Comaparison", agg_array) # FOR DEBUG
                     if isQ_result_empty(new_result):
                         self.logger.error('some error in generating new database. '
                                           'Result is empty. Can not identify aggregation')
