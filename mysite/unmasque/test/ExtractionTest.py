@@ -412,6 +412,9 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         print(eq)
         self.conn.closeConnection()
+    def test_6_mul(self):
+        for i in range(10):
+            self.test_extraction_Q6()
 
 
 if __name__ == '__main__':
