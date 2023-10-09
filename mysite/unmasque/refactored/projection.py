@@ -304,6 +304,7 @@ class Projection(GenerationPipeLineBase):
             attrib_idx = 0
             while attrib_idx < len(attrib_list):
                 attrib = attrib_list[attrib_idx]
+                self.logger.debug("Attrib", attrib)
                 if attrib in to_be_skipped:
                     attrib_idx += 1
                     continue
