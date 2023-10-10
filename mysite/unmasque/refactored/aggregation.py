@@ -140,6 +140,15 @@ class Aggregation(GenerationPipeLineBase):
                 # check if it is a key attribute
                 key_list = next((elt for elt in self.global_join_graph if attrib in elt), [])
 
+                self.logger.debug("Group By Attribs", self.global_groupby_attributes)
+                self.logger.debug("Key attribs", key_list)
+                tc = False
+                for i in key_list:
+                    if i in self.global_groupby_attributes:
+                        tc = True
+                if tc:
+                    continue
+                self.logger.debug("Not groupby", attrib)
                 # Attribute Filtering
                 if attrib in self.global_groupby_attributes:
                     continue
@@ -171,6 +180,9 @@ class Aggregation(GenerationPipeLineBase):
                     self.logger.debug(self.dependencies, result_index, \
                                                        key_list, tabname, temp_vals, result_index)
                     # print("Debug", self.dependencies, result_index)
+                    #sele = self.app.doJob(Q3_2) # FOR DEBUG
+                    # 
+                    
                     if len(self.dependencies[result_index]) > 1:
                         self.logger.debug("Temp values", temp_vals)  # FOR DEBUG
                         s = 0
@@ -188,8 +200,12 @@ class Aggregation(GenerationPipeLineBase):
                             l = []
                             for row in vals_sp:
                                 l.append(row[local_attrib_index])
-                            temp_ar.append((local_attrib, tuple(l)))
-                        #print("Temp Arr", temp_ar) # FOR DEBUG
+                            temp_ar.append((local_attrib, l))
+                        # print("Temp Arr", temp_ar) # FOR DEBUG
+                        for i in range(len(temp_ar)):
+                            if len(temp_ar[i][1]) < max_no_of_rows:
+                                while len(temp_ar[i][1]) < max_no_of_rows:
+                                    temp_ar[i][1].append(temp_ar[i][1][0])
                         for i in range(max_no_of_rows):
                             inter_val = []
                             eqn = 0
@@ -224,11 +240,7 @@ class Aggregation(GenerationPipeLineBase):
                     self.logger.debug("New Result", new_result) # FOR DEBUG
                     self.logger.debug("Comaparison", agg_array) # FOR DEBUG
                     # print("New Result", new_result) # FOR DEBUG
-                    # sele = self.app.doJob("select * from lineitem, orders where l_orderkey=o_orderkey;") # FOR DEBUG
-                    # print("Select query") # FOR DEBUG
-                    # for i in sele: # FOR DEBUG
-                    #     print(i) # FOR DEBUG
-                    #print("Comaparison", agg_array) # FOR DEBUG
+                    # print("Comaparison", agg_array) # FOR DEBUG
                     if isQ_result_empty(new_result):
                         self.logger.error('some error in generating new database. '
                                           'Result is empty. Can not identify aggregation')
@@ -267,6 +279,7 @@ class Aggregation(GenerationPipeLineBase):
                 insert_values = []
 
                 for attrib_inner in attrib_list_inner:
+                    #self.logger.debug("attribs", attrib, attrib_inner)
                     if not flag:
                         att_order += attrib_inner + ","
                     if (attrib_inner == attrib or attrib_inner in key_list) and k == no_of_rows - 1:
