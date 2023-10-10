@@ -303,129 +303,126 @@ class Projection(GenerationPipeLineBase):
         dep_list = []
         # print(index)
         to_be_skipped = []
-        try:
-            for tab_idx in range(len(self.core_relations)):
-                tabname = self.core_relations[tab_idx]
-                attrib_list = self.global_all_attribs[tab_idx]
-                coinc = 0  # Coincidence
-                update_value = None
-                attrib_idx = 0
-                while attrib_idx < len(attrib_list):
-                    attrib = attrib_list[attrib_idx]
-                    self.logger.debug("Attrib", attrib)
-                    if attrib in to_be_skipped:
-                        attrib_idx += 1
-                        continue
-                    # print(attrib)
-                    fil = 0
-                    join = 0
+        for tab_idx in range(len(self.core_relations)):
+            tabname = self.core_relations[tab_idx]
+            attrib_list = self.global_all_attribs[tab_idx]
+            coinc = 0  # Coincidence
+            update_value = None
+            attrib_idx = 0
+            while attrib_idx < len(attrib_list):
+                attrib = attrib_list[attrib_idx]
+                self.logger.debug("Attrib", attrib)
+                if attrib in to_be_skipped:
+                    attrib_idx += 1
+                    continue
+                # print(attrib)
+                fil = 0
+                join = 0
 
-                    # Check if the attribute is part of Filter or Join Predicates
-                    for pred in self.global_filter_predicates:
-                        if pred[0] == tabname and pred[1] == attrib:
-                            fil = pred
+                # Check if the attribute is part of Filter or Join Predicates
+                for pred in self.global_filter_predicates:
+                    if pred[0] == tabname and pred[1] == attrib:
+                        fil = pred
+                        break
+                for elt in self.global_join_graph:
+                    for val in elt:
+                        if val == attrib:
+                            join = elt
                             break
-                    for elt in self.global_join_graph:
-                        for val in elt:
-                            if val == attrib:
-                                join = elt
-                                break
-                        if join:
-                            break
-
-                    if fil:
-                        # Handle attributes involved in filter predicates.
-                        if not coinc:
-                            update_value = fil[3]  # Min Value for first test
-                        else:
-                            # Take Max value for to check for coincidence
-                            if 'date' in attrib_types_dict[(tabname, attrib)]:
-                                update_value = get_val_plus_delta('date', fil[4], -1)
-                            else:
-                                update_value = fil[4]
-                    update_multi = []
                     if join:
-                        # Code to be added later for attribs involved in join
-                        dummy_val = get_unused_dummy_val('int', value_used)
-                        value_used.append(attrib)
-                        value_used.append(dummy_val)
-                        if fil:
-                            dummy_val = update_value
-                        for val in join:
-                            to_be_skipped.append(val)
-                            update_multi.append(val)
-                            for idx, ele in enumerate(self.global_all_attribs):
-                                if val in ele:
-                                    update_multi.append(self.core_relations[idx])
-                            update_multi.append(dummy_val)
-                    self.logger.debug("Join Update", update_multi)
-                    if not fil and not join:
-                        if 'int' in attrib_types_dict[(tabname, attrib)] \
-                                or 'numeric' in attrib_types_dict[(tabname, attrib)]:
-                            update_value = get_unused_dummy_val('int', value_used)
-                            value_used[value_used.index(attrib) + 1] = update_value
+                        break
 
-                        elif 'date' in attrib_types_dict[(tabname, attrib)]:
-                            update_value = get_unused_dummy_val('date', value_used)
-                            value_used[value_used.index(attrib) + 1] = update_value
-
-                        elif 'boolean' in attrib_types_dict[(tabname, attrib)]:
-                            if not coinc:
-                                update_value = constants.dummy_boolean
-                            else:
-                                update_value = not update_value
-                        elif 'bit varying' in attrib_types_dict[(tabname, attrib)]:
-                            if not coinc:
-                                update_value = constants.dummy_varbit
-                            else:
-                                update_value += format(1, 'b')
+                if fil:
+                    # Handle attributes involved in filter predicates.
+                    if not coinc:
+                        update_value = fil[3]  # Min Value for first test
+                    else:
+                        # Take Max value for to check for coincidence
+                        if 'date' in attrib_types_dict[(tabname, attrib)]:
+                            update_value = get_val_plus_delta('date', fil[4], -1)
                         else:
-                            update_value = get_unused_dummy_val('char', value_used)
-                            self.logger.debug("Char", update_value)
-                            value_used[value_used.index(attrib) + 1] = update_value
-                    if 'char' in attrib_types_dict[(tabname, attrib)] or 'date' in attrib_types_dict[(tabname, attrib)]:
-                        self.logger.debug("if pred")
-                        update_value = f"'{update_value}'"
-                    # print("updated", attrib, update_value)
-                    if not join:
-                        self.logger.debug("Updated values", attrib, update_value)
-                        self.update_attrib_in_table(attrib, update_value, tabname)
-                    else:
-                        self.logger.debug("Updated values", attrib, update_multi)
-                        for i in range(0, len(update_multi), 3):
-                            self.update_attrib_in_table(update_multi[i], update_multi[i + 2], update_multi[i + 1])
-                    # Current Problem with joins, if the attribute is part of join change the corresponding ones as well.
-                    '''
-                    following code is for debugging. Once issue gets resolved, please delete it.
-                    ------ DEBUG START
-                    '''
-                    res, _ = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
-                    self.logger.debug("------ DEBUG START")
-                    self.logger.debug(tabname, " has: ", res)
-                    self.logger.debug("------ DEBUG END")
-                    '''
-                    ------ DEBUG END
-                '''
+                            update_value = fil[4]
+                update_multi = []
+                if join:
+                    # Code to be added later for attribs involved in join
+                    dummy_val = get_unused_dummy_val('int', value_used)
+                    value_used.append(attrib)
+                    value_used.append(dummy_val)
+                    if fil:
+                        dummy_val = update_value
+                    for val in join:
+                        to_be_skipped.append(val)
+                        update_multi.append(val)
+                        for idx, ele in enumerate(self.global_all_attribs):
+                            if val in ele:
+                                update_multi.append(self.core_relations[idx])
+                        update_multi.append(dummy_val)
+                self.logger.debug("Join Update", update_multi)
+                if not fil and not join:
+                    if 'int' in attrib_types_dict[(tabname, attrib)] \
+                            or 'numeric' in attrib_types_dict[(tabname, attrib)]:
+                        update_value = get_unused_dummy_val('int', value_used)
+                        value_used[value_used.index(attrib) + 1] = update_value
 
-                    self.logger.debug("Prev", prev_res)
-                    new_result = self.app.doJob(query)
-                    self.logger.debug("New", new_result)
-                    if prev_res[1][index] != new_result[1][index]:
-                        dep_list.append((tabname, attrib))
-                        # prev_res = new_result
-                        attrib_idx += 1
-                        coinc = 0
-                    elif coinc == 0:
-                        # Try again to check for coincidence
-                        coinc = 1
-                    else:
-                        # Not a coincidence
+                    elif 'date' in attrib_types_dict[(tabname, attrib)]:
+                        update_value = get_unused_dummy_val('date', value_used)
+                        value_used[value_used.index(attrib) + 1] = update_value
 
-                        coinc = 0
-                        attrib_idx += 1
-                    prev_res = new_result
-        except Exception as e:
-            self.logger.error("Error", e)
+                    elif 'boolean' in attrib_types_dict[(tabname, attrib)]:
+                        if not coinc:
+                            update_value = constants.dummy_boolean
+                        else:
+                            update_value = not update_value
+                    elif 'bit varying' in attrib_types_dict[(tabname, attrib)]:
+                        if not coinc:
+                            update_value = constants.dummy_varbit
+                        else:
+                            update_value += format(1, 'b')
+                    else:
+                        update_value = get_unused_dummy_val('char', value_used)
+                        self.logger.debug("Char", update_value)
+                        value_used[value_used.index(attrib) + 1] = update_value
+                if 'char' in attrib_types_dict[(tabname, attrib)] or 'date' in attrib_types_dict[(tabname, attrib)]:
+                    self.logger.debug("if pred")
+                    update_value = f"'{update_value}'"
+                # print("updated", attrib, update_value)
+                if not join:
+                    self.logger.debug("Updated values", attrib, update_value)
+                    self.update_attrib_in_table(attrib, update_value, tabname)
+                else:
+                    self.logger.debug("Updated values", attrib, update_multi)
+                    for i in range(0, len(update_multi), 3):
+                        self.update_attrib_in_table(update_multi[i], update_multi[i + 2], update_multi[i + 1])
+                # Current Problem with joins, if the attribute is part of join change the corresponding ones as well.
+            #     '''
+            #     following code is for debugging. Once issue gets resolved, please delete it.
+            #     ------ DEBUG START
+            #     '''
+            #     res, _ = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
+            #     self.logger.debug("------ DEBUG START")
+            #     self.logger.debug(tabname, " has: ", res)
+            #     self.logger.debug("------ DEBUG END")
+            #     '''
+            #     ------ DEBUG END
+            # '''
+
+                self.logger.debug("Prev", prev_res)
+                new_result = self.app.doJob(query)
+                self.logger.debug("New", new_result)
+                if prev_res[1][index] != new_result[1][index]:
+                    dep_list.append((tabname, attrib))
+                    # prev_res = new_result
+                    attrib_idx += 1
+                    coinc = 0
+                elif coinc == 0:
+                    # Try again to check for coincidence
+                    coinc = 1
+                else:
+                    # Not a coincidence
+
+                    coinc = 0
+                    attrib_idx += 1
+                prev_res = new_result
         return dep_list, prev_res
 
     def find_solution_on_multi(self, attrib_types_dict, projected_attrib, projection_names, projection_dep, query):
