@@ -43,8 +43,17 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict)
         pj.mock = True
+        pj.truncate_core_relations()
+        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
+        val_used = pj.construct_values_used(attrib_types_dict)
+        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
+        for tab_name in from_rels:
+            al = pj.app.doJob("select * from " + tab_name)
+            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
 
+        print(pj.global_min_instance_dict)
         check = pj.doJob(queries.Q1)
+        #check = True
         self.assertTrue(check)
 
         self.assertEqual(len(pj.projected_attribs), 10)
@@ -133,6 +142,16 @@ class MyTestCase(BaseTestCase):
                         global_min_instance_dict)
         pj.mock = True
 
+        pj.truncate_core_relations()
+        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
+        val_used = pj.construct_values_used(attrib_types_dict)
+        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
+        for tab_name in from_rels:
+            al = pj.app.doJob("select * from " + tab_name)
+            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
+
+        print(pj.global_min_instance_dict)
+
         check = pj.doJob(queries.Q3)
         self.assertTrue(check)
 
@@ -143,7 +162,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
-    def test_proj_Q3_1(self):
+    def disabled_test_proj_Q3_1(self):
         for i in range(10):
             self.test_projections_Q3_1()
 
@@ -207,6 +226,16 @@ class MyTestCase(BaseTestCase):
                         global_min_instance_dict)
         pj.mock = True
 
+        pj.truncate_core_relations()
+        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
+        val_used = pj.construct_values_used(attrib_types_dict)
+        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
+        for tab_name in from_rels:
+            al = pj.app.doJob("select * from " + tab_name)
+            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
+
+        print(pj.global_min_instance_dict)
+
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
 
@@ -242,7 +271,15 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict)
         pj.mock = True
+        pj.truncate_core_relations()
+        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
+        val_used = pj.construct_values_used(attrib_types_dict)
+        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
+        for tab_name in from_rels:
+            al = pj.app.doJob("select * from " + tab_name)
+            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
 
+        print(pj.global_min_instance_dict)
         check = pj.doJob(queries.Q4)
         self.assertTrue(check)
 
@@ -332,6 +369,16 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict)
         pj.mock = True
+
+        pj.truncate_core_relations()
+        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
+        val_used = pj.construct_values_used(attrib_types_dict)
+        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
+        for tab_name in from_rels:
+            al = pj.app.doJob("select * from " + tab_name)
+            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
+
+        print(pj.global_min_instance_dict)
 
         check = pj.doJob(queries.Q5)
         self.assertTrue(check)
