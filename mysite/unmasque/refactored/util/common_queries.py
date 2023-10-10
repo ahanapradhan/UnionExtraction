@@ -152,7 +152,7 @@ def select_max_ctid(tab):
 
 
 def select_start_ctid_of_any_table():
-    return '(0, 1)'
+    return '(0,1)'
 
 
 def hashtext_query(tab):
