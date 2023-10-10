@@ -122,7 +122,7 @@ class Minimizer(Base):
         super().doJob(*args)
         if self.mock:
             self.restore_d_min()
-            # self.see_d_min()
+            self.see_d_min()
         return self.result
 
     def see_d_min(self):

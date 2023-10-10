@@ -4,8 +4,7 @@ from datetime import date
 from ..util.constants import DONE, NO_REDUCTION
 from ...refactored.abstract.MinimizerBase import Minimizer
 from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view, select_previous_ctid, \
-    alter_view_rename_to, create_table_as_select_star_from, \
-    get_tabname_2, get_star, drop_table_cascade, select_start_ctid_of_any_table
+    get_row_count, select_start_ctid_of_any_table, drop_table
 
 
 def is_ctid_less_than(x, end_ctid):
@@ -22,6 +21,16 @@ def is_ctid_greater_than(x, end_ctid):
     exes = ex.split(',')
     eces = ec.split(',')
     return (int(exes[0]) == int(eces[0]) and int(exes[1]) > int(eces[1])) or (int(exes[0]) > int(eces[0]))
+
+
+def is_ctid_equal(one_ctid, other_ctid):
+    one = one_ctid[1:-1]
+    other = other_ctid[1:-1]
+    one_sp = one.split(',')
+    other_sp = other.split(',')
+    one_sp_i = [int(x) for x in one_sp]
+    other_sp_i = [int(x) for x in other_sp]
+    return one_sp_i == other_sp_i
 
 
 def get_ctid_one_less(ctid):
@@ -54,9 +63,6 @@ class NMinimizer(Minimizer):
         query = self.extract_params_from_args(args)
         for tab in self.core_relations:
             self.minimize_table(query, tab)
-            res, des = self.connectionHelper.execute_sql_fetchall(get_star(tab))
-            for row in res:
-                self.logger.debug(row)
         return True
 
     def minimize_table(self, query, tab):
@@ -76,57 +82,33 @@ class NMinimizer(Minimizer):
         self.must_include[tab].append(c2tid)
 
         self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab))])
-        while str(self.may_exclude[tab][0]) != select_start_ctid_of_any_table():
-            check = self.do_row_by_row_elimination(query, start_ctid, tab)
-            if check == DONE or check == NO_REDUCTION:
-                self.connectionHelper.execute_sql([drop_view(tab),
-                                                   alter_table_rename_to(get_tabname_1(tab), tab)])
-                return
-        '''
-        else:
-            while self.may_exclude[tab][0] != select_start_ctid_of_any_table():
-                self.do_row_by_row_elimination(query, start_ctid, tab)
+        check = self.do_row_by_row_elimination(query, start_ctid, tab)
 
-            
-            must_ctid = check
-            row, _ = self.connectionHelper.execute_sql_fetchall(f"select * from {get_tabname_1(tab)} where ctid = '{must_ctid}';")
-            # convert the view into a table
-            self.connectionHelper.execute_sql([alter_view_rename_to(tab, get_tabname_2(tab)),
-                                               create_table_as_select_star_from(tab, get_tabname_2(tab))])
-            self.logger.debug(tab, " is now a table")
+        self.connectionHelper.execute_sql([drop_view(tab)])
+        self.create_table_with_selected_ctids(tab, get_tabname_1(tab))
+        self.connectionHelper.execute_sql([drop_table(get_tabname_1(tab))])
 
-            for val in row:
-                self.logger.debug(val)
-                fval = self.format_insert_values(val)
-                self.connectionHelper.execute_sql([f"Insert into {tab} values {fval};"])
-            
-            if self.core_sizes[tab] < size:
-                self.connectionHelper.execute_sql([drop_table_cascade(get_tabname_1(tab))])
-                self.minimize_table(query, tab)
-            '''
+        count = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tab))
 
-        self.core_sizes[tab] = len(self.must_include[tab])
+        self.core_sizes[tab] = count
         self.logger.debug(self.core_sizes[tab])
 
     def do_row_by_row_elimination(self, query, start_ctid, tab):
         mandatory_tuple = self.must_include[tab][-1]
-        size = self.core_sizes[tab]
         while True:
+            size = self.core_sizes[tab]
             self.connectionHelper.execute_sql([drop_view(tab)])
             self.swicth_transaction(tab)
             ok = self.is_ok_to_eliminate_previous_tuple(tab, query, start_ctid)
-            if ok == DONE:
-                return DONE
             self.logger.debug("may exclude", self.may_exclude[tab])
             self.logger.debug("must include", self.must_include[tab])
             if ok and size == self.core_sizes[tab]:
+                self.must_include[tab].pop()
                 return NO_REDUCTION
-            '''
-            if not ok and self.must_include[tab][0] != mandatory_tuple:
-                found another tuple which needs to be preserved. 
-                Now we can try bin halving on the remaining data to speed up the rest of the search
-                return self.must_include[tab][0]
-            '''
+            self.logger.debug(select_start_ctid_of_any_table(), self.may_exclude[tab][0])
+            if is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
+                self.must_include[tab].pop()
+                return DONE
 
     def do_binary_halving_till_possible(self, query, tab):
         while True:
@@ -140,6 +122,16 @@ class NMinimizer(Minimizer):
             if tab_size == self.core_sizes[tab]:  # did not reduce anymore
                 break
         return end_ctid, start_ctid
+
+    def create_table_with_selected_ctids(self, tab, fromtab):
+        include_ctids = []
+        for x in self.must_include[tab]:
+            include_ctids.append(f" ctid = '{x}' ")
+        include_str = " or ".join(include_ctids)
+
+        create_cmd = f"Create table {tab} as Select * From {fromtab} " \
+                     f"Where {include_str};"
+        self.connectionHelper.execute_sql([create_cmd])
 
     def is_ok_to_eliminate_previous_tuple(self, tab, query, start_ctid):
         end_ctid = self.must_include[tab][-1]

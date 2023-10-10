@@ -1,4 +1,3 @@
-import datetime
 import unittest
 
 from mysite.unmasque.refactored.executable import Executable
@@ -32,7 +31,8 @@ class MyTestCase(BaseTestCase):
 
     def test_for_multiple_relations(self):
         self.conn.connectUsingParams()
-        relations = [self.tab_customer]
+        relations = [self.tab_nation, self.tab_customer]
+        # relations = [self.tab_customer]
         nm = NMinimizer(self.conn, relations, tpchSettings.all_size)
         nm.mock = True
 
@@ -43,8 +43,8 @@ class MyTestCase(BaseTestCase):
         print(query)
         check = nm.doJob(query)
         self.assertTrue(check)
-        # self.assertEqual(2, nm.core_sizes[self.tab_nation])
-        # self.assertEqual(2, nm.core_sizes[self.tab_customer])
+        self.assertEqual(2, nm.core_sizes[self.tab_nation])
+        self.assertEqual(2, nm.core_sizes[self.tab_customer])
         app = Executable(self.conn)
         res = app.doJob(query)
         self.assertTrue(not isQ_result_empty(res))
@@ -79,7 +79,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         self.assertEqual(1, nm.core_sizes[self.tab_customer])
         self.assertEqual(1, nm.core_sizes[self.tab_supplier])
-        # self.assertEqual(2, nm.core_sizes[self.tab_nation])
+        self.assertEqual(2, nm.core_sizes[self.tab_nation])
         app = Executable(self.conn)
         res = app.doJob(query)
         self.assertTrue(not isQ_result_empty(res))
@@ -139,10 +139,10 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         self.assertEqual(1, nm.core_sizes[self.tab_customer])
         self.assertEqual(1, nm.core_sizes[self.tab_supplier])
-        # self.assertEqual(2, nm.core_sizes[self.tab_nation])
+        self.assertEqual(2, nm.core_sizes[self.tab_nation])
         app = Executable(self.conn)
         res = app.doJob(query)
-        self.assertTrue(not isQ_result_empty(query))
+        self.assertTrue(not isQ_result_empty(res))
         self.conn.closeConnection()
 
     def test_adonis_case_2_simple_on_orders(self):
