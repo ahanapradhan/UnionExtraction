@@ -7,7 +7,7 @@ import numpy as np
 from .util.common_queries import get_star
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
-    get_val_plus_delta, get_char, get_dummy_val_for
+    get_val_plus_delta, get_char
 from ..src.util import constants
 
 
@@ -384,17 +384,6 @@ class Projection(GenerationPipeLineBase):
                     for i in range(0, len(update_multi), 3):
                         self.update_attrib_in_table(update_multi[i], update_multi[i + 2], update_multi[i + 1])
                 # Current Problem with joins, if the attribute is part of join change the corresponding ones as well.
-                '''
-                following code is for debugging. Once issue gets resolved, please delete it.
-                ------ DEBUG START
-                '''
-                res, _ = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
-                self.logger.debug("------ DEBUG START")
-                self.logger.debug(tabname, " has: ", res)
-                self.logger.debug("------ DEBUG END")
-                '''
-                ------ DEBUG END
-               '''
 
                 self.logger.debug("Prev", prev_res)
                 new_result = self.app.doJob(query)

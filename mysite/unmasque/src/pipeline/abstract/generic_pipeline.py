@@ -1,9 +1,9 @@
 import functools
 import threading
 
+from ...util.Log import Log
 from ....refactored.result_comparator import ResultComparator
 from ...core.elapsed_time import create_zero_time_profile
-from ...util.Log import Log
 from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING
 
 
