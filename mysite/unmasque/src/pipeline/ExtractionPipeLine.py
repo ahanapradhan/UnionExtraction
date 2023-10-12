@@ -2,7 +2,7 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, WRONG
+    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.equi_join import EquiJoin
@@ -12,7 +12,6 @@ from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
-from ...refactored.result_comparator import ResultComparator
 from ...refactored.view_minimizer import ViewMinimizer
 
 
