@@ -162,15 +162,18 @@ class Projection(GenerationPipeLineBase):
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
         # print(query)
+        # q = self.app.doJob("select * from lineitem;")
+        # for i in q:
+        #     self.logger.debug("min ", i)
         projected_attrib, projection_names, value_used, check = \
             self.find_projection_on_unfiltered_attribs(attrib_types_dict, query)
         if not check:
             return False
-
+        self.logger.debug("First step done", projected_attrib)
         check = self.find_projection_on_filtered_attribs(attrib_types_dict, projected_attrib, query, value_used)
         if not check:
             return False
-
+        self.logger.debug("Second step done")
         projection_dep = self.find_dependencies_on_multi(attrib_types_dict, projected_attrib, projection_names, query)
         projection_sol = self.find_solution_on_multi(attrib_types_dict, projected_attrib, projection_names,
                                                      projection_dep, query)
@@ -186,7 +189,7 @@ class Projection(GenerationPipeLineBase):
         # some projections still not identified.
         newfilterList = copy.deepcopy(self.global_filter_predicates)
         while '' in projected_attrib and len(newfilterList):
-            self.truncate_core_relations()
+            #self.truncate_core_relations()
 
             curr_attrib, curr_value, value_used = construct_value_used_for_filtered_attribs(
                 attrib_types_dict, newfilterList, value_used)
@@ -195,7 +198,9 @@ class Projection(GenerationPipeLineBase):
                 add_value_used_for_one_filtered_attrib(attrib_types_dict, curr_attrib, curr_value, entry,
                                                        value_used)
 
-            value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+            #value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+            value_used = self.construct_value_used_with_dmin()
+            #self.logger.debug("Compare between\n", value_used, "\n", n_value_used)
             new_result = self.app.doJob(query)
             if isQ_result_empty(new_result):
                 self.logger.error("Unmasque: \n some error in generating new database. "
@@ -206,9 +211,10 @@ class Projection(GenerationPipeLineBase):
         return True
 
     def find_projection_on_unfiltered_attribs(self, attrib_types_dict, query):
-        self.truncate_core_relations()
-        value_used = self.construct_values_used(attrib_types_dict)
-        value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+        #self.truncate_core_relations()
+        #value_used = self.construct_values_used(attrib_types_dict)
+        #value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+        value_used = self.construct_value_used_with_dmin()
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
             self.logger.error("Unmasque: \n some error in generating new database. "
@@ -272,7 +278,7 @@ class Projection(GenerationPipeLineBase):
             newfilterList.remove(val)
 
     def find_dependencies_on_multi(self, attrib_types_dict, projected_attrib, projection_names, query):
-        self.truncate_core_relations()
+        #self.truncate_core_relations()
         projection_dep = []
         indices_to_check = []
         self.logger.debug("Projected Attrib", projected_attrib)
@@ -281,8 +287,9 @@ class Projection(GenerationPipeLineBase):
             projection_dep.append([])
             indices_to_check.append(i)
         self.logger.debug("Indices To check", indices_to_check)
-        value_used = self.construct_values_used(attrib_types_dict)
-        value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+        # value_used = self.construct_values_used(attrib_types_dict)
+        # value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+        value_used = self.construct_value_used_with_dmin()
         # Prev Result to check for changes
         prev_result = self.app.doJob(query)
         for idx in indices_to_check:
@@ -376,11 +383,14 @@ class Projection(GenerationPipeLineBase):
                         self.logger.debug("Char", update_value)
                         value_used[value_used.index(attrib) + 1] = update_value
                 if 'char' in attrib_types_dict[(tabname, attrib)] or 'date' in attrib_types_dict[(tabname, attrib)]:
+                    self.logger.debug("if pred")
                     update_value = f"'{update_value}'"
                 # print("updated", attrib, update_value)
                 if not join:
+                    self.logger.debug("Updated values", attrib, update_value)
                     self.update_attrib_in_table(attrib, update_value, tabname)
                 else:
+                    self.logger.debug("Updated values", attrib, update_multi)
                     for i in range(0, len(update_multi), 3):
                         self.update_attrib_in_table(update_multi[i], update_multi[i + 2], update_multi[i + 1])
                 # Current Problem with joins, if the attribute is part of join change the corresponding ones as well.
@@ -415,10 +425,13 @@ class Projection(GenerationPipeLineBase):
                 solution.append([])
                 self.param_list.append([])
             else:
-                self.truncate_core_relations()
-                value_used = self.construct_values_used(attrib_types_dict)
-                value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+                
+                #self.truncate_core_relations()
+                #value_used = self.construct_values_used(attrib_types_dict)
+                #value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+                value_used = self.construct_value_used_with_dmin()
                 prev_result = self.app.doJob(query)
+                self.logger.debug("Inside else", value_used)
                 solution.append(
                     self.get_solution(attrib_types_dict, projection_dep, projection_names, idx_pro, prev_result,
                                       value_used, query))
@@ -435,8 +448,8 @@ class Projection(GenerationPipeLineBase):
         local_param_list = []  # param_list for only this output column
         if n == 1 and ('int' not in attrib_types_dict[(dep[0][0], dep[0][1])]) and (
                 'numeric' not in attrib_types_dict[(dep[0][0], dep[0][1])]):
-            self.param_list.append([])
-            return []
+            self.param_list.append([dep[0][1]])
+            return [[1]]
         for ele in dep:
             # Construct a list of list that will be used to check if the attrib belongs to filter predicate
             fil = 0
@@ -563,6 +576,15 @@ class Projection(GenerationPipeLineBase):
                     temp_str += "*"
             final_lis.append(temp_str)
         return final_lis
+
+    def construct_value_used_with_dmin(self):
+        used_val = []
+        for tab_name in self.global_min_instance_dict:
+            vals = self.global_min_instance_dict[tab_name]
+            for idx in range(len(vals[0])):
+                used_val.append(vals[0][idx])
+                used_val.append(vals[1][idx])
+        return used_val
 
 
 def get_param_values_external(coeff_arr):

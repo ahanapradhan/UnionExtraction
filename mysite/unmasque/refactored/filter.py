@@ -144,6 +144,7 @@ class Filter(WhereClause):
         if operator == '>=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                #self.logger.debug(">= pred", mid_val, low, high)
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
                     break
@@ -155,7 +156,7 @@ class Filter(WhereClause):
                     high = mid_val
                 self.revert_filter_changes(tabname)
             if (datatype=='numeric' or datatype=='float'):
-                return math.floor(high) 
+                return math.ceil(high) 
             else:
                 return high
 
