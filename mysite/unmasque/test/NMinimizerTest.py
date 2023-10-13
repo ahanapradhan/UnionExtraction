@@ -69,16 +69,19 @@ class MyTestCase(BaseTestCase):
 
     def test_adonis_case_1(self):
         self.conn.connectUsingParams()
-        relations = [self.tab_nation, self.tab_customer, self.tab_supplier]
+        relations = [self.tab_nation, self.tab_customer, self.tab_orders]
         nm = NMinimizer(self.conn, relations, tpchSettings.all_size)
         nm.mock = True
-        query = "SELECT n_name FROM customer, nation WHERE c_nationkey = n_nationkey AND c_acctbal > 4000 " \
-                "INTERSECT " \
-                "SELECT n_name FROM supplier, nation WHERE s_nationkey = n_nationkey AND s_acctbal > 4000;"
+        query = "select c_mktsegment as segment from customer,nation " \
+                "where c_acctbal < 3000 and c_nationkey = n_nationkey and n_name = 'BRAZIL' " \
+                "intersect " \
+                "select c_mktsegment from customer,nation,orders where " \
+                "c_acctbal between 1000 and 5000 and c_nationkey=n_nationkey and c_custkey = o_custkey " \
+                "and n_name = 'ARGENTINA';"
         check = nm.doJob(query)
         self.assertTrue(check)
         self.assertEqual(1, nm.core_sizes[self.tab_customer])
-        self.assertEqual(1, nm.core_sizes[self.tab_supplier])
+        self.assertEqual(1, nm.core_sizes[self.tab_orders])
         self.assertEqual(2, nm.core_sizes[self.tab_nation])
         app = Executable(self.conn)
         res = app.doJob(query)
@@ -127,7 +130,7 @@ class MyTestCase(BaseTestCase):
         nm.see_d_min()
         self.conn.closeConnection()
 
-    def test_adonis_case_1(self):
+    def test_adonis_case_1_(self):
         self.conn.connectUsingParams()
         relations = [self.tab_nation, self.tab_customer, self.tab_supplier]
         nm = NMinimizer(self.conn, relations, tpchSettings.all_size)

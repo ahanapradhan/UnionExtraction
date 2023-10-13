@@ -1,6 +1,6 @@
 (Select o_clerk as name, Sum(l_extendedprice) as total_price
 From orders, lineitem
-Where o_orderkey = l_orderkey and o_orderdate  <= '1995-01-02'
+Where o_orderkey = l_orderkey and o_orderdate  <= '1995-01-01'
 Group By o_clerk
 Order By total_price desc, name desc
 Limit 10)

@@ -105,9 +105,11 @@ class NMinimizer(Minimizer):
             if ok and size == self.core_sizes[tab]:
                 self.must_include[tab].pop()
                 return NO_REDUCTION
-            self.logger.debug(select_start_ctid_of_any_table(), self.may_exclude[tab][0])
-            if is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
+            # self.logger.debug(select_start_ctid_of_any_table(), self.may_exclude[tab][0])
+            if len(self.may_exclude[tab]) and is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
                 self.must_include[tab].pop()
+                return DONE
+            elif not len(self.may_exclude[tab]):
                 return DONE
 
     def do_binary_halving_till_possible(self, query, tab):
@@ -167,7 +169,7 @@ class NMinimizer(Minimizer):
 
     def insert_previous_ctid_list(self, ctid_list, end_ctid, tab):
         prev_ctid = self.calculate_previous_ctid(end_ctid, tab)
-        if prev_ctid is not None:
+        if prev_ctid is not None and not (prev_ctid in ctid_list):
             ctid_list.append(prev_ctid)
 
     def calculate_previous_ctid(self, end_ctid, tab):
