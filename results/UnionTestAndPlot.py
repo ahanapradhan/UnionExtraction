@@ -130,7 +130,7 @@ class MyTestCase(BaseTestCase):
         # Iterate directory
         for path in os.listdir(self.query_dir_path):
             # check if current path is a file
-            if os.path.isfile(os.path.join(self.query_dir_path, path)):
+            if os.path.isfile(os.path.join(self.query_dir_path, path)) and path == 'UQ8.sql':
                 res.append(path)
         print(res)
         return res

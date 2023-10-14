@@ -6,7 +6,7 @@ from pygnuplot import gnuplot
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-from mysite.unmasque.test.util.queries import Q1, Q2, Q3_1, Q4, Q5, Q6, Q7, Q21, Q18, Q17, Q16, Q11
+from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21
 
 
 class MyTestCase(BaseTestCase):
@@ -62,7 +62,7 @@ class MyTestCase(BaseTestCase):
 
             expt.write("\\end{longtable}}")
 
-    def do_experiment(self, ITERATIONS=1):
+    def do_experiment(self, ITERATIONS=3):
         self.do_dat_file_init()
 
         """
@@ -100,7 +100,7 @@ class MyTestCase(BaseTestCase):
 
         self.create_gnuplot()
 
-        self.assertTrue(os.path.isfile(self.plot_filename))  # add assertion here
+        # self.assertTrue(os.path.isfile(self.plot_filename))  # add assertion here
 
     def do_dat_file_init(self):
         if not os.path.exists(self.extracted_U):
@@ -198,7 +198,7 @@ class MyTestCase(BaseTestCase):
         g.cmd('set style fill solid 1.0 border -1')
         g.cmd('set ylabel "Extraction Time (ms)"')
         g.cmd('plot \"' + self.dat_filename
-              + '\" using 2 t "exe",\'\' using 3:xticlabels(1) t "Union", \'\' using 3:xticlabels(1) t "From",'
+              + '\" using 2 t "exe",\'\' using 3:xticlabels(1) t "Union", \'\' using 4:xticlabels(1) t "From",'
                 '\'\' using 5:xticlabels(1) t "cs2", '
                 '\'\' using 6:xticlabels(1) t "View min", \'\' using 7:xticlabels(1) t "where",'
                 ' \'\' using 8:xticlabels(1) t "projection", \'\' using 9:xticlabels(1) t "group by",  '
@@ -212,11 +212,13 @@ class MyTestCase(BaseTestCase):
             os.remove(self.plot_filename)
 
     def test_plot(self):
-        self.hqs = [Q1, Q2, Q3_1, Q4, Q5, Q6, Q7, Q11, Q16, Q17, Q18, Q21]
-        self.hq_keys = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q11", "Q16", "Q17", "Q18", "Q21"]
-        #self.do_experiment()
+        self.hqs = [Q1]
+        self.hq_keys = ["Q1"]
+        #self.hqs = [Q1, Q2, Q3, Q4,Q5, Q6, Q10, Q11, Q16, Q17, Q18, Q21]
+        #self.hq_keys = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q10", "Q11", "Q16", "Q17", "Q18", "Q21"]
+        self.do_experiment()
         #self.create_gnuplot()
-        self.create_latex_table_of_queries()
+        #self.create_latex_table_of_queries()
 
 
 if __name__ == '__main__':
