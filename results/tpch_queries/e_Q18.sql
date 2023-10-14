@@ -1,5 +1,6 @@
-(Select p_brand, p_type, p_size, Count(*) as supplier_cnt
-From partsupp, part
-Where p_partkey = ps_partkey and p_type LIKE 'SMALL PLATED%' and p_size  >= 4
-Group By p_brand, p_type, p_size
-Order By p_brand asc, p_type asc, p_size asc);
+(Select c_name, o_orderdate, o_totalprice, Sum(l_quantity) as sum
+From customer, orders, lineitem
+Where c_custkey = o_custkey and o_orderkey = l_orderkey and c_phone LIKE '27-%'
+Group By c_name, o_totalprice, o_orderdate
+Order By o_orderdate asc, o_totalprice desc, c_name asc
+Limit 100);
