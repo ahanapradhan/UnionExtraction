@@ -57,14 +57,7 @@ class Minimizer(Base):
 
     def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
         self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
-        start_page, start_row = self.get_boundary("min", tabname1)
-        end_page, end_row = self.get_boundary("max", tabname1)
-        start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
-        end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
-        mid_ctid1, mid_ctid2 = self.calculate_mid_ctids(start_page, end_page, core_sizes[tabname])
-
-        if start_ctid == mid_ctid1:
-            mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
+        end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
 
         if mid_ctid1 is None:
             self.connectionHelper.execute_sql([alter_table_rename_to(tabname1, tabname)])
@@ -79,6 +72,16 @@ class Minimizer(Base):
                                                                       tabname,
                                                                       tabname1)
         return end_ctid, start_ctid
+
+    def get_mid_ctids(self, core_sizes, tabname, tabname1):
+        start_page, start_row = self.get_boundary("min", tabname1)
+        end_page, end_row = self.get_boundary("max", tabname1)
+        start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
+        end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
+        mid_ctid1, mid_ctid2 = self.calculate_mid_ctids(start_page, end_page, core_sizes[tabname])
+        if start_ctid == mid_ctid1:
+            mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
+        return end_ctid, mid_ctid1, mid_ctid2, start_ctid
 
     def get_boundary(self, min_or_max, tabname):
         m_ctid = self.connectionHelper.execute_sql_fetchone_0(get_ctid_from(min_or_max, tabname))

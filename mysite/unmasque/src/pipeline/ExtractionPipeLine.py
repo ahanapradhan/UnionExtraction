@@ -50,7 +50,6 @@ class ExtractionPipeLine(GenericPipeLine):
                                   key_lists):  # get core_relations, key_lists from from clause
 
         time_profile = create_zero_time_profile()
-        # core_relations = ["customer", "orders", "lineitem"]
 
         '''
         Correlated Sampling

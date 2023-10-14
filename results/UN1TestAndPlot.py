@@ -62,7 +62,7 @@ class MyTestCase(BaseTestCase):
 
             expt.write("\\end{longtable}}")
 
-    def do_experiment(self, ITERATIONS=3):
+    def do_experiment(self, ITERATIONS=1):
         self.do_dat_file_init()
 
         """
@@ -150,8 +150,8 @@ class MyTestCase(BaseTestCase):
     def extract_query_once(self, i, query, sql, t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling,
                            t_union, t_from_clause, t_view_min, t_where_clause):
         self.pipeline = ExtractionPipeLine(self.conn)
-        u_Q = self.pipeline.extract(query)
-        self.assertTrue(u_Q is not None)
+        u_Q = self.pipeline.doJob(query)
+        self.assertTrue(self.pipeline.correct)
         print(u_Q)
         if not i:
             with open(self.extracted_U + "/e_" + sql, "w") as myfile:
@@ -212,12 +212,12 @@ class MyTestCase(BaseTestCase):
             os.remove(self.plot_filename)
 
     def test_plot(self):
-        #self.hqs = [Q5]
-        #self.hq_keys = ["Q5"]
-        self.hqs = [Q1, Q2, Q3, Q4, Q5, Q6, Q10, Q11, Q16, Q17, Q18, Q21]
-        self.hq_keys = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q10", "Q11", "Q16", "Q17", "Q18", "Q21"]
-        #self.do_experiment()
-        self.create_gnuplot()
+        self.hqs = [Q5]
+        self.hq_keys = ["Q5"]
+        #self.hqs = [Q1, Q2, Q3, Q4, Q5, Q6, Q10, Q11, Q16, Q17, Q18, Q21]
+        #self.hq_keys = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q10", "Q11", "Q16", "Q17", "Q18", "Q21"]
+        self.do_experiment()
+        #self.create_gnuplot()
         #self.create_latex_table_of_queries()
 
 

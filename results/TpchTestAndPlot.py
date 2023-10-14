@@ -50,7 +50,7 @@ class MyTestCase(BaseTestCase):
                 print(hidden_query)
                 expt.write(hidden_query + "&\n")
 
-                with open(os.path.join(self.extracted_U, "e_" + self.hq_keys[i]+".sql"), 'r') as file:
+                with open(os.path.join(self.extracted_U, "e_" + self.hq_keys[i] + ".sql"), 'r') as file:
                     content = file.read()
                     splited_data = content.splitlines()
                     extracted_query = ' '.join(splited_data)
@@ -87,10 +87,12 @@ class MyTestCase(BaseTestCase):
 
             for i in range(ITERATIONS):
                 t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_from_clause, t_view_min, t_where_clause = self.extract_query_once(
-                    i, query, str(self.hq_keys[idx]+".sql"), t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_from_clause,
+                    i, query, str(self.hq_keys[idx] + ".sql"), t_aggregate, t_groupby, t_limit, t_orderby, t_projection,
+                    t_sampling, t_union, t_from_clause,
                     t_view_min, t_where_clause)
 
-            dat_line = self.prepare_data(ITERATIONS, q_time, str(self.hq_keys[idx]+".sql"), t_aggregate, t_groupby, t_limit, t_orderby,
+            dat_line = self.prepare_data(ITERATIONS, q_time, str(self.hq_keys[idx] + ".sql"), t_aggregate, t_groupby,
+                                         t_limit, t_orderby,
                                          t_projection, t_sampling, t_union, t_from_clause, t_view_min, t_where_clause)
 
             with open(self.dat_filename, "a") as myfile:
@@ -150,8 +152,8 @@ class MyTestCase(BaseTestCase):
     def extract_query_once(self, i, query, sql, t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling,
                            t_union, t_from_clause, t_view_min, t_where_clause):
         self.pipeline = UnionPipeLine(self.conn)
-        u_Q = self.pipeline.extract(query)
-        self.assertTrue(u_Q is not None)
+        u_Q = self.pipeline.doJob(query)
+        self.assertTrue(self.pipeline.correct)
         print(u_Q)
         if not i:
             with open(self.extracted_U + "/e_" + sql, "w") as myfile:
@@ -212,13 +214,13 @@ class MyTestCase(BaseTestCase):
             os.remove(self.plot_filename)
 
     def test_plot(self):
-        self.hqs = [Q1]
-        self.hq_keys = ["Q1"]
-        #self.hqs = [Q1, Q2, Q3, Q4,Q5, Q6, Q10, Q11, Q16, Q17, Q18, Q21]
-        #self.hq_keys = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q10", "Q11", "Q16", "Q17", "Q18", "Q21"]
+        self.hqs = [Q2]
+        self.hq_keys = ["Q2"]
+        # self.hqs = [Q1, Q2, Q3, Q4,Q5, Q6, Q10, Q11, Q16, Q17, Q18, Q21]
+        # self.hq_keys = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q10", "Q11", "Q16", "Q17", "Q18", "Q21"]
         self.do_experiment()
-        #self.create_gnuplot()
-        #self.create_latex_table_of_queries()
+        # self.create_gnuplot()
+        # self.create_latex_table_of_queries()
 
 
 if __name__ == '__main__':

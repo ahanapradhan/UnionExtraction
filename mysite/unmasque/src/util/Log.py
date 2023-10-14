@@ -19,16 +19,17 @@ class Log(logging.Logger):
 
     def __init__(self, name, level):
         super().__init__(name, level)
-        # ch = logging.StreamHandler()
-        # ch.setLevel(level)
-        # ch.setFormatter(self.formatter)
-        # self.addHandler(ch)
         self.base_path = Path(__file__).parent.parent.parent.parent
         log_file = (self.base_path / "unmasque.log").resolve()
         fh = logging.FileHandler(log_file, 'a')
         fh.setLevel(level)
         fh.setFormatter(self.formatter)
         self.addHandler(fh)
+
+    def __del__(self):
+        fh = self.handlers[0]
+        self.removeHandler(fh)
+        fh.close()
 
     def debug(self, msg, *args):
         f_msg, f_args = get_format_args(msg, args)
