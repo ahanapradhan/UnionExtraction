@@ -49,7 +49,7 @@ def get_min_max_ctid(tab):
 
 
 def drop_view(tab):
-    return f"drop view if exists {tab};"
+    return f"drop view if exists {tab} cascade;"
 
 
 def get_tabname_1(tab):
@@ -70,6 +70,10 @@ def get_tabname_nep(tab):
 
 def get_tabname_2(tab):
     return f"{tab}2"
+
+
+def create_view_as(view, q):
+    return f"create view {view}  as {q}"
 
 
 def create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, view, tab):
