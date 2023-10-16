@@ -1,6 +1,7 @@
 import ast
 import copy
 import random
+import math
 
 import numpy as np
 
@@ -487,11 +488,11 @@ class Projection(GenerationPipeLineBase):
                 if fil_check[j]:
                     mi = fil_check[j][3]
                     ma = fil_check[j][4]
-                coeff[outer_idx][j] = random.randrange(mi, ma)
+                coeff[outer_idx][j] = random.randrange(math.ceil(mi), math.floor(ma))
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]
-            coeff[outer_idx][2 ** n - 1] = 1
+            coeff[outer_idx][2 ** n - 1] = 1.0
             if np.linalg.matrix_rank(coeff) > curr_rank:
                 curr_rank += 1
                 outer_idx += 1

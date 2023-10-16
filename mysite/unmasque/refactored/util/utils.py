@@ -141,6 +141,7 @@ def get_mid_val(datatype, high, low):
         mid_val = int((high + low) / 2)
     else:  # numeric
         mid_val = (high + low) / 2
+        mid_val = round(mid_val, 3)
     return mid_val
 
 

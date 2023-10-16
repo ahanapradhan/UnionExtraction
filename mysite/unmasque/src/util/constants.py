@@ -29,7 +29,7 @@ NO_ORDER = 'noorder'
 
 IDENTICAL_EXPR = "identical_expr_nc"
 # we use 1 and 999 to limit, otw overflow can occur
-pr_min = 1
+pr_min = -999
 pr_max = 999
 
 max_str_len = 500
