@@ -141,6 +141,5 @@ class MyTestCase(BaseTestCase):
         self.assertFalse(matched_diff)
         self.conn.closeConnection()
 
-
 if __name__ == '__main__':
     unittest.main()

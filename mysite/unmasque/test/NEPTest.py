@@ -179,6 +179,7 @@ class MyTestCase(BaseTestCase):
         check = o.doJob(query, Q_E)
         self.assertTrue(check)
         print(o.Q_E)
+
         self.assertTrue("Where l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31' and l_linenumber <> 4" in o.Q_E)
 
         self.conn.closeConnection()

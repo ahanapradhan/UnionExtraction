@@ -29,8 +29,10 @@ class WhereClause(MutationPipeLineBase):
 
     def do_init(self):
         for tabname in self.core_relations:
+
             res, desc = self.connectionHelper.execute_sql_fetchall(
                 get_column_details_for_table(self.connectionHelper.config.schema, tabname))
+
             tab_attribs = []
             tab_attribs.extend(row[0] for row in res)
             self.global_all_attribs.append(copy.deepcopy(tab_attribs))

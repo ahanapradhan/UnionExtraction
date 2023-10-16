@@ -155,7 +155,7 @@ class Filter(WhereClause):
                 else:
                     high = mid_val
                 self.revert_filter_changes(tabname)
-            if (datatype=='numeric' or datatype=='float'):
+            if datatype== 'numeric' or datatype== 'float':
                 return math.ceil(high) 
             else:
                 return high

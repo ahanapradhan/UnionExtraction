@@ -183,6 +183,7 @@ class Aggregation(GenerationPipeLineBase):
                     #sele = self.app.doJob(Q3_2) # FOR DEBUG
                     # 
                     
+
                     if len(self.dependencies[result_index]) > 1:
                         self.logger.debug("Temp values", temp_vals)  # FOR DEBUG
                         s = 0
@@ -231,7 +232,9 @@ class Aggregation(GenerationPipeLineBase):
                             mi = eqn if eqn < mi else mi
                             ma = eqn if eqn > ma else ma
                         self.logger.debug("no_of_rows ", max_no_of_rows)
+
                         #print("no_of_rows ", max_no_of_rows) # FOR DEBUG
+
                         av = (s / max_no_of_rows)
                         self.logger.debug("Temp Array", temp_ar)
                         self.logger.debug("SUM, AV, MIN, MAX", s, av, mi, ma)
@@ -239,8 +242,10 @@ class Aggregation(GenerationPipeLineBase):
                     new_result = self.app.doJob(query)
                     self.logger.debug("New Result", new_result) # FOR DEBUG
                     self.logger.debug("Comaparison", agg_array) # FOR DEBUG
+
                     # print("New Result", new_result) # FOR DEBUG
                     # print("Comaparison", agg_array) # FOR DEBUG
+
                     if isQ_result_empty(new_result):
                         self.logger.error('some error in generating new database. '
                                           'Result is empty. Can not identify aggregation')

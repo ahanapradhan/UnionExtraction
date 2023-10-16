@@ -39,6 +39,7 @@ class MyTestCase(BaseTestCase):
             self.assertTrue(u_Q is not None)
             self.assertTrue(self.pipeline.correct)
             print(u_Q)
+
             self.pipeline.time_profile.debug_print()
             q_no += 1
 

@@ -20,6 +20,7 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+
     hq = "Select l_returnflag, l_linestatus, Count(*) as count_order From lineitem Where l_shipdate >= '1998-07-07' " \
          "Group By l_returnflag, l_linestatus " \
          "Order By l_returnflag asc, l_linestatus asc Limit 10;"

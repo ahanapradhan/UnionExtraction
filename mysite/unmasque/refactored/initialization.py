@@ -34,6 +34,7 @@ class Initiator(Base):
     def doActualJob(self, args):
         self.logger.debug("inside -- initialization.initialization")
         # self.sanitize()
+
         self.logger.info("sanitized!")
         self.reset()
 
@@ -54,7 +55,6 @@ class Initiator(Base):
         self.logger.info("index dict done..!")
 
         self.sanitize()
-
         return True
 
     def make_index_dict(self):

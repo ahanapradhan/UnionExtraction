@@ -1,7 +1,9 @@
+
 from ..util.common_queries import create_view_as_select_star_where_ctid, drop_view, alter_table_rename_to, \
     get_ctid_from, create_table_as_select_star_from_ctid, drop_table, get_row_count, get_star, \
     create_table_as_select_star_from, get_tabname_4, select_ctid_from_tabname_offset, select_next_ctid
 from ..util.utils import isQ_result_empty
+
 from ...refactored.abstract.ExtractorBase import Base
 from ...refactored.executable import Executable
 

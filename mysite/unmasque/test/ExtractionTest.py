@@ -44,7 +44,7 @@ class MyTestCase(BaseTestCase):
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_in_loop(self):
@@ -59,7 +59,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_q1_filter(self):
@@ -69,7 +69,7 @@ class MyTestCase(BaseTestCase):
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_query1(self):
@@ -88,7 +88,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_query3(self):
@@ -107,7 +107,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q1(self):
@@ -126,7 +126,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q3(self):
@@ -145,7 +145,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q3_1(self):
@@ -164,7 +164,7 @@ class MyTestCase(BaseTestCase):
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q18_test1(self):
@@ -195,7 +195,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q5(self):
@@ -214,7 +214,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q6(self):
@@ -233,7 +233,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q7(self):
@@ -252,7 +252,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q11(self):
@@ -271,7 +271,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q16(self):
@@ -290,7 +290,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q17(self):
@@ -309,7 +309,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q18(self):
@@ -329,7 +329,7 @@ class MyTestCase(BaseTestCase):
 
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q21(self):
@@ -349,7 +349,7 @@ class MyTestCase(BaseTestCase):
 
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q23_1(self):
@@ -369,7 +369,7 @@ class MyTestCase(BaseTestCase):
 
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q9_simple(self):
@@ -388,7 +388,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q10_simple(self):
@@ -407,7 +407,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_for_bug(self):

@@ -66,6 +66,7 @@ class ViewMinimizer(Minimizer):
         core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
 
+
     def reduce_Database_Instance(self, query, cs_pass):
 
         self.local_other_info_dict = {}
@@ -84,7 +85,9 @@ class ViewMinimizer(Minimizer):
         for tabname in self.core_relations:
             self.connectionHelper.execute_sql([drop_table(get_tabname_4(tabname)),
                                                create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
+
             res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
+
             self.logger.debug(tabname, "==", res)
 
         if not self.sanity_check(query):

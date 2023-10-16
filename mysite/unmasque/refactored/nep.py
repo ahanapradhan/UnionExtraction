@@ -3,6 +3,7 @@ import ast
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
+
 from .util.common_queries import get_restore_name, drop_table, get_tabname_nep, alter_view_rename_to, \
     create_table_as_select_star_from, alter_table_rename_to, drop_view, create_view_as_select_star_where_ctid, \
     get_tabname_1
@@ -13,6 +14,7 @@ class NepComparator(ResultComparator):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "NEP Result Comparator")
         self.earlyExit = False
+
 
 
 class NEP(Minimizer, GenerationPipeLineBase):
@@ -29,6 +31,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.global_pk_dict = global_pk_dict  # from initialization
         self.global_key_attributes = global_key_attributes
         self.query_generator = query_generator
+
         self.nep_comparator = NepComparator(self.connectionHelper)
 
     def extract_params_from_args(self, args):
@@ -50,7 +53,9 @@ class NEP(Minimizer, GenerationPipeLineBase):
         # self.create_all_views()
 
         # Run the hidden query on the original database instance
+
         matched = self.nep_comparator.match(query, Q_E)
+
         if matched:
             nep_exists = False
             self.Q_E = Q_E
@@ -58,7 +63,9 @@ class NEP(Minimizer, GenerationPipeLineBase):
         else:
             self.logger.info("NEP may exists")
             while not matched:
+
                 matched = self.extract_one_nep(Q_E, core_sizes, matched, partition_dict, query)
+
             nep_exists = True
 
         self.drop_all_views1()
@@ -88,6 +95,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                                "create table " + tabname + " as select * from " + tabname + "3;",
                                                "drop view " + tabname + "3 CASCADE;"])
         self.logger.info("all views dropped.")
+
 
     def drop_all_views1(self):
         for tabname in self.core_relations:
@@ -138,12 +146,14 @@ class NEP(Minimizer, GenerationPipeLineBase):
         """
         if tab_size == 1 and not matched:
             val = self.get_NEP_val(query, tabname, i)
+
             if val:
                 self.logger.info("Extracting NEP value")
                 return self.query_generator.updateExtractedQueryWithNEPVal(query, val)
             else:
                 self.logger.debug(Q_E)
                 return Q_E
+
 
         """
         Drop the current view of name tabname
@@ -160,8 +170,10 @@ class NEP(Minimizer, GenerationPipeLineBase):
             Q_E_ = self.nep_db_minimizer(matched, query, tabname, Q_E, limit, (offset, limit), i)
             self.logger.debug(Q_E_)
             return Q_E_
+
         else:
             Q_E_ = Q_E
+
 
         """
         Drop the view of name tabname
@@ -180,6 +192,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
             return Q_E__
         else:
             return Q_E_
+
 
     def get_NEP_val(self, query, tabname, i):
         # convert the view into a table
@@ -214,6 +227,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
             tabname) + " order by " + self.global_pk_dict[tabname] + " offset " + str(offset) \
                                            + " limit " + str(limit) + ";"])
 
+
     def extract_NEP_value(self, query, tabname, i):
         # Return if hidden executable is giving non-empty output on the reduced database
         # It means that the current table does not contain NEP source column
@@ -246,6 +260,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 self.update_with_val(attrib, tabname, val)
 
                 new_result = self.app.doJob(query)
+
                 if len(new_result) > 1:
                     filterAttribs.append((tabname, attrib, '<>', prev))
                     self.logger.debug(filterAttribs, '++++++_______++++++')
@@ -284,3 +299,4 @@ class NEP(Minimizer, GenerationPipeLineBase):
             else:
                 val = get_char(get_dummy_val_for('char'))
         return val
+
