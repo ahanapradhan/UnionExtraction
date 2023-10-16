@@ -56,17 +56,15 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
         global_min_instance_dict = {}
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
         o.mock = True
 
-        check = o.doJob(query, Q_E)
+        check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertTrue("and l_shipdate <> '1994-07-11'" in o.Q_E)
+        self.assertEqual(query, o.Q_E)
 
         self.conn.closeConnection()
 
@@ -108,22 +106,22 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, count(*) as count'
         q_gen.where_op = "l_quantity > 20 "
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
         global_min_instance_dict = {}
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
         o.mock = True
 
-        check = o.doJob(query, Q_E)
+        check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertTrue(" Where l_quantity > 20 and l_quantity <> 25 " in o.Q_E)
+        self.assertEqual(query, o.Q_E)
 
         self.conn.closeConnection()
 
     def test_something(self):
         self.conn.connectUsingParams()
+
+        global_min_instance_dict = {}
 
         query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
                 "From lineitem " \
@@ -170,17 +168,16 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31'"
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
-
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
-        check = o.doJob(query, Q_E)
+        o.mock = True
+
+        check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
 
-        self.assertTrue("Where l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31' and l_linenumber <> 4" in o.Q_E)
+        self.assertEqual(query, o.Q_E)
 
         self.conn.closeConnection()
 
@@ -231,17 +228,17 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
+        global_min_instance_dict = {}
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
-        check = o.doJob(query, Q_E)
+        o.mock = True
+
+        check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertTrue("and l_shipmode NOT LIKE '%AIR%'" in o.Q_E)
-        self.assertTrue("and l_shipdate <> '1994-01-03'" in o.Q_E)
+        self.assertEqual(query, o.Q_E)
 
         self.conn.closeConnection()
 
@@ -328,16 +325,18 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 's_suppkey = l_suppkey and o_orderkey = l_orderkey and s_nationkey = n_nationkey  and ' \
                          'o_orderstatus = \'F\''
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
+        global_min_instance_dict = {}
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
-        check = o.doJob(q, eq)
+        o.mock = True
+
+        check = o.doJob([q, eq])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertTrue("and n_name <> 'GERMANY'" in o.Q_E)
+        self.assertEqual(q, o.Q_E)
+
         self.conn.closeConnection()
 
 

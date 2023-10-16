@@ -16,7 +16,6 @@ class NepComparator(ResultComparator):
         self.earlyExit = False
 
 
-
 class NEP(Minimizer, GenerationPipeLineBase):
 
     def __init__(self, connectionHelper, core_relations, all_sizes, global_pk_dict, global_all_attribs,
@@ -35,7 +34,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.nep_comparator = NepComparator(self.connectionHelper)
 
     def extract_params_from_args(self, args):
-        return args[0], args[1]
+        return args[0][0], args[0][1]
 
     def doActualJob(self, args):
         query, Q_E = self.extract_params_from_args(args)
@@ -63,7 +62,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         else:
             self.logger.info("NEP may exists")
             while not matched:
-
                 matched = self.extract_one_nep(Q_E, core_sizes, matched, partition_dict, query)
 
             nep_exists = True
@@ -76,7 +74,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
             tabname = self.core_relations[i]
             self.Q_E = Q_E
             self.Q_E = self.get_nep(core_sizes, tabname, query, i)
-            # self.Q_E = self.nep_db_minimizer(matched, query, tabname, Q_E, core_sizes[tabname], partition_dict[tabname], i)
+            # self.Q_E = self.nep_db_minimizer(matched, query, tabname, Q_E, core_sizes[tabname], partition_dict[
+            # tabname], i)
             matched = self.nep_comparator.match(query, self.Q_E)
             self.logger.debug(matched)
             self.logger.debug(self.Q_E)
@@ -96,11 +95,11 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                                "drop view " + tabname + "3 CASCADE;"])
         self.logger.info("all views dropped.")
 
-
     def drop_all_views1(self):
         for tabname in self.core_relations:
             self.connectionHelper.execute_sql([drop_view(tabname), create_table_as_select_star_from(tabname,
-                                                                                                    get_restore_name(tabname))])
+                                                                                                    get_restore_name(
+                                                                                                        tabname))])
         self.logger.info("all views dropped.")
 
     def get_nep(self, core_sizes, tabname, query, i):
@@ -108,11 +107,22 @@ class NEP(Minimizer, GenerationPipeLineBase):
         end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
         if end_ctid is None:
             return  # no role on NEP
-        self.connectionHelper.execute_sql([create_view_as_select_star_where_ctid(end_ctid, start_ctid, tabname, tabname1)])
+        self.connectionHelper.execute_sql(
+            [create_view_as_select_star_where_ctid(end_ctid, start_ctid, tabname, tabname1)])
         val = self.get_NEP_val(query, tabname, i)
         if val:
             self.logger.info("Extracting NEP value")
             return self.query_generator.updateExtractedQueryWithNEPVal(query, val)
+        else:
+            return query
+
+    def get_mid_ctids(self, core_sizes, tabname, tabname1):
+        start_page, start_row = self.get_boundary("min", tabname1)
+        end_page, end_row = self.get_boundary("max", tabname1)
+        start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
+        end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
+        mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
+        return end_ctid, mid_ctid1, mid_ctid2, start_ctid
 
     def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
         self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
@@ -154,7 +164,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 self.logger.debug(Q_E)
                 return Q_E
 
-
         """
         Drop the current view of name tabname
         Make a view of name x with first half  T <- T_u
@@ -174,7 +183,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         else:
             Q_E_ = Q_E
 
-
         """
         Drop the view of name tabname
         Make a view of name x with second half  T <- T_l
@@ -192,7 +200,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
             return Q_E__
         else:
             return Q_E_
-
 
     def get_NEP_val(self, query, tabname, i):
         # convert the view into a table
@@ -226,7 +233,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.connectionHelper.execute_sql(["create view " + tabname + " as select * from " + get_restore_name(
             tabname) + " order by " + self.global_pk_dict[tabname] + " offset " + str(offset) \
                                            + " limit " + str(limit) + ";"])
-
 
     def extract_NEP_value(self, query, tabname, i):
         # Return if hidden executable is giving non-empty output on the reduced database
@@ -299,4 +305,3 @@ class NEP(Minimizer, GenerationPipeLineBase):
             else:
                 val = get_char(get_dummy_val_for('char'))
         return val
-
