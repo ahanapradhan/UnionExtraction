@@ -66,7 +66,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
             nep_exists = True
 
-        self.drop_all_views1()
+        # self.drop_all_views1()
         return nep_exists
 
     def extract_one_nep(self, Q_E, core_sizes, matched, partition_dict, query):
@@ -74,8 +74,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
             tabname = self.core_relations[i]
             self.Q_E = Q_E
             self.Q_E = self.get_nep(core_sizes, tabname, query, i)
-            # self.Q_E = self.nep_db_minimizer(matched, query, tabname, Q_E, core_sizes[tabname], partition_dict[
-            # tabname], i)
             matched = self.nep_comparator.match(query, self.Q_E)
             self.logger.debug(matched)
             self.logger.debug(self.Q_E)
@@ -88,13 +86,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                                + get_restore_name(tabname) + " ;"])
         self.logger.info("all views created.")
 
-    def drop_all_views(self):
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql(["alter view " + tabname + " rename to " + tabname + "3;",
-                                               "create table " + tabname + " as select * from " + tabname + "3;",
-                                               "drop view " + tabname + "3 CASCADE;"])
-        self.logger.info("all views dropped.")
-
     def drop_all_views1(self):
         for tabname in self.core_relations:
             self.connectionHelper.execute_sql([drop_view(tabname), create_table_as_select_star_from(tabname,
@@ -104,17 +95,21 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
     def get_nep(self, core_sizes, tabname, query, i):
         tabname1 = get_tabname_1(tabname)
-        end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
-        if end_ctid is None:
-            return  # no role on NEP
-        self.connectionHelper.execute_sql(
-            [create_view_as_select_star_where_ctid(end_ctid, start_ctid, tabname, tabname1)])
-        val = self.get_NEP_val(query, tabname, i)
+        while core_sizes[tabname] > 1:
+            self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
+            end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
+            if end_ctid is None:
+                return  # no role on NEP
+            core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
+
+        self.see_d_min()
+
+        val = self.extract_NEP_value(query, tabname, i)
         if val:
             self.logger.info("Extracting NEP value")
             return self.query_generator.updateExtractedQueryWithNEPVal(query, val)
         else:
-            return query
+            return self.Q_E
 
     def get_mid_ctids(self, core_sizes, tabname, tabname1):
         start_page, start_row = self.get_boundary("min", tabname1)
@@ -125,7 +120,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid
 
     def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
-        self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
         end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
 
         if mid_ctid1 is None:
@@ -145,10 +139,13 @@ class NEP(Minimizer, GenerationPipeLineBase):
     def check_result_for_half(self, start_ctid, end_ctid, tab, view, query):
         self.connectionHelper.execute_sql(
             [create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
-        matched = self.nep_comparator.match(query, self.Q_E)
-        self.logger.debug(matched)
-        self.connectionHelper.execute_sql([drop_view(view)])
-        return not matched  # if both queries produce different result, this is it!
+        query = query.replace(";", "")
+        q_e = self.Q_E.replace(";", "")
+        query_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({query}) as q_h;")
+        q_e_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({q_e}) as q_e;")
+        found = q_e_result and not query_result  # as per thesis
+        self.logger.debug(found)
+        return found
 
     def nep_db_minimizer(self, matched, query, tabname, Q_E, tab_size, partition_dict, i):
         """
@@ -235,16 +232,9 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                            + " limit " + str(limit) + ";"])
 
     def extract_NEP_value(self, query, tabname, i):
-        # Return if hidden executable is giving non-empty output on the reduced database
-        # It means that the current table does not contain NEP source column
-        new_result = self.app.doJob(query)
-        if len(new_result) > 1:
+        res = self.app.doJob(query)
+        if len(res) > 1:
             return False
-
-        # check nep for every non-key attribute by changing its value to different s value and run the executable.
-        # If the output came out non- empty. It means that nep is present on that attribute with previous value.
-        # for i in range(len(self.core_relations)):
-        #    tabname = self.core_relations[i]
         attrib_list = self.global_all_attribs[i]
         filterAttribs = []
         filterAttribs = self.check_per_attrib(attrib_list,
