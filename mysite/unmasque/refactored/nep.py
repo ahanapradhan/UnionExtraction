@@ -3,11 +3,9 @@ import ast
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
-
-from .util.common_queries import get_restore_name, drop_table, get_tabname_nep, alter_view_rename_to, \
-    create_table_as_select_star_from, alter_table_rename_to, drop_view, create_view_as_select_star_where_ctid, \
+from .util.common_queries import alter_table_rename_to, create_view_as_select_star_where_ctid, \
     get_tabname_1
-from .util.utils import get_dummy_val_for, get_format, get_char, isQ_result_empty
+from .util.utils import get_dummy_val_for, get_format, get_char
 
 
 class NepComparator(ResultComparator):
@@ -40,19 +38,10 @@ class NEP(Minimizer, GenerationPipeLineBase):
         query, Q_E = self.extract_params_from_args(args)
         core_sizes = self.getCoreSizes()
 
-        # STORE STARTING POINT(OFFSET) AND NOOFROWS(LIMIT) FOR EACH TABLE IN FORMAT (offset, limit)
-        partition_dict = {}
-        for key in core_sizes.keys():
-            partition_dict[key] = (0, core_sizes[key])
-
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
-
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
 
-        # self.create_all_views()
-
         # Run the hidden query on the original database instance
-
         matched = self.nep_comparator.match(query, Q_E)
 
         if matched:
@@ -62,14 +51,13 @@ class NEP(Minimizer, GenerationPipeLineBase):
         else:
             self.logger.info("NEP may exists")
             while not matched:
-                matched = self.extract_one_nep(Q_E, core_sizes, matched, partition_dict, query)
+                matched = self.extract_one_nep(Q_E, core_sizes, matched, query)
 
             nep_exists = True
 
-        # self.drop_all_views1()
         return nep_exists
 
-    def extract_one_nep(self, Q_E, core_sizes, matched, partition_dict, query):
+    def extract_one_nep(self, Q_E, core_sizes, matched, query):
         for i in range(len(self.core_relations)):
             tabname = self.core_relations[i]
             self.Q_E = Q_E
@@ -78,20 +66,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
             self.logger.debug(matched)
             self.logger.debug(self.Q_E)
         return matched
-
-    def create_all_views(self):
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql([drop_table(tabname),
-                                               "create view " + tabname + " as select * from "
-                                               + get_restore_name(tabname) + " ;"])
-        self.logger.info("all views created.")
-
-    def drop_all_views1(self):
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql([drop_view(tabname), create_table_as_select_star_from(tabname,
-                                                                                                    get_restore_name(
-                                                                                                        tabname))])
-        self.logger.info("all views dropped.")
 
     def get_nep(self, core_sizes, tabname, query, i):
         tabname1 = get_tabname_1(tabname)
@@ -146,90 +120,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         found = q_e_result and not query_result  # as per thesis
         self.logger.debug(found)
         return found
-
-    def nep_db_minimizer(self, matched, query, tabname, Q_E, tab_size, partition_dict, i):
-        """
-        Base Case
-        """
-        if tab_size == 1 and not matched:
-            val = self.get_NEP_val(query, tabname, i)
-
-            if val:
-                self.logger.info("Extracting NEP value")
-                return self.query_generator.updateExtractedQueryWithNEPVal(query, val)
-            else:
-                self.logger.debug(Q_E)
-                return Q_E
-
-        """
-        Drop the current view of name tabname
-        Make a view of name x with first half  T <- T_u
-        """
-        self.connectionHelper.execute_sql(["drop view " + tabname + " CASCADE;"])
-        offset, limit = self.create_view_with_upper_half(partition_dict, tabname)
-        """
-        Run the hidden query on this updated database instance with table T_u
-        """
-        matched = self.nep_comparator.match(query, Q_E)
-        self.logger.debug(matched)
-        if not matched:
-            Q_E_ = self.nep_db_minimizer(matched, query, tabname, Q_E, limit, (offset, limit), i)
-            self.logger.debug(Q_E_)
-            return Q_E_
-
-        else:
-            Q_E_ = Q_E
-
-        """
-        Drop the view of name tabname
-        Make a view of name x with second half  T <- T_l
-        """
-        self.connectionHelper.execute_sql(["drop view " + tabname + " CASCADE;"])
-        offset, limit = self.create_view_with_lower_half(partition_dict, tabname)
-        """
-        Run the hidden query on this updated database instance with table T_l
-        """
-        matched = self.nep_comparator.match(query, Q_E_)
-        self.logger.debug(matched)
-        if not matched:
-            Q_E__ = self.nep_db_minimizer(matched, query, tabname, Q_E_, limit, (offset, limit), i)
-            self.logger.debug(Q_E__)
-            return Q_E__
-        else:
-            return Q_E_
-
-    def get_NEP_val(self, query, tabname, i):
-        # convert the view into a table
-        self.connectionHelper.execute_sql([alter_view_rename_to(tabname, get_tabname_nep(tabname)),
-                                           create_table_as_select_star_from(tabname, get_tabname_nep(tabname))])
-        self.logger.debug(tabname, " is now a table")
-
-        val = self.extract_NEP_value(query, tabname, i)
-        self.logger.debug("NEP val", val)
-
-        # convert the table back to view
-        self.connectionHelper.execute_sql([drop_table(tabname),
-                                           alter_view_rename_to(get_tabname_nep(tabname), tabname)])
-        self.logger.debug(tabname, " is now a view")
-        return val
-
-    def create_view_with_upper_half(self, partition_dict, tabname):
-        offset = int(partition_dict[0])
-        limit = int(partition_dict[1] / 2)
-        self.create_view_from_offset_limit(limit, offset, tabname)
-        return offset, limit
-
-    def create_view_with_lower_half(self, partition_dict, tabname):
-        offset = int(partition_dict[0]) + int(partition_dict[1] / 2)
-        limit = int(partition_dict[1]) - int(partition_dict[1] / 2)
-        self.create_view_from_offset_limit(limit, offset, tabname)
-        return offset, limit
-
-    def create_view_from_offset_limit(self, limit, offset, tabname):
-        self.logger.debug("table", tabname, "offset ", offset, " limit ", limit)
-        self.connectionHelper.execute_sql(["create view " + tabname + " as select * from " + get_restore_name(
-            tabname) + " order by " + self.global_pk_dict[tabname] + " offset " + str(offset) \
-                                           + " limit " + str(limit) + ";"])
 
     def extract_NEP_value(self, query, tabname, i):
         res = self.app.doJob(query)
