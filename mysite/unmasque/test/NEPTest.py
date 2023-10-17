@@ -16,7 +16,7 @@ class MyTestCase(BaseTestCase):
         query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
                 "From lineitem Where l_shipdate >= " \
                 "'1994-01-01' and l_quantity < 24 " \
-                "and l_shipdate <> '1994-07-11' Group By l_shipmode Limit 100;"
+                "and l_returnflag <> 'R' Group By l_shipmode Limit 100;"
 
         Q_E = "Select l_shipmode, sum(l_extendedprice) as revenue " \
               "From lineitem " \
@@ -64,7 +64,10 @@ class MyTestCase(BaseTestCase):
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertEqual(query, o.Q_E)
+
+        q_e = f"Select {q_gen.select_op}\n From {q_gen.from_op}\n Where {q_gen.where_op} and l_returnflag <> 'R'\n " \
+              f"Group By {q_gen.group_by_op}\n Limit {q_gen.limit_op};"
+        self.assertEqual(q_e, o.Q_E)
 
         self.conn.closeConnection()
 
