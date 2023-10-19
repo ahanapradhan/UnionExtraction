@@ -89,7 +89,7 @@ class Filter(WhereClause):
                 filterAttribs.append(
                     (tabname, attrib, '=', float(d_plus_value[attrib]), float(d_plus_value[attrib])))
             else:
-                val1 = self.get_filter_value(query, 'float', tabname, attrib, math.ceil(float(d_plus_value[attrib])),
+                val1 = self.get_filter_value(query, 'float', tabname, attrib, float(d_plus_value[attrib]),
                                              max_val_domain, '<=')
                 val2 = self.get_filter_value(query, 'float', tabname, attrib, min_val_domain,
                                              math.floor(float(d_plus_value[attrib])), '>=')
@@ -99,13 +99,13 @@ class Filter(WhereClause):
                                         max_val_domain, '<=')
             val = float(val)
             val1 = self.get_filter_value(query, 'float', tabname, attrib, val, val + 0.99, '<=')
-            filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round(val1, 2))))
+            filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round(val1, 3))))
         elif not min_present and max_present:
             val = self.get_filter_value(query, 'float', tabname, attrib, min_val_domain,
                                         math.floor(float(d_plus_value[attrib]) + 5), '>=')
             val = float(val)
             val1 = self.get_filter_value(query, 'float', tabname, attrib, val - 1, val, '>=')
-            filterAttribs.append((tabname, attrib, '>=', float(round(val1, 2)), float(max_val_domain)))
+            filterAttribs.append((tabname, attrib, '>=', float(round(val1, 3)), float(max_val_domain)))
 
     def get_filter_value(self, query, datatype,
                          tabname, filter_attrib,
@@ -121,30 +121,24 @@ class Filter(WhereClause):
         if operator == '<=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                self.logger.debug("<= pred", mid_val, low, high)
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
                     # break
-                    if datatype=='numeric' or datatype=='float':
-                        return math.floor(mid_val)
-                    else:
-                        return mid_val
+                    return low
                 if isQ_result_empty(new_result):
                     new_val = get_val_plus_delta(datatype, mid_val, -1 * delta)
                     high = new_val
-                    self.logger.debug("high", high)
                 else:
                     low = mid_val
                 
                 self.revert_filter_changes(tabname)
-            if (datatype=='numeric' or datatype=='float'):
-                return math.floor(low) 
-            else:
-                return low
+            return low
 
         if operator == '>=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
-                #self.logger.debug(">= pred", mid_val, low, high)
+                self.logger.debug(">= pred", mid_val, low, high)
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
                     break
@@ -155,10 +149,7 @@ class Filter(WhereClause):
                 else:
                     high = mid_val
                 self.revert_filter_changes(tabname)
-            if (datatype=='numeric' or datatype=='float'):
-                return math.ceil(high) 
-            else:
-                return high
+            return high
 
         else:  # =, i.e. datatype == 'int', date
             is_low = True
