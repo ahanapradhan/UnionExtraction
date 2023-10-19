@@ -4,7 +4,7 @@ from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
 from .util.common_queries import alter_table_rename_to, create_view_as_select_star_where_ctid, \
-    get_tabname_1
+    get_tabname_1, drop_view
 from .util.utils import get_dummy_val_for, get_format, get_char
 
 
@@ -42,7 +42,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
 
         # Run the hidden query on the original database instance
-        matched = self.nep_comparator.match(query, Q_E)
+        matched = self.nep_comparator.doJob(query, Q_E)
 
         if matched:
             nep_exists = False
@@ -62,7 +62,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
             tabname = self.core_relations[i]
             self.Q_E = Q_E
             self.Q_E = self.get_nep(core_sizes, tabname, query, i)
-            matched = self.nep_comparator.match(query, self.Q_E)
+            matched = self.nep_comparator.doJob(query, self.Q_E)
             self.logger.debug(matched)
             self.logger.debug(self.Q_E)
         return matched
@@ -73,6 +73,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
             self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
             end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
             if end_ctid is None:
+                self.connectionHelper.execute_sql([alter_table_rename_to(tabname1, tabname)])
                 return  # no role on NEP
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
 
@@ -97,7 +98,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
 
         if mid_ctid1 is None:
-            self.connectionHelper.execute_sql([alter_table_rename_to(tabname1, tabname)])
             return None, None
 
         self.logger.debug(start_ctid, mid_ctid1, mid_ctid2, end_ctid)
@@ -110,16 +110,46 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                                                       tabname1)
         return end_ctid, start_ctid
 
+    def create_view_execute_app_drop_view(self,
+                                          end_ctid,
+                                          mid_ctid1,
+                                          mid_ctid2,
+                                          query,
+                                          start_ctid,
+                                          tabname,
+                                          tabname1):
+        if self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
+            # Take the lower half
+            start_ctid = mid_ctid2
+        elif self.check_result_for_half(start_ctid, mid_ctid1, tabname1, tabname, query):
+            # Take the upper half
+            end_ctid = mid_ctid1
+        else:
+            self.logger.error("something is wrong!")
+            return None, None
+        self.connectionHelper.execute_sql([drop_view(tabname)])
+        return end_ctid, start_ctid
+
     def check_result_for_half(self, start_ctid, end_ctid, tab, view, query):
-        self.connectionHelper.execute_sql(
-            [create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
+        self.connectionHelper.execute_sql([drop_view(view),
+                                          create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
+
+        found = self.nep_comparator.match(query, self.Q_E)
+        if found:
+            return False
         query = query.replace(";", "")
         q_e = self.Q_E.replace(";", "")
         query_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({query}) as q_h;")
         q_e_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({q_e}) as q_e;")
-        found = q_e_result and not query_result  # as per thesis
-        self.logger.debug(found)
-        return found
+        self.logger.debug(f"q_e result: {q_e_result}, query result: {query_result}")
+        if q_e_result == 1 and query_result == 0:
+            return True
+        elif q_e_result >= 1 and query_result >= 1:
+            return True
+        elif q_e_result == 0 and query_result == 1:
+            return False
+        elif q_e_result == 0 and query_result == 0:
+            return False
 
     def extract_NEP_value(self, query, tabname, i):
         res = self.app.doJob(query)
