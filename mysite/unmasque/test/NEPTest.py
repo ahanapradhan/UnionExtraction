@@ -3,6 +3,7 @@ import unittest
 
 from mysite.unmasque.refactored.cs2 import Cs2
 from mysite.unmasque.refactored.nep import NEP
+from mysite.unmasque.refactored.util.common_queries import drop_table, alter_table_rename_to, get_restore_name
 from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -68,9 +69,14 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(o.Q_E)
 
-        q_e = f"Select {q_gen.select_op}\n From {q_gen.from_op}\n Where {q_gen.where_op} and l_returnflag <> 'R'\n " \
-              f"Group By {q_gen.group_by_op}\n Limit {q_gen.limit_op};"
+        self.assertEqual("l_shipdate >= '1994-01-01' and l_quantity <= 23.0  and l_returnflag <> 'R' ", q_gen.where_op)
+
+        q_e = f"Select {q_gen.select_op}\nFrom {q_gen.from_op}\nWhere {q_gen.where_op}\n" \
+              f"Group By {q_gen.group_by_op}\nLimit {q_gen.limit_op};"
         self.assertEqual(q_e, o.Q_E)
+
+        self.conn.execute_sql([drop_table('lineitem'),
+                               alter_table_rename_to(get_restore_name('lineitem'), 'lineitem')])
 
         self.conn.closeConnection()
 
