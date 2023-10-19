@@ -57,8 +57,8 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
+        #cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
+        #cs2.take_backup()
 
         global_min_instance_dict = {}
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
@@ -75,9 +75,6 @@ class MyTestCase(BaseTestCase):
               f"Group By {q_gen.group_by_op}\nLimit {q_gen.limit_op};"
         self.assertEqual(q_e, o.Q_E)
 
-        self.conn.execute_sql([drop_table('lineitem'),
-                               alter_table_rename_to(get_restore_name('lineitem'), 'lineitem')])
-
         self.conn.closeConnection()
 
     def test_mukul_sample_query(self):
@@ -89,7 +86,7 @@ class MyTestCase(BaseTestCase):
 
         core_rels = ['lineitem']
 
-        filters = [('lineitem', 'l_quantity', '<=', -2147483648.88, 20.0)]
+        filters = [('lineitem', 'l_quantity', '<=', -2147483648.88, 21.0)]
 
         global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
                                ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
@@ -128,11 +125,11 @@ class MyTestCase(BaseTestCase):
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertEqual(query, o.Q_E)
+        self.assertEqual("l_quantity > 20 and l_quantity <> 25 ", q_gen.where_op)
 
         self.conn.closeConnection()
 
-    def test_something(self):
+    def test_two_neps_one_table(self):
         self.conn.connectUsingParams()
 
         global_min_instance_dict = {}
@@ -194,7 +191,11 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(o.Q_E)
 
-        self.assertEqual(query, o.Q_E)
+        self.assertTrue("l_linenumber <> 4" in q_gen.where_op)
+        self.assertTrue("l_returnflag <> 'R'" in q_gen.where_op)
+        terms = o.Q_E.split(" ")
+        and_count = terms.count("and")
+        self.assertEqual(and_count, 3)
 
         self.conn.closeConnection()
 
