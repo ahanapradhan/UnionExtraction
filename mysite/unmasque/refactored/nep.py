@@ -4,7 +4,7 @@ from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
 from .util.common_queries import alter_table_rename_to, create_view_as_select_star_where_ctid, \
-    get_tabname_1, drop_view
+    get_tabname_1, drop_view, drop_table, get_restore_name, create_table_as_select_star_from
 from .util.utils import get_dummy_val_for, get_format, get_char
 
 
@@ -36,36 +36,38 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
     def doActualJob(self, args):
         query, Q_E = self.extract_params_from_args(args)
-        core_sizes = self.getCoreSizes()
 
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
+        nep_exists = False
 
         # Run the hidden query on the original database instance
         matched = self.nep_comparator.doJob(query, Q_E)
+        self.Q_E = Q_E
+        while not matched:
+            for i in range(len(self.core_relations)):
+                tabname = self.core_relations[i]
+                self.logger.info("NEP may exists")
+                nep_exists = True
+                self.backup_relation(tabname)
 
-        if matched:
-            nep_exists = False
-            self.Q_E = Q_E
-            self.logger.info("NEP doesn't exists under our assumptions")
-        else:
-            self.logger.info("NEP may exists")
-            while not matched:
-                matched = self.extract_one_nep(Q_E, core_sizes, matched, query)
-
-            nep_exists = True
+                core_sizes = self.getCoreSizes()
+                self.Q_E = self.get_nep(core_sizes, tabname, query, i)
+                if self.Q_E is None:
+                    self.logger.error("Something is wrong")
+                    return False
+                matched = self.nep_comparator.doJob(query, self.Q_E)
 
         return nep_exists
 
-    def extract_one_nep(self, Q_E, core_sizes, matched, query):
-        for i in range(len(self.core_relations)):
-            tabname = self.core_relations[i]
-            self.Q_E = Q_E
-            self.Q_E = self.get_nep(core_sizes, tabname, query, i)
-            matched = self.nep_comparator.doJob(query, self.Q_E)
-            self.logger.debug(matched)
-            self.logger.debug(self.Q_E)
-        return matched
+    def restore_relation(self, table):
+        self.connectionHelper.execute_sql([drop_table(table),
+                                           alter_table_rename_to(get_restore_name(table), table)])
+
+    def backup_relation(self, table):
+        self.connectionHelper.execute_sql([drop_table(get_restore_name(table)),
+                                           create_table_as_select_star_from(
+                                               get_restore_name(table), table)])
 
     def get_nep(self, core_sizes, tabname, query, i):
         tabname1 = get_tabname_1(tabname)
@@ -77,7 +79,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 return  # no role on NEP
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
 
-        self.see_d_min()
+        # self.see_d_min()
 
         val = self.extract_NEP_value(query, tabname, i)
         if val:
@@ -132,7 +134,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
     def check_result_for_half(self, start_ctid, end_ctid, tab, view, query):
         self.connectionHelper.execute_sql([drop_view(view),
-                                          create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
+                                           create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
 
         found = self.nep_comparator.match(query, self.Q_E)
         if found:
