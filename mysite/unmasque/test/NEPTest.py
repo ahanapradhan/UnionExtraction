@@ -10,7 +10,7 @@ from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
-    def test_Q6_mukul_thesis_shipdate(self):
+    def test_Q6_lineitem_returnflag(self):
         self.conn.connectUsingParams()
 
         query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
@@ -55,6 +55,9 @@ class MyTestCase(BaseTestCase):
         q_gen.order_by_op = ''
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
+
+        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
+        cs2.take_backup()
 
         global_min_instance_dict = {}
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
@@ -109,6 +112,8 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, count(*) as count'
         q_gen.where_op = "l_quantity > 20 "
 
+        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
+        cs2.take_backup()
         global_min_instance_dict = {}
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
@@ -171,6 +176,9 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31'"
 
+        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
+        cs2.take_backup()
+
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
@@ -231,6 +239,8 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
+        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
+        cs2.take_backup()
         global_min_instance_dict = {}
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
@@ -328,6 +338,8 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 's_suppkey = l_suppkey and o_orderkey = l_orderkey and s_nationkey = n_nationkey  and ' \
                          'o_orderstatus = \'F\''
 
+        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
+        cs2.take_backup()
         global_min_instance_dict = {}
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,

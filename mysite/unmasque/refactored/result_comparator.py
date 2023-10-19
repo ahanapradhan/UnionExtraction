@@ -8,9 +8,7 @@ class ResultComparator(Comparator):
         super().__init__(connectionHelper, "Result Comparator", True)
         self.isHash = isHash
 
-
     def is_match(self, len1, len2):
-
         if self.isHash:
             if len1 == len2:
                 return True
@@ -18,7 +16,6 @@ class ResultComparator(Comparator):
                 return False
         else:
             return super().is_match(len1, len2)
-
 
     def run_diff_queries(self):
         if self.isHash:
