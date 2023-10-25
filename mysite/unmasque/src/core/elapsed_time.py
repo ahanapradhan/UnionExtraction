@@ -70,6 +70,9 @@ class ElapsedTime:
     def update_for_view_minimization(self, t_u):
         self.t_view_min += t_u
 
+    def update_for_nep(self, t_u):
+        self.t_nep += t_u
+
     def update_for_app(self, t_u):
         self.executable_call_count += t_u
 

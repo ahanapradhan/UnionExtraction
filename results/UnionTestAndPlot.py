@@ -172,8 +172,8 @@ class MyTestCase(BaseTestCase):
     def extract_query_once(self, i, query, sql, t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling,
                            t_union, t_view_min, t_where_clause):
         self.pipeline = UnionPipeLine(self.conn)
-        u_Q = self.pipeline.extract(query)
-        self.assertTrue(u_Q is not None)
+        u_Q = self.pipeline.doJob(query)
+        self.assertTrue(self.pipeline.correct)
         print(u_Q)
         if not i:
             with open(self.extracted_U + "/e_" + sql, "w") as myfile:

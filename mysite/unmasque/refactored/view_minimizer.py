@@ -3,9 +3,9 @@ import copy
 import pandas as pd
 
 from .abstract.MinimizerBase import Minimizer
-from ..refactored.util.common_queries import get_row_count, alter_table_rename_to, get_min_max_ctid, \
+from ..refactored.util.common_queries import alter_table_rename_to, get_min_max_ctid, \
     drop_table, create_table_as_select_star_from, get_tabname_1, \
-    create_table_as_select_star_from_ctid, get_tabname_4, get_star, \
+    get_tabname_4, get_star, \
     get_restore_name
 
 
@@ -66,6 +66,7 @@ class ViewMinimizer(Minimizer):
         core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
 
+
     def reduce_Database_Instance(self, query, cs_pass):
 
         self.local_other_info_dict = {}
@@ -82,9 +83,9 @@ class ViewMinimizer(Minimizer):
                 return False
 
         for tabname in self.core_relations:
-            res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
             self.connectionHelper.execute_sql([drop_table(get_tabname_4(tabname)),
                                                create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
+            res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
             self.logger.debug(tabname, "==", res)
 
         if not self.sanity_check(query):
@@ -97,7 +98,6 @@ class ViewMinimizer(Minimizer):
         while int(core_sizes[tabname]) > self.max_row_no:
             end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
-
         return core_sizes
 
     def populate_dict_info(self, query):

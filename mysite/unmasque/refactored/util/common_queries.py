@@ -8,6 +8,10 @@ def drop_table(tab):
     return f"drop table if exists {tab};"
 
 
+def drop_table_cascade(tab):
+    return f"drop table if exists {tab} CASCADE;"
+
+
 def alter_table_rename_to(tab, retab):
     return f"Alter table {tab} rename to {retab};"
 
@@ -45,7 +49,7 @@ def get_min_max_ctid(tab):
 
 
 def drop_view(tab):
-    return f"drop view if exists {tab};"
+    return f"drop view if exists {tab} cascade;"
 
 
 def get_tabname_1(tab):
@@ -62,6 +66,14 @@ def get_tabname_un(tab):
 
 def get_tabname_nep(tab):
     return f"{tab}_nep"
+
+
+def get_tabname_2(tab):
+    return f"{tab}2"
+
+
+def create_view_as(view, q):
+    return f"create view {view}  as {q}"
 
 
 def create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, view, tab):
@@ -121,3 +133,31 @@ def select_attribs_from_relation(tab_attribs, relation):
 
 def insert_into_tab_select_star_fromtab(tab, fromtab):
     return f"Insert into {tab} Select * from {fromtab};"
+
+
+def insert_into_tab_select_star_fromtab_with_ctid(tab, fromtab, ctid):
+    return f"Insert into {tab} (Select * from {fromtab} Where ctid = {ctid});"
+
+
+def select_ctid_from_tabname_offset(tabname, offset):
+    return f"Select ctid from {tabname} offset {offset} Limit 1;"
+
+
+def select_next_ctid(tabname, mid_ctid1):
+    return f"Select Min(ctid) from {tabname} Where ctid > '{mid_ctid1}';"
+
+
+def select_previous_ctid(tab, ctid1):
+    return f"Select MAX(ctid) from {tab} Where ctid < '{ctid1}';"
+
+
+def select_max_ctid(tab):
+    return f"Select MAX(ctid) from {tab};"
+
+
+def select_start_ctid_of_any_table():
+    return '(0,1)'
+
+
+def hashtext_query(tab):
+    return f"select sum(hashtext) from (select hashtext({tab}::TEXT) FROM {tab}) as T;"

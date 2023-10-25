@@ -3,7 +3,7 @@ from psycopg2 import Error
 from ....refactored.abstract.ExtractorBase import Base
 from ....refactored.executable import Executable
 from ....refactored.util.common_queries import drop_table, get_row_count, drop_view, \
-    get_star_from_except_all_get_star_from
+    get_star_from_except_all_get_star_from, create_view_as
 
 
 class Comparator(Base):
@@ -21,6 +21,9 @@ class Comparator(Base):
     def doActualJob(self, args):
         Q_h, Q_E = self.extract_params_from_args(args)
         self.sanitize()
+        if Q_E is None:
+            self.logger.info("Got None to compared. Cannot do anything...sorry!")
+            return False
         matched = self.match(Q_h, Q_E)
         return matched
 
@@ -28,7 +31,7 @@ class Comparator(Base):
         try:
             self.logger.debug(Q_E)
             # Run the extracted query Q_E .
-            self.connectionHelper.execute_sql([drop_view(self.r_e), "create view " + self.r_e + " as " + Q_E])
+            self.connectionHelper.execute_sql([drop_view(self.r_e), create_view_as(self.r_e, Q_E)])
         except Error as e:
             self.logger.error(e)
             return False
@@ -64,6 +67,8 @@ class Comparator(Base):
         self.insert_data_into_Qh_table(result)
 
     def match(self, Q_h, Q_E):
+        if Q_E is None:
+            self.logger.debug("Q_E is none. Please see why.")
         count_star_Q_E = self.create_view_from_Q_E(Q_E)
         self.logger.debug(count_star_Q_E)
 

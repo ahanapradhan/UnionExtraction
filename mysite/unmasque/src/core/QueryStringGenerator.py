@@ -98,7 +98,7 @@ class QueryStringGenerator(Base):
             output = output + "\n" + "Limit " + self.limit_op
         output = output + ";"
         return output
-    
+
     def refine_Query1(self, global_key_attributes, pj, gb, agg, ob, lm):
         self.logger.debug("inside:   reveal_proc_support.refine_Query")
         for i in range(len(agg.global_projected_attributes)):
@@ -204,85 +204,97 @@ class QueryStringGenerator(Base):
         return Q_E
 
     def getStrFilterValue(self, query, tabname, attrib, representative, max_length):
-        # convert the view into a table
-        self.connectionHelper.execute_sql(["alter view " + tabname + " rename to " + tabname + "_nep ;",
-                                           "create table " + tabname + " as select * from " + tabname + "_nep ;"])
 
         index = 0
         output = ""
         # currently inverted exclaimaination is being used assuming it will not be in the string
         # GET minimal string with _
         while index < len(representative):
+
             temp = list(representative)
             if temp[index] == 'a':
                 temp[index] = 'b'
             else:
                 temp[index] = 'a'
             temp = ''.join(temp)
+            u_query = f"update {tabname} set {attrib} = '{temp}';"
 
-            # updatequery
-            u_query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
-            self.connectionHelper.execute_sql([u_query])
-            new_result = self.app.doJob(query)
-            if len(new_result) <= 1:
-                temp = copy.deepcopy(representative)
-                temp = temp[:index] + temp[index + 1:]
-
-                # updatequery
-                u_query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
+            try:
                 self.connectionHelper.execute_sql([u_query])
                 new_result = self.app.doJob(query)
                 if len(new_result) <= 1:
-                    representative = representative[:index] + representative[index + 1:]
+                    temp = copy.deepcopy(representative)
+                    temp = temp[:index] + temp[index + 1:]
+
+                    u_query = f"update {tabname} set {attrib} = '{temp}';"
+                    try:
+                        self.connectionHelper.execute_sql([u_query])
+                        new_result = self.app.doJob(query)
+                        if len(new_result) <= 1:
+                            representative = representative[:index] + representative[index + 1:]
+                        else:
+                            output = output + "_"
+                            representative = list(representative)
+                            representative[index] = u"\u00A1"
+                            representative = ''.join(representative)
+                    except Exception as e:
+                        print(e)
+                        output = output + "_"
+                        representative = list(representative)
+                        representative[index] = u"\u00A1"
+                        representative = ''.join(representative)
                 else:
-                    output = output + "_"
-                    representative = list(representative)
-                    representative[index] = u"\u00A1"
-                    representative = ''.join(representative)
-                    index = index + 1
-            else:
+                    output = output + representative[index]
+            except Exception as e:
+                print(e)
                 output = output + representative[index]
-                index = index + 1
+
+            index = index + 1
         if output == '':
-            # convert the table back to view
-            self.connectionHelper.execute_sql(["drop table " + tabname + ";",
-                                               "alter view " + tabname + "_nep rename to " + tabname + ";"])
             return output
+
         # GET % positions
         index = 0
         representative = copy.deepcopy(output)
         if len(representative) < max_length:
             output = ""
+
             while index < len(representative):
+
                 temp = list(representative)
                 if temp[index] == 'a':
                     temp.insert(index, 'b')
                 else:
                     temp.insert(index, 'a')
                 temp = ''.join(temp)
-                # updatequery
-                u_query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
-                self.connectionHelper.execute_sql([u_query])
-                new_result = self.app.doJob(query)
-                # update_other_data(tabname, attrib, 'text', temp, new_result, [])
-                if len(new_result) <= 1:
-                    output = output + '%'
+                u_query = f"update {tabname} set {attrib} = '{temp}';"
+
+                try:
+                    self.connectionHelper.execute_sql([u_query])
+                    new_result = self.app.doJob(query)
+                    if len(new_result) <= 1:
+                        output = output + '%'
+                except Exception as e:
+                    print(e)
+
                 output = output + representative[index]
                 index = index + 1
+
             temp = list(representative)
             if temp[index - 1] == 'a':
                 temp.append('b')
             else:
                 temp.append('a')
             temp = ''.join(temp)
+            u_query = f"update {tabname} set {attrib} = '{temp}';"
 
-            u_query = "update " + tabname + " set " + attrib + " = " + "'" + temp + "';"
-            self.connectionHelper.execute_sql([u_query])
-            new_result = self.app.doJob(query)
-            if len(new_result) <= 1:
-                output = output + '%'
+            try:
+                self.connectionHelper.execute_sql([u_query])
+                new_result = self.app.doJob(query)
+                if len(new_result) <= 1:
+                    output = output + '%'
+            except Exception as e:
+                print(e)
 
-        # convert the table back to view
-        self.connectionHelper.execute_sql(["drop table " + tabname + ";",
-                                           "alter view " + tabname + "_nep rename to " + tabname + ";"])
         return output
+

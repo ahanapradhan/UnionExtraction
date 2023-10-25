@@ -29,7 +29,7 @@ NO_ORDER = 'noorder'
 
 IDENTICAL_EXPR = "identical_expr_nc"
 # we use 1 and 999 to limit, otw overflow can occur
-pr_min = -999
+pr_min = 1
 pr_max = 999
 
 max_str_len = 500
@@ -67,5 +67,9 @@ SAMPLING = "SAMPLING"
 DB_MINIMIZATION = "DB MINIMIZATION"
 RESULT_COMPARE = "RESULT COMPARATOR"
 
+NEP_ = "NEP"
+
 LOG_FORMAT = '%(name)s -- %(levelname)s -- %(message)s'
 
+
+NO_REDUCTION = "NO_REDUCTION"

@@ -8,8 +8,12 @@ from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA
 def cus_execute_sqls(cur, sqls):
     # print(cur)
     for sql in sqls:
-        # print("..cur execute.." + sql)
-        cur.execute(sql)
+        print("..cur execute.." + sql)
+        try:
+            cur.execute(sql)
+        except psycopg2.ProgrammingError as e:
+            print(e)
+            print(e.diag.message_detail)
         # print("..done")
     cur.close()
 
@@ -21,17 +25,27 @@ def cus_execute_sql_with_params(cur, sql, params):
 
 
 def cur_execute_sql_fetch_one_0(cur, sql):
-    cur.execute(sql)
-    prev = cur.fetchone()
-    prev = prev[0]
-    cur.close()
+    prev = None
+    try:
+        cur.execute(sql)
+        prev = cur.fetchone()
+        prev = prev[0]
+        cur.close()
+    except psycopg2.ProgrammingError as e:
+        print(e)
+        print(e.diag.message_detail)
     return prev
 
 
 def cur_execute_sql_fetch_one(cur, sql):
-    cur.execute(sql)
-    prev = cur.fetchone()
-    cur.close()
+    prev = None
+    try:
+        cur.execute(sql)
+        prev = cur.fetchone()
+        cur.close()
+    except psycopg2.ProgrammingError as e:
+        print(e)
+        print(e.diag.message_detail)
     return prev
 
 
@@ -112,12 +126,18 @@ class ConnectionHelper:
         return cur_execute_sql_fetch_one_0(cur, sql)
 
     def execute_sql_fetchall(self, sql):
+        res = None
+        des = None
         cur = self.get_cursor()
         print("...", sql, "...")
-        cur.execute(sql)
-        res = cur.fetchall()
-        des = cur.description
-        cur.close()
+        try:
+            cur.execute(sql)
+            res = cur.fetchall()
+            des = cur.description
+            cur.close()
+        except psycopg2.ProgrammingError as e:
+            print(e)
+            print(e.diag.message_detail)
         return res, des
 
     def get_cursor(self):
