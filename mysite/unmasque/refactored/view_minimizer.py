@@ -66,6 +66,7 @@ class ViewMinimizer(Minimizer):
         core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
 
+
     def reduce_Database_Instance(self, query, cs_pass):
 
         self.local_other_info_dict = {}

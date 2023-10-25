@@ -1,5 +1,7 @@
 import signal
 import sys
+
+from ..test.util import queries
 from .pipeline.ExtractionPipeLine import ExtractionPipeLine
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
 from .util.ConnectionHelper import ConnectionHelper
@@ -18,6 +20,7 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+
     hq = "select sum(l_extendedprice*(1 - l_discount)) as revenue, o_orderdate, " \
                 "o_shippriority, l_orderkey " \
                 "from customer, orders, " \

@@ -449,7 +449,6 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
         print(eq)
-        # self.assertTrue()
         self.conn.closeConnection()
 
     def test_Q21_mukul_thesis(self):

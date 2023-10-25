@@ -2,7 +2,7 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, NEP_
+    NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.equi_join import EquiJoin
@@ -200,7 +200,6 @@ class ExtractionPipeLine(GenericPipeLine):
 
         if self.connectionHelper.config.detect_nep:
             self.update_state(NEP_ + START)
-
             nep = NEP(self.connectionHelper, core_relations, cs2.sizes, self.global_pk_dict, ej.global_all_attribs,
                       ej.global_attrib_types, fl.filter_predicates, ej.global_key_attributes, q_generator,
                       vm.global_min_instance_dict)
@@ -209,6 +208,7 @@ class ExtractionPipeLine(GenericPipeLine):
             eq = nep.Q_E
             time_profile.update_for_nep(nep.local_elapsed_time)
             self.update_state(NEP_ + DONE)
+
             if not check:
                 self.logger.info("NEP does not exists.")
 
