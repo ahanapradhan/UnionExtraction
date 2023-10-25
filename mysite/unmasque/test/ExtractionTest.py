@@ -416,6 +416,18 @@ class MyTestCase(BaseTestCase):
         for i in range(10):
             self.test_extraction_Q6()
 
+    def test_Q21(self):
+        query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \
+            "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
+            "and s_nationkey = n_nationkey Group By s_name " \
+            "Order By numwait desc, s_name Limit 100;"
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()
