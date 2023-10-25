@@ -211,7 +211,12 @@ class QueryStringGenerator(Base):
         # GET minimal string with _
         while index < len(representative):
 
-            temp = self.get_temp_at_index(index, index, representative)
+            temp = list(representative)
+            if temp[index] == 'a':
+                temp[index] = 'b'
+            else:
+                temp[index] = 'a'
+            temp = ''.join(temp)
             u_query = f"update {tabname} set {attrib} = '{temp}';"
 
             try:
@@ -256,7 +261,12 @@ class QueryStringGenerator(Base):
 
             while index < len(representative):
 
-                temp = self.get_temp_at_index(index, index, representative)
+                temp = list(representative)
+                if temp[index] == 'a':
+                    temp.insert(index, 'b')
+                else:
+                    temp.insert(index, 'a')
+                temp = ''.join(temp)
                 u_query = f"update {tabname} set {attrib} = '{temp}';"
 
                 try:
@@ -288,11 +298,3 @@ class QueryStringGenerator(Base):
 
         return output
 
-    def get_temp_at_index(self, check_idx, insert_idx, representative):
-        temp = list(representative)
-        if temp[check_idx] == 'a':
-            temp.insert(insert_idx, 'b')
-        else:
-            temp.insert(insert_idx, 'a')
-        temp = ''.join(temp)
-        return temp

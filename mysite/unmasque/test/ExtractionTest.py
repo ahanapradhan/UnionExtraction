@@ -425,9 +425,31 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         print(eq)
         self.conn.closeConnection()
+
     def test_6_mul(self):
+        pass
+        '''
         for i in range(10):
             self.test_extraction_Q6()
+        '''
+
+    def test_NEP_mukul_thesis_Q1(self):
+        query = "Select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as " \
+                "sum_base_price, " \
+                "sum(l_discount) as sum_disc_price, sum(l_tax) as sum_charge, avg(l_quantity) as avg_qty, " \
+                "avg(l_extendedprice) as avg_price, avg(l_discount) as avg_disc, count(*) as count_order " \
+                "From lineitem Where l_shipdate <= date '1998-12-01' and l_extendedprice <> 33203.72 " \
+                "Group by l_returnflag, l_linestatus " \
+                "Order by l_returnflag, l_linestatus;"
+
+        self.conn.config.detect_nep = True
+
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        print(eq)
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':

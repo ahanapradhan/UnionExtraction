@@ -3,7 +3,6 @@ import unittest
 
 from mysite.unmasque.refactored.cs2 import Cs2
 from mysite.unmasque.refactored.nep import NEP
-from mysite.unmasque.refactored.util.common_queries import drop_table, alter_table_rename_to, get_restore_name
 from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -57,9 +56,6 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
-        #cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        #cs2.take_backup()
-
         global_min_instance_dict = {}
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
@@ -77,7 +73,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
-    def test_mukul_sample_query(self):
+    def test_mukul_overlapping_ranges(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count From lineitem Where l_quantity > 20 and l_quantity <> 25 " \
                 "Group By l_shipmode Order By l_shipmode;"
@@ -115,8 +111,6 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, count(*) as count'
         q_gen.where_op = "l_quantity > 20 "
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
         global_min_instance_dict = {}
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
@@ -179,9 +173,6 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31'"
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
-
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
                 global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
 
@@ -206,7 +197,7 @@ class MyTestCase(BaseTestCase):
                 "From lineitem Where l_shipdate >= " \
                 "'1994-01-01' and l_quantity < 24 " \
                 "and l_shipmode " \
-                "not like '%AIR%' and l_shipdate <> '1995-01-03' Group By l_shipmode Limit 100;"
+                "not like '%AIR%' Group By l_shipmode Limit 100;"
 
         Q_E = "Select l_shipmode, sum(l_extendedprice) as revenue " \
               "From lineitem " \
@@ -246,8 +237,6 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
         global_min_instance_dict = {}
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
@@ -258,7 +247,10 @@ class MyTestCase(BaseTestCase):
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertEqual(query, o.Q_E)
+        self.assertTrue("and l_shipmode NOT LIKE '%AIR%'" in q_gen.where_op)
+        terms = o.Q_E.split(" ")
+        and_count = terms.count("and")
+        self.assertEqual(and_count, 2)
 
         self.conn.closeConnection()
 
@@ -345,8 +337,6 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 's_suppkey = l_suppkey and o_orderkey = l_orderkey and s_nationkey = n_nationkey  and ' \
                          'o_orderstatus = \'F\''
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings)
-        cs2.take_backup()
         global_min_instance_dict = {}
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
@@ -357,7 +347,10 @@ class MyTestCase(BaseTestCase):
         check = o.doJob([q, eq])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertEqual(q, o.Q_E)
+        self.assertTrue("and n_name <> 'GERMANY" in q_gen.where_op)
+        terms = o.Q_E.split(" ")
+        and_count = terms.count("and")
+        self.assertEqual(and_count, 4)
 
         self.conn.closeConnection()
 

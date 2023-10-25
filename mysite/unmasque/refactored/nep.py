@@ -53,10 +53,14 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
                 core_sizes = self.getCoreSizes()
                 self.Q_E = self.get_nep(core_sizes, tabname, query, i)
+
                 if self.Q_E is None:
                     self.logger.error("Something is wrong")
                     return False
                 matched = self.nep_comparator.doJob(query, self.Q_E)
+
+                if matched:
+                    break
 
         return nep_exists
 
@@ -144,13 +148,19 @@ class NEP(Minimizer, GenerationPipeLineBase):
         query_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({query}) as q_h;")
         q_e_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({q_e}) as q_e;")
         self.logger.debug(f"q_e result: {q_e_result}, query result: {query_result}")
-        if q_e_result == 1 and query_result == 0:
+        '''
+        if q_e_result >= 1 and query_result >= 1:
             return True
-        elif q_e_result >= 1 and query_result >= 1:
+        elif q_e_result == 1 and query_result == 0:
             return True
         elif q_e_result == 0 and query_result == 1:
             return False
         elif q_e_result == 0 and query_result == 0:
+            return False
+        '''
+        if q_e_result >= 1:
+            return True
+        elif not q_e_result:
             return False
 
     def extract_NEP_value(self, query, tabname, i):

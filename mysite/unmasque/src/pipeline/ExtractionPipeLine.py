@@ -2,7 +2,7 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
+    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, NEP
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.equi_join import EquiJoin
@@ -19,6 +19,7 @@ class ExtractionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Extraction PipeLine")
+        self.global_pk_dict = {}
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
@@ -36,6 +37,7 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, self.time_profile
 
         self.all_relations = fc.all_relations
+        self.global_pk_dict = fc.init.global_pk_dict
 
         eq, t = self.after_from_clause_extract(query, self.all_relations,
                                                fc.core_relations,
@@ -166,7 +168,8 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(ORDER_BY + START)
         ob = OrderBy(self.connectionHelper, ej.global_key_attributes, ej.global_attrib_types, core_relations,
                      fl.filter_predicates, ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs,
-                     pj.projection_names, pj.dependencies, agg.global_aggregated_attributes, vm.global_min_instance_dict)
+                     pj.projection_names, pj.dependencies, agg.global_aggregated_attributes,
+                     vm.global_min_instance_dict)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
         self.update_state(ORDER_BY + DONE)
@@ -193,6 +196,21 @@ class ExtractionPipeLine(GenericPipeLine):
         q_generator = QueryStringGenerator(self.connectionHelper)
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
         self.logger.debug("extracted query:\n", eq)
+
+        if self.connectionHelper.config.detect_nep:
+            self.update_state(NEP + START)
+
+            nep = NEP(self.connectionHelper, core_relations, cs2.sizes, self.global_pk_dict, ej.global_all_attribs,
+                      ej.global_attrib_types, fl.filter_predicates, ej.global_key_attributes, q_generator,
+                      vm.global_min_instance_dict)
+            self.update_state(NEP + RUNNING)
+            check = nep.doJob([query, eq])
+            eq = nep.Q_E
+            time_profile.update_for_nep(nep.local_elapsed_time)
+            self.update_state(NEP + DONE)
+            if not check:
+                self.logger.info("NEP does not exists.")
+
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
 
