@@ -44,7 +44,8 @@ Q3 = "select l_orderkey as orderkey, sum(l_discount) as revenue, o_totalprice as
 Q3_1 = "select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, " \
        "o_shippriority  from customer, orders, " \
        "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate " \
-       "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
+       "<= '1995-03-15' and l_shipdate >= '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by " \
+       "revenue " \
        "desc, o_orderdate limit 10;"
 Q3_2 = "select l_orderkey, sum(l_extendedprice*(1 - l_discount) - o_totalprice) as revenue, o_orderdate, " \
        "o_shippriority  from customer, orders, " \
@@ -124,7 +125,9 @@ queries_dict = {'tpch_query3': tpch_query3,
                 'Q10_simple': Q10_simple,
                 'q1': q1,
                 'q1_simple': q1_simple,
-                'q1_filter': q1_filter
+                'q1_filter': q1_filter,
+                'Q18_test1': Q18_test1,
+                'Q18_test': Q18_test
                 }
 '''
 (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905 limit 3)

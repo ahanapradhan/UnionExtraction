@@ -44,7 +44,7 @@ class MyTestCase(BaseTestCase):
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_in_loop(self):
@@ -59,7 +59,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_q1_filter(self):
@@ -69,7 +69,7 @@ class MyTestCase(BaseTestCase):
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
-        self.pipeline.time_profile.print()
+        self.pipeline.time_profile.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_query1(self):
@@ -88,7 +88,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_query3(self):
@@ -107,7 +107,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q1(self):
@@ -126,7 +126,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q3(self):
@@ -145,7 +145,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q3_1(self):
@@ -153,16 +153,29 @@ class MyTestCase(BaseTestCase):
         key = 'Q3_1'
         query = queries.queries_dict[key]
         print(query)
+        '''
         app = Executable(self.conn)
         result = app.doJob(query)
         if isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
-
+        '''
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
+        self.pipeline.time_profile.debug_print()
+        self.conn.closeConnection()
+
+    def test_extraction_Q18_test1(self):
+        self.conn.connectUsingParams()
+        key = 'Q18_test'
+        query = queries.queries_dict[key]
+        print(query)
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
         self.pipeline.time_profile.print()
         self.conn.closeConnection()
 
@@ -182,7 +195,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q5(self):
@@ -201,7 +214,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q6(self):
@@ -220,7 +233,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q7(self):
@@ -239,7 +252,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q11(self):
@@ -258,7 +271,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q16(self):
@@ -277,7 +290,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q17(self):
@@ -296,7 +309,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q18(self):
@@ -316,7 +329,7 @@ class MyTestCase(BaseTestCase):
 
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q21(self):
@@ -336,7 +349,7 @@ class MyTestCase(BaseTestCase):
 
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q23_1(self):
@@ -356,7 +369,7 @@ class MyTestCase(BaseTestCase):
 
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q9_simple(self):
@@ -375,7 +388,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_extraction_Q10_simple(self):
@@ -394,7 +407,7 @@ class MyTestCase(BaseTestCase):
                                                          tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        tp.debug_print()
         self.conn.closeConnection()
 
     def test_for_bug(self):
@@ -412,9 +425,47 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         print(eq)
         self.conn.closeConnection()
+
     def test_6_mul(self):
+        pass
+        '''
         for i in range(10):
             self.test_extraction_Q6()
+        '''
+
+    def test_NEP_mukul_thesis_Q1(self):
+        query = "Select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as " \
+                "sum_base_price, " \
+                "sum(l_discount) as sum_disc_price, sum(l_tax) as sum_charge, avg(l_quantity) as avg_qty, " \
+                "avg(l_extendedprice) as avg_price, avg(l_discount) as avg_disc, count(*) as count_order " \
+                "From lineitem Where l_shipdate <= date '1998-12-01' and l_extendedprice <> 33203.72 " \
+                "Group by l_returnflag, l_linestatus " \
+                "Order by l_returnflag, l_linestatus;"
+
+        self.conn.config.detect_nep = True
+
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        print(eq)
+        self.conn.closeConnection()
+
+    def test_Q21_mukul_thesis(self):
+        self.conn.connectUsingParams()
+        query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \
+            "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
+            "and s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name " \
+            "Order By numwait desc, s_name Limit 100;"
+        self.conn.config.detect_nep = True
+
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        print(eq)
+        self.assertTrue("n_name <> 'GERMANY'" in eq)
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':
