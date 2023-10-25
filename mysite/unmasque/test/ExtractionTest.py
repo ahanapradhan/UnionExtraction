@@ -449,6 +449,23 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
         print(eq)
+        # self.assertTrue()
+        self.conn.closeConnection()
+
+    def test_Q21_mukul_thesis(self):
+        self.conn.connectUsingParams()
+        query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \
+            "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
+            "and s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name " \
+            "Order By numwait desc, s_name Limit 100;"
+        self.conn.config.detect_nep = True
+
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        print(eq)
+        self.assertTrue("n_name <> 'GERMANY'" in eq)
         self.conn.closeConnection()
 
 

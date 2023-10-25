@@ -36,9 +36,6 @@ class Base(TpchSanitizer):
     def doActualJob(self, args):
         pass
 
-    def sanitize(self):
-        super().doJob()
-
     def extract_params_from_args(self, args):
         pass
 

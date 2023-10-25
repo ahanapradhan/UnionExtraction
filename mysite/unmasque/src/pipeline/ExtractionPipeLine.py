@@ -2,7 +2,7 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, NEP
+    PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, NEP_
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.equi_join import EquiJoin
@@ -10,6 +10,7 @@ from ...refactored.filter import Filter
 from ...refactored.from_clause import FromClause
 from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
+from ...refactored.nep import NEP
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
 from ...refactored.view_minimizer import ViewMinimizer
@@ -198,16 +199,16 @@ class ExtractionPipeLine(GenericPipeLine):
         self.logger.debug("extracted query:\n", eq)
 
         if self.connectionHelper.config.detect_nep:
-            self.update_state(NEP + START)
+            self.update_state(NEP_ + START)
 
             nep = NEP(self.connectionHelper, core_relations, cs2.sizes, self.global_pk_dict, ej.global_all_attribs,
                       ej.global_attrib_types, fl.filter_predicates, ej.global_key_attributes, q_generator,
                       vm.global_min_instance_dict)
-            self.update_state(NEP + RUNNING)
+            self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
             eq = nep.Q_E
             time_profile.update_for_nep(nep.local_elapsed_time)
-            self.update_state(NEP + DONE)
+            self.update_state(NEP_ + DONE)
             if not check:
                 self.logger.info("NEP does not exists.")
 
