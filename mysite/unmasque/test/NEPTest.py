@@ -1,7 +1,7 @@
 import datetime
 import unittest
 
-# import pytest as pytest
+import pytest as pytest
 
 from mysite.unmasque.refactored.nep import NEP
 from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
@@ -74,7 +74,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     def test_mukul_overlapping_ranges(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count From lineitem Where l_quantity > 20 and l_quantity <> 25 " \

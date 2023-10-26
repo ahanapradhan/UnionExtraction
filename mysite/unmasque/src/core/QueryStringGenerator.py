@@ -203,7 +203,10 @@ class QueryStringGenerator(Base):
             else:
                 predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
 
-            self.where_op = f'{self.where_op} and {predicate}' if self.where_op else predicate
+            if self.where_op and predicate not in self.where_op:
+                self.where_op = f'{self.where_op} and {predicate}'
+            else:
+                self.where_op = predicate
 
         Q_E = self.assembleQuery()
         return Q_E
