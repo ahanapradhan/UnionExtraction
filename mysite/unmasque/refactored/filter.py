@@ -125,7 +125,7 @@ class Filter(WhereClause):
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
                     # break
-                    if datatype=='numeric' or datatype=='float':
+                    if datatype == 'numeric' or datatype == 'float':
                         return math.floor(mid_val)
                     else:
                         return mid_val
@@ -135,10 +135,10 @@ class Filter(WhereClause):
                     self.logger.debug("high", high)
                 else:
                     low = mid_val
-                
+
                 self.revert_filter_changes(tabname)
-            if datatype== 'numeric' or datatype== 'float':
-                return math.floor(low) 
+            if datatype == 'numeric' or datatype == 'float':
+                return math.floor(low)
             else:
                 return low
 
@@ -156,10 +156,10 @@ class Filter(WhereClause):
                 else:
                     high = mid_val
                 self.revert_filter_changes(tabname)
-            if datatype== 'numeric' or datatype== 'float':
-                return math.ceil(high) 
+            if datatype == 'numeric' or datatype == 'float':
+                return math.ceil(mid_val)
             else:
-                return high
+                return mid_val
 
         else:  # =, i.e. datatype == 'int', date
             is_low = True

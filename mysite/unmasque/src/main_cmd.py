@@ -29,6 +29,11 @@ if __name__ == '__main__':
                 "< '1995-03-15' and l_shipdate > '1995-03-15' " \
                 "group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
                 "desc, o_orderdate limit 10;"
+    hq = "select l_orderkey as orderkey, sum(l_extendedprice * l_discount - o_totalprice) as revenue, o_orderdate as " \
+         "orderdate, o_shippriority as shippriority from customer, orders, lineitem where c_mktsegment = 'BUILDING' " \
+         "and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < '1995-03-15' and l_shipdate > " \
+         "'1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate, " \
+         "l_orderkey limit 10;"
     conn = ConnectionHelper()
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
