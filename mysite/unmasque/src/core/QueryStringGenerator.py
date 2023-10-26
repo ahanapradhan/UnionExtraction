@@ -212,7 +212,7 @@ class QueryStringGenerator(Base):
         return Q_E
 
     def remove_exact_NE_string_predicate(self, elt):
-        if elt[1] in self.where_op:
+        while elt[1] in self.where_op:
             where_parts = self.where_op.split()
             attrib_index = where_parts.index(elt[1])
 
@@ -225,7 +225,7 @@ class QueryStringGenerator(Base):
                 check_idx = start_idx + 1
                 while not where_parts[check_idx].endswith("'"):
                     check_idx += 1
-                while check_idx > start_idx:
+                while check_idx >= start_idx:
                     where_parts.pop(check_idx)
                     check_idx -= 1
 
