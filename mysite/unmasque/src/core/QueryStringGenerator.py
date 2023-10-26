@@ -40,6 +40,10 @@ def handle_range_preds(datatype, pred, pred_op):
     return pred_op
 
 
+def get_exact_NE_string_predicate(elt, output):
+    return elt[1] + " " + str(elt[2]) + " '" + str(output) + "' "
+
+
 class QueryStringGenerator(Base):
 
     def __init__(self, connectionHelper):
@@ -187,14 +191,15 @@ class QueryStringGenerator(Base):
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:
             if '-' in str(elt[3]):
-                predicate = elt[1] + " " + str(elt[2]) + " '" + str(elt[3]) + "' "
+                predicate = get_exact_NE_string_predicate(elt, elt[3])
 
             elif isinstance(elt[3], str):
                 output = self.getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
                 if '%' in output or '_' in output:
                     predicate = elt[1] + " NOT LIKE '" + str(output) + "' "
+                    self.remove_exact_NE_string_predicate(elt)
                 else:
-                    predicate = elt[1] + " " + str(elt[2]) + " '" + str(output) + "' "
+                    predicate = get_exact_NE_string_predicate(elt, output)
             else:
                 predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
 
@@ -203,8 +208,85 @@ class QueryStringGenerator(Base):
         Q_E = self.assembleQuery()
         return Q_E
 
-    def getStrFilterValue(self, query, tabname, attrib, representative, max_length):
+    def remove_exact_NE_string_predicate(self, elt):
+        if elt[1] in self.where_op:
+            where_parts = self.where_op.split()
+            attrib_index = where_parts.index(elt[1])
 
+            val = where_parts[attrib_index + 2]
+            self.logger.debug(f"=== val: {val} to delete ===")
+            if val.startswith("'") and val.endswith("'"):
+                where_parts.pop(attrib_index + 2)
+            elif val.startswith("'"):
+                start_idx = attrib_index + 2
+                check_idx = start_idx + 1
+                while not where_parts[check_idx].endswith("'"):
+                    check_idx += 1
+                while check_idx > start_idx:
+                    where_parts.pop(check_idx)
+                    check_idx -= 1
+
+            where_parts.pop(attrib_index + 1)  # <>
+            where_parts.pop(attrib_index)
+
+            if "and" in where_parts[attrib_index - 1]:
+                where_parts.pop(attrib_index - 1)  # for and
+            self.where_op = " ".join(where_parts)
+
+    def getStrFilterValue(self, query, tabname, attrib, representative, max_length):
+        representative = self.get_minimal_representative_str(attrib, query, representative, tabname)
+        output = self.handle_for_wildcard_char_underscore(attrib, query, representative, tabname)
+        if output == '':
+            return output
+        output = self.handle_for_wildcard_char_perc(attrib, max_length, output, query, tabname)
+        return output
+
+    def handle_for_wildcard_char_perc(self, attrib, max_length, output, query, tabname):
+        # GET % positions
+        index = 0
+        representative = copy.deepcopy(output)
+        if len(representative) < max_length:
+            output = ""
+
+            while index < len(representative):
+
+                temp = list(representative)
+                if temp[index] == 'a':
+                    temp.insert(index, 'b')
+                else:
+                    temp.insert(index, 'a')
+                temp = ''.join(temp)
+                u_query = f"update {tabname} set {attrib} = '{temp}';"
+
+                try:
+                    self.connectionHelper.execute_sql([u_query])
+                    new_result = self.app.doJob(query)
+                    if len(new_result) <= 1:
+                        output = output + '%'
+                except Exception as e:
+                    print(e)
+
+                output = output + representative[index]
+                index = index + 1
+
+            temp = list(representative)
+            if temp[index - 1] == 'a':
+                temp.append('b')
+            else:
+                temp.append('a')
+            temp = ''.join(temp)
+            u_query = f"update {tabname} set {attrib} = '{temp}';"
+
+            try:
+                self.connectionHelper.execute_sql([u_query])
+                new_result = self.app.doJob(query)
+                if len(new_result) <= 1:
+                    output = output + '%'
+            except Exception as e:
+                print(e)
+        return output
+
+    def handle_for_wildcard_char_underscore(self, attrib, query, representative, tabname):
         index = 0
         output = ""
         # currently inverted exclaimaination is being used assuming it will not be in the string
@@ -250,41 +332,15 @@ class QueryStringGenerator(Base):
                 output = output + representative[index]
 
             index = index + 1
-        if output == '':
-            return output
+        return output
 
-        # GET % positions
+    def get_minimal_representative_str(self, attrib, query, representative, tabname):
         index = 0
-        representative = copy.deepcopy(output)
-        if len(representative) < max_length:
-            output = ""
+        output = ""
 
-            while index < len(representative):
-
-                temp = list(representative)
-                if temp[index] == 'a':
-                    temp.insert(index, 'b')
-                else:
-                    temp.insert(index, 'a')
-                temp = ''.join(temp)
-                u_query = f"update {tabname} set {attrib} = '{temp}';"
-
-                try:
-                    self.connectionHelper.execute_sql([u_query])
-                    new_result = self.app.doJob(query)
-                    if len(new_result) <= 1:
-                        output = output + '%'
-                except Exception as e:
-                    print(e)
-
-                output = output + representative[index]
-                index = index + 1
-
+        while index < len(representative):
             temp = list(representative)
-            if temp[index - 1] == 'a':
-                temp.append('b')
-            else:
-                temp.append('a')
+            temp[index] = ''
             temp = ''.join(temp)
             u_query = f"update {tabname} set {attrib} = '{temp}';"
 
@@ -292,9 +348,12 @@ class QueryStringGenerator(Base):
                 self.connectionHelper.execute_sql([u_query])
                 new_result = self.app.doJob(query)
                 if len(new_result) <= 1:
-                    output = output + '%'
+                    pass
+                else:
+                    output = output + representative[index]
             except Exception as e:
                 print(e)
+                output = output + representative[index]
 
+            index = index + 1
         return output
-

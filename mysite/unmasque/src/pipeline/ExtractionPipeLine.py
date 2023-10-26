@@ -198,6 +198,15 @@ class ExtractionPipeLine(GenericPipeLine):
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
         self.logger.debug("extracted query:\n", eq)
 
+        eq = self.extract_NEP(core_relations, cs2, ej, eq, fl, q_generator, query, time_profile, vm)
+
+        # last component in the pipeline should do this
+        time_profile.update_for_app(lm.app.method_call_count)
+
+        self.update_state(DONE)
+        return eq, time_profile
+
+    def extract_NEP(self, core_relations, cs2, ej, eq, fl, q_generator, query, time_profile, vm):
         if self.connectionHelper.config.detect_nep:
             self.update_state(NEP_ + START)
             nep = NEP(self.connectionHelper, core_relations, cs2.sizes, self.global_pk_dict, ej.global_all_attribs,
@@ -211,9 +220,4 @@ class ExtractionPipeLine(GenericPipeLine):
 
             if not check:
                 self.logger.info("NEP does not exists.")
-
-        # last component in the pipeline should do this
-        time_profile.update_for_app(lm.app.method_call_count)
-
-        self.update_state(DONE)
-        return eq, time_profile
+        return eq

@@ -16,6 +16,13 @@ class NepComparator(ResultComparator):
 
 class NEP(Minimizer, GenerationPipeLineBase):
 
+    loop_count_cutoff = 10
+    '''
+    NEP extractor do not terminate if input Q_E is not correct. This cutoff is to prevent infinite looping
+    It imposes on the user the following restriction: hidden query cannot have more than 10 NEPs.
+    Of course we can set this cutoff to much higher value if needed.
+    '''
+
     def __init__(self, connectionHelper, core_relations, all_sizes, global_pk_dict, global_all_attribs,
                  global_attrib_types, filter_predicates, global_key_attributes, query_generator,
                  global_min_instance_dict):

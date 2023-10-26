@@ -1,11 +1,10 @@
 import ast
 import copy
-import random
 import math
+import random
 
 import numpy as np
 
-from .util.common_queries import get_star
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
     get_val_plus_delta, get_char
