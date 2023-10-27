@@ -5,6 +5,7 @@ import pytest as pytest
 
 from mysite.unmasque.refactored.nep import NEP
 from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
+from mysite.unmasque.src.util.constants import max_numeric_val
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -74,7 +75,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
-    @pytest.mark.skip
+    #@pytest.mark.skip
     def test_mukul_overlapping_ranges(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count From lineitem Where l_quantity > 20 and l_quantity <> 25 " \
@@ -84,7 +85,7 @@ class MyTestCase(BaseTestCase):
 
         core_rels = ['lineitem']
 
-        filters = [('lineitem', 'l_quantity', '<=', -2147483648.88, 21.0)]
+        filters = [('lineitem', 'l_quantity', '<=', 21.0, max_numeric_val)]
 
         global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
                                ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
@@ -107,7 +108,7 @@ class MyTestCase(BaseTestCase):
         q_gen = QueryStringGenerator(self.conn)
         q_gen.from_op = 'lineitem'
         q_gen.group_by_op = 'l_shipmode'
-        q_gen.limit_op = ''
+        q_gen.limit_op = None
         q_gen.method_call_count = 0
         q_gen.order_by_op = 'l_shipmode'
         q_gen.select_op = 'l_shipmode, count(*) as count'
@@ -121,7 +122,7 @@ class MyTestCase(BaseTestCase):
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertEqual("l_quantity > 20 and l_quantity <> 25 ", q_gen.where_op)
+        self.assertEqual("l_quantity > 20  and l_quantity <> 25.00", q_gen.where_op)
 
         self.conn.closeConnection()
 

@@ -46,16 +46,16 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
-        print("***********")
-        print(self.filter_attrib_dict)
-        print("***********")
         nep_exists = False
 
         # Run the hidden query on the original database instance
         matched = self.nep_comparator.doJob(query, Q_E)
         self.Q_E = Q_E
-        while not matched:
+        loop_count = 0
+        while not matched and loop_count < self.loop_count_cutoff:
             for i in range(len(self.core_relations)):
+                loop_count += 1
+
                 tabname = self.core_relations[i]
                 self.logger.info("NEP may exists")
                 nep_exists = True
@@ -68,7 +68,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
                     self.logger.error("Something is wrong")
                     return False
                 matched = self.nep_comparator.doJob(query, self.Q_E)
-
                 if matched:
                     break
 
