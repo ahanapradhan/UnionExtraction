@@ -116,9 +116,8 @@ class Aggregation(GenerationPipeLineBase):
                  global_all_attribs, join_graph, projected_attribs, has_groupby, groupby_attribs, dependencies,
                  solution, param_list, global_min_instance_dict):
         super().__init__(connectionHelper, "Aggregation", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict)
+                         join_graph, filter_predicates, global_min_instance_dict, global_key_attributes)
         self.global_aggregated_attributes = None
-        self.global_key_attributes = global_key_attributes
         self.global_projected_attributes = projected_attribs
         self.has_groupby = has_groupby
         self.global_groupby_attributes = groupby_attribs
@@ -126,7 +125,7 @@ class Aggregation(GenerationPipeLineBase):
         self.solution = solution
         self.param_list = param_list
 
-    def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
+    def doExtractJob(self, query):
         # AsSUMing NO DISTINCT IN AGGREGATION
 
         self.global_aggregated_attributes = [(element, '') for element in self.global_projected_attributes]
@@ -170,12 +169,12 @@ class Aggregation(GenerationPipeLineBase):
                 if attrib in self.global_key_attributes and attrib in self.global_groupby_attributes:
                     groupby_key_flag = True
                 for result_index in result_index_list:
-                    a, agg_array, b, k_value = get_k_value(attrib, attrib_types_dict, filter_attrib_dict,
+                    a, agg_array, b, k_value = get_k_value(attrib, self.attrib_types_dict, self.filter_attrib_dict,
                                                            groupby_key_flag, tabname)
 
                     self.truncate_core_relations()
                     temp_vals = []
-                    max_no_of_rows = self.insert_for_inner(a, attrib, attrib_types_dict, b, filter_attrib_dict, k_value,
+                    max_no_of_rows = self.insert_for_inner(a, attrib, self.attrib_types_dict, b, self.filter_attrib_dict, k_value,
                                                            key_list, tabname, temp_vals, result_index)
                     self.logger.debug(self.dependencies, result_index, \
                                                        key_list, tabname, temp_vals, result_index)

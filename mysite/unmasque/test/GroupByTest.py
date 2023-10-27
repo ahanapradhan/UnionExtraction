@@ -1,6 +1,7 @@
 import datetime
 import unittest
 import sys
+
 sys.path.append("../../../")
 from mysite.unmasque.refactored.groupby_clause import GroupBy
 from mysite.unmasque.test.util import tpchSettings, queries
@@ -13,6 +14,7 @@ class MyTestCase(BaseTestCase):
         global_min_instance_dict = {}
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q1']
+        global_key_attributes = ['l_orderkey', 'l_partkey', 'l_suppkey']
 
         global_attrib_types = [('lineitem', 'l_orderkey', 'integer'),
                                ('lineitem', 'l_partkey', 'integer'),
@@ -40,10 +42,10 @@ class MyTestCase(BaseTestCase):
 
         join_graph = []
 
-        projections = ['l_returnflag', 'l_linestatus', 'l_quantity','l_extendedprice', 'l_discount'
+        projections = ['l_returnflag', 'l_linestatus', 'l_quantity', 'l_extendedprice', 'l_discount'
             , 'l_tax', 'l_quantity', 'l_extendedprice', 'l_discount', '']
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
-                     projections, global_min_instance_dict)
+                     projections, global_min_instance_dict, global_key_attributes)
         gb.mock = True
 
         check = gb.doJob(queries.Q1)
@@ -58,6 +60,8 @@ class MyTestCase(BaseTestCase):
 
     def test_gb_Q3(self):
         global_min_instance_dict = {}
+        global_key_attribs = ['c_custkey', 'c_nationkey', 'l_orderkey', 'l_partkey', 'l_suppkey',
+                              'o_orderkey', 'o_custkey']
 
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
@@ -115,9 +119,8 @@ class MyTestCase(BaseTestCase):
         projections = ['l_orderkey', 'l_discount', 'o_orderdate', 'o_shippriority']
 
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
-                     projections, global_min_instance_dict)
+                     projections, global_min_instance_dict, global_key_attribs)
         gb.mock = True
-
 
         check = gb.doJob(queries.Q3_1)
         self.assertTrue(check)
@@ -132,6 +135,7 @@ class MyTestCase(BaseTestCase):
 
     def test_gb_Q4(self):
         global_min_instance_dict = {}
+        global_key_attributes = ['o_orderkey','o_custkey']
 
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q4']
@@ -156,9 +160,8 @@ class MyTestCase(BaseTestCase):
         projections = ['o_orderdate', 'o_orderpriority', '']
 
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
-                     projections, global_min_instance_dict)
+                     projections, global_min_instance_dict, global_key_attributes)
         gb.mock = True
-
 
         check = gb.doJob(queries.Q4)
         self.assertTrue(check)
@@ -172,6 +175,10 @@ class MyTestCase(BaseTestCase):
 
     def test_gb_Q5(self):
         global_min_instance_dict = {}
+        global_key_attribs = ['c_custkey', 'c_nationkey', 'l_orderkey', 'l_partkey', 'l_suppkey',
+                              'o_orderkey', 'o_custkey', 's_suppkey', 's_nationkey', 'n_nationkey',
+                              'n_regionkey', 'r_regionkey']
+
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q5']
 
@@ -246,9 +253,8 @@ class MyTestCase(BaseTestCase):
         projections = ['n_name', 'l_extendedprice']
 
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
-                     projections, global_min_instance_dict)
+                     projections, global_min_instance_dict, global_key_attribs)
         gb.mock = True
-
 
         check = gb.doJob(queries.Q5)
         self.assertTrue(check)

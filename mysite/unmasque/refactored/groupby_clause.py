@@ -11,14 +11,14 @@ def has_attrib_key_condition(attrib, attrib_inner, key_list):
 
 class GroupBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates, global_all_attribs,
-                 join_graph, projected_attribs, global_min_instance_dict):
+                 join_graph, projected_attribs, global_min_instance_dict, global_key_attributes):
         super().__init__(connectionHelper, "Group By", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict)
+                         join_graph, filter_predicates, global_min_instance_dict, global_key_attributes)
         self.projected_attribs = projected_attribs
         self.has_groupby = False
         self.group_by_attrib = []
 
-    def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
+    def doExtractJob(self, query):
         for i in range(len(self.core_relations)):
             tabname = self.core_relations[i]
             attrib_list = self.global_all_attribs[i]
@@ -52,60 +52,60 @@ class GroupBy(GenerationPipeLineBase):
                                 att_order += attrib_inner + ","
                             if has_attrib_key_condition(attrib, attrib_inner, key_list):
                                 delta = curr_attrib_value[k]
-                                if 'date' in attrib_types_dict[(tabname_inner, attrib_inner)]:
-                                    if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
+                                if 'date' in self.attrib_types_dict[(tabname_inner, attrib_inner)]:
+                                    if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                                         zero_date = get_val_plus_delta('date',
-                                                                       filter_attrib_dict[
+                                                                       self.filter_attrib_dict[
                                                                            (tabname_inner, attrib_inner)][0], delta)
-                                        one_date = filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+                                        one_date = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
                                         date_val = min(zero_date, one_date)
                                     else:
                                         date_val = get_val_plus_delta('date', get_dummy_val_for('date'), delta)
                                     insert_values.append(ast.literal_eval(get_format('date', date_val)))
-                                elif ('int' in attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in
-                                      attrib_types_dict[(tabname_inner, attrib_inner)]):
+                                elif ('int' in self.attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in
+                                      self.attrib_types_dict[(tabname_inner, attrib_inner)]):
                                     # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-                                    if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
+                                    if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                                         zero_val = get_val_plus_delta('int',
-                                                                      filter_attrib_dict[(tabname_inner, attrib_inner)][
+                                                                      self.filter_attrib_dict[(tabname_inner, attrib_inner)][
                                                                           0], delta)
-                                        one_val = filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+                                        one_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
                                         number_val = min(zero_val, one_val)
                                     else:
                                         number_val = get_val_plus_delta('int', get_dummy_val_for('int'), delta)
                                     insert_values.append(get_format('int', number_val))
                                 else:
                                     plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), delta))
-                                    if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                                        if '_' in filter_attrib_dict[(tabname_inner, attrib_inner)]:
+                                    if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                                        if '_' in self.filter_attrib_dict[(tabname_inner, attrib_inner)]:
                                             insert_values.append(
-                                                filter_attrib_dict[(tabname_inner, attrib_inner)].replace('_',
+                                                self.filter_attrib_dict[(tabname_inner, attrib_inner)].replace('_',
                                                                                                           plus_val))
                                         else:
                                             insert_values.append(
-                                                filter_attrib_dict[(tabname_inner, attrib_inner)].replace('%', plus_val,
+                                                self.filter_attrib_dict[(tabname_inner, attrib_inner)].replace('%', plus_val,
                                                                                                           1))
                                         insert_values[-1].replace('%', '')
                                     else:
                                         insert_values.append(plus_val)
                             else:
-                                if 'date' in attrib_types_dict[(tabname_inner, attrib_inner)]:
-                                    if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                                        date_val = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                                if 'date' in self.attrib_types_dict[(tabname_inner, attrib_inner)]:
+                                    if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                                        date_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
                                     else:
                                         date_val = get_dummy_val_for('date')
                                     insert_values.append(ast.literal_eval(get_format('date', date_val)))
-                                elif 'int' in attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in \
-                                        attrib_types_dict[(tabname_inner, attrib_inner)]:
+                                elif 'int' in self.attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in \
+                                        self.attrib_types_dict[(tabname_inner, attrib_inner)]:
                                     # check for filter
-                                    if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                                        number_val = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                                    if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                                        number_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
                                     else:
                                         number_val = get_dummy_val_for('int')
                                     insert_values.append(number_val)
                                 else:
-                                    if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                                        char_val = filter_attrib_dict[(tabname_inner, attrib_inner)].replace('%', '')
+                                    if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                                        char_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)].replace('%', '')
                                     else:
                                         char_val = get_char(get_dummy_val_for('char'))
                                     insert_values.append(char_val)

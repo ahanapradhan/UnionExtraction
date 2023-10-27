@@ -1,6 +1,7 @@
 import datetime
 import sys
 import unittest
+
 sys.path.append("../../../")
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from mysite.unmasque.refactored.projection import Projection
@@ -36,12 +37,13 @@ class MyTestCase(BaseTestCase):
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
 
-        filter_predicates = [('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1),  datetime.date(1998, 9, 21))]
+        filter_predicates = [('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1), datetime.date(1998, 9, 21))]
 
+        global_key_attributes = ['l_orderkey','l_partkey','l_suppkey']
         join_graph = []
         global_min_instance_dict = {}
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict)
+                        global_min_instance_dict, global_key_attributes)
         pj.mock = True
         pj.truncate_core_relations()
         attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
@@ -53,7 +55,7 @@ class MyTestCase(BaseTestCase):
 
         print(pj.global_min_instance_dict)
         check = pj.doJob(queries.Q1)
-        #check = True
+
         self.assertTrue(check)
 
         self.assertEqual(len(pj.projected_attribs), 10)
@@ -89,6 +91,8 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q3']
+        global_key_attribs = ['c_custkey', 'c_nationkey', 'l_orderkey', 'l_partkey', 'l_suppkey',
+                              'o_orderkey', 'o_custkey']
 
         filter_predicates = [('customer', 'c_mktsegment', 'equal', 'BUILDING', 'BUILDING'),
                              ('orders', 'o_orderdate', '<=', datetime.date(1, 1, 1), datetime.date(1995, 3, 14)),
@@ -139,7 +143,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_comment', 'character varying')]
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict)
+                        global_min_instance_dict, global_key_attribs)
         pj.mock = True
 
         pj.truncate_core_relations()
@@ -173,6 +177,8 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.conn.conn is not None)
 
         from_rels = tpchSettings.from_rels['Q3_1']
+        global_key_attribs = ['c_custkey', 'c_nationkey', 'l_orderkey', 'l_partkey', 'l_suppkey',
+                              'o_orderkey', 'o_custkey']
 
         filter_predicates = [('customer', 'c_mktsegment', 'equal', 'BUILDING', 'BUILDING'),
                              ('orders', 'o_orderdate', '<=', datetime.date(1, 1, 1), datetime.date(1995, 3, 14)),
@@ -223,7 +229,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_comment', 'character varying')]
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict)
+                        global_min_instance_dict, global_key_attribs)
         pj.mock = True
 
         pj.truncate_core_relations()
@@ -239,13 +245,17 @@ class MyTestCase(BaseTestCase):
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
 
-        self.assertEqual(frozenset({'o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate', 'o_shippriority'}),
-                         frozenset(set(pj.projected_attribs)))
+        self.assertEqual(frozenset(
+            {'o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate',
+             'o_shippriority'}),
+            frozenset(set(pj.projected_attribs)))
 
         self.conn.closeConnection()
 
     def test_projection_Q4(self):
         global_min_instance_dict = {}
+
+        global_key_attributes = ['o_orderkey','o_custkey']
 
         self.conn.connectUsingParams()
         print("Q4")
@@ -269,7 +279,7 @@ class MyTestCase(BaseTestCase):
                                ('orders', 'o_comment', 'character varying')]
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict)
+                        global_min_instance_dict, global_key_attributes)
         pj.mock = True
         pj.truncate_core_relations()
         attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
@@ -294,6 +304,10 @@ class MyTestCase(BaseTestCase):
 
     def test_projection_Q5(self):
         global_min_instance_dict = {}
+
+        global_key_attribs = ['c_custkey', 'c_nationkey', 'l_orderkey', 'l_partkey', 'l_suppkey',
+                              'o_orderkey', 'o_custkey', 's_suppkey','s_nationkey','n_nationkey',
+                              'n_regionkey','r_regionkey']
 
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q5']
@@ -367,7 +381,7 @@ class MyTestCase(BaseTestCase):
                       ['n_regionkey', 'r_regionkey']]
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict)
+                        global_min_instance_dict, global_key_attribs)
         pj.mock = True
 
         pj.truncate_core_relations()
@@ -392,7 +406,6 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('l_extendedprice' in pj.projected_attribs)
 
         self.conn.closeConnection()
-
 
 if __name__ == '__main__':
     unittest.main()

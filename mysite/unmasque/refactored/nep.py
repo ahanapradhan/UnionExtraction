@@ -1,11 +1,8 @@
-import ast
-
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
 from .util.common_queries import alter_table_rename_to, create_view_as_select_star_where_ctid, \
     get_tabname_1, drop_view, drop_table, get_restore_name, create_table_as_select_star_from
-from .util.utils import get_dummy_val_for, get_format, get_char
 
 
 class NepComparator(ResultComparator):
@@ -28,12 +25,12 @@ class NEP(Minimizer, GenerationPipeLineBase):
                  global_min_instance_dict):
         Minimizer.__init__(self, connectionHelper, core_relations, all_sizes, "NEP")
         GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", core_relations, global_all_attribs,
-                                        global_attrib_types, None, filter_predicates, global_min_instance_dict)
+                                        global_attrib_types, None, filter_predicates,
+                                        global_min_instance_dict, global_key_attributes)
         self.filter_attrib_dict = {}
         self.attrib_types_dict = {}
         self.Q_E = ""
         self.global_pk_dict = global_pk_dict  # from initialization
-        self.global_key_attributes = global_key_attributes
         self.query_generator = query_generator
 
         self.nep_comparator = NepComparator(self.connectionHelper)
@@ -202,39 +199,3 @@ class NEP(Minimizer, GenerationPipeLineBase):
                     filterAttribs.append((tabname, attrib, '<>', prev))
                     self.logger.debug(filterAttribs, '++++++_______++++++')
                     return filterAttribs
-
-    def update_with_val(self, attrib, tabname, val):
-        if 'date' in self.attrib_types_dict[(tabname, attrib)]:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + get_format('date', val) + ";"
-        elif 'int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
-            (tabname, attrib)]:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + str(val) + ";"
-        else:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = '" + val + "';"
-        self.connectionHelper.execute_sql([update_q])
-
-    def get_val(self, attrib, tabname):
-        if 'date' in self.attrib_types_dict[(tabname, attrib)]:
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
-            else:
-                val = get_dummy_val_for('date')
-            val = ast.literal_eval(get_format('date', val))
-
-        elif ('int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
-            (tabname, attrib)]):
-            # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
-            else:
-                val = get_dummy_val_for('int')
-        else:
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = self.filter_attrib_dict[(tabname, attrib)]
-                self.logger.debug(val)
-                val = val.replace('%', '')
-            else:
-                val = get_char(get_dummy_val_for('char'))
-        return val
