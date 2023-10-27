@@ -46,6 +46,9 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
+        print("***********")
+        print(self.filter_attrib_dict)
+        print("***********")
         nep_exists = False
 
         # Run the hidden query on the original database instance
@@ -230,7 +233,9 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 val = get_dummy_val_for('int')
         else:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = (self.filter_attrib_dict[(tabname, attrib)].replace('%', ''))
+                val = self.filter_attrib_dict[(tabname, attrib)]
+                self.logger.debug(val)
+                val = val.replace('%', '')
             else:
                 val = get_char(get_dummy_val_for('char'))
         return val

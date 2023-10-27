@@ -2,7 +2,7 @@ import re
 from typing import Literal
 
 from ....refactored.util.common_queries import drop_view, get_restore_name, drop_table, alter_table_rename_to, \
-    get_tabname_1, get_tabname_4, get_tabname_un, get_tabname_nep
+    get_tabname_1, get_tabname_4, get_tabname_un, get_tabname_nep, drop_table_cascade
 
 
 def get_mutated_names(tab):
@@ -75,7 +75,7 @@ class TpchSanitizer:
         self.commit_transaction()
 
     def get_drop_fn(self, table):
-        return drop_table if self.is_view_or_table(table) == 'table' else drop_view
+        return drop_table_cascade if self.is_view_or_table(table) == 'table' else drop_view
 
     def drop_derived_relations(self, table):
         derived_objects = get_mutated_names(table)

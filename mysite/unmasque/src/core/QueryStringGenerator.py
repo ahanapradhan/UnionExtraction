@@ -340,12 +340,11 @@ class QueryStringGenerator(Base):
     def get_minimal_representative_str(self, attrib, query, representative, tabname):
         index = 0
         output = ""
-
+        temp = list(representative)
         while index < len(representative):
-            temp = list(representative)
             temp[index] = ''
-            temp = ''.join(temp)
-            u_query = f"update {tabname} set {attrib} = '{temp}';"
+            temp_str = ''.join(temp)
+            u_query = f"update {tabname} set {attrib} = '{temp_str}';"
 
             try:
                 self.connectionHelper.execute_sql([u_query])
@@ -354,9 +353,12 @@ class QueryStringGenerator(Base):
                     pass
                 else:
                     output = output + representative[index]
+                    temp[index] = representative[index]
+
             except Exception as e:
                 print(e)
                 output = output + representative[index]
+                temp[index] = representative[index]
 
             index = index + 1
         return output

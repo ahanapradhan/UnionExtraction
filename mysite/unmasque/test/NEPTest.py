@@ -196,23 +196,23 @@ class MyTestCase(BaseTestCase):
         self.conn.connectUsingParams()
 
         query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
-                "From lineitem Where l_shipdate >= " \
-                "'1994-01-01' and l_quantity < 24 " \
+                "From lineitem Where l_quantity < 24 and l_shipdate <> " \
+                "'1994-01-02' " \
                 "and l_shipmode " \
                 "not like '%AIR%' Group By l_shipmode Limit 100;"
 
         Q_E = "Select l_shipmode, sum(l_extendedprice) as revenue " \
               "From lineitem " \
-              "Where l_shipdate >= '1994-01-01' " \
-              "and l_quantity <= 23.0 " \
+              "Where l_quantity <= 23.0 " \
               "Group By l_shipmode Limit 100; "
 
         global_key_attribs = ['l_orderkey', 'l_partkey', 'l_suppkey']
 
         core_rels = ['lineitem']
 
-        filters = [('lineitem', 'l_quantity', '<=', -2147483648.88, 23.0),
-                   ('lineitem', 'l_shipdate', '<=', datetime.date(1994, 1, 1), datetime.date(9999, 12, 31))]
+        filters = [('lineitem', 'l_quantity', '<=', -2147483648.88, 23.0)]
+
+        # ('lineitem', 'l_shipdate', '<=', datetime.date(1994, 1, 1), datetime.date(9999, 12, 31))]
 
         global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
                                ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
@@ -237,7 +237,7 @@ class MyTestCase(BaseTestCase):
         q_gen.method_call_count = 0
         q_gen.order_by_op = ''
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
-        q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
+        q_gen.where_op = 'l_quantity <= 23.0 '
 
         global_min_instance_dict = {}
 
@@ -250,6 +250,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(o.Q_E)
         self.assertTrue("and l_shipmode NOT LIKE '%AIR%'" in q_gen.where_op)
+        self.assertTrue("and l_shipdate <> '1994-01-02'" in q_gen.where_op)
         terms = o.Q_E.split(" ")
         and_count = terms.count("and")
         self.assertEqual(and_count, 2)
@@ -444,6 +445,125 @@ class MyTestCase(BaseTestCase):
         and_count = terms.count("and")
         self.assertEqual(and_count, 3)
 
+        self.conn.closeConnection()
+
+    def test_mukul_thesis_Q18_modified(self):
+        self.conn.connectUsingParams()
+        q = "Select c_phone, o_orderdate, o_totalprice, sum(l_quantity) From customer, orders, lineitem " \
+            "Where c_name LIKE 'Customer#%217' and c_custkey = o_custkey and o_orderkey = l_orderkey and " \
+            "c_phone not Like '27-_%' " \
+            "Group By c_phone, o_orderdate, o_totalprice Order by o_orderdate, o_totalprice desc Limit 100;"
+
+        eq = "Select c_phone, o_orderdate, o_totalprice, sum(l_quantity) From customer, orders, lineitem " \
+             "Where c_name = 'Customer#000060217' and c_custkey = o_custkey and o_orderkey = l_orderkey " \
+             "Group By c_phone, o_orderdate, o_totalprice Order by o_orderdate, o_totalprice desc Limit 100;"
+
+        core_rels = ['customer', 'lineitem', 'orders']
+
+        global_key_attribs = ['c_custkey', 'c_nationkey', 'l_orderkey', 'l_partkey', 'l_suppkey',
+                              'o_orderkey', 'o_custkey']
+
+        filters = [('customer', 'c_name', 'LIKE', 'Customer#%217', 'Customer#%217')]
+
+        global_attrib_types = {('customer', 'c_custkey', 'integer'),
+                               ('customer', 'c_name', 'character varying'),
+                               ('customer', 'c_address', 'character varying'),
+                               ('customer', 'c_nationkey', 'integer'),
+                               ('customer', 'c_phone', 'character'),
+                               ('customer', 'c_acctbal', 'numeric'),
+                               ('customer', 'c_mktsegment', 'character'),
+                               ('customer', 'c_comment', 'character varying'),
+                               ('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
+                               ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
+                               ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
+                               ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
+                               ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
+                               ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
+                               ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
+                               ('lineitem', 'l_shipmode', 'character'),
+                               ('lineitem', 'l_comment', 'character varying'),
+                               ('orders', "o_orderkey", "integer"),
+                               ('orders', "o_custkey", "integer"),
+                               ('orders', "o_orderstatus", "character"),
+                               ('orders', "o_totalprice", "numeric"),
+                               ('orders', "o_orderdate", "date"),
+                               ('orders', "o_orderpriority", "character"),
+                               ('orders', "o_clerk", "character"),
+                               ('orders', "o_shippriority", "integer"),
+                               ('orders', "o_comment", "character varying")
+                               }
+
+        global_all_attribs = [['c_custkey', 'c_name', 'c_address', 'c_nationkey',
+                               'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
+                              ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
+                               'l_discount',
+                               'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate',
+                               'l_shipinstruct',
+                               'l_shipmode', 'l_comment'],
+                              ["o_orderkey",
+                               "o_custkey",
+                               "o_orderstatus",
+                               "o_totalprice",
+                               "o_orderdate",
+                               "o_orderpriority",
+                               "o_clerk",
+                               "o_shippriority",
+                               "o_comment"]
+                              ]
+
+        q_gen = QueryStringGenerator(self.conn)
+        q_gen.from_op = 'customer, lineitem, orders'
+        q_gen.group_by_op = 'c_phone, o_orderdate, o_totalprice'
+        q_gen.limit_op = '100'
+        q_gen.method_call_count = 0
+        q_gen.order_by_op = 'o_orderdate, o_totalprice desc'
+        q_gen.select_op = 'c_phone, o_orderdate, o_totalprice, sum(l_quantity)'
+        q_gen.where_op = 'c_name LIKE \'Customer#%217\' and c_custkey = o_custkey and o_orderkey = l_orderkey '
+
+        global_min_instance_dict = {}
+
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
+                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+
+        o.mock = True
+
+        check = o.doJob([q, eq])
+        self.assertTrue(check)
+        print(o.Q_E)
+        self.assertTrue("c_phone NOT LIKE '27-%'" in q_gen.where_op)
+        terms = o.Q_E.split(" ")
+        and_count = terms.count("and")
+        self.assertEqual(and_count, 3)
+
+        self.conn.closeConnection()
+
+    def test_mukul_thesis_Q18_modified_fix_try(self):
+        rep_str = '27-922-412-7917'
+
+        self.conn.connectUsingParams()
+        q = "Select c_phone, o_orderdate, o_totalprice, sum(l_quantity) From customer1, orders, lineitem " \
+            "Where c_name LIKE 'Customer#%7' and c_custkey = o_custkey and o_orderkey = l_orderkey and " \
+            "c_phone not Like '27-_%' " \
+            "Group By c_phone, o_orderdate, o_totalprice Order by o_orderdate, o_totalprice desc Limit 100;"
+
+        self.conn.execute_sql(["drop table if exists customer1;", "create table customer1 (like customer);",
+                               f"Insert into customer1(c_custkey,c_name,c_address,c_nationkey,c_phone,c_acctbal,"
+                               f"c_mktsegment,c_comment)"
+                               f"VALUES (136777,\'Customer#000060217\',\'kolkata\',2,\'{rep_str}\',4089.02,"
+                               f"\'BUILDING\',\'Nothing\');"])
+
+        q_gen = QueryStringGenerator(self.conn)
+        q_gen.from_op = 'customer1, lineitem, orders'
+        q_gen.group_by_op = 'c_phone, o_orderdate, o_totalprice'
+        q_gen.limit_op = '100'
+        q_gen.method_call_count = 0
+        q_gen.order_by_op = 'o_orderdate, o_totalprice desc'
+        q_gen.select_op = 'c_phone, o_orderdate, o_totalprice, sum(l_quantity)'
+        q_gen.where_op = 'c_name LIKE \'Customer#%7\' and c_custkey = o_custkey and o_orderkey = l_orderkey'
+
+        rep_str_wildcard = q_gen.getStrFilterValue(q, "customer1", "c_phone", rep_str, 500)
+        self.assertEqual(rep_str_wildcard, "27-%")
+        self.conn.execute_sql(["drop table customer1;"])
         self.conn.closeConnection()
 
     def test_mukul_thesis_Q11(self):
