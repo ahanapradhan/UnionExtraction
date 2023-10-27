@@ -55,27 +55,26 @@ class OrderBy(GenerationPipeLineBase):
                  global_all_attribs, join_graph, projected_attribs, global_projection_names, global_dependencies,
                  global_aggregated_attributes, global_min_instance_dict):
         super().__init__(connectionHelper, "Order By", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict)
+                         join_graph, filter_predicates, global_min_instance_dict, global_key_attributes)
         self.global_projection_names = global_projection_names
         self.projected_attribs = projected_attribs
         self.global_aggregated_attributes = global_aggregated_attributes
-        self.global_key_attributes = global_key_attributes
         self.orderby_list = []
         self.global_dependencies = global_dependencies
         self.orderBy_string = ''
         self.has_orderBy = True
 
-    def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
+    def doExtractJob(self, query):
         # ORDERBY ON PROJECTED COLUMNS ONLY
         # ASSUMING NO ORDER ON JOIN ATTRIBUTES
         cand_list = self.construct_candidate_list()
         # CHECK ORDER BY ON COUNT
-        self.orderBy_string = self.remove_equality_predicates(cand_list, filter_attrib_dict, query)
-        self.check_order_by_on_count(cand_list, self.orderBy_string, filter_attrib_dict, query)
+        self.orderBy_string = self.remove_equality_predicates(cand_list, query)
+        self.check_order_by_on_count(cand_list, self.orderBy_string, query)
         self.has_orderBy = self.orderBy_string or self.orderby_list
         return True
 
-    def check_order_by_on_count(self, cand_list, curr_orderby, filter_attrib_dict, query):
+    def check_order_by_on_count(self, cand_list, curr_orderby, query):
         for elt in cand_list:
             if COUNT not in elt.aggregation:
                 continue
@@ -83,7 +82,7 @@ class OrderBy(GenerationPipeLineBase):
                 temp_orderby_list = []
                 for j in range(i):
                     temp_orderby_list.append(self.orderby_list[j])
-                order = self.generateData(elt, temp_orderby_list, filter_attrib_dict, curr_orderby, query)
+                order = self.generateData(elt, temp_orderby_list, curr_orderby, query)
                 if order is None:
                     break
                 else:
@@ -92,7 +91,7 @@ class OrderBy(GenerationPipeLineBase):
                         curr_orderby += COUNT_STAR + " " + order + ", "
                         break
 
-    def remove_equality_predicates(self, cand_list, filter_attrib_dict, query):
+    def remove_equality_predicates(self, cand_list, query):
         # REMOVE ELEMENTS WITH EQUALITY FILTER PREDICATES
         remove_list = []
         for elt in cand_list:
@@ -109,7 +108,7 @@ class OrderBy(GenerationPipeLineBase):
             for elt in cand_list:
                 if COUNT in elt.aggregation:
                     continue
-                order = self.generateData(elt, self.orderby_list, filter_attrib_dict, curr_orderby, query)
+                order = self.generateData(elt, self.orderby_list, curr_orderby, query)
                 if order is None:
                     remove_list.append(elt)
                 elif order != NO_ORDER:
@@ -138,7 +137,7 @@ class OrderBy(GenerationPipeLineBase):
             i.debug_print()
         return cand_list
 
-    def generateData(self, obj, orderby_list, filter_attrib_dict, curr_orderby, query):
+    def generateData(self, obj, orderby_list, curr_orderby, query):
         attrib_types_dict = {}
         for entry in self.global_attrib_types:
             attrib_types_dict[(entry[0], entry[1])] = entry[2]
@@ -177,11 +176,11 @@ class OrderBy(GenerationPipeLineBase):
                         if not flag:
                             att_order += attrib_inner + ","
                         if 'date' in attrib_types_dict[(tabname_inner, attrib_inner)]:
-                            if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                                first = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                            if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                                first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
                                 second = min \
                                     (get_val_plus_delta('date', first, 1),
-                                     filter_attrib_dict[(tabname_inner, attrib_inner)][1])
+                                     self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
                             else:
                                 first = get_dummy_val_for('date')
                                 second = get_val_plus_delta('date', first, 1)
@@ -191,26 +190,26 @@ class OrderBy(GenerationPipeLineBase):
                               attrib_types_dict
                               [(tabname_inner, attrib_inner)]):
                             # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-                            if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                                first = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                            if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                                first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
                                 second = min(get_val_plus_delta('int', first, 1),
-                                             filter_attrib_dict[(tabname_inner, attrib_inner)][1])
+                                             self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
                             else:
                                 first = get_dummy_val_for('int')
                                 second = get_val_plus_delta('int', first, 1)
                         else:
-                            if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
+                            if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                                 # EQUAL FILTER WILL NOT COME HERE
-                                if '_' in filter_attrib_dict[(tabname_inner, attrib_inner)]:
-                                    string = copy.deepcopy(filter_attrib_dict[(tabname_inner, attrib_inner)])
+                                if '_' in self.filter_attrib_dict[(tabname_inner, attrib_inner)]:
+                                    string = copy.deepcopy(self.filter_attrib_dict[(tabname_inner, attrib_inner)])
                                     first = string.replace('_', get_char(get_dummy_val_for('char')))
-                                    string = copy.deepcopy(filter_attrib_dict[(tabname_inner, attrib_inner)])
+                                    string = copy.deepcopy(self.filter_attrib_dict[(tabname_inner, attrib_inner)])
                                     second = string.replace('_', get_char(
                                         get_val_plus_delta('char', get_dummy_val_for('char'), 1)))
                                 else:
-                                    string = copy.deepcopy(filter_attrib_dict[(tabname_inner, attrib_inner)])
+                                    string = copy.deepcopy(self.filter_attrib_dict[(tabname_inner, attrib_inner)])
                                     first = string.replace('%', get_char(get_dummy_val_for('char')), 1)
-                                    string = copy.deepcopy(filter_attrib_dict[(tabname_inner, attrib_inner)])
+                                    string = copy.deepcopy(self.filter_attrib_dict[(tabname_inner, attrib_inner)])
                                     second = string.replace('%', get_char(
                                         get_val_plus_delta('char', get_dummy_val_for('char'), 1)), 1)
                                 first.replace('%', '')

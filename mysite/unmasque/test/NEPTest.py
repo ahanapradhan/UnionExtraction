@@ -304,10 +304,6 @@ class MyTestCase(BaseTestCase):
                                ('nation', "n_nationkey", "integer"),
                                ('nation', "n_name", "character"),
                                ('nation', "n_regionkey", "integer"),
-                               ('nation', "n_comment", "character varying"),
-                               ('nation', "n_nationkey", "integer"),
-                               ('nation', "n_name", "character"),
-                               ('nation', "n_regionkey", "integer"),
                                ('nation', "n_comment", "character varying")
                                }
 
@@ -599,10 +595,6 @@ class MyTestCase(BaseTestCase):
                                ('supplier', "s_phone", "character"),
                                ('supplier', "s_acctbal", "numeric"),
                                ('supplier', "s_comment", "character varying"),
-                               ('nation', "n_nationkey", "integer"),
-                               ('nation', "n_name", "character"),
-                               ('nation', "n_regionkey", "integer"),
-                               ('nation', "n_comment", "character varying"),
                                ('nation', "n_nationkey", "integer"),
                                ('nation', "n_name", "character"),
                                ('nation', "n_regionkey", "integer"),

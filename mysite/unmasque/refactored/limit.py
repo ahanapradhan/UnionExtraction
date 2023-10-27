@@ -11,10 +11,9 @@ class Limit(GenerationPipeLineBase):
     def __init__(self, connectionHelper, global_attrib_types, global_key_attributes, core_relations, filter_predicates,
                  global_all_attribs, global_groupby_attributes, global_min_instance_dict):
         super().__init__(connectionHelper, "Limit", core_relations, global_all_attribs, global_attrib_types, None,
-                         filter_predicates, global_min_instance_dict)
+                         filter_predicates, global_min_instance_dict, global_key_attributes)
         self.limit = None
         self.global_groupby_attributes = global_groupby_attributes
-        self.global_key_attributes = global_key_attributes
 
     def construct_filter_attribsOnly_dict(self):
         # get filter values and their allowed minimum and maximum value
@@ -30,10 +29,10 @@ class Limit(GenerationPipeLineBase):
         query = self.extract_params_from_args(args)
         attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         filter_attrib_dict = self.construct_filter_attribs_dict()
-        check = self.doExtractJob(query, attrib_types_dict, filter_attrib_dict)
+        check = self.doExtractJob(query)
         return check
 
-    def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
+    def doExtractJob(self, query):
         grouping_attribute_values = {}
 
         filter_onlyattrib_dict = self.construct_filter_attribsOnly_dict()

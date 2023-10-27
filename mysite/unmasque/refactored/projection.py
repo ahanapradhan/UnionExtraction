@@ -78,9 +78,9 @@ def add_value_used_for_one_filtered_attrib(attrib_types_dict,
 
 class Projection(GenerationPipeLineBase):
     def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates, join_graph,
-                 global_all_attribs, global_min_instance_dict):
+                 global_all_attribs, global_min_instance_dict, global_key_attribs):
         super().__init__(connectionHelper, "Projection", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict)
+                         join_graph, filter_predicates, global_min_instance_dict, global_key_attribs)
         self.projection_names = None
         self.projected_attribs = None
         self.dependencies = None
@@ -160,22 +160,22 @@ class Projection(GenerationPipeLineBase):
         value_used = [str(val) for val in value_used]
         return value_used
 
-    def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
+    def doExtractJob(self, query):
         # print(query)
         # q = self.app.doJob("select * from lineitem;")
         # for i in q:
         #     self.logger.debug("min ", i)
         projected_attrib, projection_names, value_used, check = \
-            self.find_projection_on_unfiltered_attribs(attrib_types_dict, query)
+            self.find_projection_on_unfiltered_attribs(self.attrib_types_dict, query)
         if not check:
             return False
         self.logger.debug("First step done", projected_attrib)
-        check = self.find_projection_on_filtered_attribs(attrib_types_dict, projected_attrib, query, value_used)
+        check = self.find_projection_on_filtered_attribs(self.attrib_types_dict, projected_attrib, query, value_used)
         if not check:
             return False
         self.logger.debug("Second step done")
-        projection_dep = self.find_dependencies_on_multi(attrib_types_dict, projected_attrib, projection_names, query)
-        projection_sol = self.find_solution_on_multi(attrib_types_dict, projected_attrib, projection_names,
+        projection_dep = self.find_dependencies_on_multi(self.attrib_types_dict, projected_attrib, projection_names, query)
+        projection_sol = self.find_solution_on_multi(self.attrib_types_dict, projected_attrib, projection_names,
                                                      projection_dep, query)
         self.build_equation(projected_attrib, projection_dep, projection_sol)
         self.projected_attribs = projected_attrib
@@ -189,7 +189,7 @@ class Projection(GenerationPipeLineBase):
         # some projections still not identified.
         newfilterList = copy.deepcopy(self.global_filter_predicates)
         while '' in projected_attrib and len(newfilterList):
-            #self.truncate_core_relations()
+            # self.truncate_core_relations()
 
             curr_attrib, curr_value, value_used = construct_value_used_for_filtered_attribs(
                 attrib_types_dict, newfilterList, value_used)
@@ -198,9 +198,9 @@ class Projection(GenerationPipeLineBase):
                 add_value_used_for_one_filtered_attrib(attrib_types_dict, curr_attrib, curr_value, entry,
                                                        value_used)
 
-            #value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+            # value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
             value_used = self.construct_value_used_with_dmin()
-            #self.logger.debug("Compare between\n", value_used, "\n", n_value_used)
+            # self.logger.debug("Compare between\n", value_used, "\n", n_value_used)
             new_result = self.app.doJob(query)
             if isQ_result_empty(new_result):
                 self.logger.error("Unmasque: \n some error in generating new database. "
@@ -211,9 +211,9 @@ class Projection(GenerationPipeLineBase):
         return True
 
     def find_projection_on_unfiltered_attribs(self, attrib_types_dict, query):
-        #self.truncate_core_relations()
-        #value_used = self.construct_values_used(attrib_types_dict)
-        #value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+        # self.truncate_core_relations()
+        # value_used = self.construct_values_used(attrib_types_dict)
+        # value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
         value_used = self.construct_value_used_with_dmin()
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
@@ -231,6 +231,79 @@ class Projection(GenerationPipeLineBase):
             if projected_attrib[i] == '' and projected_attrib1[i] != '':
                 projected_attrib[i] = projected_attrib1[i]
         return projected_attrib, projection_names, value_used, True
+
+    def find_projection_attribs_ahana(self, query):
+
+        value_used = self.construct_value_used_with_dmin()
+
+        new_result = self.app.doJob(query)
+        if isQ_result_empty(new_result):
+            self.logger.error("Unmasque: \n some error in generating new database. "
+                              "Result is empty. Can not identify "
+                              "projections completely.")
+            return [], [], value_used, False
+
+        projection_names = list(new_result[0])
+        new_result = list(new_result[1])
+
+        projected_attrib = []
+        keys_to_skip = []
+
+        for entry in self.global_attrib_types:
+            tabname = entry[0]
+            attrib = entry[1]
+            self.logger.debug("checking for ", tabname, attrib)
+            if attrib not in self.global_key_attributes:
+                self.check_impact_of_non_key_attribs(attrib, new_result, projected_attrib, query, tabname)
+            else:
+                self.check_impact_of_key_attribs(attrib, new_result, projected_attrib, query, tabname, keys_to_skip)
+
+        return projected_attrib, projection_names, value_used, True
+
+    def check_impact_of_key_attribs(self, attrib, new_result, projected_attrib, query, tabname, keys_to_skip):
+        if attrib in keys_to_skip:
+            return
+        for join_edge in self.global_join_graph:
+            other_attrib = None
+            if join_edge[0] == attrib:
+                other_attrib = join_edge[1]
+            elif join_edge[1] == attrib:
+                other_attrib = join_edge[0]
+            else:
+                pass
+            if other_attrib is not None:
+                join_tabname = self.find_tabname_for_given_attrib(other_attrib)
+                val, prev = self.update_attrib_to_see_impact(attrib, tabname)
+                self.logger.debug("update ", join_tabname, other_attrib, "with value ", val, " prev", prev)
+                self.update_with_val(other_attrib, join_tabname, val)
+                new_result1 = self.app.doJob(query)
+                self.update_with_val(attrib, tabname, prev)
+                self.update_with_val(other_attrib, join_tabname, prev)
+                if len(new_result1) > 1:
+                    new_result1 = list(new_result1[1])
+                    if new_result1 != new_result:
+                        projected_attrib.append(attrib)
+                        keys_to_skip.append(other_attrib)
+                    return
+
+
+    def update_attrib_to_see_impact(self, attrib, tabname):
+        prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
+        val = self.get_different_val(attrib, tabname, prev)
+        self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
+        self.update_with_val(attrib, tabname, val)
+        return val, prev
+
+    def check_impact_of_non_key_attribs(self, attrib, new_result, projected_attrib, query, tabname):
+        for fe in self.global_filter_predicates:
+            if fe[1] == attrib and (fe[2] == 'equal' or fe[2] == '='):
+                return
+        val, prev = self.update_attrib_to_see_impact(attrib, tabname)
+        new_result1 = self.app.doJob(query)
+        new_result1 = list(new_result1[1])
+        if new_result1 != new_result:
+            projected_attrib.append(attrib)
+        self.update_with_val(attrib, tabname, prev)
 
     def analyze1(self, new_result, projectedAttrib1, projected_attrib, value_used):
         for val in new_result:
@@ -278,7 +351,7 @@ class Projection(GenerationPipeLineBase):
             newfilterList.remove(val)
 
     def find_dependencies_on_multi(self, attrib_types_dict, projected_attrib, projection_names, query):
-        #self.truncate_core_relations()
+        # self.truncate_core_relations()
         projection_dep = []
         indices_to_check = []
         self.logger.debug("Projected Attrib", projected_attrib)
@@ -425,10 +498,10 @@ class Projection(GenerationPipeLineBase):
                 solution.append([])
                 self.param_list.append([])
             else:
-                
-                #self.truncate_core_relations()
-                #value_used = self.construct_values_used(attrib_types_dict)
-                #value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+
+                # self.truncate_core_relations()
+                # value_used = self.construct_values_used(attrib_types_dict)
+                # value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
                 value_used = self.construct_value_used_with_dmin()
                 prev_result = self.app.doJob(query)
                 self.logger.debug("Inside else", value_used)
@@ -585,6 +658,10 @@ class Projection(GenerationPipeLineBase):
                 used_val.append(vals[0][idx])
                 used_val.append(vals[1][idx])
         return used_val
+
+    '''
+    This method is also present in nep. If proved to be useful here, move it to MutationPipeLineBase class
+    '''
 
 
 def get_param_values_external(coeff_arr):
