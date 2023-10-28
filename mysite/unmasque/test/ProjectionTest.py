@@ -2,6 +2,8 @@ import datetime
 import sys
 import unittest
 
+from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
+
 sys.path.append("../../../")
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from mysite.unmasque.refactored.projection import Projection
@@ -9,6 +11,23 @@ from mysite.unmasque.test.util import tpchSettings, queries
 
 
 class MyTestCase(BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.conn.connectUsingParams()
+        for rel in tpchSettings.relations:
+            self.conn.execute_sql(["BEGIN;",f"alter table {rel} rename to {rel}_copy;",
+                                   f"create table {rel} (like {rel}_copy);", "COMMIT;"])
+        self.conn.closeConnection()
+
+    def tearDown(self):
+        self.conn.connectUsingParams()
+        for rel in tpchSettings.relations:
+            self.conn.execute_sql(["BEGIN;",
+                                   f"drop table {rel};",
+                                   f"alter table {rel}_copy rename to {rel};","COMMIT;"])
+        self.conn.closeConnection()
+        super().tearDown()
 
     def test_projection_Q1(self):
 
@@ -39,21 +58,13 @@ class MyTestCase(BaseTestCase):
 
         filter_predicates = [('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1), datetime.date(1998, 9, 21))]
 
-        global_key_attributes = ['l_orderkey','l_partkey','l_suppkey']
+        global_key_attributes = ['l_orderkey', 'l_partkey', 'l_suppkey']
         join_graph = []
         global_min_instance_dict = {}
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict, global_key_attributes)
         pj.mock = True
-        pj.truncate_core_relations()
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
-        val_used = pj.construct_values_used(attrib_types_dict)
-        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
-        for tab_name in from_rels:
-            al = pj.app.doJob("select * from " + tab_name)
-            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
-
-        print(pj.global_min_instance_dict)
+        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
         check = pj.doJob(queries.Q1)
 
         self.assertTrue(check)
@@ -146,15 +157,7 @@ class MyTestCase(BaseTestCase):
                         global_min_instance_dict, global_key_attribs)
         pj.mock = True
 
-        pj.truncate_core_relations()
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
-        val_used = pj.construct_values_used(attrib_types_dict)
-        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
-        for tab_name in from_rels:
-            al = pj.app.doJob("select * from " + tab_name)
-            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
-
-        print(pj.global_min_instance_dict)
+        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
 
         check = pj.doJob(queries.Q3)
         self.assertTrue(check)
@@ -182,7 +185,7 @@ class MyTestCase(BaseTestCase):
 
         filter_predicates = [('customer', 'c_mktsegment', 'equal', 'BUILDING', 'BUILDING'),
                              ('orders', 'o_orderdate', '<=', datetime.date(1, 1, 1), datetime.date(1995, 3, 14)),
-                             ('lineitem', 'l_shipdate', '>=', datetime.date(1995, 3, 17), datetime.date(9999, 12, 31))]
+                             ('lineitem', 'l_shipdate', '>=', datetime.date(1995, 3, 16), datetime.date(9999, 12, 31))]
 
         global_all_attribs = [
             ['c_custkey', 'c_name', 'c_address', 'c_nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
@@ -232,15 +235,7 @@ class MyTestCase(BaseTestCase):
                         global_min_instance_dict, global_key_attribs)
         pj.mock = True
 
-        pj.truncate_core_relations()
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
-        val_used = pj.construct_values_used(attrib_types_dict)
-        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
-        for tab_name in from_rels:
-            al = pj.app.doJob("select * from " + tab_name)
-            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
-
-        print(pj.global_min_instance_dict)
+        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
 
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
@@ -252,15 +247,25 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
+    def create_dmin_for_test(self, from_rels, global_attrib_types, pj):
+        pj.truncate_core_relations()
+        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
+        val_used = pj.construct_values_used(attrib_types_dict)
+        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
+        for tab_name in from_rels:
+            al = pj.app.doJob("select * from " + tab_name)
+            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
+        print(pj.global_min_instance_dict)
+
     def test_projection_Q4(self):
         global_min_instance_dict = {}
 
-        global_key_attributes = ['o_orderkey','o_custkey']
+        global_key_attributes = ['o_orderkey', 'o_custkey']
 
         self.conn.connectUsingParams()
         print("Q4")
         from_rels = tpchSettings.from_rels['Q4']
-        filter_predicates = [('orders', 'o_orderdate', '<=', datetime.date(1997, 7, 1), datetime.date(1997, 10, 1))]
+        filter_predicates = [('orders', 'o_orderdate', '<=', datetime.date(1997, 7, 1), datetime.date(1997, 9, 30))]
 
         global_all_attribs = [
             ['o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority', 'o_clerk',
@@ -281,15 +286,7 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict, global_key_attributes)
         pj.mock = True
-        pj.truncate_core_relations()
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
-        val_used = pj.construct_values_used(attrib_types_dict)
-        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
-        for tab_name in from_rels:
-            al = pj.app.doJob("select * from " + tab_name)
-            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
-
-        print(pj.global_min_instance_dict)
+        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
         check = pj.doJob(queries.Q4)
         self.assertTrue(check)
 
@@ -306,8 +303,8 @@ class MyTestCase(BaseTestCase):
         global_min_instance_dict = {}
 
         global_key_attribs = ['c_custkey', 'c_nationkey', 'l_orderkey', 'l_partkey', 'l_suppkey',
-                              'o_orderkey', 'o_custkey', 's_suppkey','s_nationkey','n_nationkey',
-                              'n_regionkey','r_regionkey']
+                              'o_orderkey', 'o_custkey', 's_suppkey', 's_nationkey', 'n_nationkey',
+                              'n_regionkey', 'r_regionkey']
 
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q5']
@@ -384,15 +381,7 @@ class MyTestCase(BaseTestCase):
                         global_min_instance_dict, global_key_attribs)
         pj.mock = True
 
-        pj.truncate_core_relations()
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
-        val_used = pj.construct_values_used(attrib_types_dict)
-        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
-        for tab_name in from_rels:
-            al = pj.app.doJob("select * from " + tab_name)
-            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
-
-        print(pj.global_min_instance_dict)
+        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
 
         check = pj.doJob(queries.Q5)
         self.assertTrue(check)
@@ -406,6 +395,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('l_extendedprice' in pj.projected_attribs)
 
         self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

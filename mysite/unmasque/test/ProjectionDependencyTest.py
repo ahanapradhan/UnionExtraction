@@ -65,15 +65,22 @@ class MyTestCase(BaseTestCase):
                                ])
 
         pj.do_init()
-        attribs, names, v, flag = pj.find_projection_attribs_ahana(q)
+        attribs, names, deps, flag = pj.find_projection_attribs(q)
         print("===========")
         print(attribs)
+        print(deps)
         print("===========")
 
-        self.assertEqual(len(attribs), 3)
+        self.assertEqual(len(attribs), 2)
         self.assertTrue('ps_comment' in attribs)
-        self.assertTrue('ps_supplycost' in attribs)
-        self.assertTrue('ps_availqty' in attribs)
+        self.assertTrue('' in attribs)
+        self.assertEqual(len(deps), 2)
+        for dep in deps:
+            if len(dep) == 1:
+                self.assertEqual(('partsupp1', 'ps_comment'), dep[0])
+            if len(dep) == 2:
+                self.assertTrue(('partsupp1', 'ps_supplycost') in dep)
+                self.assertTrue(('partsupp1', 'ps_availqty') in dep)
 
         self.conn.execute_sql(["drop table if exists partsupp1;",
                                "drop table if exists supplier1;", "drop table if exists nation1;"])
@@ -173,17 +180,30 @@ class MyTestCase(BaseTestCase):
                                ])
 
         pj.do_init()
-        attribs, names, v, flag = pj.find_projection_attribs_ahana(q)
+        attribs, names, deps, flag = pj.find_projection_attribs(q)
         print("===========")
         print(attribs)
+        print(deps)
         print("===========")
 
-        self.assertEqual(len(attribs), 5)
+        self.assertEqual(len(attribs), 4)
         self.assertTrue('l_orderkey' in attribs)
-        self.assertTrue('l_extendedprice' in attribs)
-        self.assertTrue('l_discount' in attribs)
+        self.assertTrue('' in attribs)
         self.assertTrue('o_orderdate' in attribs)
         self.assertTrue('o_shippriority' in attribs)
+
+        self.assertEqual(len(deps), 4)
+        self.assertTrue([('lineitem1', 'l_orderkey')] in deps)
+        self.assertTrue([('orders1', 'o_orderdate')] in deps)
+        self.assertTrue([('orders1', 'o_shippriority')] in deps)
+        i = 0
+        for dep in deps:
+            if len(dep) > 1:
+                self.assertTrue(('lineitem1', 'l_extendedprice') in dep)
+                self.assertTrue(('lineitem1', 'l_discount') in dep)
+                break
+            i += 1
+        self.assertEqual(names[i],'revenue')
 
         self.conn.execute_sql(["drop table if exists customer1;",
                                "drop table if exists lineitem1;", "drop table if exists orders1;"])
