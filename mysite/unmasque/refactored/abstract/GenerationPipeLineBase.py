@@ -1,7 +1,8 @@
 import ast
 
 from .MutationPipeLineBase import MutationPipeLineBase
-from ..util.common_queries import truncate_table, insert_into_tab_attribs_format, update_tab_attrib_with_value
+from ..util.common_queries import truncate_table, insert_into_tab_attribs_format, update_tab_attrib_with_value, \
+    update_tab_attrib_with_quoted_value
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val
 
 
@@ -52,9 +53,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
 
     def update_attrib_in_table(self, attrib, value, tabname):
-
         update_query = update_tab_attrib_with_value(attrib, tabname, value)
-
         self.connectionHelper.execute_sql([update_query])
 
     def doExtractJob(self, query):
@@ -62,12 +61,12 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def update_with_val(self, attrib, tabname, val):
         if 'date' in self.attrib_types_dict[(tabname, attrib)]:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + get_format('date', val) + ";"
-        elif 'int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
-            (tabname, attrib)]:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + str(val) + ";"
+            update_q = update_tab_attrib_with_value(attrib, tabname, get_format('date', val))
+        elif 'int' in self.attrib_types_dict[(tabname, attrib)] \
+                or 'numeric' in self.attrib_types_dict[(tabname, attrib)]:
+            update_q = update_tab_attrib_with_value(attrib, tabname, val)
         else:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = '" + val + "';"
+            update_q = update_tab_attrib_with_quoted_value(tabname, attrib, val)
         self.connectionHelper.execute_sql([update_q])
 
     def get_val(self, attrib, tabname):
@@ -79,8 +78,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                 val = get_dummy_val_for('date')
             val = ast.literal_eval(get_format('date', val))
 
-        elif ('int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
-            (tabname, attrib)]):
+        elif ('int' in self.attrib_types_dict[(tabname, attrib)]
+              or 'numeric' in self.attrib_types_dict[(tabname, attrib)]):
             # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = min(self.filter_attrib_dict[(tabname, attrib)][0],
@@ -96,21 +95,29 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                 val = get_char(get_dummy_val_for('char'))
         return val
 
+    def get_different_val_for_dmin(self, attrib, tabname, prev):
+        if prev == self.filter_attrib_dict[(tabname, attrib)][0]:
+            val = self.filter_attrib_dict[(tabname, attrib)][1]
+        elif prev == self.filter_attrib_dict[(tabname, attrib)][1]:
+            val = self.filter_attrib_dict[(tabname, attrib)][0]
+        else:
+            val = min(self.filter_attrib_dict[(tabname, attrib)][0],
+                      self.filter_attrib_dict[(tabname, attrib)][1])
+        return val
+
     def get_different_val(self, attrib, tabname, prev):
         if 'date' in self.attrib_types_dict[(tabname, attrib)]:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
+                val = self.get_different_val_for_dmin(attrib, tabname, prev)
             else:
                 val = get_unused_dummy_val('date', [prev])
             val = ast.literal_eval(get_format('date', val))
 
-        elif ('int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
-            (tabname, attrib)]):
+        elif ('int' in self.attrib_types_dict[(tabname, attrib)]
+              or 'numeric' in self.attrib_types_dict[(tabname, attrib)]):
             # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
+                val = self.get_different_val_for_dmin(attrib, tabname, prev)
             else:
                 val = get_unused_dummy_val('int', [prev])
         else:
@@ -128,4 +135,3 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             attrib = entry[1]
             if attrib == find_attrib:
                 return tabname
-

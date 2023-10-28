@@ -7,6 +7,15 @@ from ...src.util import constants
 from ...src.util.constants import dummy_int, dummy_date, dummy_char
 
 
+def find_diff_idx(list1, list2):
+    if len(list1) != len(list2):
+        return -1
+    for i in range(len(list1)):
+        if list1[i] != list2[i]:
+            return i
+    return -1
+
+
 def isQ_result_empty(Res):
     if len(Res) <= 1:
         return True
