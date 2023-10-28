@@ -16,7 +16,7 @@ class MyTestCase(BaseTestCase):
         super().setUp()
         self.conn.connectUsingParams()
         for rel in tpchSettings.relations:
-            self.conn.execute_sql(["BEGIN;",f"alter table {rel} rename to {rel}_copy;",
+            self.conn.execute_sql(["BEGIN;", f"alter table {rel} rename to {rel}_copy;",
                                    f"create table {rel} (like {rel}_copy);", "COMMIT;"])
         self.conn.closeConnection()
 
@@ -25,7 +25,7 @@ class MyTestCase(BaseTestCase):
         for rel in tpchSettings.relations:
             self.conn.execute_sql(["BEGIN;",
                                    f"drop table {rel};",
-                                   f"alter table {rel}_copy rename to {rel};","COMMIT;"])
+                                   f"alter table {rel}_copy rename to {rel};", "COMMIT;"])
         self.conn.closeConnection()
         super().tearDown()
 

@@ -37,7 +37,7 @@ class Limit(GenerationPipeLineBase):
 
         filter_onlyattrib_dict = self.construct_filter_attribsOnly_dict()
 
-        attribonly_types_dict = self.construct_attributeOnly_types_dict(attrib_types_dict)
+        attribonly_types_dict = self.construct_attributeOnly_types_dict()
 
         pre_assignment = self.get_pre_assignment()
 
@@ -104,32 +104,32 @@ class Limit(GenerationPipeLineBase):
                         att_order += attrib_inner + ","
                     if attrib_inner in grouping_attribute_values.keys():
                         insert_values.append(grouping_attribute_values[attrib_inner][k])
-                    elif 'date' in attrib_types_dict[(tabname_inner, attrib_inner)]:
-                        if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
+                    elif 'date' in self.attrib_types_dict[(tabname_inner, attrib_inner)]:
+                        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                             zero_k = get_val_plus_delta('date',
-                                                        filter_attrib_dict[(tabname_inner, attrib_inner)][0], k)
-                            one = filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+                                                        self.filter_attrib_dict[(tabname_inner, attrib_inner)][0], k)
+                            one = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
                             date_val = min(zero_k, one)
                         else:
                             date_val = get_val_plus_delta('date', get_dummy_val_for('date'), k)
                         insert_values.append(ast.literal_eval(get_format('date', date_val)))
 
-                    elif ('int' in attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in
-                          attrib_types_dict[(tabname_inner, attrib_inner)]):
+                    elif ('int' in self.attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in
+                          self.attrib_types_dict[(tabname_inner, attrib_inner)]):
                         # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-                        if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
+                        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                             zero_k = get_val_plus_delta('int',
-                                                        filter_attrib_dict[(tabname_inner, attrib_inner)][0], k)
-                            one = filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+                                                        self.filter_attrib_dict[(tabname_inner, attrib_inner)][0], k)
+                            one = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
                             date_val = min(zero_k, one)
                         else:
                             date_val = get_val_plus_delta('int', get_dummy_val_for('int'), k)
                         insert_values.append(ast.literal_eval(get_format('int', date_val)))
                     else:
                         char_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), k))
-                        if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                            temp = copy.deepcopy(filter_attrib_dict[(tabname_inner, attrib_inner)])
-                            if '_' in filter_attrib_dict[(tabname_inner, attrib_inner)]:
+                        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                            temp = copy.deepcopy(self.filter_attrib_dict[(tabname_inner, attrib_inner)])
+                            if '_' in self.filter_attrib_dict[(tabname_inner, attrib_inner)]:
                                 insert_values.append(temp.replace('_', char_val))
                             else:
                                 insert_values.append(temp.replace('%', char_val, 1))
@@ -160,9 +160,9 @@ class Limit(GenerationPipeLineBase):
             pre_assignment = False
         return pre_assignment
 
-    def construct_attributeOnly_types_dict(self, attrib_types_dict):
+    def construct_attributeOnly_types_dict(self):
         attribonly_types_dict = {}
         for entry in self.global_attrib_types:
-            attrib_types_dict[(entry[0], entry[1])] = entry[2]
+            self.attrib_types_dict[(entry[0], entry[1])] = entry[2]
             attribonly_types_dict[entry[1]] = entry[2]
         return attribonly_types_dict
