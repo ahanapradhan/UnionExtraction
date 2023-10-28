@@ -501,7 +501,9 @@ class Projection(GenerationPipeLineBase):
                                                     update_multi[inner_i + 1])
 
             # print(self.app.doJob(query), b)
-            b[i][0] = self.app.doJob(query)[1][idx]
+            exe_result = self.app.doJob(query)
+            if len(exe_result) > 1:
+                b[i][0] = exe_result[1][idx]
 
         solution = np.linalg.solve(coeff, b)
         solution = np.around(solution, decimals=0)
