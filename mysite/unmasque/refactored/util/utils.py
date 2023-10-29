@@ -7,6 +7,10 @@ from ...src.util import constants
 from ...src.util.constants import dummy_int, dummy_date, dummy_char
 
 
+def count_empty_lists_in(l):
+    return sum(x.count([]) for x in l)
+
+
 def find_diff_idx(list1, list2):
     if len(list1) != len(list2):
         return -1

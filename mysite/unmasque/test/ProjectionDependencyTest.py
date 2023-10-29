@@ -65,7 +65,8 @@ class MyTestCase(BaseTestCase):
                                ])
 
         pj.do_init()
-        attribs, names, deps, flag = pj.find_projection_attribs(q)
+        s_values = []
+        attribs, names, deps, flag = pj.find_projection_dependencies(q, s_values)
         print("===========")
         print(attribs)
         print(deps)
@@ -180,7 +181,8 @@ class MyTestCase(BaseTestCase):
                                ])
 
         pj.do_init()
-        attribs, names, deps, flag = pj.find_projection_attribs(q)
+        s_values = []
+        attribs, names, deps, flag = pj.find_projection_dependencies(q, s_values)
         print("===========")
         print(attribs)
         print(deps)

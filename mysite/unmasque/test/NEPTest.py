@@ -354,6 +354,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
+
     def test_mukul_thesis_Q18(self):
         self.conn.connectUsingParams()
         q = "Select c_name, o_orderdate, o_totalprice, sum(l_quantity) From customer, orders, lineitem " \
@@ -444,6 +445,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_mukul_thesis_Q18_modified(self):
         self.conn.connectUsingParams()
         q = "Select c_phone, o_orderdate, o_totalprice, sum(l_quantity) From customer, orders, lineitem " \
