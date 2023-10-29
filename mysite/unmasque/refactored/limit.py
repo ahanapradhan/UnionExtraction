@@ -25,20 +25,11 @@ class Limit(GenerationPipeLineBase):
                 filter_onlyattrib_dict[entry[1]] = entry[3]
         return filter_onlyattrib_dict
 
-    def doActualJob(self, args):
-        query = self.extract_params_from_args(args)
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
-        filter_attrib_dict = self.construct_filter_attribs_dict()
-        check = self.doExtractJob(query)
-        return check
-
     def doExtractJob(self, query):
         grouping_attribute_values = {}
 
         filter_onlyattrib_dict = self.construct_filter_attribsOnly_dict()
-
         attribonly_types_dict = self.construct_attributeOnly_types_dict()
-
         pre_assignment = self.get_pre_assignment()
 
         total_combinations = 1

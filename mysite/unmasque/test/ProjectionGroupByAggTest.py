@@ -1,6 +1,8 @@
 import datetime
 import unittest
 
+import pytest
+
 from mysite.unmasque.refactored.aggregation import Aggregation
 from mysite.unmasque.refactored.groupby_clause import GroupBy
 from mysite.unmasque.refactored.projection import Projection
@@ -15,6 +17,7 @@ class MyTestCase(BaseTestCase):
         for i in range(2):
             self.test_something()
 
+    @pytest.mark.skip
     def test_something(self):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)

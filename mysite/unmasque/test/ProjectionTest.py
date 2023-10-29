@@ -2,12 +2,23 @@ import datetime
 import sys
 import unittest
 
-from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
+import pytest
 
 sys.path.append("../../../")
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from mysite.unmasque.refactored.projection import Projection
 from mysite.unmasque.test.util import tpchSettings, queries
+
+
+def create_dmin_for_test(from_rels, global_attrib_types, pj):
+    pj.truncate_core_relations()
+    attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
+    val_used = pj.construct_values_used(attrib_types_dict)
+    val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
+    for tab_name in from_rels:
+        al = pj.app.doJob("select * from " + tab_name)
+        pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
+    print(pj.global_min_instance_dict)
 
 
 class MyTestCase(BaseTestCase):
@@ -64,7 +75,7 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict, global_key_attributes)
         pj.mock = True
-        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
+        create_dmin_for_test(from_rels, global_attrib_types, pj)
         check = pj.doJob(queries.Q1)
 
         self.assertTrue(check)
@@ -157,7 +168,7 @@ class MyTestCase(BaseTestCase):
                         global_min_instance_dict, global_key_attribs)
         pj.mock = True
 
-        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
+        create_dmin_for_test(from_rels, global_attrib_types, pj)
 
         check = pj.doJob(queries.Q3)
         self.assertTrue(check)
@@ -169,6 +180,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def disabled_test_proj_Q3_1(self):
         for i in range(10):
             self.test_projections_Q3_1()
@@ -235,7 +247,7 @@ class MyTestCase(BaseTestCase):
                         global_min_instance_dict, global_key_attribs)
         pj.mock = True
 
-        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
+        create_dmin_for_test(from_rels, global_attrib_types, pj)
 
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
@@ -246,16 +258,6 @@ class MyTestCase(BaseTestCase):
             frozenset(set(pj.projected_attribs)))
 
         self.conn.closeConnection()
-
-    def create_dmin_for_test(self, from_rels, global_attrib_types, pj):
-        pj.truncate_core_relations()
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
-        val_used = pj.construct_values_used(attrib_types_dict)
-        val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
-        for tab_name in from_rels:
-            al = pj.app.doJob("select * from " + tab_name)
-            pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
-        print(pj.global_min_instance_dict)
 
     def test_projection_Q4(self):
         global_min_instance_dict = {}
@@ -286,7 +288,7 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict, global_key_attributes)
         pj.mock = True
-        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
+        create_dmin_for_test(from_rels, global_attrib_types, pj)
         check = pj.doJob(queries.Q4)
         self.assertTrue(check)
 
@@ -381,7 +383,7 @@ class MyTestCase(BaseTestCase):
                         global_min_instance_dict, global_key_attribs)
         pj.mock = True
 
-        self.create_dmin_for_test(from_rels, global_attrib_types, pj)
+        create_dmin_for_test(from_rels, global_attrib_types, pj)
 
         check = pj.doJob(queries.Q5)
         self.assertTrue(check)
