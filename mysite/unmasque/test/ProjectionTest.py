@@ -1,8 +1,12 @@
+import ast
 import datetime
 import sys
 import unittest
 
 import pytest
+
+from mysite.unmasque.refactored.util.utils import get_unused_dummy_val, get_format, get_char
+from mysite.unmasque.src.util import constants
 
 sys.path.append("../../../")
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -10,15 +14,85 @@ from mysite.unmasque.refactored.projection import Projection
 from mysite.unmasque.test.util import tpchSettings, queries
 
 
-def create_dmin_for_test(from_rels, global_attrib_types, pj):
+def construct_values_used(global_filter_predicates, attrib_types_dict):
+    vu = []
+    # Identifying projected attributs with no filter
+    for pred in global_filter_predicates:
+        vu.append(pred[1])
+        if 'char' in attrib_types_dict[(pred[0], pred[1])] or 'text' in attrib_types_dict[
+            (pred[0], pred[1])]:
+            vu.append(pred[3].replace('%', ''))
+        else:
+            vu.append(pred[3])
+    return vu
+
+
+def create_dmin_for_test(from_rels, pj):
     pj.truncate_core_relations()
-    attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in global_attrib_types}
-    val_used = pj.construct_values_used(attrib_types_dict)
-    val_used = pj.construct_values_for_attribs(val_used, attrib_types_dict)
+    val_used = construct_values_used(pj.global_filter_predicates, pj.attrib_types_dict)
+    val_used = construct_values_for_attribs(val_used, pj)
     for tab_name in from_rels:
         al = pj.app.doJob("select * from " + tab_name)
         pj.global_min_instance_dict[tab_name] = [al[0], al[1]]
     print(pj.global_min_instance_dict)
+
+
+def construct_values_for_attribs(value_used, proj_ob):
+    for elt in proj_ob.global_join_graph:
+        dummy_int = get_unused_dummy_val('int', value_used)
+        for val in elt:
+            value_used.append(val)
+            value_used.append(dummy_int)
+    for i in range(len(proj_ob.core_relations)):
+        tabname = proj_ob.core_relations[i]
+        attrib_list = proj_ob.global_all_attribs[i]
+        insert_values = []
+        att_order = '('
+        for attrib in attrib_list:
+            att_order = att_order + attrib + ","
+            if attrib in value_used:
+                if 'int' in proj_ob.attrib_types_dict[(tabname, attrib)] \
+                        or \
+                        'numeric' in proj_ob.attrib_types_dict[(tabname, attrib)]:
+                    insert_values.append(value_used[value_used.index(attrib) + 1])
+                elif 'date' in proj_ob.attrib_types_dict[(tabname, attrib)]:
+                    date_val = value_used[value_used.index(attrib) + 1]
+                    date_insert = get_format('date', date_val)
+                    insert_values.append(ast.literal_eval(date_insert))
+                else:
+                    insert_values.append(str(value_used[value_used.index(attrib) + 1]))
+
+            else:
+                value_used.append(attrib)
+                if 'int' in proj_ob.attrib_types_dict[(tabname, attrib)] \
+                        or \
+                        'numeric' in proj_ob.attrib_types_dict[(tabname, attrib)]:
+                    dummy_int = get_unused_dummy_val('int', value_used)
+                    insert_values.append(dummy_int)
+                    value_used.append(dummy_int)
+                elif 'date' in proj_ob.attrib_types_dict[(tabname, attrib)]:
+                    dummy_date = get_unused_dummy_val('date', value_used)
+                    val = ast.literal_eval(get_format('date', dummy_date))
+                    insert_values.append(val)
+                    value_used.append(val)
+                elif 'boolean' in proj_ob.attrib_types_dict[(tabname, attrib)]:
+                    insert_values.append(constants.dummy_boolean)
+                    value_used.append(str(constants.dummy_boolean))
+                elif 'bit varying' in proj_ob.attrib_types_dict[(tabname, attrib)]:
+                    value_used.append(attrib)
+                    insert_values.append(constants.dummy_varbit)
+                    value_used.append(str(constants.dummy_varbit))
+                else:
+                    dummy_char = get_unused_dummy_val('char', value_used)
+                    dummy = get_char(dummy_char)
+                    insert_values.append(dummy)
+                    value_used.append(dummy)
+
+        insert_values = tuple(insert_values)
+        proj_ob.insert_attrib_vals_into_table(att_order, attrib_list, [insert_values], tabname)
+
+    value_used = [str(val) for val in value_used]
+    return value_used
 
 
 class MyTestCase(BaseTestCase):
@@ -75,7 +149,8 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict, global_key_attributes)
         pj.mock = True
-        create_dmin_for_test(from_rels, global_attrib_types, pj)
+        pj.do_init()
+        create_dmin_for_test(from_rels, pj)
         check = pj.doJob(queries.Q1)
 
         self.assertTrue(check)
@@ -167,8 +242,9 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict, global_key_attribs)
         pj.mock = True
+        pj.do_init()
 
-        create_dmin_for_test(from_rels, global_attrib_types, pj)
+        create_dmin_for_test(from_rels, pj)
 
         check = pj.doJob(queries.Q3)
         self.assertTrue(check)
@@ -246,8 +322,9 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict, global_key_attribs)
         pj.mock = True
+        pj.do_init()
 
-        create_dmin_for_test(from_rels, global_attrib_types, pj)
+        create_dmin_for_test(from_rels, pj)
 
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
@@ -288,7 +365,10 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict, global_key_attributes)
         pj.mock = True
-        create_dmin_for_test(from_rels, global_attrib_types, pj)
+        pj.do_init()
+
+        create_dmin_for_test(from_rels, pj)
+
         check = pj.doJob(queries.Q4)
         self.assertTrue(check)
 
@@ -382,8 +462,9 @@ class MyTestCase(BaseTestCase):
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
                         global_min_instance_dict, global_key_attribs)
         pj.mock = True
+        pj.do_init()
 
-        create_dmin_for_test(from_rels, global_attrib_types, pj)
+        create_dmin_for_test(from_rels, pj)
 
         check = pj.doJob(queries.Q5)
         self.assertTrue(check)

@@ -1,79 +1,21 @@
-import ast
-import copy
+import math
 import math
 import random
 
 import numpy as np
 
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
-    get_val_plus_delta, get_char, find_diff_idx
+from ..refactored.util.utils import isQ_result_empty, get_unused_dummy_val, get_val_plus_delta, find_diff_idx, \
+    count_empty_lists_in
 from ..src.util import constants
 
 
-def cover_special_chars(curr_str, value_used):
-    dummy_char = get_unused_dummy_val('char', value_used)
-    curr_str = curr_str.replace('_', get_char(dummy_char))
-    dummy_char = get_unused_dummy_val('char', value_used)
-    curr_str = curr_str.replace('%', get_char(dummy_char), 1)
-    curr_str = curr_str.replace('%', '')
-    return curr_str
-
-
-def construct_value_used_for_filtered_attribs(attrib_types_dict, newfilterList, value_used):
-    curr_attrib = [newfilterList[0]]
-    index = 1
-    while index < len(newfilterList) and curr_attrib[0][2] != '=' and curr_attrib[0][2] != 'equal':
-        curr_attrib[0] = newfilterList[index]
-        index = index + 1
-    if 'char' in attrib_types_dict[(curr_attrib[0][0], curr_attrib[0][1])] \
-            or \
-            'text' in attrib_types_dict[(curr_attrib[0][0], curr_attrib[0][1])]:
-        curr_value = cover_special_chars(curr_attrib[0][3], value_used)
-    elif 'date' in attrib_types_dict[(curr_attrib[0][0], curr_attrib[0][1])] or 'numeric' in attrib_types_dict[
-        (curr_attrib[0][0], curr_attrib[0][1])]:
-        curr_value = curr_attrib[0][3]
-    else:
-        curr_value = int(curr_attrib[0][3])
-    value_used = [curr_attrib[0][1], curr_value]
-    return curr_attrib, curr_value, value_used
-
-
-def add_value_used_for_one_filtered_attrib(attrib_types_dict,
-                                           curr_attrib, curr_value,
-                                           entry, value_used):
-    if entry == curr_attrib[0]:
-        return
-    value_used.append(entry[1])
-    if 'int' in attrib_types_dict[(entry[0], entry[1])] or 'numeric' in attrib_types_dict[(entry[0], entry[1])]:
-        # indicates integer type attribute
-        value_used.append(0)
-        for i in range(int(entry[3]), int(entry[4]) + 1):
-            value_used[-1] = i
-            if i != curr_value:
-                break
-        if value_used[-1] == curr_value:
-            curr_attrib.append(entry)
-    elif 'date' in attrib_types_dict[(entry[0], entry[1])]:
-        value_used.append(entry[3])
-        for i in range(int((entry[4] - entry[3]).days)):
-            value_used[-1] = get_val_plus_delta('date', entry[3], i)
-            if value_used[-1] == curr_value:
-                curr_attrib.append(entry)
-            else:
-                break
-    elif 'char' in attrib_types_dict[(entry[0], entry[1])] or 'text' in attrib_types_dict[(entry[0], entry[1])]:
-        # character type attribute
-        curr_str = entry[3]
-        value_used.append(curr_str)
-        while '_' in curr_str or '%' in curr_str:
-            curr_str = cover_special_chars(curr_str, value_used)
-            if curr_str != curr_value:
-                value_used[-1]
-                break
-            curr_str = entry[3]
-        if value_used[-1] == curr_value:
-            curr_attrib.append(entry)
+def if_dependencies_found_incomplete(projection_names, projection_dep):
+    if len(projection_names) > 2:
+        empty_deps = count_empty_lists_in(projection_dep)
+        if len(projection_dep) - empty_deps < 2:
+            return True
+    return False
 
 
 class Projection(GenerationPipeLineBase):
@@ -91,79 +33,21 @@ class Projection(GenerationPipeLineBase):
         """
         self.param_list = []
 
-    def construct_values_used(self, attrib_types_dict):
-        vu = []
-        # Identifying projected attributs with no filter
-        for pred in self.global_filter_predicates:
-            vu.append(pred[1])
-            if 'char' in attrib_types_dict[(pred[0], pred[1])] or 'text' in attrib_types_dict[
-                (pred[0], pred[1])]:
-                vu.append(pred[3].replace('%', ''))
-            else:
-                vu.append(pred[3])
-        return vu
-
-    def construct_values_for_attribs(self, value_used, attrib_types_dict):
-        for elt in self.global_join_graph:
-            dummy_int = get_unused_dummy_val('int', value_used)
-            for val in elt:
-                value_used.append(val)
-                value_used.append(dummy_int)
-        for i in range(len(self.core_relations)):
-            tabname = self.core_relations[i]
-            attrib_list = self.global_all_attribs[i]
-            insert_values = []
-            att_order = '('
-            for attrib in attrib_list:
-                att_order = att_order + attrib + ","
-                if attrib in value_used:
-                    if 'int' in attrib_types_dict[(tabname, attrib)] \
-                            or \
-                            'numeric' in attrib_types_dict[(tabname, attrib)]:
-                        insert_values.append(value_used[value_used.index(attrib) + 1])
-                    elif 'date' in attrib_types_dict[(tabname, attrib)]:
-                        date_val = value_used[value_used.index(attrib) + 1]
-                        date_insert = get_format('date', date_val)
-                        insert_values.append(ast.literal_eval(date_insert))
-                    else:
-                        insert_values.append(str(value_used[value_used.index(attrib) + 1]))
-
-                else:
-                    value_used.append(attrib)
-                    if 'int' in attrib_types_dict[(tabname, attrib)] \
-                            or \
-                            'numeric' in attrib_types_dict[(tabname, attrib)]:
-                        dummy_int = get_unused_dummy_val('int', value_used)
-                        insert_values.append(dummy_int)
-                        value_used.append(dummy_int)
-                    elif 'date' in attrib_types_dict[(tabname, attrib)]:
-                        dummy_date = get_unused_dummy_val('date', value_used)
-                        val = ast.literal_eval(get_format('date', dummy_date))
-                        insert_values.append(val)
-                        value_used.append(val)
-                    elif 'boolean' in attrib_types_dict[(tabname, attrib)]:
-                        insert_values.append(constants.dummy_boolean)
-                        value_used.append(str(constants.dummy_boolean))
-                    elif 'bit varying' in attrib_types_dict[(tabname, attrib)]:
-                        value_used.append(attrib)
-                        insert_values.append(constants.dummy_varbit)
-                        value_used.append(str(constants.dummy_varbit))
-                    else:
-                        dummy_char = get_unused_dummy_val('char', value_used)
-                        dummy = get_char(dummy_char)
-                        insert_values.append(dummy)
-                        value_used.append(dummy)
-
-            insert_values = tuple(insert_values)
-            self.insert_attrib_vals_into_table(att_order, attrib_list, [insert_values], tabname)
-
-        value_used = [str(val) for val in value_used]
-        return value_used
-
     def doExtractJob(self, query):
-        projected_attrib, projection_names, projection_dep, check = self.find_projection_attribs(query)
+        s_values = []
+        projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
         if not check:
+            self.logger.error("Some problem while identifying the dependency list!")
             return False
+        if if_dependencies_found_incomplete(projection_names, projection_dep):
+            for s_v in s_values:
+                if s_v[2] is not None:
+                    self.update_with_val(s_v[1], s_v[0], s_v[2])
+        projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
+        if not check:
+            self.logger.error("Some problem while identifying the dependency list!")
+            return False
+
         # projection_dep = self.find_dependencies_on_multi(self.attrib_types_dict, projected_attrib,
         # projection_names,query)
         projection_sol = self.find_solution_on_multi(projected_attrib, projection_names,
@@ -176,7 +60,7 @@ class Projection(GenerationPipeLineBase):
         self.logger.debug("Result ", projection_names, projected_attrib, projection_sol, self.param_list)
         return True
 
-    def find_projection_attribs(self, query):
+    def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
             self.logger.error("Unmasque: \n some error in generating new database. "
@@ -193,16 +77,19 @@ class Projection(GenerationPipeLineBase):
         for i in range(len(projection_names)):
             projection_dep.append([])
 
+        s_value_dict = {}
+
         for entry in self.global_attrib_types:
             tabname = entry[0]
             attrib = entry[1]
             self.logger.debug("checking for ", tabname, attrib)
             if attrib not in self.global_key_attributes:
-                self.check_impact_of_non_key_attribs(attrib, new_result, projection_dep, query,
-                                                     tabname)
+                val = self.check_impact_of_non_key_attribs(attrib, new_result, projection_dep, query,
+                                                           tabname)
             else:
-                self.check_impact_of_key_attribs(attrib, new_result, projection_dep, query, tabname,
-                                                 keys_to_skip)
+                val = self.check_impact_of_key_attribs(attrib, new_result, projection_dep, query, tabname,
+                                                       keys_to_skip, s_value_dict)
+            s_values.append((tabname, attrib, val))
 
         for i in range(len(projection_names)):
             if len(projection_dep[i]) == 1:
@@ -214,9 +101,9 @@ class Projection(GenerationPipeLineBase):
         return projected_attrib, projection_names, projection_dep, True
 
     def check_impact_of_key_attribs(self, attrib, new_result, projection_dep, query, tabname,
-                                    keys_to_skip):
+                                    keys_to_skip, s_value_dict):
         if attrib in keys_to_skip:
-            return
+            return s_value_dict[attrib]
         for join_edge in self.global_join_graph:
             other_attrib = None
             if join_edge[0] == attrib:
@@ -239,7 +126,9 @@ class Projection(GenerationPipeLineBase):
                     if diff != -1:
                         projection_dep[diff].append((tabname, attrib))
                         keys_to_skip.append(other_attrib)
-                    return
+                        s_value_dict[other_attrib] = val
+                    return val
+                return val
 
     def update_attrib_to_see_impact(self, attrib, tabname):
         prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
@@ -260,6 +149,7 @@ class Projection(GenerationPipeLineBase):
             if diff != -1:
                 projection_dep[diff].append((tabname, attrib))
             self.update_with_val(attrib, tabname, prev)
+        return val
 
     def find_dependencies_on_multi(self, attrib_types_dict, projected_attrib, projection_names, query):
         projection_dep = []
@@ -274,13 +164,13 @@ class Projection(GenerationPipeLineBase):
         # Prev Result to check for changes
         prev_result = self.app.doJob(query)
         for idx in indices_to_check:
-            projection_dep[idx], prev_result = self.get_dependence(idx, projection_names, query, prev_result,
+            projection_dep[idx], prev_result = self.get_dependence(idx, query, prev_result,
                                                                    attrib_types_dict,
                                                                    value_used)
         self.logger.debug("Dependencies", projection_dep)
         return projection_dep
 
-    def get_dependence(self, index, names, query, prev_res, attrib_types_dict, value_used):
+    def get_dependence(self, index, query, prev_res, attrib_types_dict, value_used):
         dep_list = []
         # print(index)
         to_be_skipped = []
@@ -409,15 +299,14 @@ class Projection(GenerationPipeLineBase):
                 prev_result = self.app.doJob(query)
                 self.logger.debug("Inside else", value_used)
                 solution.append(
-                    self.get_solution(projection_dep, projection_names, idx_pro, prev_result,
-                                      value_used, query))
+                    self.get_solution(projection_dep, idx_pro, value_used, query))
         return solution
 
     """
     Solve Ax=b to get the expression of the output column
     """
 
-    def get_solution(self, projection_dep, projection_names, idx, prev_res, value_used, query):
+    def get_solution(self, projection_dep, idx, value_used, query):
         dep = projection_dep[idx]
         n = len(dep)
         fil_check = []
@@ -517,10 +406,10 @@ class Projection(GenerationPipeLineBase):
             if projection_dep[idx_pro] == [] or projection_sol[idx_pro] == []:
                 continue
             else:
-                projected_attrib[idx_pro] = self.build_equation_helper(projection_sol[idx_pro], projection_dep[idx_pro],
+                projected_attrib[idx_pro] = self.build_equation_helper(projection_sol[idx_pro],
                                                                        self.param_list[idx_pro])
 
-    def build_equation_helper(self, solution, dependencies, param_l):
+    def build_equation_helper(self, solution, param_l):
         res_str = ""
         for i in range(len(solution)):
             if solution[i][0] == 0:
