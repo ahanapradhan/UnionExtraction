@@ -62,7 +62,6 @@ class MyTestCase(BaseTestCase):
                           global_min_instance_dict)
         agg.mock = True
 
-
         check = agg.doJob(queries.Q1)
         self.assertTrue(check)
         print(agg.global_aggregated_attributes)
@@ -143,7 +142,7 @@ class MyTestCase(BaseTestCase):
 
         projections = ['l_orderkey', 'l_discount', 'o_totalprice', 'o_shippriority']
 
-        global_key_attribs = ['l_orderkey', 'c_custkey', 'o_custkey', 'o_orderkey' ]
+        global_key_attribs = ['l_orderkey', 'c_custkey', 'o_custkey', 'o_orderkey']
         has_groupBy = True
         group_by_attribs = ['l_orderkey', 'o_totalprice', 'o_shippriority']
         dep = [[('identical_expr_nc', 'o_orderkey')], [('identical_expr_nc', 'l_discount')],
@@ -154,7 +153,6 @@ class MyTestCase(BaseTestCase):
                           global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, [],
                           global_min_instance_dict)
         agg.mock = True
-
 
         check = agg.doJob(queries.Q3)
         self.assertTrue(check)
@@ -271,7 +269,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(avg_count, 0)
 
         self.conn.closeConnection()
-    
+
     def test_projections_Q3_2(self):
         global_min_instance_dict = {}
 
@@ -337,7 +335,8 @@ class MyTestCase(BaseTestCase):
                [(IDENTICAL_EXPR, 'o_orderdate')], [(IDENTICAL_EXPR, 'o_shippriority')]]
         sol = [[], [[-1.], [1.], [0.], [0.], [-1.], [-0.], [-0.], [0.]], [], []]
         p_list = [[], ['o_totalprice', 'l_extendedprice', 'l_discount', 'o_totalprice*l_extendedprice',
-                       'l_extendedprice*l_discount', 'l_discount*o_totalprice', 'o_totalprice*l_extendedprice*l_discount'],
+                       'l_extendedprice*l_discount', 'l_discount*o_totalprice',
+                       'o_totalprice*l_extendedprice*l_discount'],
                   [], []]
         agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
                           global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
