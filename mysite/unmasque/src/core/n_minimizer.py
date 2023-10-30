@@ -82,7 +82,7 @@ class NMinimizer(Minimizer):
         self.must_include[tab].append(c2tid)
 
         self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab))])
-        check = self.do_row_by_row_elimination(query, start_ctid, tab)
+        self.do_row_by_row_elimination(query, start_ctid, tab)
 
         self.connectionHelper.execute_sql([drop_view(tab)])
         self.create_table_with_selected_ctids(tab, get_tabname_1(tab))
@@ -94,7 +94,6 @@ class NMinimizer(Minimizer):
         self.logger.debug(self.core_sizes[tab])
 
     def do_row_by_row_elimination(self, query, start_ctid, tab):
-        mandatory_tuple = self.must_include[tab][-1]
         while True:
             size = self.core_sizes[tab]
             self.connectionHelper.execute_sql([drop_view(tab)])
@@ -102,15 +101,31 @@ class NMinimizer(Minimizer):
             ok = self.is_ok_to_eliminate_previous_tuple(tab, query, start_ctid)
             self.logger.debug("may exclude", self.may_exclude[tab])
             self.logger.debug("must include", self.must_include[tab])
-            if ok and size == self.core_sizes[tab]:
-                self.must_include[tab].pop()
-                return NO_REDUCTION
+            # if ok and size == self.core_sizes[tab]:
+            #    self.must_include[tab].pop()
+            #    return NO_REDUCTION
             # self.logger.debug(select_start_ctid_of_any_table(), self.may_exclude[tab][0])
-            if len(self.may_exclude[tab]) and is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
-                self.must_include[tab].pop()
+
+            if len(self.may_exclude[tab]):
+                if is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
+                    if not ok:
+                        self.must_include[tab].append(self.may_exclude[tab].pop())
+                    return DONE
+            else:
+                return DONE
+
+            '''
+            if not ok and len(self.may_exclude[tab]) \
+                    and is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
+                # self.must_include[tab].pop()
+                self.must_include[tab].append(self.may_exclude[tab].pop())
+                return DONE
+            if ok and len(self.may_exclude[tab]) \
+                    and is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
                 return DONE
             elif not len(self.may_exclude[tab]):
                 return DONE
+            '''
 
     def do_binary_halving_till_possible(self, query, tab):
         while True:
@@ -163,8 +178,13 @@ class NMinimizer(Minimizer):
             self.insert_previous_ctid_list(self.must_include[tab], end_ctid, tab)
             return True
         else:
-            self.must_include[tab].insert(0, self.may_exclude[tab].pop())
-            self.insert_previous_ctid_list(self.may_exclude[tab], end_ctid, tab)
+            _36 = self.must_include[tab].pop()
+            _37 = self.may_exclude[tab].pop()
+            if _37 not in self.must_include[tab]:
+                self.must_include[tab].insert(0, _37)
+            if _36 not in self.may_exclude[tab]:
+                self.may_exclude[tab].insert(0, _36)
+            self.insert_previous_ctid_list(self.must_include[tab], end_ctid, tab)  # _35
         return False
 
     def insert_previous_ctid_list(self, ctid_list, end_ctid, tab):
