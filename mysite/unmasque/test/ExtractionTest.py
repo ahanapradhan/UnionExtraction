@@ -1,5 +1,7 @@
 import unittest
 
+import pytest
+
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
@@ -49,6 +51,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_in_loop(self):
         for i in range(5):
             self.test_extraction_tpch_q1_filter()

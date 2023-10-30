@@ -135,7 +135,7 @@ class MyTestCase(BaseTestCase):
 
     def test_gb_Q4(self):
         global_min_instance_dict = {}
-        global_key_attributes = ['o_orderkey','o_custkey']
+        global_key_attributes = ['o_orderkey', 'o_custkey']
 
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q4']

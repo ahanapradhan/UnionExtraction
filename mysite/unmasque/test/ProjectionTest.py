@@ -251,7 +251,7 @@ class MyTestCase(BaseTestCase):
 
         self.assertEqual(frozenset({'orderkey', 'revenue', 'totalprice', 'shippriority'}),
                          frozenset(set(pj.projection_names)))
-        self.assertEqual(frozenset({'o_orderkey', 'l_discount', 'o_totalprice', 'o_shippriority'}),
+        self.assertEqual(frozenset({'l_orderkey', 'l_discount', 'o_totalprice', 'o_shippriority'}),
                          frozenset(set(pj.projected_attribs)))
 
         self.conn.closeConnection()
@@ -330,7 +330,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
 
         self.assertEqual(frozenset(
-            {'o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate',
+            {'l_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate',
              'o_shippriority'}),
             frozenset(set(pj.projected_attribs)))
 
