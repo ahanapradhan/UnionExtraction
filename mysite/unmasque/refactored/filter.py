@@ -125,7 +125,6 @@ class Filter(WhereClause):
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
                     break
-                    # return mid_val
                 if isQ_result_empty(new_result):
                     new_val = get_val_plus_delta(datatype, mid_val, -1 * delta)
                     high = new_val
