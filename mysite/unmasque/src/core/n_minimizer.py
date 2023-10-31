@@ -1,7 +1,7 @@
 from _decimal import Decimal
 from datetime import date
 
-from ..util.constants import DONE, NO_REDUCTION
+from ..util.constants import DONE
 from ...refactored.abstract.MinimizerBase import Minimizer
 from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view, select_previous_ctid, \
     get_row_count, select_start_ctid_of_any_table, drop_table
@@ -63,6 +63,13 @@ class NMinimizer(Minimizer):
         query = self.extract_params_from_args(args)
         for tab in self.core_relations:
             self.minimize_table(query, tab)
+
+        self.create_d_min_db()
+
+        if not self.sanity_check(query):
+            return False
+
+        self.populate_min_instance_dict()
         return True
 
     def minimize_table(self, query, tab):
@@ -70,7 +77,6 @@ class NMinimizer(Minimizer):
         if end_ctid is None:
             return
 
-        size = self.core_sizes[tab]
         self.logger.debug(start_ctid, end_ctid)
 
         self.may_exclude[tab] = []  # set of tuples that can be removed for getting non empty result

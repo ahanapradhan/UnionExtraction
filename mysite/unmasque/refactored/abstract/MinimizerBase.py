@@ -1,3 +1,4 @@
+import pandas as pd
 
 from ..util.common_queries import create_view_as_select_star_where_ctid, drop_view, alter_table_rename_to, \
     get_ctid_from, create_table_as_select_star_from_ctid, drop_table, get_row_count, get_star, \
@@ -15,6 +16,7 @@ class Minimizer(Base):
         self.core_relations = core_relations
         self.app = Executable(connectionHelper)
         self.all_sizes = all_sizes
+        self.global_min_instance_dict = {}
         self.mock = False
 
     def getCoreSizes(self):
@@ -143,5 +145,23 @@ class Minimizer(Base):
             drop_fn = self.get_drop_fn(tab)
             self.connectionHelper.execute_sql([create_table_as_select_star_from(get_tabname_4(tab), tab),
                                                drop_fn(tab), alter_table_rename_to(get_tabname_4(tab), tab)])
+
+    def populate_min_instance_dict(self):
+        # POPULATE MIN INSTANCE DICT
+        for tabname in self.core_relations:
+            self.global_min_instance_dict[tabname] = []
+            sql_query = pd.read_sql_query(get_star(tabname), self.connectionHelper.conn)
+            df = pd.DataFrame(sql_query)
+            self.global_min_instance_dict[tabname].append(tuple(df.columns))
+            for index, row in df.iterrows():
+                self.global_min_instance_dict[tabname].append(tuple(row))
+
+    def create_d_min_db(self):
+        for tabname in self.core_relations:
+            self.connectionHelper.execute_sql([drop_table(get_tabname_4(tabname)),
+                                               create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
+            res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
+            self.logger.debug(tabname, "==", res)
+
 
 
