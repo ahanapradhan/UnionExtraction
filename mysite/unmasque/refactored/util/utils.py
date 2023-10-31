@@ -215,3 +215,17 @@ def get_datatype(my_list, input_tuple):
         if tpl[:2] == input_tuple:
             return tpl[2]
     return 'int'  # Return None if no match is found
+
+
+def get_two_different_vals(list_type):
+    datatype = get_datatype_from_typesList(list_type)
+    val1 = get_dummy_val_for(datatype)
+    val2 = get_val_plus_delta(datatype, val1, 1)
+    return val1, val2
+
+
+def construct_two_lists(attrib_types_dict, curr_list, elt):
+    list1 = [curr_list[index] for index in elt]
+    list_type = attrib_types_dict[curr_list[elt[0]]] if elt else ''
+    list2 = list(set(curr_list) - set(list1))
+    return list1, list2, list_type

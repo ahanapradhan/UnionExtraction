@@ -2,23 +2,8 @@ import copy
 
 
 from .util.common_queries import get_tabname_4, update_tab_attrib_with_value, insert_into_tab_select_star_fromtab
-from .util.utils import get_datatype_from_typesList, get_dummy_val_for, get_val_plus_delta, \
-    get_all_combo_lists
+from .util.utils import get_all_combo_lists, get_two_different_vals, construct_two_lists
 from .abstract.where_clause import WhereClause
-
-
-def get_two_different_vals(list_type):
-    datatype = get_datatype_from_typesList(list_type)
-    val1 = get_dummy_val_for(datatype)
-    val2 = get_val_plus_delta(datatype, val1, 1)
-    return val1, val2
-
-
-def construct_two_lists(attrib_types_dict, curr_list, elt):
-    list1 = [curr_list[index] for index in elt]
-    list_type = attrib_types_dict[curr_list[elt[0]]] if elt else ''
-    list2 = list(set(curr_list) - set(list1))
-    return list1, list2, list_type
 
 
 def remove_edge_from_join_graph_dicts(curr_list, list1, list2, global_key_lists):
@@ -118,3 +103,11 @@ class EquiJoin(WhereClause):
                 temp.append(val[1])
                 self.global_key_attributes.append(val[1])
             self.global_join_graph.append(copy.deepcopy(temp))
+
+    def find_tabname_for_given_attrib(self, find_attrib):
+        for entry in self.global_attrib_types:
+            tabname = entry[0]
+            attrib = entry[1]
+            if attrib == find_attrib:
+                return tabname
+

@@ -35,5 +35,10 @@ class MutationPipeLineBase(Base):
             self.connectionHelper.execute_sql([truncate_table(tab),
                                                insert_into_tab_select_star_fromtab(tab, get_tabname_4(tab))])
 
+    def truncate_core_relations(self):
+        # Truncate all core relations
+        for table in self.core_relations:
+            self.connectionHelper.execute_sql([truncate_table(table)])
+
     def extract_params_from_args(self, args):
         return args[0]

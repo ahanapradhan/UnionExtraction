@@ -1,7 +1,7 @@
 import ast
 
 from .MutationPipeLineBase import MutationPipeLineBase
-from ..util.common_queries import truncate_table, insert_into_tab_attribs_format, update_tab_attrib_with_value, \
+from ..util.common_queries import insert_into_tab_attribs_format, update_tab_attrib_with_value, \
     update_tab_attrib_with_quoted_value
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val
 
@@ -41,11 +41,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def do_init(self):
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
-
-    def truncate_core_relations(self):
-        # Truncate all core relations
-        for table in self.core_relations:
-            self.connectionHelper.execute_sql([truncate_table(table)])
 
     def insert_attrib_vals_into_table(self, att_order, attrib_list_inner, insert_rows, tabname_inner):
         att_order, esc_string = get_escape_string(att_order, attrib_list_inner)

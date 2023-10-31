@@ -1,11 +1,8 @@
 import copy
 
-import pandas as pd
-
 from .abstract.MinimizerBase import Minimizer
 from ..refactored.util.common_queries import alter_table_rename_to, get_min_max_ctid, \
-    drop_table, create_table_as_select_star_from, get_tabname_1, \
-    get_tabname_4, get_star, \
+    get_tabname_1, \
     get_restore_name
 
 
@@ -34,7 +31,6 @@ class ViewMinimizer(Minimizer):
         self.global_other_info_dict = {}
         self.global_result_dict = {}
         self.local_other_info_dict = {}
-        self.global_min_instance_dict = {}
 
     def extract_params_from_args(self, args):
         return args[0]
@@ -81,11 +77,7 @@ class ViewMinimizer(Minimizer):
             if not self.sanity_check(query):
                 return False
 
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql([drop_table(get_tabname_4(tabname)),
-                                               create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
-            res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
-            self.logger.debug(tabname, "==", res)
+        self.create_d_min_db()
 
         if not self.sanity_check(query):
             return False
@@ -100,17 +92,13 @@ class ViewMinimizer(Minimizer):
         return core_sizes
 
     def populate_dict_info(self, query):
-        # POPULATE MIN INSTANCE DICT
-        for tabname in self.core_relations:
-            self.global_min_instance_dict[tabname] = []
-            sql_query = pd.read_sql_query(get_star(tabname), self.connectionHelper.conn)
-            df = pd.DataFrame(sql_query)
-            self.global_min_instance_dict[tabname].append(tuple(df.columns))
-            for index, row in df.iterrows():
-                self.global_min_instance_dict[tabname].append(tuple(row))
+        self.populate_min_instance_dict()
+        self.populate_other_data(query)
 
+    def populate_other_data(self, query):
         # populate other data
         new_result = self.app.doJob(query)
         self.global_result_dict['min'] = copy.deepcopy(new_result)
         self.local_other_info_dict['Result Cardinality'] = str(len(new_result) - 1)
         self.global_other_info_dict['min'] = copy.deepcopy(self.local_other_info_dict)
+
