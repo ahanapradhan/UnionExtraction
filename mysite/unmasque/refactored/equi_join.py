@@ -1,7 +1,8 @@
 import copy
 
 
-from .util.common_queries import get_tabname_4, update_tab_attrib_with_value, insert_into_tab_select_star_fromtab
+from .util.common_queries import get_tabname_4, update_tab_attrib_with_value, insert_into_tab_select_star_fromtab, \
+    truncate_table
 from .util.utils import get_all_combo_lists, get_two_different_vals, construct_two_lists
 from .abstract.where_clause import WhereClause
 
@@ -73,7 +74,7 @@ class EquiJoin(WhereClause):
             for elt in combo_dict_of_lists[len(join_keys)]:
                 list1, list2, list_type = construct_two_lists(attrib_types_dict, join_keys, elt)
                 val1, val2 = get_two_different_vals(list_type)
-                temp_copy = {tab: self.global_min_instance_dict[tab] for tab in self.core_relations}
+                temp_copy = {tab: copy.deepcopy(self.global_min_instance_dict[tab]) for tab in self.core_relations}
 
                 # Assign two different values to two lists in database
                 self.assign_values_to_lists(list1, list2, temp_copy, val1, val2)
@@ -90,7 +91,7 @@ class EquiJoin(WhereClause):
                     join_graph.append(copy.deepcopy(join_keys))
 
             for val in join_keys:
-                self.connectionHelper.execute_sql([insert_into_tab_select_star_fromtab(val[0], get_tabname_4(val[0]))])
+                self.restore_d_min_for_tab(val)
         self.refine_join_graph(join_graph)
 
     def refine_join_graph(self, join_graph):
@@ -110,4 +111,9 @@ class EquiJoin(WhereClause):
             attrib = entry[1]
             if attrib == find_attrib:
                 return tabname
+
+    def restore_d_min_for_tab(self, tab):
+        if not self.mock:
+            self.connectionHelper.execute_sql([truncate_table(tab),
+                                               insert_into_tab_select_star_fromtab(tab, get_tabname_4(tab))])
 
