@@ -35,7 +35,6 @@ class MultipleEquiJoin(EquiJoin):
 
     def get_multiple_join_graphs(self):
         self.restore_d_min_from_dict_data()
-        self.init_join_graph_dict()
         self.get_matching_tuples()
         self.do_traversal()
 
@@ -48,6 +47,7 @@ class MultipleEquiJoin(EquiJoin):
             self.subqueries.append((from_tabs, join_graph))
 
     def traverse_for_one_cycle(self, row_ctid, tab):
+
         join_graph = []
         from_tabs = [tab]
         visited = []
@@ -56,46 +56,41 @@ class MultipleEquiJoin(EquiJoin):
             token = str(tab) + "+" + str(row_ctid)
             if token in visited:
                 break
+
             entry = self.tab_tuple_sig_dict[tab][row_ctid]
-            next_tab = entry[1]
-            this_key = entry[0]
-            next_key = entry[3]
+            this_key, next_tab, next_key, next_ctid = entry[0], entry[1], entry[3], entry[2]
+
             this_join = [this_key, next_key]
-            that_join = copy.deepcopy(this_join)
-            that_join.reverse()
-            next_ctid = entry[2]
+            that_join = this_join[::-1]
+
             if next_tab not in from_tabs:
                 from_tabs.append(next_tab)
             if this_join not in join_graph and that_join not in join_graph:
                 join_graph.append(this_join)
+
             visited.append(token)
 
-            tab = next_tab
-            row_ctid = next_ctid
+            tab, row_ctid = next_tab, next_ctid
 
         return from_tabs, join_graph
 
     def get_matching_tuples(self):
+        self.tab_tuple_sig_dict = {key_tab: {} for key_tab in self.global_min_instance_dict}
+
         for edge in self.global_join_graph:
-            where_op = generate_join_string([edge])
-            tabs = []
-            ctids = []
-            for e in edge:
-                tab = self.find_tabname_for_given_attrib(e)
-                tabs.append(tab)
-                ctid = f"{tab}.ctid"
-                ctids.append(ctid)
+            tabs = [self.find_tabname_for_given_attrib(e) for e in edge]
+            ctids = [f"{tab}.ctid" for tab in tabs]
             from_op = ", ".join(tabs)
             select_op = ", ".join(ctids)
+            where_op = generate_join_string([edge])
             ctid_query = f"select {select_op} from {from_op} where {where_op};"
             result_ctids, _ = self.connectionHelper.execute_sql_fetchall(ctid_query)
-            for r in range(len(result_ctids)):
-                result = result_ctids[r]
-                for i in range(len(tabs) - 1):
-                    self.tab_tuple_sig_dict[tabs[i]][result[i]] = (edge[i], tabs[i + 1], result[i + 1], edge[i + 1])
-                for i in range(len(tabs) - 1, 0, -1):
-                    self.tab_tuple_sig_dict[tabs[i]][result[i]] = (edge[i], tabs[i - 1], result[i - 1], edge[i - 1])
+            self.add_to_sig_dict(edge, result_ctids, tabs)
 
-    def init_join_graph_dict(self):
-        for key_tab in self.global_min_instance_dict:
-            self.tab_tuple_sig_dict[key_tab] = {}  # each table entry is a dict
+    def add_to_sig_dict(self, edge, result_ctids, tabs):
+        for r in range(len(result_ctids)):
+            result = result_ctids[r]
+            for i in range(len(tabs) - 1):
+                self.tab_tuple_sig_dict[tabs[i]][result[i]] = (edge[i], tabs[i + 1], result[i + 1], edge[i + 1])
+            for i in range(len(tabs) - 1, 0, -1):
+                self.tab_tuple_sig_dict[tabs[i]][result[i]] = (edge[i], tabs[i - 1], result[i - 1], edge[i - 1])
