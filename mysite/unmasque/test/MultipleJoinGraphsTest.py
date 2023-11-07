@@ -1,10 +1,12 @@
 import datetime
+
 import unittest
 
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
 from mysite.unmasque.src.core.multiple_equi_joins import MultipleEquiJoin
 from mysite.unmasque.test.util import tpchSettings
+
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 

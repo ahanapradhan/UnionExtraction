@@ -4,6 +4,7 @@ import datetime
 from .util.common_queries import get_tabname_4, update_tab_attrib_with_value, insert_into_tab_select_star_fromtab, \
     truncate_table
 from .util.utils import get_all_combo_lists, get_two_different_vals, construct_two_lists, get_format
+
 from .abstract.where_clause import WhereClause
 
 
