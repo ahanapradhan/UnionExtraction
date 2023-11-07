@@ -2,6 +2,7 @@ import unittest
 
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
+from mysite.unmasque.src.core.multiple_equi_joins import MultipleEquiJoin
 from mysite.unmasque.src.core.n_minimizer import NMinimizer
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -32,7 +33,6 @@ class MyTestCase(BaseTestCase):
     def test_for_multiple_relations(self):
         self.conn.connectUsingParams()
         relations = [self.tab_nation, self.tab_customer]
-        # relations = [self.tab_customer]
         nm = NMinimizer(self.conn, relations, tpchSettings.all_size)
         nm.mock = True
 
@@ -49,6 +49,24 @@ class MyTestCase(BaseTestCase):
         res = app.doJob(query)
         self.assertTrue(not isQ_result_empty(res))
         nm.see_d_min()
+
+        equijoin = MultipleEquiJoin(self.conn, tpchSettings.key_lists, relations, nm.global_min_instance_dict)
+        equijoin.mock = True
+
+        check = equijoin.doJob(query)
+        self.assertTrue(check)
+
+        print(equijoin.subqueries)
+        self.assertEqual(2, len(equijoin.subqueries))
+
+        for subquery in equijoin.subqueries:
+            from_tabs = subquery[0]
+            join_graph = subquery[1]
+            froms = frozenset(from_tabs)
+            self.assertEqual(frozenset(['customer', 'nation']), froms)
+            self.assertEqual(1, len(join_graph))
+            self.assertEqual(frozenset(join_graph[0]), frozenset(['c_nationkey', 'n_nationkey']))
+
         self.conn.closeConnection()
 
     def test_other(self):

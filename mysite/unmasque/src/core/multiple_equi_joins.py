@@ -61,11 +61,12 @@ class MultipleEquiJoin(EquiJoin):
             select_op = ", ".join(ctids)
             ctid_query = f"select {select_op} from {from_op} where {where_op};"
             result_ctids, _ = self.connectionHelper.execute_sql_fetchall(ctid_query)
-            result = result_ctids[0]
-            for i in range(len(tabs) - 1):
-                self.tab_tuple_sig_dict[tabs[i]][result[i]] = (edge[i], tabs[i + 1], result[i + 1], edge[i + 1])
-            for i in range(len(tabs) - 1, 0, -1):
-                self.tab_tuple_sig_dict[tabs[i]][result[i]] = (edge[i], tabs[i - 1], result[i - 1], edge[i - 1])
+            for r in range(len(result_ctids)):
+                result = result_ctids[r]
+                for i in range(len(tabs) - 1):
+                    self.tab_tuple_sig_dict[tabs[i]][result[i]] = (edge[i], tabs[i + 1], result[i + 1], edge[i + 1])
+                for i in range(len(tabs) - 1, 0, -1):
+                    self.tab_tuple_sig_dict[tabs[i]][result[i]] = (edge[i], tabs[i - 1], result[i - 1], edge[i - 1])
 
     def init_join_graph_dict(self):
         for key_tab in self.global_min_instance_dict:
