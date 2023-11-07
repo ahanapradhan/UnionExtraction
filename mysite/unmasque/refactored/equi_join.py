@@ -1,9 +1,9 @@
 import copy
-
+import datetime
 
 from .util.common_queries import get_tabname_4, update_tab_attrib_with_value, insert_into_tab_select_star_fromtab, \
     truncate_table
-from .util.utils import get_all_combo_lists, get_two_different_vals, construct_two_lists
+from .util.utils import get_all_combo_lists, get_two_different_vals, construct_two_lists, get_format
 from .abstract.where_clause import WhereClause
 
 
@@ -13,6 +13,19 @@ def remove_edge_from_join_graph_dicts(curr_list, list1, list2, global_key_lists)
             global_key_lists.remove(keys)
     global_key_lists.append(copy.deepcopy(list1))
     global_key_lists.append(copy.deepcopy(list2))
+
+
+def format_insert_data(data, i):
+    data_i = data[i]
+    data_row = []
+    for d in data_i:
+        if isinstance(d, datetime.date):
+            d_date = d.strftime('%Y-%m-%d')
+            data_row.append(d_date)
+        else:
+            data_row.append(d)
+    data_row = tuple(data_row)
+    return data_row
 
 
 class EquiJoin(WhereClause):
@@ -117,3 +130,16 @@ class EquiJoin(WhereClause):
             self.connectionHelper.execute_sql([truncate_table(tab),
                                                insert_into_tab_select_star_fromtab(tab, get_tabname_4(tab))])
 
+    def restore_d_min_from_dict_data(self):
+        for key_tab in self.global_min_instance_dict:
+            rows = self.global_min_instance_dict[key_tab]
+            header = rows[0]
+            header = str(header)
+            header = header.replace("'", "")
+            data = rows[1:]
+            self.connectionHelper.execute_sql([truncate_table(key_tab)])
+            for i in range(len(data)):
+                data_row = format_insert_data(data, i)
+
+                insert_query = f"Insert into {key_tab} {header} VALUES {data_row};"
+                self.connectionHelper.execute_sql([insert_query])

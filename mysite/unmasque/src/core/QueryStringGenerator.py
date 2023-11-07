@@ -44,6 +44,20 @@ def get_exact_NE_string_predicate(elt, output):
     return elt[1] + " " + str(elt[2]) + " '" + str(output) + "' "
 
 
+def generate_join_string(edges):
+    joins = []
+    for edge in edges:
+        if type(edge) is list:
+            edge.sort()
+        for i in range(len(edge) - 1):
+            left_e = edge[i]
+            right_e = edge[i + 1]
+            join_e = f"{left_e} = {right_e}"
+            joins.append(join_e)
+    where_op = " and ".join(joins)
+    return where_op
+
+
 class QueryStringGenerator(Base):
 
     def __init__(self, connectionHelper):
@@ -56,21 +70,10 @@ class QueryStringGenerator(Base):
         self.order_by_op = ''
         self.limit_op = None
 
-    def generate_join_string(self, ej):
-        joins = []
-        for edge in ej.global_join_graph:
-            edge.sort()
-            for i in range(len(edge) - 1):
-                left_e = edge[i]
-                right_e = edge[i + 1]
-                join_e = f"{left_e} = {right_e}"
-                joins.append(join_e)
-        self.where_op = " and ".join(joins)
-
     def generate_query_string(self, core_relations, ej, fl, pj, gb, agg, ob, lm):
         core_relations.sort()
         self.from_op = ", ".join(core_relations)
-        self.generate_join_string(ej)
+        self.where_op = generate_join_string(ej.global_join_graph)
 
         if self.where_op and len(fl.filter_predicates) > 0:
             self.where_op += " and "
