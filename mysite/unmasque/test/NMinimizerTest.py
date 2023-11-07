@@ -15,6 +15,25 @@ class MyTestCase(BaseTestCase):
     tab_orders = "orders"
     tab_lineitem = "lineitem"
 
+    def test_adonis_case3(self):
+        query = "SELECT s_name FROM supplier, nation WHERE s_nationkey = n_nationkey AND n_name like 'A%'" \
+                " INTERSECT " \
+                "SELECT s_name FROM supplier, customer WHERE s_nationkey = c_nationkey AND c_name like '%12';"
+        self.conn.connectUsingParams()
+        nm = NMinimizer(self.conn, [self.tab_nation, self.tab_supplier, self.tab_customer], tpchSettings.all_size)
+        nm.mock = True
+
+        check = nm.doJob(query)
+        self.assertTrue(check)
+        self.assertEqual(1, nm.core_sizes[self.tab_nation])
+        self.assertEqual(1, nm.core_sizes[self.tab_customer])
+        self.assertEqual(1, nm.core_sizes[self.tab_supplier])
+        app = Executable(self.conn)
+        res = app.doJob(query)
+        self.assertTrue(not isQ_result_empty(res))
+        nm.see_d_min()
+        self.conn.closeConnection()
+
     def test_for_single_relation(self):
         self.conn.connectUsingParams()
         nm = NMinimizer(self.conn, [self.tab_nation], tpchSettings.all_size)
