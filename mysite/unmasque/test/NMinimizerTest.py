@@ -94,7 +94,7 @@ class MyTestCase(BaseTestCase):
                 "where c_acctbal < 3000 and c_nationkey = n_nationkey and n_name = 'BRAZIL' " \
                 "intersect " \
                 "select c_mktsegment from customer,nation,orders where " \
-                "c_acctbal between 1000 and 5000 and c_nationkey=n_nationkey and c_custkey = o_custkey " \
+                "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
                 "and n_name = 'ARGENTINA';"
         check = nm.doJob(query)
         self.assertTrue(check)
@@ -106,6 +106,37 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(not isQ_result_empty(res))
         print(res)
         nm.see_d_min()
+
+        equijoin = MultipleEquiJoin(self.conn, tpchSettings.key_lists, relations, nm.global_min_instance_dict)
+        equijoin.mock = True
+
+        check = equijoin.doJob(query)
+        self.assertTrue(check)
+
+        print(equijoin.subqueries)
+        self.assertEqual(2, len(equijoin.subqueries))
+
+        one = False
+        two = False
+        for subquery in equijoin.subqueries:
+            from_tabs = subquery[0]
+            join_graph = subquery[1]
+            froms = frozenset(from_tabs)
+            if froms == frozenset(['nation', 'customer']):
+                self.assertEqual(1, len(join_graph))
+                self.assertEqual(frozenset(join_graph[0]), frozenset(['n_nationkey', 'c_nationkey']))
+                one = True
+            elif froms == frozenset(['customer', 'nation', 'orders']):
+                self.assertEqual(2, len(join_graph))
+                graph = []
+                for edge in join_graph:
+                    graph.append(frozenset(edge))
+                self.assertEqual(frozenset(graph), frozenset([frozenset(['n_nationkey', 'c_nationkey']),
+                                                              frozenset(['o_custkey', 'c_custkey'])]))
+                two = True
+        self.assertTrue(one)
+        self.assertTrue(two)
+
         self.conn.closeConnection()
 
     def test_adonis_case_2_simple_on_orders(self):

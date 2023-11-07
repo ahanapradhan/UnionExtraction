@@ -108,6 +108,8 @@ class MyTestCase(BaseTestCase):
         print(equi_join.subqueries)
         self.assertEqual(2, len(equi_join.subqueries))
 
+        one = False
+        two = False
         for subquery in equi_join.subqueries:
             from_tabs = subquery[0]
             join_graph = subquery[1]
@@ -115,9 +117,13 @@ class MyTestCase(BaseTestCase):
             if froms == frozenset(['orders', 'customer']):
                 self.assertEqual(1, len(join_graph))
                 self.assertEqual(frozenset(join_graph[0]), frozenset(['o_custkey', 'c_custkey']))
+                one = True
             elif froms == frozenset(['orders', 'lineitem']):
                 self.assertEqual(1, len(join_graph))
                 self.assertEqual(frozenset(join_graph[0]), frozenset(['o_orderkey', 'l_orderkey']))
+                two = True
+        self.assertTrue(one)
+        self.assertTrue(two)
 
         self.conn.closeConnection()
 

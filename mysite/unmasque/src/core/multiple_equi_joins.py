@@ -1,3 +1,5 @@
+import copy
+
 from mysite.unmasque.refactored.equi_join import EquiJoin
 from mysite.unmasque.src.core.QueryStringGenerator import generate_join_string
 
@@ -41,11 +43,37 @@ class MultipleEquiJoin(EquiJoin):
         all_tabs = sorted(self.tab_tuple_sig_dict, key=lambda key: len(self.tab_tuple_sig_dict[key]), reverse=True)
         tab = all_tabs[0]
         tab_entry = self.tab_tuple_sig_dict[tab]
-        for i in tab_entry.keys():
-            entry = tab_entry[i]
-            from_tabs = [tab, entry[1]]
-            join_graph = [[entry[0], entry[3]]]
+        for row_ctid in tab_entry.keys():
+            from_tabs, join_graph = self.traverse_for_one_cycle(row_ctid, tab)
             self.subqueries.append((from_tabs, join_graph))
+
+    def traverse_for_one_cycle(self, row_ctid, tab):
+        join_graph = []
+        from_tabs = [tab]
+        visited = []
+
+        while True:
+            token = str(tab) + "+" + str(row_ctid)
+            if token in visited:
+                break
+            entry = self.tab_tuple_sig_dict[tab][row_ctid]
+            next_tab = entry[1]
+            this_key = entry[0]
+            next_key = entry[3]
+            this_join = [this_key, next_key]
+            that_join = copy.deepcopy(this_join)
+            that_join.reverse()
+            next_ctid = entry[2]
+            if next_tab not in from_tabs:
+                from_tabs.append(next_tab)
+            if this_join not in join_graph and that_join not in join_graph:
+                join_graph.append(this_join)
+            visited.append(token)
+
+            tab = next_tab
+            row_ctid = next_ctid
+
+        return from_tabs, join_graph
 
     def get_matching_tuples(self):
         for edge in self.global_join_graph:
