@@ -104,22 +104,20 @@ class MyTestCase(BaseTestCase):
 
         check = equi_join.doJob(query)
         self.assertTrue(check)
-        # print(equi_join.global_join_graph)
-        # self.assertEqual(1, equi_join.join_key_subquery_dict['l_orderkey'])
-        # self.assertEqual(1, equi_join.join_key_subquery_dict['o_orderkey'])
-        # self.assertEqual(1, equi_join.join_key_subquery_dict['c_custkey'])
-        # self.assertEqual(1, equi_join.join_key_subquery_dict['o_custkey'])
 
-        # print(equi_join.global_all_join_graphs)
-        # self.assertFalse(equi_join.validate_global_all_join_graphs(query))
-        # equi_join.global_all_join_graphs = [[['c_custkey', 'o_custkey']], [['o_orderkey', 'l_orderkey']]]
-        # self.assertTrue(equi_join.validate_global_all_join_graphs(query))
+        print(equi_join.subqueries)
+        self.assertEqual(2, len(equi_join.subqueries))
 
-        # for join_graph in equi_join.global_all_join_graphs:
-        #    self.assertEqual(len(join_graph), 1)
-
-        global_graph = frozenset({frozenset({'c_custkey', 'o_custkey'}),
-                                  frozenset({'l_orderkey', 'o_orderkey'})})
+        for subquery in equi_join.subqueries:
+            from_tabs = subquery[0]
+            join_graph = subquery[1]
+            froms = frozenset(from_tabs)
+            if froms == frozenset(['orders', 'customer']):
+                self.assertEqual(1, len(join_graph))
+                self.assertEqual(frozenset(join_graph[0]), frozenset(['o_custkey', 'c_custkey']))
+            elif froms == frozenset(['orders', 'lineitem']):
+                self.assertEqual(1, len(join_graph))
+                self.assertEqual(frozenset(join_graph[0]), frozenset(['o_orderkey', 'l_orderkey']))
 
         self.conn.closeConnection()
 
@@ -206,7 +204,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(1, equi_join.join_key_subquery_dict['c_custkey'])
         self.assertEqual(1, equi_join.join_key_subquery_dict['o_custkey'])
 
-        equi_join.global_all_join_graphs = [[['c_custkey', 'o_custkey']], [['o_orderkey', 'l_orderkey']]]
+        equi_join.subqueries = [[['c_custkey', 'o_custkey']], [['o_orderkey', 'l_orderkey']]]
         self.assertTrue(equi_join.validate_global_all_join_graphs(query))
 
         # for join_graph in equi_join.global_all_join_graphs:

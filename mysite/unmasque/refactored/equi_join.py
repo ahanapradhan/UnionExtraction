@@ -48,8 +48,8 @@ class EquiJoin(WhereClause):
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
         self.get_init_data()
-        self.get_join_graph(query)
-        return self.global_join_graph
+        graph = self.get_join_graph(query)
+        return graph
 
     def assign_values_to_lists(self, list1, list2, temp_copy, val1, val2):
         self.assign_value_to_list(list1, temp_copy, val1)
@@ -107,6 +107,7 @@ class EquiJoin(WhereClause):
             for val in join_keys:
                 self.restore_d_min_for_tab(val)
         self.refine_join_graph(join_graph)
+        return self.global_join_graph
 
     def refine_join_graph(self, join_graph):
         # refine join graph and get all key attributes

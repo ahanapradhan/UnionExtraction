@@ -43,9 +43,9 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(2, equi_join.join_key_subquery_dict['c_nationkey'])
         self.assertEqual(2, equi_join.join_key_subquery_dict['n_nationkey'])
 
-        print(equi_join.global_all_join_graphs)
-        self.assertEqual(2, len(equi_join.global_all_join_graphs))
-        for join_graph in equi_join.global_all_join_graphs:
+        print(equi_join.subqueries)
+        self.assertEqual(2, len(equi_join.subqueries))
+        for join_graph in equi_join.subqueries:
             self.assertEqual(1, len(join_graph))
             edge = join_graph[0]
             self.assertTrue('c_nationkey' in edge)
@@ -85,9 +85,9 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(1, equi_join.join_key_subquery_dict['c_custkey'])
         self.assertEqual(1, equi_join.join_key_subquery_dict['o_custkey'])
 
-        print(equi_join.global_all_join_graphs)
-        self.assertEqual(2, len(equi_join.global_all_join_graphs))
-        for join_graph in equi_join.global_all_join_graphs:
+        print(equi_join.subqueries)
+        self.assertEqual(2, len(equi_join.subqueries))
+        for join_graph in equi_join.subqueries:
             self.assertTrue(len(join_graph) == 1 or len(join_graph) == 2)
 
             if len(join_graph) == 1:

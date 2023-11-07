@@ -1,7 +1,4 @@
-import copy
-
 from mysite.unmasque.refactored.equi_join import EquiJoin
-from mysite.unmasque.refactored.util.common_queries import alter_table_rename_to, get_tabname_2, drop_view
 from mysite.unmasque.src.core.QueryStringGenerator import generate_join_string
 
 
@@ -15,10 +12,9 @@ class MultipleEquiJoin(EquiJoin):
                          global_key_lists,
                          core_relations,
                          global_min_instance_dict)
-        self.global_all_join_graphs = []
+        self.subqueries = []
         self.intersection = False
         self.intersection_flag = False
-        self.working = True
         self.tab_tuple_sig_dict = {}
 
     def is_intersection_present(self):
@@ -31,7 +27,7 @@ class MultipleEquiJoin(EquiJoin):
         super().get_join_graph(query)
         if self.is_intersection_present():
             self.get_multiple_join_graphs()
-            return self.global_all_join_graphs
+            return self.subqueries
         else:
             return self.global_join_graph
 
@@ -39,13 +35,17 @@ class MultipleEquiJoin(EquiJoin):
         self.restore_d_min_from_dict_data()
         self.init_join_graph_dict()
         self.get_matching_tuples()
-
-        if self.working:
-            return
+        self.do_traversal()
 
     def do_traversal(self):
-        for key_tab in self.tab_tuple_sig_dict.keys():
-            te = self.tab_tuple_sig_dict[key_tab]
+        all_tabs = sorted(self.tab_tuple_sig_dict, key=lambda key: len(self.tab_tuple_sig_dict[key]), reverse=True)
+        tab = all_tabs[0]
+        tab_entry = self.tab_tuple_sig_dict[tab]
+        for i in tab_entry.keys():
+            entry = tab_entry[i]
+            from_tabs = [tab, entry[1]]
+            join_graph = [[entry[0], entry[3]]]
+            self.subqueries.append((from_tabs, join_graph))
 
     def get_matching_tuples(self):
         for edge in self.global_join_graph:
