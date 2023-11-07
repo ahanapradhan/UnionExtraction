@@ -19,6 +19,20 @@ class Minimizer(Base):
         self.global_min_instance_dict = {}
         self.mock = False
 
+    def doActualJob(self, args):
+        query = self.extract_params_from_args(args)
+        minimized = self.do_minimizeJob(query)
+
+        if minimized:
+            self.create_d_min_db()
+
+            if not self.sanity_check(query):
+                return False
+
+            self.populate_min_instance_dict()
+            return True
+        return False
+
     def getCoreSizes(self):
         core_sizes = {}
         for table in self.core_relations:
@@ -162,6 +176,9 @@ class Minimizer(Base):
                                                create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
             res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
             self.logger.debug(tabname, "==", res)
+
+    def do_minimizeJob(self, query):
+        return True
 
 
 

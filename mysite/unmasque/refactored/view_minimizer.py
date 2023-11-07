@@ -1,5 +1,3 @@
-import copy
-
 from .abstract.MinimizerBase import Minimizer
 from ..refactored.util.common_queries import alter_table_rename_to, get_min_max_ctid, \
     get_tabname_1, \
@@ -20,7 +18,6 @@ def extract_start_and_end_page(logger, rctid):
 
 
 class ViewMinimizer(Minimizer):
-    max_row_no = 1
 
     def __init__(self, connectionHelper,
                  core_relations, core_sizes,
@@ -35,10 +32,9 @@ class ViewMinimizer(Minimizer):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def doActualJob(self, args):
-        query = self.extract_params_from_args(args)
-        return self.reduce_Database_Instance(query,
-                                             True) if self.cs2_passed else self.reduce_Database_Instance(query, False)
+    def do_minimizeJob(self, query):
+        return self.reduce_Database_Instance(query, True) if self.cs2_passed \
+            else self.reduce_Database_Instance(query, False)
 
     def do_binary_halving(self, core_sizes,
                           query,
@@ -76,29 +72,10 @@ class ViewMinimizer(Minimizer):
 
             if not self.sanity_check(query):
                 return False
-
-        self.create_d_min_db()
-
-        if not self.sanity_check(query):
-            return False
-
-        self.populate_dict_info(query)
         return True
 
     def do_binary_halving_1(self, core_sizes, query, tabname, tabname1):
-        while int(core_sizes[tabname]) > self.max_row_no:
+        while int(core_sizes[tabname]) > 1:
             end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
-
-    def populate_dict_info(self, query):
-        self.populate_min_instance_dict()
-        self.populate_other_data(query)
-
-    def populate_other_data(self, query):
-        # populate other data
-        new_result = self.app.doJob(query)
-        self.global_result_dict['min'] = copy.deepcopy(new_result)
-        self.local_other_info_dict['Result Cardinality'] = str(len(new_result) - 1)
-        self.global_other_info_dict['min'] = copy.deepcopy(self.local_other_info_dict)
-

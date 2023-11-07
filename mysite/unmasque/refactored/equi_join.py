@@ -105,7 +105,7 @@ class EquiJoin(WhereClause):
                     join_graph.append(copy.deepcopy(join_keys))
 
             for val in join_keys:
-                self.restore_d_min_for_tab(val)
+                self.restore_d_min_for_tab(val[0])
         self.refine_join_graph(join_graph)
         return self.global_join_graph
 

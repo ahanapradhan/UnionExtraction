@@ -59,17 +59,9 @@ class NMinimizer(Minimizer):
         self.must_include = {}
         self.view_drop_count = 0
 
-    def doActualJob(self, args):
-        query = self.extract_params_from_args(args)
+    def do_minimizeJob(self, query):
         for tab in self.core_relations:
             self.minimize_table(query, tab)
-
-        self.create_d_min_db()
-
-        if not self.sanity_check(query):
-            return False
-
-        self.populate_min_instance_dict()
         return True
 
     def minimize_table(self, query, tab):
@@ -107,10 +99,6 @@ class NMinimizer(Minimizer):
             ok = self.is_ok_to_eliminate_previous_tuple(tab, query, start_ctid)
             self.logger.debug("may exclude", self.may_exclude[tab])
             self.logger.debug("must include", self.must_include[tab])
-            # if ok and size == self.core_sizes[tab]:
-            #    self.must_include[tab].pop()
-            #    return NO_REDUCTION
-            # self.logger.debug(select_start_ctid_of_any_table(), self.may_exclude[tab][0])
 
             if len(self.may_exclude[tab]):
                 if is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
@@ -119,19 +107,6 @@ class NMinimizer(Minimizer):
                     return DONE
             else:
                 return DONE
-
-            '''
-            if not ok and len(self.may_exclude[tab]) \
-                    and is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
-                # self.must_include[tab].pop()
-                self.must_include[tab].append(self.may_exclude[tab].pop())
-                return DONE
-            if ok and len(self.may_exclude[tab]) \
-                    and is_ctid_equal(self.may_exclude[tab][0], select_start_ctid_of_any_table()):
-                return DONE
-            elif not len(self.may_exclude[tab]):
-                return DONE
-            '''
 
     def do_binary_halving_till_possible(self, query, tab):
         while True:
