@@ -33,8 +33,7 @@ class ViewMinimizer(Minimizer):
         return args[0]
 
     def do_minimizeJob(self, query):
-        return self.reduce_Database_Instance(query, True) if self.cs2_passed \
-            else self.reduce_Database_Instance(query, False)
+        return self.reduce_Database_Instance(query, self.cs2_passed)
 
     def do_binary_halving(self, core_sizes,
                           query,

@@ -3,7 +3,7 @@ import copy
 from ..refactored.abstract.ExtractorBase import Base
 from ..refactored.executable import Executable
 from ..refactored.util.common_queries import get_row_count, drop_table, alter_table_rename_to, \
-    get_restore_name, create_table_like
+    get_restore_name, create_table_like, truncate_table, insert_into_tab_select_star_fromtab
 from ..refactored.util.utils import isQ_result_empty
 
 
@@ -71,7 +71,10 @@ class Cs2(Base):
 
     def restore(self):
         for table in self.core_relations:
-            self.connectionHelper.execute_sqls_with_DictCursor([alter_table_rename_to(get_restore_name(table), table)])
+            self.connectionHelper.execute_sqls_with_DictCursor([truncate_table(table),
+                                                                insert_into_tab_select_star_fromtab(table,
+                                                                                                    get_restore_name(
+                                                                                                        table))])
 
     def correlated_sampling(self, query, sizes):
         self.logger.debug("Starting correlated sampling ")
@@ -93,7 +96,7 @@ class Cs2(Base):
         # check for null free rows and not just nonempty results
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
-            self.logger.debug('sampling failed in iteraation')
+            self.logger.debug('sampling failed in iteration')
             for table in self.core_relations:
                 self.connectionHelper.execute_sqls_with_DictCursor([drop_table(table)])
                 self.sample[table] = sizes[table]

@@ -6,6 +6,7 @@ from .util.common_queries import get_tabname_4, update_tab_attrib_with_value, in
 from .util.utils import get_all_combo_lists, get_two_different_vals, construct_two_lists, get_format
 
 from .abstract.where_clause import WhereClause
+from ..src.core.abstract.join_data_class import JoinData
 
 
 def remove_edge_from_join_graph_dicts(curr_list, list1, list2, global_key_lists):
@@ -29,21 +30,17 @@ def format_insert_data(data, i):
     return data_row
 
 
-class EquiJoin(WhereClause):
+class EquiJoin(JoinData, WhereClause):
 
     def __init__(self, connectionHelper,
                  global_key_lists,
                  core_relations,
                  global_min_instance_dict):
-        super().__init__(connectionHelper,
-                         global_key_lists,
-                         core_relations,
-                         global_min_instance_dict)
-        # join data
-        self.global_join_instance_dict = {}
-        self.global_component_dict = {}
-        self.global_join_graph = []
-        self.global_key_attributes = []
+        JoinData.__init__(self)
+        WhereClause.__init__(self, connectionHelper,
+                             global_key_lists,
+                             core_relations,
+                             global_min_instance_dict)
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)

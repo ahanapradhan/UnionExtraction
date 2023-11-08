@@ -1,7 +1,5 @@
-import copy
-
 from mysite.unmasque.refactored.equi_join import EquiJoin
-from mysite.unmasque.src.core.QueryStringGenerator import generate_join_string
+from mysite.unmasque.src.core.abstract.spj_QueryStringGenerator import generate_join_string
 
 
 class MultipleEquiJoin(EquiJoin):
@@ -29,8 +27,10 @@ class MultipleEquiJoin(EquiJoin):
         super().get_join_graph(query)
         if self.is_intersection_present():
             self.get_multiple_join_graphs()
+            self.logger.debug(self.subqueries)
             return self.subqueries
         else:
+            self.logger.debug(self.global_join_graph)
             return self.global_join_graph
 
     def get_multiple_join_graphs(self):

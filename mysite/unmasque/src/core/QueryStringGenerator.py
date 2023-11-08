@@ -1,9 +1,7 @@
 import copy
 
+from mysite.unmasque.src.core.abstract.spj_QueryStringGenerator import SPJQueryStringGenerator
 from ..util.constants import COUNT, SUM, max_str_len
-from ...refactored.abstract.ExtractorBase import Base
-from ...refactored.executable import Executable
-from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val
 
 
 def refine_aggregates(agg, wc):
@@ -21,91 +19,21 @@ def refine_aggregates(agg, wc):
                 agg.global_groupby_attributes.remove(attrib)
 
 
-def handle_range_preds(datatype, pred, pred_op):
-    min_val, max_val = get_min_and_max_val(datatype)
-    min_present = False
-    max_present = False
-    if pred[3] == min_val:  # no min val
-        min_present = True
-    if pred[4] == max_val:  # no max val
-        max_present = True
-    if min_present and not max_present:
-        pred_op += " <= " + get_format(datatype, pred[4])
-    elif not min_present and max_present:
-        pred_op += " >= " + get_format(datatype, pred[3])
-    elif not min_present and not max_present:
-        pred_op += " >= " + get_format(datatype, pred[3]) + " and " + pred[1] + " <= " + get_format(
-            datatype,
-            pred[4])
-    return pred_op
-
-
 def get_exact_NE_string_predicate(elt, output):
     return elt[1] + " " + str(elt[2]) + " '" + str(output) + "' "
 
 
-def generate_join_string(edges):
-    joins = []
-    for edge in edges:
-        if type(edge) is list:
-            edge.sort()
-        for i in range(len(edge) - 1):
-            left_e = edge[i]
-            right_e = edge[i + 1]
-            join_e = f"{left_e} = {right_e}"
-            joins.append(join_e)
-    where_op = " and ".join(joins)
-    return where_op
-
-
-class QueryStringGenerator(Base):
+class QueryStringGenerator(SPJQueryStringGenerator):
 
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "Query String Generator")
-        self.app = Executable(connectionHelper)
-        self.select_op = ''
-        self.from_op = ''
-        self.where_op = ''
+        super().__init__(connectionHelper)
         self.group_by_op = ''
         self.order_by_op = ''
         self.limit_op = None
 
-    def generate_query_string(self, core_relations, ej, fl, pj, gb, agg, ob, lm):
-        core_relations.sort()
-        self.from_op = ", ".join(core_relations)
-        self.where_op = generate_join_string(ej.global_join_graph)
-
-        if self.where_op and len(fl.filter_predicates) > 0:
-            self.where_op += " and "
-        self.where_op = self.add_filters(fl)
-
-        eq = self.refine_Query1(ej.global_key_attributes, pj, gb, agg, ob, lm)
-        return eq
-
-    def add_filters(self, wc):
-        filters = []
-        for pred in wc.filter_predicates:
-            tab_col = tuple(pred[:2])
-            pred_op = pred[1] + " "
-            datatype = get_datatype(wc.global_attrib_types, tab_col)
-            if pred[2] != ">=" and pred[2] != "<=" and pred[2] != "range":
-                if pred[2] == "equal":
-                    pred_op += " = "
-                else:
-                    pred_op += pred[2] + " "
-                pred_op += get_format(datatype, pred[3])
-            else:
-                pred_op = handle_range_preds(datatype, pred, pred_op)
-
-            filters.append(pred_op)
-        self.where_op += " and ".join(filters)
-        return self.where_op
-
     def assembleQuery(self):
-        output = "Select " + self.select_op \
-                 + "\n" + "From " + self.from_op
-        if self.where_op != '':
-            output = output + "\n" + "Where " + self.where_op
+        output = super().assembleQuery()
+        output = output.replace(";", "")
         if self.group_by_op != '':
             output = output + "\n" + "Group By " + self.group_by_op
         if self.order_by_op != '':
@@ -115,7 +43,10 @@ class QueryStringGenerator(Base):
         output = output + ";"
         return output
 
-    def refine_Query1(self, global_key_attributes, pj, gb, agg, ob, lm):
+    def refine_Query1(self, modules):
+        ej, pj, gb, agg, ob, lm = modules[1], modules[3], modules[4], modules[5], modules[6], modules[7]
+        global_key_attributes = ej.global_key_attributes
+
         self.logger.debug("inside:   reveal_proc_support.refine_Query")
         for i in range(len(agg.global_projected_attributes)):
             attrib = agg.global_projected_attributes[i]
@@ -172,33 +103,6 @@ class QueryStringGenerator(Base):
         self.order_by_op = ob.orderBy_string[:-2]
         if lm.limit is not None:
             self.limit_op = str(lm.limit)
-        eq = self.assembleQuery()
-        return eq
-
-    def refine_Query(self, wc, pj, gb, agg, ob, lm):
-        refine_aggregates(agg, wc)
-
-        # UPDATE OUTPUTS
-        if len(agg.global_groupby_attributes) == 1:
-            self.group_by_op = agg.global_groupby_attributes[0]
-        else:
-            self.group_by_op = ", ".join(agg.global_groupby_attributes)
-
-        for i, elt in enumerate(agg.global_projected_attributes):
-            if agg.global_aggregated_attributes[i][1] != '':
-                suffix = f'({elt})' if elt else ""
-                elt = agg.global_aggregated_attributes[i][1] + suffix
-                if COUNT in agg.global_aggregated_attributes[i][1]:
-                    elt = agg.global_aggregated_attributes[i][1]
-            if elt and elt != pj.projection_names[i]:
-                elt = f'{elt} as {pj.projection_names[i]}' if pj.projection_names[i] else elt
-            self.select_op += ", " + elt if self.select_op else elt
-
-        self.order_by_op = ob.orderBy_string[:-2]
-        if lm.limit is not None:
-            self.limit_op = str(lm.limit)
-        eq = self.assembleQuery()
-        return eq
 
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:

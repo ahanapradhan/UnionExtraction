@@ -55,11 +55,13 @@ class GenericPipeLine:
         self.logger = Log(name, connectionHelper.config.log_level)
         self.correct = False
         self.all_relations = []
+        self.validate_extraction = True
 
     def doJob(self, query):
         self.update_state(WAITING)
         result = self.extract(query)
-        self.verify_correctness(query, result)
+        if self.validate_extraction:
+            self.verify_correctness(query, result)
         return result
 
     def verify_correctness(self, query, result):
