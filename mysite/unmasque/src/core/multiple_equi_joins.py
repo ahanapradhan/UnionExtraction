@@ -2,6 +2,23 @@ from mysite.unmasque.refactored.equi_join import EquiJoin
 from mysite.unmasque.src.core.abstract.spj_QueryStringGenerator import generate_join_string
 
 
+def create_token(row_ctid, tab):
+    token = str(tab) + "+" + str(row_ctid)
+    return token
+
+
+def check_and_add(tab, from_tabs, join_graph, next_key, next_tab, this_key, token, visited):
+    this_join = [this_key, next_key]
+    that_join = this_join[::-1]
+    if tab not in from_tabs:
+        from_tabs.append(tab)
+    if next_tab not in from_tabs:
+        from_tabs.append(next_tab)
+    if this_join not in join_graph and that_join not in join_graph:
+        join_graph.append(this_join)
+    visited.append(token)
+
+
 class MultipleEquiJoin(EquiJoin):
 
     def __init__(self, connectionHelper,
@@ -47,30 +64,26 @@ class MultipleEquiJoin(EquiJoin):
             self.subqueries.append((from_tabs, join_graph))
 
     def traverse_for_one_cycle(self, row_ctid, tab):
-
         join_graph = []
-        from_tabs = [tab]
+        from_tabs = []
         visited = []
-
         while True:
-            token = str(tab) + "+" + str(row_ctid)
+            token = create_token(row_ctid, tab)
             if token in visited:
                 break
-
             entry = self.tab_tuple_sig_dict[tab][row_ctid]
-            this_key, next_tab, next_key, next_ctid = entry[0], entry[1], entry[3], entry[2]
-
-            this_join = [this_key, next_key]
-            that_join = this_join[::-1]
-
-            if next_tab not in from_tabs:
-                from_tabs.append(next_tab)
-            if this_join not in join_graph and that_join not in join_graph:
-                join_graph.append(this_join)
-
-            visited.append(token)
-
+            this_key, next_tab, next_ctid, next_key = entry[0], entry[1], entry[2], entry[3]
+            check_and_add(tab, from_tabs, join_graph, next_key, next_tab, this_key, token, visited)
             tab, row_ctid = next_tab, next_ctid
+
+        for key_tab in self.tab_tuple_sig_dict.keys():
+            for key_ctid in self.tab_tuple_sig_dict[key_tab].keys():
+                token = create_token(key_ctid, key_tab)
+                entry = self.tab_tuple_sig_dict[key_tab][key_ctid]
+                this_key, next_tab, next_ctid, next_key = entry[0], entry[1], entry[2], entry[3]
+                next_token = create_token(next_ctid, next_tab)
+                if token not in visited and next_token in visited:
+                    check_and_add(key_tab, from_tabs, join_graph, next_key, next_tab, this_key, token, visited)
 
         return from_tabs, join_graph
 
