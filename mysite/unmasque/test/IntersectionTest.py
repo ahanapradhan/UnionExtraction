@@ -19,6 +19,7 @@ class MyTestCase(BaseTestCase):
                 "AND n_name = 'ARGENTINA';"
         eq = self.pipeline.doJob(query)
         print(eq)
+        self.assertTrue(eq is not None)
         check = eq.count(self.INTERSECT)
         self.assertEqual(check, 1)
         subq_check = eq.count("From customer, nation\nWhere c_nationkey = n_nationkey)")

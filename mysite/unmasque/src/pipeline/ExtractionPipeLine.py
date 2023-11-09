@@ -1,15 +1,14 @@
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
-from ..core.abstract.join_data_class import JoinData
 from ..core.elapsed_time import create_zero_time_profile
 from ..core.multiple_equi_joins import MultipleEquiJoin
+from ..core.multiple_filters import MultipleFilter
 from ..core.n_minimizer import NMinimizer
 from mysite.unmasque.src.core.abstract.spj_QueryStringGenerator import SPJQueryStringGenerator
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
     NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
-from ...refactored.filter import Filter
 from ...refactored.from_clause import FromClause
 from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
@@ -126,21 +125,15 @@ class ExtractionPipeLine(GenericPipeLine):
         next_modules.append(ej)
         self.JOIN_IDX = len(next_modules) - 1
 
-        if ej.intersection:
-            self.logger.info("It is an intersection Query")
-            self.logger.info(ej.subqueries)
-            return "INTERSECTION", next_modules
-
         '''
         Filters Extraction
         '''
         self.update_state(FILTER + START)
 
-        fl = Filter(self.connectionHelper,
-                    key_lists,
-                    core_relations,
-                    global_min_instance_dict,
-                    ej.global_key_attributes)
+        fl = MultipleFilter(self.connectionHelper,
+                            key_lists,
+                            ej.fromData, ej.joinData,
+                            global_min_instance_dict)
         self.update_state(FILTER + RUNNING)
         check = fl.doJob(query)
         self.update_state(FILTER + DONE)
@@ -156,6 +149,10 @@ class ExtractionPipeLine(GenericPipeLine):
 
         next_modules.append(fl)
         self.FILTER_IDX = len(next_modules) - 1
+
+        if ej.intersection:
+            self.logger.info("It is an intersection Query")
+            return "INTERSECTION", next_modules
 
         '''
         Projection Extraction
@@ -327,11 +324,12 @@ class ExtractionPipeLine(GenericPipeLine):
 
     def generate_intersection_query_string(self, mutation_modules):
         subq_strings = []
-        join_module = JoinData()
         subquery_generator = SPJQueryStringGenerator(self.connectionHelper)
-        for subq in mutation_modules[self.JOIN_IDX].subqueries:
-            join_module.global_join_graph = subq[1]
-            subq_modules = [subq[0], join_module, None, None]
+        froms = mutation_modules[self.JOIN_IDX].fromData
+        joins = mutation_modules[self.JOIN_IDX].joinData
+        filters = mutation_modules[self.FILTER_IDX].filterData
+        for i in range(len(froms)):
+            subq_modules = [froms[i].core_relations, joins[i], filters[i], None]
             subq_str = "(" + subquery_generator.generate_query_string(subq_modules) + ")"
             subq_str = subq_str.replace(";", "")
             subq_strings.append(subq_str)

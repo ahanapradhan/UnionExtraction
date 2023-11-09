@@ -3,6 +3,7 @@ from ..refactored.executable import Executable
 from ..refactored.initialization import Initiator
 from ..refactored.util.common_queries import alter_table_rename_to, create_table_like
 from ..refactored.util.utils import isQ_result_empty
+from mysite.unmasque.src.core.abstract.dataclass.from_clause_data_class import FromData
 
 try:
     import psycopg2
@@ -10,15 +11,15 @@ except ImportError:
     pass
 
 
-class FromClause(Base):
+class FromClause(Base, FromData):
 
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "FromClause")
+        FromData.__init__(self)
+        Base.__init__(self, connectionHelper, "FromClause")
         self.app = Executable(connectionHelper)
         self.init = Initiator(connectionHelper)
 
         self.all_relations = set()
-        self.core_relations = []
 
     def get_core_relations_by_rename(self, query):
         for tabname in self.all_relations:

@@ -100,19 +100,19 @@ class MyTestCase(BaseTestCase):
         self.see_tables_with_ctid()
 
         equi_join = MultipleEquiJoin(self.conn, tpchSettings.key_lists, relations, global_min_instance_dict)
-        equi_join.mock = True
+        equi_join.join_extractor.mock = True
 
         check = equi_join.doJob(query)
         self.assertTrue(check)
 
-        print(equi_join.subqueries)
-        self.assertEqual(2, len(equi_join.subqueries))
+        print(equi_join.joinData)
+        self.assertEqual(2, len(equi_join.joinData))
 
         one = False
         two = False
-        for subquery in equi_join.subqueries:
-            from_tabs = subquery[0]
-            join_graph = subquery[1]
+        for i in range(2):
+            from_tabs = equi_join.fromData[i].core_relations
+            join_graph = equi_join.joinData[i].global_join_graph
             froms = frozenset(from_tabs)
             if froms == frozenset(['orders', 'customer']):
                 self.assertEqual(1, len(join_graph))
