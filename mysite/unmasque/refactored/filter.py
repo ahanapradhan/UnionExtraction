@@ -1,11 +1,12 @@
 import copy
 import math
 
-from .util.common_queries import get_tabname_4, update_sql_query_tab_attribs, form_update_query_with_value, \
-    insert_into_tab_select_star_fromtab, truncate_table, update_tab_attrib_with_quoted_value
+from .abstract.where_clause import WhereClause
+from .util.common_queries import get_tabname_4, update_sql_query_tab_attribs, insert_into_tab_select_star_fromtab, \
+    truncate_table, update_tab_attrib_with_value_where, update_tab_attrib_with_quoted_value_where, \
+    form_update_query_with_value_where, select_attribs_from_relation, select_attribs_from_relation_where
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
     get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff
-from .abstract.where_clause import WhereClause
 
 
 class Filter(WhereClause):
@@ -21,6 +22,7 @@ class Filter(WhereClause):
                          global_min_instance_dict)
         self.filter_predicates = None
         self.global_key_attributes = global_key_attributes
+        self.tab_key_value_dict = {}
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
@@ -28,6 +30,36 @@ class Filter(WhereClause):
         self.filter_predicates = self.get_filter_predicates(query)
         self.logger.debug(self.filter_predicates)
         return self.filter_predicates
+
+    def do_init(self):
+        tab_attribs_dict = {}
+        for tabname in self.core_relations:
+            tab_attribs = self.get_attrib_details(tabname)
+            tab_attribs_dict[tabname] = tab_attribs
+        self.init_tab_key_value_dict()
+        for tabname in self.core_relations:
+            self.get_d_plus_values(tab_attribs_dict[tabname], tabname)
+
+    def get_d_plus_values(self, tab_attribs, tabname):
+        res, desc = self.connectionHelper.execute_sql_fetchall(
+            select_attribs_from_relation_where(tab_attribs, tabname, self.get_where_key_val_sql(tabname)))
+        for row in res:
+            for attrib, value in zip(tab_attribs, row):
+                self.global_d_plus_value[attrib] = value
+
+    def init_tab_key_value_dict(self):
+        for key in self.global_key_attributes:
+            tab = self.find_tabname_for_given_attrib(key)
+            columns = self.global_min_instance_dict[tab][0]
+            key_idx = columns.index(key)
+            value = self.global_min_instance_dict[tab][1][key_idx]
+            self.tab_key_value_dict[tab] = (key, value)
+
+    def get_where_key_val_sql(self, tab):
+        key = self.tab_key_value_dict[tab][0]
+        value = self.tab_key_value_dict[tab][1]
+        where_condition = f"where {key} = {value}"
+        return where_condition
 
     def get_filter_predicates(self, query):
         filter_attribs = []
@@ -66,7 +98,9 @@ class Filter(WhereClause):
             self.handle_numeric_filter(attrib, d_plus_value, filter_attribs, tabname, query)
 
     def checkAttribValueEffect(self, query, tabname, attrib, val):
-        self.connectionHelper.execute_sql(["update " + tabname + " set " + attrib + " = " + str(val) + ";"])
+        self.connectionHelper.execute_sql([update_tab_attrib_with_value_where(attrib, tabname, val,
+                                                                              self.get_where_key_val_sql(tabname))])
+        # self.connectionHelper.execute_sql([f"update {tabname}  set {attrib}  =  {str(val)};"])
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
             self.revert_filter_changes(tabname)
@@ -111,6 +145,7 @@ class Filter(WhereClause):
                          tabname, filter_attrib,
                          min_val, max_val, operator):
         query_front = update_sql_query_tab_attribs(tabname, filter_attrib)
+        where_key = self.get_where_key_val_sql(tabname)
         delta, while_cut_off = get_constants_for(datatype)
 
         self.revert_filter_changes(tabname)
@@ -120,7 +155,7 @@ class Filter(WhereClause):
 
         if operator == '<=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
-                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, where_key)
                 self.logger.debug("<= pred", mid_val, low, high)
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
@@ -135,7 +170,7 @@ class Filter(WhereClause):
 
         if operator == '>=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
-                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, where_key)
                 self.logger.debug(">= pred", mid_val, low, high)
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
@@ -152,16 +187,15 @@ class Filter(WhereClause):
         else:  # =, i.e. datatype == 'int', date
             is_low = True
             is_high = True
-            # updatequery
             is_low = self.run_app_for_a_val(datatype, is_low,
-                                            low, query, query_front)
+                                            low, query, query_front, where_key)
             is_high = self.run_app_for_a_val(datatype, is_high,
-                                             high, query, query_front)
+                                             high, query, query_front, where_key)
             self.revert_filter_changes(tabname)
             return not is_low and not is_high
 
-    def run_app_for_a_val(self, datatype, is_low, low, query, query_front):
-        low_query = form_update_query_with_value(query_front, datatype, low)
+    def run_app_for_a_val(self, datatype, is_low, low, query, query_front, where_key):
+        low_query = form_update_query_with_value_where(query_front, datatype, low, where_key)
         self.connectionHelper.execute_sql([low_query])
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
@@ -169,10 +203,9 @@ class Filter(WhereClause):
         # put filter_
         return is_low
 
-    def run_app_with_mid_val(self, datatype, high, low, query, q_front):
+    def run_app_with_mid_val(self, datatype, high, low, query, q_front, where_key):
         mid_val = get_mid_val(datatype, high, low)
-        # updatequery
-        update_query = form_update_query_with_value(q_front, datatype, mid_val)
+        update_query = form_update_query_with_value_where(q_front, datatype, mid_val, where_key)
         self.connectionHelper.execute_sql([update_query])
         new_result = self.app.doJob(query)
         return mid_val, new_result
@@ -242,7 +275,6 @@ class Filter(WhereClause):
                                            insert_into_tab_select_star_fromtab(tabname, get_tabname_4(tabname))])
 
     def checkStringPredicate(self, query, tabname, attrib):
-        # updatequery
         if self.global_d_plus_value[attrib] is not None and self.global_d_plus_value[attrib][0] == 'a':
             val = 'b'
         else:
@@ -316,7 +348,7 @@ class Filter(WhereClause):
         return output
 
     def run_updateQ_with_temp_str(self, attrib, query, tabname, temp):
-        up_query = update_tab_attrib_with_quoted_value(tabname, attrib, temp)
+        up_query = update_tab_attrib_with_quoted_value_where(tabname, attrib, temp, self.get_where_key_val_sql(tabname))
         self.connectionHelper.execute_sql([up_query])
         new_result = self.app.doJob(query)
         return new_result

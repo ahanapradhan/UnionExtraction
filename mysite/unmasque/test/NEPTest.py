@@ -354,7 +354,6 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
-
     def test_mukul_thesis_Q18(self):
         self.conn.connectUsingParams()
         q = "Select c_name, o_orderdate, o_totalprice, sum(l_quantity) From customer, orders, lineitem " \

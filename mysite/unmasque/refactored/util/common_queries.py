@@ -105,8 +105,17 @@ def update_tab_attrib_with_value(attrib, tab, value):
     return f"UPDATE {tab}  SET {attrib}={str_value};"
 
 
+def update_tab_attrib_with_value_where(attrib, tab, value, where):
+    str_value = str(value)
+    return f"UPDATE {tab}  SET {attrib}={str_value} {where};"
+
+
 def update_tab_attrib_with_quoted_value(tab, attrib, value):
     return f"UPDATE {tab}  SET {attrib} = '{value}';"
+
+
+def update_tab_attrib_with_quoted_value_where(tab, attrib, value, where):
+    return f"UPDATE {tab}  SET {attrib} = '{value}'  {where};"
 
 
 def update_sql_query_tab_attribs(tab, attrib):
@@ -120,6 +129,11 @@ def form_update_query_with_value(update_string, datatype, val):
     return f"{update_string} {update_val};"
 
 
+def form_update_query_with_value_where(update_string, datatype, val, where):
+    update_val = get_format(datatype, val)
+    return f"{update_string} {update_val} {where};"
+
+
 def get_column_details_for_table(schema, tab):
     return f"select column_name, data_type, character_maximum_length from " \
            f"information_schema.columns where table_schema = '{schema}' and " \
@@ -129,6 +143,11 @@ def get_column_details_for_table(schema, tab):
 def select_attribs_from_relation(tab_attribs, relation):
     attribs = ", ".join(tab_attribs)
     return f"select {attribs} from {relation};"
+
+
+def select_attribs_from_relation_where(tab_attribs, relation, where):
+    attribs = ", ".join(tab_attribs)
+    return f"select {attribs} from {relation} {where};"
 
 
 def insert_into_tab_select_star_fromtab(tab, fromtab):

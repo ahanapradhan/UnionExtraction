@@ -117,13 +117,6 @@ class EquiJoin(JoinData, WhereClause):
                 self.global_key_attributes.append(val[1])
             self.global_join_graph.append(copy.deepcopy(temp))
 
-    def find_tabname_for_given_attrib(self, find_attrib):
-        for entry in self.global_attrib_types:
-            tabname = entry[0]
-            attrib = entry[1]
-            if attrib == find_attrib:
-                return tabname
-
     def restore_d_min_for_tab(self, tab):
         if not self.mock:
             self.connectionHelper.execute_sql([truncate_table(tab),

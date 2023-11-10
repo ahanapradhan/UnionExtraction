@@ -133,7 +133,7 @@ class ExtractionPipeLine(GenericPipeLine):
         fl = MultipleFilter(self.connectionHelper,
                             key_lists,
                             ej.fromData, ej.joinData,
-                            global_min_instance_dict)
+                            ej.d_min_DictData)
         self.update_state(FILTER + RUNNING)
         check = fl.doJob(query)
         self.update_state(FILTER + DONE)

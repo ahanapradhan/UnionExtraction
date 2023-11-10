@@ -1,3 +1,5 @@
+import pandas as pd
+
 from mysite.unmasque.refactored.equi_join import EquiJoin
 from mysite.unmasque.src.core.abstract.ExtractorModuleBase import ExtractorModuleBase
 from mysite.unmasque.src.core.abstract.dataclass.from_clause_data_class import FromData
@@ -10,7 +12,8 @@ def create_token(row_ctid, tab):
     return token
 
 
-def check_and_add(tab, from_tabs, join_graph, next_key, next_tab, this_key, token, visited):
+def check_and_add(tab, this_key, this_ctid, next_tab, next_key, next_ctid,
+                  from_tabs, join_graph, token, d_min_dict, visited):
     this_join = [this_key, next_key]
     that_join = this_join[::-1]
     if tab not in from_tabs:
@@ -19,6 +22,8 @@ def check_and_add(tab, from_tabs, join_graph, next_key, next_tab, this_key, toke
         from_tabs.append(next_tab)
     if this_join not in join_graph and that_join not in join_graph:
         join_graph.append(this_join)
+    d_min_dict[tab] = this_ctid
+    d_min_dict[next_tab] = next_ctid
     visited.append(token)
 
 
@@ -38,6 +43,7 @@ class MultipleEquiJoin(ExtractorModuleBase):
                  core_relations,
                  global_min_instance_dict):
         super().__init__(connectionHelper, "Multiple Equi Join")
+        self.d_min_DictData = []
         self.fromData = []
         self.joinData = []
         self.intersection = False
@@ -72,10 +78,10 @@ class MultipleEquiJoin(ExtractorModuleBase):
         tab = all_tabs[0]
         tab_entry = self.tab_tuple_sig_dict[tab]
         for row_ctid in tab_entry.keys():
-            from_tabs, join_graph = self.traverse_for_one_cycle(row_ctid, tab)
-            self.fill_in_data_fields(from_tabs, join_graph)
+            from_tabs, join_graph, d_min_dict = self.traverse_for_one_cycle(row_ctid, tab)
+            self.fill_in_data_fields(from_tabs, join_graph, d_min_dict)
 
-    def fill_in_data_fields(self, from_tabs, join_graph):
+    def fill_in_data_fields(self, from_tabs, join_graph, d_min_dict):
         from_data = FromData()
         join_data = JoinData()
         from_data.core_relations = from_tabs
@@ -83,10 +89,24 @@ class MultipleEquiJoin(ExtractorModuleBase):
         join_data.global_key_attributes = form_global_key_attributes(join_graph)
         self.fromData.append(from_data)
         self.joinData.append(join_data)
+        self.d_min_DictData.append(self.populate_min_instance_dict(d_min_dict))
+
+    def populate_min_instance_dict(self, d_min_dict):
+        data_dict = {}
+        for key_tab in d_min_dict.keys():
+            data_dict[key_tab] = []
+            sql_query = pd.read_sql_query(f"select * from {key_tab} where ctid = '{d_min_dict[key_tab]}';",
+                                          self.connectionHelper.conn)
+            df = pd.DataFrame(sql_query)
+            data_dict[key_tab].append(tuple(df.columns))
+            for index, row in df.iterrows():
+                data_dict[key_tab].append(tuple(row))
+        return data_dict
 
     def traverse_for_one_cycle(self, row_ctid, tab):
         join_graph = []
         from_tabs = []
+        d_min_dict = {}
         visited = []
         while True:
             token = create_token(row_ctid, tab)
@@ -94,7 +114,8 @@ class MultipleEquiJoin(ExtractorModuleBase):
                 break
             entry = self.tab_tuple_sig_dict[tab][row_ctid]
             this_key, next_tab, next_ctid, next_key = entry[0], entry[1], entry[2], entry[3]
-            check_and_add(tab, from_tabs, join_graph, next_key, next_tab, this_key, token, visited)
+            check_and_add(tab, this_key, row_ctid, next_tab, next_key, next_ctid,
+                          from_tabs, join_graph, token, d_min_dict, visited)
             tab, row_ctid = next_tab, next_ctid
 
         for key_tab in self.tab_tuple_sig_dict.keys():
@@ -104,9 +125,10 @@ class MultipleEquiJoin(ExtractorModuleBase):
                 this_key, next_tab, next_ctid, next_key = entry[0], entry[1], entry[2], entry[3]
                 next_token = create_token(next_ctid, next_tab)
                 if token not in visited and next_token in visited:
-                    check_and_add(key_tab, from_tabs, join_graph, next_key, next_tab, this_key, token, visited)
+                    check_and_add(key_tab, this_key, key_ctid, next_tab, next_key, next_ctid,
+                                  from_tabs, join_graph, token, d_min_dict, visited)
 
-        return from_tabs, join_graph
+        return from_tabs, join_graph, d_min_dict
 
     def get_matching_tuples(self):
         self.tab_tuple_sig_dict = {key_tab: {} for key_tab in self.join_extractor.global_min_instance_dict}

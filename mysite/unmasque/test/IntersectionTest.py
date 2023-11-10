@@ -22,8 +22,10 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         check = eq.count(self.INTERSECT)
         self.assertEqual(check, 1)
-        subq_check = eq.count("From customer, nation\nWhere c_nationkey = n_nationkey)")
-        self.assertEqual(subq_check, 2)
+        subq_check = eq.count("From customer, nation\nWhere c_nationkey = n_nationkey and n_name  = 'BRAZIL'")
+        self.assertEqual(subq_check, 1)
+        subq_check = eq.count("From customer, nation\nWhere c_nationkey = n_nationkey and n_name  = 'ARGENTINA'")
+        self.assertEqual(subq_check, 1)
         # self.assertTrue(self.pipeline.correct)
 
     def test_brazil_argentina_2(self):
