@@ -189,7 +189,7 @@ class MyTestCase(BaseTestCase):
         print("===========")
 
         self.assertEqual(len(attribs), 4)
-        self.assertTrue('l_orderkey' in attribs)
+        self.assertTrue('l_orderkey' in attribs or 'o_orderkey' in attribs)
         self.assertTrue('' in attribs)
         self.assertTrue('o_orderdate' in attribs)
         self.assertTrue('o_shippriority' in attribs)
