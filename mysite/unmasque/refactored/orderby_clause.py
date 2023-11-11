@@ -140,12 +140,17 @@ class OrderBy(GenerationPipeLineBase):
 
     def generateData(self, obj, orderby_list, filter_attrib_dict, curr_orderby, query):
         attrib_types_dict = {}
+        
         for entry in self.global_attrib_types:
             attrib_types_dict[(entry[0], entry[1])] = entry[2]
         # check if it is a key attribute, #NO CHECKING ON KEY ATTRIBUTES
+        self.logger.debug(obj.attrib)
+        key_elt = None
         if obj.attrib in self.global_key_attributes:
-            self.logger.info("Skipping on key")
-            return None
+            for elt in self.global_join_graph:
+                if obj.attrib in elt:
+                    key_elt = elt
+            
         if not obj.dependency:
             # if obj.name not in self.global_attrib_dict['order by']:
             #    self.global_attrib_dict['order by'].append(obj.name)
@@ -157,7 +162,16 @@ class OrderBy(GenerationPipeLineBase):
             same_value_list = []
             for elt in orderby_list:
                 for i in elt[0].attrib_dependency:
-                    same_value_list.append(i)
+                    key_f = None
+                    for j in self.global_join_graph:
+                        if i[1] in j:
+                            key_f = j
+                    self.logger.debug("Key: ", key_f)
+                    if key_f:
+                        for in_e in key_f:
+                            same_value_list.append(("check", in_e))
+                    else:
+                        same_value_list.append(i)
             no_of_db = 2
             order = [None, None]
             # For this attribute (obj.attrib), fill all tables now
@@ -221,7 +235,7 @@ class OrderBy(GenerationPipeLineBase):
                         insert_values1.append(first)
                         insert_values2.append(second)
                         if k == no_of_db - 1 and (any([(attrib_inner in i) for i in
-                                                       obj.attrib_dependency]) or 'Count' in obj.aggregation):
+                                                       obj.attrib_dependency]) or 'Count' in obj.aggregation) or ( k == no_of_db - 1 and key_elt and attrib_inner in key_elt):
                             # swap first and second
                             self.logger.debug("Swapping", attrib_inner)
                             self.logger.debug("Attribute Order", att_order)
@@ -243,7 +257,9 @@ class OrderBy(GenerationPipeLineBase):
                     self.logger.debug("Insert 1", insert_values1)
                     self.logger.debug("Insert 2", insert_values2)
                     self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
-
+                #nr = self.app.doJob("select * from lineitem;")
+                # for i in nr:
+                #     self.logger.debug(i)
                 new_result = self.app.doJob(query)
                 self.logger.debug("New Result", k, new_result)
                 if isQ_result_empty(new_result):
@@ -253,7 +269,7 @@ class OrderBy(GenerationPipeLineBase):
                 if len(new_result) == 2:
                     return None
                 order[k] = checkOrdering(self.logger, obj, new_result)
-
+                self.logger.debug("Order", k, order)
             if order[0] is not None and order[1] is not None and order[0] == order[1]:
                 return order[0]
             else:

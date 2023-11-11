@@ -5,10 +5,14 @@ import random
 
 import numpy as np
 
+from sympy import symbols, factor, expand, collect, nsimplify
+
+from .util.common_queries import get_star
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
     get_val_plus_delta, get_char
 from ..src.util import constants
+
 
 
 def cover_special_chars(curr_str, value_used):
@@ -85,6 +89,7 @@ class Projection(GenerationPipeLineBase):
         self.projected_attribs = None
         self.dependencies = None
         self.solution = None
+        self.syms = []
         """
         List of list of all the subsets of the dependencies of an output column (having more than one dependencies)
         Suppose a column is dependent on a and b, corresponding index of that column in param_list will contain, [a,b,a*b]
@@ -177,7 +182,7 @@ class Projection(GenerationPipeLineBase):
         projection_dep = self.find_dependencies_on_multi(attrib_types_dict, projected_attrib, projection_names, query)
         projection_sol = self.find_solution_on_multi(attrib_types_dict, projected_attrib, projection_names,
                                                      projection_dep, query)
-        self.build_equation(projected_attrib, projection_dep, projection_sol)
+        #self.build_equation(projected_attrib, projection_dep, projection_sol)
         self.projected_attribs = projected_attrib
         self.projection_names = projection_names
         self.dependencies = projection_dep
@@ -293,6 +298,8 @@ class Projection(GenerationPipeLineBase):
         # Prev Result to check for changes
         prev_result = self.app.doJob(query)
         for idx in indices_to_check:
+            self.logger.debug("---------------------------------------------------------------------")
+            self.logger.debug("Checking", idx)
             projection_dep[idx], prev_result = self.get_dependence(idx, projection_names, query, prev_result,
                                                                    attrib_types_dict,
                                                                    value_used)
@@ -301,7 +308,7 @@ class Projection(GenerationPipeLineBase):
 
     def get_dependence(self, index, names, query, prev_res, attrib_types_dict, value_used):
         dep_list = []
-        # print(index)
+        self.logger.debug("IDX", index)
         to_be_skipped = []
         for tab_idx in range(len(self.core_relations)):
             tabname = self.core_relations[tab_idx]
@@ -340,6 +347,8 @@ class Projection(GenerationPipeLineBase):
                         # Take Max value for to check for coincidence
                         if 'date' in attrib_types_dict[(tabname, attrib)]:
                             update_value = get_val_plus_delta('date', fil[4], -1)
+                        elif fil[2] == 'LIKE':
+                            update_value = fil[4].replace('%', 'a')
                         else:
                             update_value = fil[4]
                 update_multi = []
@@ -358,6 +367,8 @@ class Projection(GenerationPipeLineBase):
                                 update_multi.append(self.core_relations[idx])
                         update_multi.append(dummy_val)
                 self.logger.debug("Join Update", update_multi)
+                # prev_val = value_used[value_used.index(attrib) + 1]
+                # self.logger.debug("Val to restore", prev)
                 if not fil and not join:
                     if 'int' in attrib_types_dict[(tabname, attrib)] \
                             or 'numeric' in attrib_types_dict[(tabname, attrib)]:
@@ -424,6 +435,7 @@ class Projection(GenerationPipeLineBase):
                 # Identical output column, so append empty list and continue
                 solution.append([])
                 self.param_list.append([])
+                self.syms.append([])
             else:
                 
                 #self.truncate_core_relations()
@@ -433,7 +445,7 @@ class Projection(GenerationPipeLineBase):
                 prev_result = self.app.doJob(query)
                 self.logger.debug("Inside else", value_used)
                 solution.append(
-                    self.get_solution(attrib_types_dict, projection_dep, projection_names, idx_pro, prev_result,
+                    self.get_solution(attrib_types_dict, projected_attrib, projection_dep, projection_names, idx_pro, prev_result,
                                       value_used, query))
         return solution
 
@@ -441,14 +453,34 @@ class Projection(GenerationPipeLineBase):
     Solve Ax=b to get the expression of the output column
     """
 
-    def get_solution(self, attrib_types_dict, projection_dep, projection_names, idx, prev_res, value_used, query):
+    def get_solution(self, attrib_types_dict, projected_attrib, projection_dep, projection_names, idx, prev_res, value_used, query):
         dep = projection_dep[idx]
         n = len(dep)
         fil_check = []
         local_param_list = []  # param_list for only this output column
+        local_symbol_list = []
+        sym_string = ''
+        for i in dep:
+            sym_string += (i[1] + " ")
+        res = 1
+        if n > 1:
+            syms = symbols(sym_string)
+            local_symbol_list = syms
+            syms = sorted(syms, key=lambda x: str(x))
+            self.logger.debug("symbols", syms)
+            for i in syms:
+                res *= (1+i)
+            self.logger.debug("Sym List", expand(res).args)
+            self.syms.append(get_param_values_external(syms))
+            self.logger.debug("Another List", self.syms)
+        else:
+            self.syms.append([symbols(sym_string)])
+            local_symbol_list = self.syms[-1]
+            self.logger.debug("Another List", self.syms, idx)
         if n == 1 and ('int' not in attrib_types_dict[(dep[0][0], dep[0][1])]) and (
                 'numeric' not in attrib_types_dict[(dep[0][0], dep[0][1])]):
             self.param_list.append([dep[0][1]])
+            projected_attrib[idx] = dep[0][1]
             return [[1]]
         for ele in dep:
             # Construct a list of list that will be used to check if the attrib belongs to filter predicate
@@ -472,8 +504,8 @@ class Projection(GenerationPipeLineBase):
             coeff[0][i] = temp_array[i]
 
         coeff[0][2 ** n - 1] = 1
-
-        local_param_list = self.get_param_list([i[1] for i in dep])
+        
+        local_param_list = self.get_param_list(sorted([i[1] for i in dep]))
         self.logger.debug("Param List", local_param_list)
         self.param_list.append(local_param_list)
         curr_rank = 1
@@ -499,8 +531,11 @@ class Projection(GenerationPipeLineBase):
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
             for j in range(n):
-                tabname = dep[j][0]
-                col = dep[j][1]
+                col = self.param_list[idx][j]
+                tabname = None
+                for e_dep in dep:
+                    if col in e_dep:
+                        tabname = e_dep[0]
                 value = coeff[i][j]
                 join = []
                 for elt in self.global_join_graph:
@@ -529,8 +564,15 @@ class Projection(GenerationPipeLineBase):
 
         solution = np.linalg.solve(coeff, b)
         solution = np.around(solution, decimals=0)
+        final_res = 0
+        for i, ele in enumerate(self.syms[idx]):
+            final_res += (ele*solution[i]) 
+        self.logger.debug("Coeff of 1", solution[len(self.syms[idx])-1])
+        final_res += 1*solution[-1]
         self.logger.debug("Equation", coeff, b)
         self.logger.debug("Solution", solution)
+        self.logger.debug("Final", final_res, nsimplify(collect(final_res, local_symbol_list)))
+        projected_attrib[idx] = str(nsimplify(collect(final_res, local_symbol_list)))
         return solution
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
@@ -543,6 +585,13 @@ class Projection(GenerationPipeLineBase):
                                                                        self.param_list[idx_pro])
 
     def build_equation_helper(self, solution, dependencies, param_l):
+        
+        
+        n = len(dependencies)
+        # syms = " ".join(dependencies[:n])
+        # syms = symbols(syms)
+        # expr = None
+
         res_str = ""
         for i in range(len(solution)):
             if solution[i][0] == 0:
@@ -557,6 +606,7 @@ class Projection(GenerationPipeLineBase):
                 if solution[i][0] > 0:
                     res_str += "+"
                 res_str += (str(solution[i][0]) + "*" + param_l[i]) if solution[i][0] != 1 else param_l[i]
+
         self.logger.debug("Result String", res_str)
         return res_str
 
@@ -615,3 +665,4 @@ def get_subsets_helper(deps, res, curr, idx):
         curr.append(deps[i])
         get_subsets_helper(deps, res, curr, i + 1)
         curr.pop()
+        

@@ -20,6 +20,13 @@ Follow the link https://www.postgresql.org/download/ to download and install the
 # Setting up IDE  
 A developement environment for python project is required next. Here is the link to PyCharm Community Edition: https://www.jetbrains.com/pycharm/download/  (Any other IDE is also fine)
 
+### Requirements
+* Python 3.8.0 or above
+* `django==4.2.4`
+* `sympy==1.4`
+* `psycopg2==2.9.3`
+* `numpy==1.22.4`
+
 # Setting Up the UN1+UNION UNMASQUE Code
 This code corresponds to UNMASQUE Project: https://dsl.cds.iisc.ac.in/projects/HIDDEN/index.html  
 UNMASQUE code for https://dsl.cds.iisc.ac.in/publications/report/TR/TR-2021-02_updated.pdf    
@@ -54,7 +61,7 @@ Please explore the individual directories for more details on the code and its p
 inside `mysite` directory, there are three files as follows:  
 config.ini --> This contains database login credentials. Change the fields accordingly.  
 create_indexes.sql --> currently empty.  (do not delete this file.)  
-pkfkrelations.csv --> contains key details for the TPCH schema. If any other schema is to be used, change this file accordingly.  
+pkfkrelations.csv --> contains key details for the TPCH schema. If any other schema is to be used, change this file accordingly.
 
 ### Running Unmasque
 Open `mysite/unmasque/src/main_cmd.py` file.  

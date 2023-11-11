@@ -31,6 +31,10 @@ class MyTestCase(BaseTestCase):
             self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    def test_1_mul(self):
+        for i in range(10):
+            self.test_extraction_tpch_q1()
+
     def test_extraction_tpch_q1(self):
         self.conn.connectUsingParams()
         key = 'q1'
@@ -482,6 +486,10 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
+    
+    def test_6_mul(self):
+        for i in range(10):
+            self.test_extraction_Q6()
 
 
 if __name__ == '__main__':
