@@ -1,5 +1,6 @@
 import unittest
 
+from mysite.unmasque.src.core.multiple_projections import find_common_items
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -11,6 +12,15 @@ class MyTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.pipeline = ExtractionPipeLine(self.conn)
         self.pipeline.validate_extraction = False
+
+    def test_intersect(self):
+        a = [1, 2, 3]
+        b = [2, 3, 4]
+        c = [3, 4, 5]
+        li = [frozenset(a), frozenset(b), frozenset(c)]
+        result = find_common_items(li)
+        print(result)
+        self.assertEqual(len(result), 1)
 
     def test_brazil_argentina_basic(self):
         query = "SELECT c_mktsegment as segment FROM customer, nation WHERE n_nationkey = c_nationkey " \
@@ -40,7 +50,8 @@ class MyTestCase(BaseTestCase):
         check = eq.count(self.INTERSECT)
         self.assertEqual(check, 1)
         self.assertTrue("From customer, nation\nWhere c_nationkey = n_nationkey)" in eq)
-        self.assertTrue("From customer, nation, orders\nWhere c_nationkey = n_nationkey and c_custkey = o_custkey)" in eq)
+        self.assertTrue(
+            "From customer, nation, orders\nWhere c_nationkey = n_nationkey and c_custkey = o_custkey)" in eq)
         # self.assertTrue(self.pipeline.correct)
 
 

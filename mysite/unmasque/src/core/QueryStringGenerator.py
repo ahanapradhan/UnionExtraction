@@ -91,14 +91,7 @@ class QueryStringGenerator(SPJQueryStringGenerator):
                     elt = agg.global_aggregated_attributes[i][1]
                 else:
                     elt = agg.global_aggregated_attributes[i][1] + '(' + elt + ')'
-
-            if elt != pj.projection_names[i] and pj.projection_names[i] != '':
-                elt = elt + ' as ' + pj.projection_names[i]
-            if first_occur:
-                self.select_op = elt
-                first_occur = False
-            else:
-                self.select_op = self.select_op + ", " + elt
+            first_occur = self.update_select_op(elt, first_occur, i, pj)
 
         self.order_by_op = ob.orderBy_string[:-2]
         if lm.limit is not None:

@@ -49,8 +49,22 @@ class SPJQueryStringGenerator(Base):
         self.from_op = ''
         self.where_op = ''
 
+    def update_select_op(self, elt, first_occur, i, pj):
+        if elt != pj.projection_names[i] and pj.projection_names[i] != '':
+            elt = elt + ' as ' + pj.projection_names[i]
+        if first_occur:
+            self.select_op = elt
+            first_occur = False
+        else:
+            self.select_op = self.select_op + ", " + elt
+        return first_occur
+
     def refine_Query1(self, modules):
-        pass
+        pj = modules[3]
+        first_occur = True
+        for i in range(len(pj.projected_attribs)):
+            elt = pj.projected_attribs[i]
+            self.update_select_op(elt, first_occur, i, pj)
 
     def generate_query_string(self, modules):
         core_relations, ej, fl, pj = get_modules(modules)
