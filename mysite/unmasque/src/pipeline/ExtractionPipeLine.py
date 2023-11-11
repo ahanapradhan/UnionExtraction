@@ -1,3 +1,5 @@
+import copy
+
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
@@ -129,7 +131,6 @@ class ExtractionPipeLine(GenericPipeLine):
         Filters Extraction
         '''
         self.update_state(FILTER + START)
-
         fl = MultipleFilter(self.connectionHelper,
                             key_lists,
                             ej.fromData, ej.joinData,
@@ -157,10 +158,13 @@ class ExtractionPipeLine(GenericPipeLine):
         '''
         Projection Extraction
         '''
+
         self.update_state(PROJECTION + START)
-        pj = Projection(self.connectionHelper, ej.global_attrib_types, core_relations, fl.filter_predicates,
-                        ej.global_join_graph, ej.global_all_attribs, global_min_instance_dict,
-                        ej.global_key_attributes)
+        pj = Projection(self.connectionHelper, ej.join_extractor.global_attrib_types, core_relations,
+                        fl.filterData[0].filter_predicates,
+                        ej.join_extractor.global_join_graph, ej.join_extractor.global_all_attribs,
+                        ej.join_extractor.global_min_instance_dict,
+                        ej.join_extractor.global_key_attributes)
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
         self.update_state(PROJECTION + DONE)
@@ -181,7 +185,8 @@ class ExtractionPipeLine(GenericPipeLine):
     def run_generation_pipeline(self, query, core_relations,
                                 modules, global_min_instance_dict,
                                 time_profile):
-        ej, fl, pj = modules[self.JOIN_IDX], modules[self.FILTER_IDX], modules[self.PROJECTION_IDX]
+        ej, fl, pj = modules[self.JOIN_IDX], modules[self.FILTER_IDX], \
+            modules[self.PROJECTION_IDX]
         next_modules = []
         can_progress = True
 
@@ -296,23 +301,26 @@ class ExtractionPipeLine(GenericPipeLine):
             eq = self.generate_intersection_query_string(mutation_modules)
             return eq, time_profile
 
+        useful_mutation_modules = self.prepare_modules_for_singleQuery(mutation_modules)
+
         can_progress, generation_modules = self.run_generation_pipeline(query,
                                                                         core_relations,
-                                                                        mutation_modules, global_min_instance_dict,
+                                                                        useful_mutation_modules,
+                                                                        global_min_instance_dict,
                                                                         time_profile)
         if not can_progress:
             return None, time_profile
 
         q_generator = QueryStringGenerator(self.connectionHelper)
 
-        useful_modules = mutation_modules + generation_modules
+        useful_modules = useful_mutation_modules + generation_modules
         useful_modules.insert(0, core_relations)
         eq = q_generator.generate_query_string(useful_modules)
         self.logger.debug("extracted query:\n", eq)
 
         eq = self.extract_NEP(core_relations, minimizer_modules[self.CS2_IDX].sizes,
-                              mutation_modules[self.JOIN_IDX], eq,
-                              mutation_modules[self.FILTER_IDX].filter_predicates,
+                              useful_mutation_modules[self.JOIN_IDX], eq,
+                              useful_mutation_modules[self.FILTER_IDX].filter_predicates,
                               q_generator, query,
                               time_profile, global_min_instance_dict)
 
@@ -321,6 +329,12 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.update_state(DONE)
         return eq, time_profile
+
+    def prepare_modules_for_singleQuery(self, mutation_modules):
+        joins = mutation_modules[self.JOIN_IDX].join_extractor
+        filters = mutation_modules[self.FILTER_IDX].filterData[0]
+        useful_mutation_modules = [joins, filters, mutation_modules[self.PROJECTION_IDX]]
+        return useful_mutation_modules
 
     def generate_intersection_query_string(self, mutation_modules):
         subq_strings = []

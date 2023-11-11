@@ -65,7 +65,12 @@ class MultipleEquiJoin(ExtractorModuleBase):
         if self.is_intersection_present():
             self.get_multiple_join_graphs()
         else:
-            self.fill_in_data_fields(self.join_extractor.core_relations, self.join_extractor.global_join_graph)
+            default_d_min_dict = {}
+            for table in self.join_extractor.core_relations:
+                default_d_min_dict[table] = '(0,1)'
+            self.fill_in_data_fields(self.join_extractor.core_relations,
+                                     self.join_extractor.global_join_graph,
+                                     default_d_min_dict)
         return True
 
     def get_multiple_join_graphs(self):

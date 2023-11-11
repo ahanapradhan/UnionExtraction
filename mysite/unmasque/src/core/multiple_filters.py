@@ -1,7 +1,5 @@
 import copy
 
-from mysite.unmasque.refactored.abstract.ExtractorBase import Base
-from mysite.unmasque.refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
 from mysite.unmasque.refactored.filter import Filter
 from mysite.unmasque.src.core.abstract.ExtractorModuleBase import ExtractorModuleBase
 from mysite.unmasque.src.core.abstract.dataclass.filter_data_class import FilterData
