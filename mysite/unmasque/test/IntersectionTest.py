@@ -1,6 +1,6 @@
 import unittest
 
-from mysite.unmasque.src.core.multiple_projections import find_common_items
+from mysite.unmasque.src.core.factory import find_common_items
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -32,9 +32,13 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         check = eq.count(self.INTERSECT)
         self.assertEqual(check, 1)
-        subq_check = eq.count("From customer, nation\nWhere c_nationkey = n_nationkey and n_name  = 'BRAZIL'")
+        subq_check = eq.count(
+            "(Select c_mktsegment as segment\nFrom customer, nation\nWhere c_nationkey = n_nationkey and n_name  = "
+            "'BRAZIL')")
         self.assertEqual(subq_check, 1)
-        subq_check = eq.count("From customer, nation\nWhere c_nationkey = n_nationkey and n_name  = 'ARGENTINA'")
+        subq_check = eq.count(
+            "(Select c_mktsegment as segment\nFrom customer, nation\nWhere c_nationkey = n_nationkey and n_name  = "
+            "'ARGENTINA')")
         self.assertEqual(subq_check, 1)
         # self.assertTrue(self.pipeline.correct)
 
@@ -42,17 +46,18 @@ class MyTestCase(BaseTestCase):
         query = "select c_mktsegment as segment from customer,nation " \
                 "where c_acctbal < 3000 and c_nationkey = n_nationkey and n_name = 'BRAZIL' " \
                 "intersect " \
-                "select c_mktsegment from customer,nation,orders where " \
+                "select c_mktsegment as segment from customer,nation,orders where " \
                 "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
                 "and n_name = 'ARGENTINA';"
         eq = self.pipeline.doJob(query)
         print(eq)
         check = eq.count(self.INTERSECT)
         self.assertEqual(check, 1)
-        self.assertTrue("From customer, nation\nWhere c_nationkey = n_nationkey)" in eq)
+        self.assertTrue("Select c_mktsegment as segment\nFrom customer, nation\nWhere c_nationkey = n_nationkey" in eq)
         self.assertTrue(
-            "From customer, nation, orders\nWhere c_nationkey = n_nationkey and c_custkey = o_custkey)" in eq)
-        # self.assertTrue(self.pipeline.correct)
+            "Select c_mktsegment as segment\nFrom customer, nation, orders\nWhere c_nationkey = n_nationkey and "
+            "c_custkey = o_custkey" in eq)
+        self.assertTrue(self.pipeline.correct)
 
 
 if __name__ == '__main__':

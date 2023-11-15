@@ -3,19 +3,18 @@ import copy
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..util.common_queries import get_column_details_for_table, select_attribs_from_relation
 from ..util.utils import is_int
+from ...src.core.abstract.dataclass.whereclause_data_class import WhereData
 
 
-class WhereClause(MutationPipeLineBase):
+class WhereClause(MutationPipeLineBase, WhereData):
 
     def __init__(self, connectionHelper,
                  global_key_lists,
                  core_relations,
-                 global_min_instance_dict):
-        super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Where_clause")
-        self.global_key_lists = global_key_lists
+                 global_min_instance_dict, global_key_attributes=None):
+        WhereData.__init__(self, global_key_lists, global_key_attributes)
+        MutationPipeLineBase.__init__(self, connectionHelper, core_relations, global_min_instance_dict, "Where_clause")
         # init data
-        self.global_attrib_types = []
-        self.global_all_attribs = []
         self.global_d_plus_value = {}  # this is the tuple from D_min
         self.global_attrib_max_length = {}
 

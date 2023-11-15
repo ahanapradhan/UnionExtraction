@@ -1,19 +1,29 @@
 import copy
 
 from mysite.unmasque.refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from mysite.unmasque.refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
 from mysite.unmasque.refactored.util.utils import isQ_result_empty, find_diff_idx
 from mysite.unmasque.src.core.abstract.dataclass.projection_data_class import ProjectionData
 
 
 class ProjectionBase(GenerationPipeLineBase, ProjectionData):
 
-    def __init__(self, connectionHelper, global_all_attribs, global_attrib_types, global_key_attributes,
-                 core_relations, join_graph, filter_predicates, global_min_instance_dict):
+    def __init__(self, connectionHelper, name, global_all_attribs, global_attrib_types, global_key_attributes,
+                 core_relations, join_graph, filter_predicates, global_min_instance_dict, attribs_to_check=None, skip_equals=True):
         ProjectionData.__init__(self)
-        GenerationPipeLineBase.__init__(self, connectionHelper, "Projection Base", core_relations, global_all_attribs,
+        GenerationPipeLineBase.__init__(self, connectionHelper, name, core_relations, global_all_attribs,
                                         global_attrib_types, join_graph, filter_predicates,
                                         global_min_instance_dict, global_key_attributes)
+        if attribs_to_check is None:
+            self.attribs_to_check = self.global_attrib_types
+        else:
+            self.attribs_to_check = attribs_to_check
+        self.skip_equals = skip_equals
+
+    def find_dep_one_round(self, query, s_values):
+        projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
+        if not check:
+            self.logger.error("Some problem while identifying the dependency list!")
+        return projected_attrib, projection_names, projection_dep, check
 
     def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)
@@ -34,7 +44,7 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
 
         s_value_dict = {}
 
-        for entry in self.global_attrib_types:
+        for entry in self.attribs_to_check:
             tabname = entry[0]
             attrib = entry[1]
             self.logger.debug("checking for ", tabname, attrib)
@@ -64,9 +74,10 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
         return val, prev
 
     def check_impact_of_non_key_attribs(self, attrib, new_result, projection_dep, query, tabname):
-        for fe in self.global_filter_predicates:
-            if fe[1] == attrib and (fe[2] == 'equal' or fe[2] == '='):
-                return
+        if self.skip_equals:
+            for fe in self.global_filter_predicates:
+                if fe[1] == attrib and (fe[2] == 'equal' or fe[2] == '='):
+                    return
         val, prev = self.update_attrib_to_see_impact(attrib, tabname)
         new_result1 = self.app.doJob(query)
         if len(new_result1) > 1:

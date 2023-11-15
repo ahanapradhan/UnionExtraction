@@ -3,6 +3,7 @@ import copy
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
+from ..core.factory import ProjectionFactory
 from ..core.multiple_equi_joins import MultipleEquiJoin
 from ..core.multiple_filters import MultipleFilter
 from ..core.multiple_projections import MultipleProjection
@@ -156,22 +157,15 @@ class ExtractionPipeLine(GenericPipeLine):
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
+        pj_factory = ProjectionFactory(self.connectionHelper,
+                                       ej.fromData, ej.joinData,
+                                       ej.join_extractor.global_join_graph,
+                                       fl.filterData, core_relations,
+                                       global_min_instance_dict)
+        pj = pj_factory.doCreateJob()
+        next_modules.append(pj)
+        self.PROJECTION_IDX = len(next_modules) - 1
 
-        if ej.intersection:
-            self.logger.info("It is an intersection Query")
-            pj = MultipleProjection(self.connectionHelper, key_lists,
-                                    ej.fromData, ej.joinData, fl.filterData,
-                                    ej.d_min_DictData)
-        else:
-            pj = Projection(self.connectionHelper, ej.join_extractor.global_attrib_types, core_relations,
-                            fl.filterData[0].filter_predicates,
-                            ej.join_extractor.global_join_graph, ej.join_extractor.global_all_attribs,
-                            ej.join_extractor.global_min_instance_dict,
-                            ej.join_extractor.global_key_attributes)
-        can_progress = self.extract_projection(can_progress, next_modules, pj, query, time_profile)
-        return can_progress, next_modules
-
-    def extract_projection(self, can_progress, next_modules, pj, query, time_profile):
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
         self.update_state(PROJECTION + DONE)
@@ -182,9 +176,7 @@ class ExtractionPipeLine(GenericPipeLine):
         if not pj.done:
             self.logger.error("Some error while projection extraction. Aborting extraction!")
             can_progress = False
-        next_modules.append(pj)
-        self.PROJECTION_IDX = len(next_modules) - 1
-        return can_progress
+        return can_progress, next_modules
 
     def run_generation_pipeline(self, query, core_relations,
                                 modules, global_min_instance_dict,
@@ -348,10 +340,10 @@ class ExtractionPipeLine(GenericPipeLine):
         subquery_generator = SPJQueryStringGenerator(self.connectionHelper)
         froms = mutation_modules[self.JOIN_IDX].fromData
         joins = mutation_modules[self.JOIN_IDX].joinData
-        filters = mutation_modules[self.FILTER_IDX].filterData
+        filters = mutation_modules[self.PROJECTION_IDX].filterData
         projections = mutation_modules[self.PROJECTION_IDX].projectionData
         for i in range(len(froms)):
-            subq_modules = [froms[i].core_relations, joins[i], filters[i], projections]
+            subq_modules = [froms[i].core_relations, joins[i], filters[i], projections[i]]
             subq_str = "(" + subquery_generator.generate_query_string(subq_modules) + ")"
             subq_str = subq_str.replace(";", "")
             subq_strings.append(subq_str)

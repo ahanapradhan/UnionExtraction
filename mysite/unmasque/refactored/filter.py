@@ -4,24 +4,25 @@ import math
 from .abstract.where_clause import WhereClause
 from .util.common_queries import get_tabname_4, update_sql_query_tab_attribs, insert_into_tab_select_star_fromtab, \
     truncate_table, update_tab_attrib_with_value_where, update_tab_attrib_with_quoted_value_where, \
-    form_update_query_with_value_where, select_attribs_from_relation, select_attribs_from_relation_where
+    form_update_query_with_value_where, select_attribs_from_relation_where
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
     get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff
+from ..src.core.abstract.dataclass.filter_data_class import FilterData
+from ..src.core.abstract.dataclass.only_filter_data import OnlyFilterData
 
 
-class Filter(WhereClause):
+class Filter(WhereClause, OnlyFilterData):
 
     def __init__(self, connectionHelper,
                  global_key_lists,
                  core_relations,
                  global_min_instance_dict,
                  global_key_attributes):
-        super().__init__(connectionHelper,
-                         global_key_lists,
-                         core_relations,
-                         global_min_instance_dict)
-        self.filter_predicates = None
-        self.global_key_attributes = global_key_attributes
+        OnlyFilterData.__init__(self)
+        WhereClause.__init__(self, connectionHelper,
+                             global_key_lists,
+                             core_relations,
+                             global_min_instance_dict, global_key_attributes)
         self.tab_key_value_dict = {}
 
     def doActualJob(self, args):
@@ -100,7 +101,6 @@ class Filter(WhereClause):
     def checkAttribValueEffect(self, query, tabname, attrib, val):
         self.connectionHelper.execute_sql([update_tab_attrib_with_value_where(attrib, tabname, val,
                                                                               self.get_where_key_val_sql(tabname))])
-        # self.connectionHelper.execute_sql([f"update {tabname}  set {attrib}  =  {str(val)};"])
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
             self.revert_filter_changes(tabname)

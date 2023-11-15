@@ -20,7 +20,7 @@ def if_dependencies_found_incomplete(projection_names, projection_dep):
 class Projection(ProjectionBase):
     def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates, join_graph,
                  global_all_attribs, global_min_instance_dict, global_key_attribs):
-        super().__init__(connectionHelper, global_all_attribs, global_attrib_types, global_key_attribs,
+        super().__init__(connectionHelper, "projection", global_all_attribs, global_attrib_types, global_key_attribs,
                          core_relations, join_graph, filter_predicates, global_min_instance_dict)
         self.dependencies = None
         self.solution = None
@@ -32,17 +32,15 @@ class Projection(ProjectionBase):
 
     def doExtractJob(self, query):
         s_values = []
-        projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
+        projected_attrib, projection_names, projection_dep, check = self.find_dep_one_round(query, s_values)
         if not check:
-            self.logger.error("Some problem while identifying the dependency list!")
             return False
         if if_dependencies_found_incomplete(projection_names, projection_dep):
             for s_v in s_values:
                 if s_v[2] is not None:
                     self.update_with_val(s_v[1], s_v[0], s_v[2])
-        projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
+        projected_attrib, projection_names, projection_dep, check = self.find_dep_one_round(query, s_values)
         if not check:
-            self.logger.error("Some problem while identifying the dependency list!")
             return False
 
         # projection_dep = self.find_dependencies_on_multi(self.attrib_types_dict, projected_attrib,

@@ -7,6 +7,7 @@ from .util.utils import get_all_combo_lists, get_two_different_vals, construct_t
 
 from .abstract.where_clause import WhereClause
 from mysite.unmasque.src.core.abstract.dataclass.join_data_class import JoinData
+from ..src.core.abstract.dataclass.only_join_data_class import OnlyJoinData
 
 
 def remove_edge_from_join_graph_dicts(curr_list, list1, list2, global_key_lists):
@@ -30,13 +31,13 @@ def format_insert_data(data, i):
     return data_row
 
 
-class EquiJoin(JoinData, WhereClause):
+class EquiJoin(OnlyJoinData, WhereClause):
 
     def __init__(self, connectionHelper,
                  global_key_lists,
                  core_relations,
                  global_min_instance_dict):
-        JoinData.__init__(self)
+        OnlyJoinData.__init__(self)
         WhereClause.__init__(self, connectionHelper,
                              global_key_lists,
                              core_relations,
@@ -109,7 +110,6 @@ class EquiJoin(JoinData, WhereClause):
     def refine_join_graph(self, join_graph):
         # refine join graph and get all key attributes
         self.global_join_graph = []
-        self.global_key_attributes = []
         for elt in join_graph:
             temp = []
             for val in elt:

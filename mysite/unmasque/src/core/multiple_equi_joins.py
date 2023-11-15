@@ -68,9 +68,12 @@ class MultipleEquiJoin(ExtractorModuleBase):
             default_d_min_dict = {}
             for table in self.join_extractor.core_relations:
                 default_d_min_dict[table] = '(0,1)'
-            self.fill_in_data_fields(self.join_extractor.core_relations,
-                                     self.join_extractor.global_join_graph,
+            self.fill_in_data_fields(self.join_extractor.core_relations, self.join_extractor.global_join_graph,
                                      default_d_min_dict)
+
+        for joindata in self.joinData:
+            joindata.global_all_attribs = self.join_extractor.global_all_attribs
+            joindata.global_attrib_types = self.join_extractor.global_attrib_types
         return True
 
     def get_multiple_join_graphs(self):
