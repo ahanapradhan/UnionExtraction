@@ -78,6 +78,9 @@ class MyTestCase(BaseTestCase):
         if os.path.isfile(self.summary_filename):
             os.remove(self.summary_filename)
 
+        with open(self.summary_filename, "a") as myfile:
+            myfile.write(f"Q id\tGb/Ob Correct?\tResult Correct?\n")
+
         """
         read each query file and store the content in a string. 
         This string is the hidden query for the experiment
@@ -111,7 +114,7 @@ class MyTestCase(BaseTestCase):
             with open(self.dat_filename, "a") as myfile:
                 myfile.write(dat_line)
 
-            self.add_extraction_summary(hq, self.gb_ob_correct, self.result_correct)
+            self.add_extraction_summary(self.hq_keys[0], self.gb_ob_correct, self.result_correct)
 
             idx += 1
 
@@ -306,7 +309,7 @@ class MyTestCase(BaseTestCase):
 
     def add_extraction_summary(self, hq_key, gb_ob_correct, result_correct):
         with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"{hq_key}\t{gb_ob_correct}\t{result_correct}\n")
+            myfile.write(f"{hq_key}\t\t{gb_ob_correct}\t\t{result_correct}\n")
 
 
 if __name__ == '__main__':
