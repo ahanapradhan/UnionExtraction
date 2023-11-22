@@ -75,12 +75,6 @@ class MyTestCase(BaseTestCase):
     def do_experiment(self, ITERATIONS=1):
         self.do_dat_file_init()
 
-        if os.path.isfile(self.summary_filename):
-            os.remove(self.summary_filename)
-
-        with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"Q id\tGb/Ob Correct?\tResult Correct?\n")
-
         """
         read each query file and store the content in a string. 
         This string is the hidden query for the experiment
@@ -297,15 +291,13 @@ class MyTestCase(BaseTestCase):
         self.hq_keys = ["Q21"]
         self.do_experiment()
 
-    @pytest.mark.skip
-    def test_plot(self):
-        self.hqs = [Q3]
-        self.hq_keys = ["Q3"]
-        # self.hqs = [Q1, Q2, Q3, Q4, Q5, Q6, Q10, Q11, Q16, Q17, Q18, Q21]
-        # self.hq_keys = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q10", "Q11", "Q16", "Q17", "Q18", "Q21"]
-        self.do_experiment()
-        # self.create_gnuplot()
-        # self.create_latex_table_of_queries()
+    @pytest.fixture(scope="session", autouse=True)
+    def do_something(self, request):
+        if os.path.isfile(self.summary_filename):
+            os.remove(self.summary_filename)
+
+        with open(self.summary_filename, "a") as myfile:
+            myfile.write(f"Q id\tGb/Ob Correct?\tResult Correct?\n")
 
     def add_extraction_summary(self, hq_key, gb_ob_correct, result_correct):
         with open(self.summary_filename, "a") as myfile:
