@@ -99,13 +99,13 @@ class Filter(WhereClause):
                                         max_val_domain, '<=')
             val = float(val)
             val1 = self.get_filter_value(query, 'float', tabname, attrib, val, val + 0.99, '<=')
-            filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round(val1, 3))))
+            filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round(val1, 2))))
         elif not min_present and max_present:
             val = self.get_filter_value(query, 'float', tabname, attrib, min_val_domain,
                                         math.floor(float(d_plus_value[attrib]) + 5), '>=')
             val = float(val)
             val1 = self.get_filter_value(query, 'float', tabname, attrib, val - 1, val, '>=')
-            filterAttribs.append((tabname, attrib, '>=', float(round(val1, 3)), float(max_val_domain)))
+            filterAttribs.append((tabname, attrib, '>=', float(round(val1, 2)), float(max_val_domain)))
 
     def get_filter_value(self, query, datatype,
                          tabname, filter_attrib,
@@ -124,8 +124,8 @@ class Filter(WhereClause):
                 self.logger.debug("<= pred", mid_val, low, high)
                 if mid_val == low or mid_val == high:
                     self.revert_filter_changes(tabname)
-                    break
-                    # return low
+                    # break
+                    return mid_val
                 if isQ_result_empty(new_result):
                     new_val = get_val_plus_delta(datatype, mid_val, -1 * delta)
                     high = new_val
