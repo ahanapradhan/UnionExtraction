@@ -409,7 +409,7 @@ class Projection(GenerationPipeLineBase):
                 self.logger.debug("Prev", prev_res)
                 new_result = self.app.doJob(query)
                 self.logger.debug("New", new_result)
-                if prev_res[1][index] != new_result[1][index]:
+                if len(new_result) > 1 and prev_res[1][index] != new_result[1][index]:
                     dep_list.append((tabname, attrib))
                     # prev_res = new_result
                     attrib_idx += 1
