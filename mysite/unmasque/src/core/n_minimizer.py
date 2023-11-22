@@ -195,7 +195,7 @@ class NMinimizer(Minimizer):
         if self.view_drop_count >= self.SWTICH_TRANSACTION_ON:
             self.connectionHelper.closeConnection()
             self.connectionHelper.connectUsingParams()
-            self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab))])
+            # self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab))])
             self.view_drop_count = 0
 
     def try_binary_halving(self, query, tab):

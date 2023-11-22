@@ -71,7 +71,7 @@ class Cs2(Base):
 
     def restore(self):
         for table in self.core_relations:
-            self.connectionHelper.execute_sqls_with_DictCursor([truncate_table(table),
+            self.connectionHelper.execute_sqls_with_DictCursor([create_table_like(table, get_restore_name(table)),
                                                                 insert_into_tab_select_star_fromtab(table,
                                                                                                     get_restore_name(
                                                                                                         table))])

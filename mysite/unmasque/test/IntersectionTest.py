@@ -74,13 +74,28 @@ class MyTestCase(BaseTestCase):
 
     def test_abhinav_thesis_q3(self):
         query = "select p_container,p_retailprice,ps_availqty " \
-                "from part,supplier,partsupp where p_partkey = ps_partkey and s_suppkey = ps_suppkey and " \
-                "p_brand='Brand45' intersect select p_container,p_retailprice,ps_availqty " \
-                "from part,supplier,partsupp where p_partkey = ps_partkey and s_suppkey=ps_suppkey and " \
-                "p_brand='Brand15' and p_size > 10;"
+                "from part,supplierx,partsuppx where p_partkey = ps_partkey and s_suppkey = ps_suppkey and " \
+                "p_brand='Brand#45' intersect select p_container,p_retailprice,ps_availqty " \
+                "from part,supplierx,partsuppx where p_partkey = ps_partkey and s_suppkey=ps_suppkey and " \
+                "p_brand='Brand#15';"
+        # supplier ctid = '(7, 34)' or ctid = '(18, 40)'
+        # partsupp '(52, 32)', '(227,45)'
+        # part: ERROR
+        self.conn.connectUsingParams()
+        self.conn.execute_sql(["drop table if exists partsuppx;", "drop table if exists supplierx;"])
+        self.conn.closeConnection()
+
+        self.conn.connectUsingParams()
+        self.conn.execute_sql(["create table partsuppx as select * from partsupp where ctid = '(52, 32)' or ctid = '(227,45)';"])
+        self.conn.execute_sql(["create table supplierx as select * from supplier where ctid = '(7, 34)' or ctid = '(18, 40)';"])
+        self.conn.closeConnection()
+
         eq = self.pipeline.doJob(query)
         print(eq)
         check = eq.count(self.INTERSECT)
+        self.conn.connectUsingParams()
+        self.conn.execute_sql(["drop table if exists partsuppx;", "drop table if exists supplierx;"])
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':
