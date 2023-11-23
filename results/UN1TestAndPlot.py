@@ -8,7 +8,7 @@ from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.src.validator import validate_gb, validate_ob
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21
+from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, Q16_nep, Q3_1, Q16_nep_2
 
 
 class MyTestCase(BaseTestCase):
@@ -229,61 +229,92 @@ class MyTestCase(BaseTestCase):
             os.remove(self.plot_filename)
 
     def test_plot_Q1(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q1]
         self.hq_keys = ["Q1"]
         self.do_experiment()
 
     def test_plot_Q2(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q2]
         self.hq_keys = ["Q2"]
         self.do_experiment()
 
     def test_plot_Q3(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q3]
         self.hq_keys = ["Q3"]
         self.do_experiment()
 
+    def test_plot_Q3_1(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q3_1]
+        self.hq_keys = ["Q3_1"]
+        self.do_experiment()
+
     def test_plot_Q4(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q4]
         self.hq_keys = ["Q4"]
         self.do_experiment()
 
     def test_plot_Q5(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q5]
         self.hq_keys = ["Q5"]
         self.do_experiment()
 
     def test_plot_Q6(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q6]
         self.hq_keys = ["Q6"]
         self.do_experiment()
 
     def test_plot_Q10(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q10]
         self.hq_keys = ["Q10"]
         self.do_experiment()
 
     def test_plot_Q11(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q11]
         self.hq_keys = ["Q11"]
         self.do_experiment()
 
     def test_plot_Q16(self):
+        self.conn.config.detect_nep = True
         self.hqs = [Q16]
         self.hq_keys = ["Q16"]
         self.do_experiment()
 
+    def test_plot_Q16_nep(self):
+        self.conn.config.detect_nep = True
+        self.hqs = [Q16_nep]
+        self.hq_keys = ["Q16_nep"]
+        self.do_experiment()
+
+    @pytest.mark.skip
+    def test_plot_Q16_nep_2(self):
+        self.conn.config.detect_nep = True
+        self.hqs = [Q16_nep_2]
+        self.hq_keys = ["Q16_nep_2"]
+        self.do_experiment()
+
     def test_plot_Q17(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q17]
         self.hq_keys = ["Q17"]
         self.do_experiment()
 
     def test_plot_Q18(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q18]
         self.hq_keys = ["Q18"]
         self.do_experiment()
 
     def test_plot_Q21(self):
+        self.conn.config.detect_nep = False
         self.hqs = [Q21]
         self.hq_keys = ["Q21"]
         self.do_experiment()
@@ -294,11 +325,11 @@ class MyTestCase(BaseTestCase):
             os.remove(self.summary_filename)
 
         with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"Q id\tGb Correct?\tOb Correct?\tResult Correct?\n")
+            myfile.write(f"Q id\t\t\t\tGb Correct?\tOb Correct?\tResult Correct?\n")
 
     def add_extraction_summary(self, hq_key, gb_correct, ob_correct, result_correct):
         with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"{hq_key}\t\t{gb_correct}\t\t{ob_correct}\t\t{result_correct}\n")
+            myfile.write(f"{hq_key}\t\t\t\t{gb_correct}\t\t{ob_correct}\t\t{result_correct}\n")
 
 
 if __name__ == '__main__':
