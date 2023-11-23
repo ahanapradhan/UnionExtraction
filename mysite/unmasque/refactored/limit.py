@@ -147,7 +147,7 @@ class Limit(GenerationPipeLineBase):
             self.logger.error('some error in generating new database. Result is empty. Can not identify Limit.')
             return False
         else:
-            if len(new_result) <= 1000:
+            if 4 <= len(new_result) <= 1000:
                 self.limit = len(new_result) - 1
             return True
 

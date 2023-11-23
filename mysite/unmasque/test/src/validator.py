@@ -1,4 +1,4 @@
-from mysite.unmasque.test.src.parser import parse_sql_query
+from mysite.unmasque.test.src.parser import parse_sql_query, extract_equality_predicates
 
 
 def validate_gb(q_h, q_e):
@@ -6,10 +6,21 @@ def validate_gb(q_h, q_e):
         print("Something is Wrong")
         return False
     gb_h, _ = parse_sql_query(q_h)
+    gb_h_lower = [element.lower() for element in gb_h]
+
     gb_e, _ = parse_sql_query(q_e)
-    if frozenset(gb_h) != frozenset(gb_e):
-        print("Grouping attributes do not match!")
+    gb_e_lower = [element.lower() for element in gb_e]
+
+    q_h_eq = extract_equality_predicates(q_h)
+
+    if len(gb_h_lower) != len(gb_e_lower):
+        print("Grouping attributes do not match in count!")
         return False
+    for gb_attrib in gb_h_lower:
+        if gb_attrib not in gb_e_lower:
+            if gb_attrib not in q_h_eq.keys() and gb_attrib not in q_h_eq.values():
+                return False
+
     return True
 
 

@@ -60,6 +60,10 @@ class UnionPipeLine(GenericPipeLine):
         u_Q = "\n UNION ALL \n".join(u_eq)
         u_Q += ";"
 
+        if "UNION ALL" not in u_Q:
+            if u_Q.startswith('(') and u_Q.endswith(');'):
+                u_Q = u_Q[1:-2] + ';'
+
         result = ""
         if pipeLineError:
             result = "Could not extract the query due to errors.\nHere's what I have as a half-baked answer:\n" + pstr + "\n"

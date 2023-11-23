@@ -50,6 +50,10 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
         # Run the hidden query on the original database instance
         matched = self.nep_comparator.doJob(query, Q_E)
+        if matched is None:
+            self.logger.error("Extracted Query is not semantically correct!..not going to try to extract NEP!")
+            return False
+
         self.Q_E = Q_E
         loop_count = 0
         while not matched and loop_count < self.loop_count_cutoff:

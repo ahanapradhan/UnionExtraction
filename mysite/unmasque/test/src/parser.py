@@ -1,5 +1,20 @@
 import re
 
+import re
+
+
+def extract_equality_predicates(sql_query):
+    # Regular expression pattern for finding equality predicates
+    equality_pattern = re.compile(r'(\w+)\s*=\s*(\w+)', re.IGNORECASE)
+
+    # Find all matches in the SQL query
+    matches = equality_pattern.findall(sql_query)
+
+    # Extract equality predicates as tuples
+    equality_predicates = {match[0].lower(): match[1].lower() for match in matches}
+
+    return equality_predicates
+
 
 def parse_sql_query(sql_query):
     # Initialize lists to store grouping and ordering attributes
