@@ -138,6 +138,7 @@ class ConnectionHelper:
         except psycopg2.ProgrammingError as e:
             print(e)
             print(e.diag.message_detail)
+            des = str(e)
         return res, des
 
     def get_cursor(self):

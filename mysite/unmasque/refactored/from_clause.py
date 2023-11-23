@@ -3,6 +3,7 @@ from ..refactored.executable import Executable
 from ..refactored.initialization import Initiator
 from ..refactored.util.common_queries import alter_table_rename_to, create_table_like
 from ..refactored.util.utils import isQ_result_empty
+from ..src.util.constants import REL_ERROR
 
 try:
     import psycopg2
@@ -54,7 +55,10 @@ class FromClause(Base):
                         raise
 
             except Exception as error:
-                self.logger.error("Error Occurred in table extraction. Error: " + str(error))
+                if str(error) == REL_ERROR:
+                    self.core_relations.append(tabname)
+                else:
+                    self.logger.error("Error Occurred in table extraction. Error: " + str(error))
 
             finally:
                 self.connectionHelper.execute_sql(["ROLLBACK;"])
