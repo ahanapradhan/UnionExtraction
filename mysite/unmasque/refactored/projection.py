@@ -571,7 +571,7 @@ class Projection(GenerationPipeLineBase):
         final_res += 1*solution[-1]
         self.logger.debug("Equation", coeff, b)
         self.logger.debug("Solution", solution)
-        self.logger.debug("Final", final_res, nsimplify(collect(final_res, local_symbol_list)))
+        # self.logger.debug("Final", final_res, nsimplify(collect(final_res, local_symbol_list)))
         projected_attrib[idx] = str(nsimplify(collect(final_res, local_symbol_list)))
         return solution
 

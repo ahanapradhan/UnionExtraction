@@ -6,14 +6,9 @@ from pygnuplot import gnuplot
 
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
-from mysite.unmasque.test.src.validator import validate_gb_ob_attributes
+from mysite.unmasque.test.src.validator import validate_gb, validate_ob
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21
-
-
-def validate_gb_ob(q_h, q_e):
-    valid = validate_gb_ob_attributes(q_h, q_e)
-    return valid
 
 
 class MyTestCase(BaseTestCase):
@@ -27,7 +22,8 @@ class MyTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.app = Executable(self.conn)
-        self.gb_ob_correct = False
+        self.gb_correct = False
+        self.ob_correct = False
         self.result_correct = False
 
     def create_latex_table_of_queries(self):
@@ -108,10 +104,9 @@ class MyTestCase(BaseTestCase):
             with open(self.dat_filename, "a") as myfile:
                 myfile.write(dat_line)
 
-            self.add_extraction_summary(self.hq_keys[0], self.gb_ob_correct, self.result_correct)
+            self.add_extraction_summary(self.hq_keys[0], self.gb_correct, self.ob_correct, self.result_correct)
 
             idx += 1
-
 
         self.create_gnuplot()
 
@@ -183,8 +178,10 @@ class MyTestCase(BaseTestCase):
 
         self.result_correct = self.pipeline.correct
 
-        check = validate_gb_ob(query, u_Q)
-        self.gb_ob_correct = check
+        check = validate_gb(query, u_Q)
+        self.gb_correct = check
+        check = validate_ob(query, u_Q)
+        self.ob_correct = check
 
         return t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_from_clause, t_view_min, t_where_clause
 
@@ -297,11 +294,11 @@ class MyTestCase(BaseTestCase):
             os.remove(self.summary_filename)
 
         with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"Q id\tGb/Ob Correct?\tResult Correct?\n")
+            myfile.write(f"Q id\tGb Correct?\tOb Correct?\tResult Correct?\n")
 
-    def add_extraction_summary(self, hq_key, gb_ob_correct, result_correct):
+    def add_extraction_summary(self, hq_key, gb_correct, ob_correct, result_correct):
         with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"{hq_key}\t\t{gb_ob_correct}\t\t{result_correct}\n")
+            myfile.write(f"{hq_key}\t\t{gb_correct}\t\t{ob_correct}\t\t{result_correct}\n")
 
 
 if __name__ == '__main__':

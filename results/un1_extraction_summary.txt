@@ -1,12 +1,13 @@
-Q id	Gb/Ob Correct?	Result Correct?
-Q1		True		True
-Q10		False		False
-Q11		False		True
-Q16		False		False
-Q17		True		True
-Q18		True		True
-Q2		True		True
-Q21		False		False
-Q3		False		False
-Q4		True		False
-Q5		False		False
+Q id	Gb Correct?	Ob Correct?	Result Correct?
+Q1		True		True		True
+Q10		True		False		False
+Q11		False		False		True
+Q16		False		False		False
+Q17		True		True		True
+Q18		True		False		True
+Q2		True		True		True
+Q21		True		False		False
+Q3		False		False		False
+Q4		True		False		True
+Q5		True		False		True
+Q6		True		False		False
