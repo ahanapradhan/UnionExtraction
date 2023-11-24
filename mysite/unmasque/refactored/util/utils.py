@@ -134,11 +134,25 @@ def get_format(datatype, val):
     return str(val)
 
 
+def average_rounding(a, b):
+    avg = (float(a) + float(b)) / 2
+    # print("avg", avg)
+
+    # Check if the decimal part of the average is 0.5 or more
+    if avg % 1 >= 0.499:
+        rounded_avg = math.ceil(avg)
+    else:
+        rounded_avg = math.floor(avg)
+    # print("rounded_avg", rounded_avg)
+    return rounded_avg
+
+
 def get_mid_val(datatype, high, low):
     if datatype == 'date':
         mid_val = low + datetime.timedelta(days=int(math.ceil((high - low).days / 2)))
     elif datatype == 'int':
-        mid_val = int((high + low) / 2)
+        # mid_val = int((high + low) / 2)
+        mid_val = average_rounding(high, low)
     else:  # numeric
         mid_val = (high + low) / 2
         mid_val = round(mid_val, 3)
