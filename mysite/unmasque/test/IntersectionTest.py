@@ -40,7 +40,7 @@ class MyTestCase(BaseTestCase):
             "(Select c_mktsegment as segment\nFrom customer, nation\nWhere c_nationkey = n_nationkey and n_name  = "
             "'ARGENTINA')")
         self.assertEqual(subq_check, 1)
-        # self.assertTrue(self.pipeline.correct)
+        self.assertTrue(self.pipeline.correct)
 
     def test_brazil_argentina_2(self):
         query = "select c_mktsegment as segment from customer,nation " \

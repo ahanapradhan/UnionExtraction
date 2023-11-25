@@ -155,7 +155,7 @@ class Filter(WhereClause, OnlyFilterData):
 
         if operator == '<=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
-                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, where_key)
                 if mid_val == low:
                     high = mid_val
                 if low == high:
@@ -171,7 +171,7 @@ class Filter(WhereClause, OnlyFilterData):
 
         if operator == '>=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
-                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, where_key)
                 if mid_val == high:
                     low = mid_val
                 if low == high:
