@@ -22,13 +22,16 @@ class MutationPipeLineBase(Base):
         super().doJob(args)
         if not self.mock:
             self.restore_d_min()
-            self.see_d_min()
+            # self.see_d_min()
         return self.result
 
     def see_d_min(self):
+        pass
+        '''
         for tab in self.core_relations:
             res, des = self.connectionHelper.execute_sql_fetchall(get_star(tab))
             self.logger.debug(res)
+        '''
 
     def restore_d_min(self):
         for tab in self.core_relations:

@@ -72,6 +72,9 @@ class Comparator(Base):
         count_star_Q_E = self.create_view_from_Q_E(Q_E)
         self.logger.debug(count_star_Q_E)
 
+        if count_star_Q_E is None:
+            return None
+
         if self.earlyExit and not count_star_Q_E:
             return False
 

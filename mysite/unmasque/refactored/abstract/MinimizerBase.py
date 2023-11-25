@@ -149,10 +149,13 @@ class Minimizer(Base):
         return self.result
 
     def see_d_min(self):
+        pass
+        '''
         for tab in self.core_relations:
             res, des = self.connectionHelper.execute_sql_fetchall(get_star(tab))
             for row in res:
                 self.logger.debug(row)
+        '''
 
     def restore_d_min(self):
         for tab in self.core_relations:

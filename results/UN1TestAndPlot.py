@@ -1,24 +1,30 @@
 import os
 import unittest
 
+import pytest
 from pygnuplot import gnuplot
 
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from mysite.unmasque.test.src.validator import validate_gb, validate_ob
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21
+from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, Q16_nep, Q3_1, Q16_nep_2
 
 
-class MyTestCase(BaseTestCase):
-    extracted_U = "un1_queries"
-    dat_filename = "un1_queries.dat"
-    plot_script = "un1_queries.gnu"
-    plot_filename = "un1_queries_plot.eps"
-    latex_filename = "un1_queries_table.tex"
+class TpchExtractionPipelineTestCase(BaseTestCase):
 
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.app = Executable(self.conn)
+        self.extracted_U = "un1_queries"
+        self.dat_filename = "un1_queries.dat"
+        self.plot_script = "un1_queries.gnu"
+        self.plot_filename = "un1_queries_plot.eps"
+        self.latex_filename = "un1_queries_table.tex"
+        self.summary_filename = "un1_extraction_summary.txt"
+        self.gb_correct = False
+        self.ob_correct = False
+        self.result_correct = False
 
     def create_latex_table_of_queries(self):
         if os.path.isfile(self.latex_filename):
@@ -50,7 +56,7 @@ class MyTestCase(BaseTestCase):
                 print(hidden_query)
                 expt.write(hidden_query + "&\n")
 
-                with open(os.path.join(self.extracted_U, "e_" + self.hq_keys[i]+".sql"), 'r') as file:
+                with open(os.path.join(self.extracted_U, "e_" + self.hq_keys[i] + ".sql"), 'r') as file:
                     content = file.read()
                     splited_data = content.splitlines()
                     extracted_query = ' '.join(splited_data)
@@ -87,20 +93,24 @@ class MyTestCase(BaseTestCase):
 
             for i in range(ITERATIONS):
                 t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_from_clause, t_view_min, t_where_clause = self.extract_query_once(
-                    i, query, str(self.hq_keys[idx]+".sql"), t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_from_clause,
+                    i, query, str(self.hq_keys[idx] + ".sql"), t_aggregate, t_groupby, t_limit, t_orderby, t_projection,
+                    t_sampling, t_union, t_from_clause,
                     t_view_min, t_where_clause)
 
-            dat_line = self.prepare_data(ITERATIONS, q_time, str(self.hq_keys[idx]+".sql"), t_aggregate, t_groupby, t_limit, t_orderby,
+            dat_line = self.prepare_data(ITERATIONS, q_time, str(self.hq_keys[idx] + ".sql"), t_aggregate, t_groupby,
+                                         t_limit, t_orderby,
                                          t_projection, t_sampling, t_union, t_from_clause, t_view_min, t_where_clause)
 
             with open(self.dat_filename, "a") as myfile:
                 myfile.write(dat_line)
 
+            self.add_extraction_summary(self.hq_keys[0], self.gb_correct, self.ob_correct, self.result_correct)
+
             idx += 1
 
         self.create_gnuplot()
 
-        #self.assertTrue(os.path.isfile(self.plot_filename))  # add assertion here
+        # self.assertTrue(os.path.isfile(self.plot_filename))  # add assertion here
 
     def do_dat_file_init(self):
         if not os.path.exists(self.extracted_U):
@@ -149,9 +159,8 @@ class MyTestCase(BaseTestCase):
 
     def extract_query_once(self, i, query, sql, t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling,
                            t_union, t_from_clause, t_view_min, t_where_clause):
-        self.pipeline = ExtractionPipeLine(self.conn)
+        self.create_pipeline()
         u_Q = self.pipeline.doJob(query)
-        # self.assertTrue(self.pipeline.correct)
         print(u_Q)
         if not i:
             with open(self.extracted_U + "/e_" + sql, "w") as myfile:
@@ -166,7 +175,18 @@ class MyTestCase(BaseTestCase):
         t_orderby += self.pipeline.time_profile.t_orderby
         t_limit += self.pipeline.time_profile.t_limit
         t_union += self.pipeline.time_profile.t_union
+
+        self.result_correct = self.pipeline.correct
+
+        check = validate_gb(query, u_Q)
+        self.gb_correct = check
+        check = validate_ob(query, u_Q)
+        self.ob_correct = check
+
         return t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_from_clause, t_view_min, t_where_clause
+
+    def create_pipeline(self):
+        self.pipeline = ExtractionPipeLine(self.conn)
 
     def create_gnuplot(self):
 
@@ -211,14 +231,121 @@ class MyTestCase(BaseTestCase):
         if os.path.isfile(self.plot_filename):
             os.remove(self.plot_filename)
 
-    def test_plot(self):
-        #self.hqs = [Q5]
-        #self.hq_keys = ["Q5"]
-        self.hqs = [Q1, Q2, Q3, Q4, Q5, Q6, Q10, Q11, Q16, Q17, Q18, Q21]
-        self.hq_keys = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q10", "Q11", "Q16", "Q17", "Q18", "Q21"]
+    def test_plot_Q1(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q1]
+        self.hq_keys = ["Q1"]
         self.do_experiment()
-        #self.create_gnuplot()
-        #self.create_latex_table_of_queries()
+
+    # @pytest.mark.skip
+    def test_plot_Q2(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q2]
+        self.hq_keys = ["Q2"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q3(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q3]
+        self.hq_keys = ["Q3"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q3_1(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q3_1]
+        self.hq_keys = ["Q3_1"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q4(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q4]
+        self.hq_keys = ["Q4"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q5(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q5]
+        self.hq_keys = ["Q5"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q6(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q6]
+        self.hq_keys = ["Q6"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q10(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q10]
+        self.hq_keys = ["Q10"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q11(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q11]
+        self.hq_keys = ["Q11"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q16(self):
+        self.conn.config.detect_nep = True
+        self.hqs = [Q16]
+        self.hq_keys = ["Q16"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q16_nep(self):
+        self.conn.config.detect_nep = True
+        self.hqs = [Q16_nep]
+        self.hq_keys = ["Q16_nep"]
+        self.do_experiment()
+
+    @pytest.mark.skip
+    def test_plot_Q16_nep_2(self):
+        self.conn.config.detect_nep = True
+        self.hqs = [Q16_nep_2]
+        self.hq_keys = ["Q16_nep_2"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q17(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q17]
+        self.hq_keys = ["Q17"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q18(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q18]
+        self.hq_keys = ["Q18"]
+        self.do_experiment()
+
+    # @pytest.mark.skip
+    def test_plot_Q21(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q21]
+        self.hq_keys = ["Q21"]
+        self.do_experiment()
+
+    @pytest.fixture(scope="session", autouse=True)
+    def do_something(self):
+        if os.path.isfile(self.summary_filename):
+            os.remove(self.summary_filename)
+
+        with open(self.summary_filename, "a") as myfile:
+            myfile.write(f"Q id\t\t\t\tGb Correct?\tOb Correct?\tResult Correct?\n")
+
+    def add_extraction_summary(self, hq_key, gb_correct, ob_correct, result_correct):
+        with open(self.summary_filename, "a") as myfile:
+            myfile.write(f"{hq_key}\t\t\t\t{gb_correct}\t\t{ob_correct}\t\t{result_correct}\n")
 
 
 if __name__ == '__main__':

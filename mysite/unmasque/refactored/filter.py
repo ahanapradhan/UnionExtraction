@@ -155,9 +155,10 @@ class Filter(WhereClause, OnlyFilterData):
 
         if operator == '<=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
-                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, where_key)
-                self.logger.debug("<= pred", mid_val, low, high)
-                if mid_val == low or mid_val == high:
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                if mid_val == low:
+                    high = mid_val
+                if low == high:
                     self.revert_filter_changes(tabname)
                     break
                 if isQ_result_empty(new_result):
@@ -170,12 +171,12 @@ class Filter(WhereClause, OnlyFilterData):
 
         if operator == '>=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
-                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, where_key)
-                self.logger.debug(">= pred", mid_val, low, high)
-                if mid_val == low or mid_val == high:
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                if mid_val == high:
+                    low = mid_val
+                if low == high:
                     self.revert_filter_changes(tabname)
                     break
-                    # return mid_val
                 if isQ_result_empty(new_result):
                     new_val = get_val_plus_delta(datatype, mid_val, delta)
                     low = new_val
@@ -205,6 +206,7 @@ class Filter(WhereClause, OnlyFilterData):
 
     def run_app_with_mid_val(self, datatype, high, low, query, q_front, where_key):
         mid_val = get_mid_val(datatype, high, low)
+        self.logger.debug(f"low: {low}, high: {high}, mid: {mid_val}")
         update_query = form_update_query_with_value_where(q_front, datatype, mid_val, where_key)
         self.connectionHelper.execute_sql([update_query])
         new_result = self.app.doJob(query)

@@ -179,7 +179,7 @@ class Aggregation(GenerationPipeLineBase):
                     self.logger.debug(self.dependencies, result_index, \
                                                        key_list, tabname, temp_vals, result_index)
                     # print("Debug", self.dependencies, result_index)
-                    #sele = self.app.doJob(Q3_2) # FOR DEBUG
+                    # sele = self.app.doJob(Q3_2) # FOR DEBUG
                     # 
 
                     if len(self.dependencies[result_index]) > 1:
@@ -200,7 +200,8 @@ class Aggregation(GenerationPipeLineBase):
                             for row in vals_sp:
                                 l.append(row[local_attrib_index])
                             temp_ar.append((local_attrib, l))
-                        # print("Temp Arr", temp_ar) # FOR DEBUG
+                        temp_ar = sorted(temp_ar, key=lambda x: x[0])
+                        self.logger.debug("Temp Arr", temp_ar) # FOR DEBUG
                         for i in range(len(temp_ar)):
                             if len(temp_ar[i][1]) < max_no_of_rows:
                                 while len(temp_ar[i][1]) < max_no_of_rows:
@@ -217,7 +218,7 @@ class Aggregation(GenerationPipeLineBase):
                             #     # coeff[0][j] = coeff[0][(j-n)]*coeff[0][(j+ele)%n]
                             #     inter_val.append(inter_val[(j - n)] * inter_val[(j + ele) % n])
                             temp_arr = get_param_values_external(inter_val)
-                            #print("Coeffs", temp_arr, local_sol) # FOR DEBUG
+                            self.logger.debug("Coeffs", temp_arr, local_sol) # FOR DEBUG
                             inter_val = [0 for j in range(len(self.param_list[result_index]))]
                             for j in range(len(self.param_list[result_index])):
                                 inter_val[j] = temp_arr[j]

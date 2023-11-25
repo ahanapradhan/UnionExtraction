@@ -1,4 +1,5 @@
 from ..refactored.abstract.ExtractorBase import Base
+from ..src.util.constants import REL_ERROR, RELATION
 
 
 def get_result_as_tuple_1(res, result):
@@ -11,6 +12,10 @@ def get_result_as_tuple_1(res, result):
         row_as_tuple = tuple(str(val) for val in row)
         result.append(row_as_tuple)
     return result
+
+
+def is_error(msg):
+    return RELATION in msg and REL_ERROR in msg
 
 
 class Executable(Base):
@@ -26,12 +31,16 @@ class Executable(Base):
         result = []
         try:
             res, description = self.connectionHelper.execute_sql_fetchall(query)
-            colnames = [desc[0] for desc in description]
-            result.append(tuple(colnames))
+            if description is not None and not is_error(description):
+                colnames = [desc[0] for desc in description]
+                result.append(tuple(colnames))
             if res is not None:
                 result = get_result_as_tuple_1(res, result)
+            if is_error(description):
+                raise Exception(REL_ERROR)
 
         except Exception as error:
             self.logger.error("Executable could not be run. Error: " + str(error))
             raise error
+
         return result

@@ -73,3 +73,6 @@ LOG_FORMAT = '%(name)s -- %(levelname)s -- %(message)s'
 
 
 NO_REDUCTION = "NO_REDUCTION"
+
+REL_ERROR = "does not exist"
+RELATION = "Relation"
