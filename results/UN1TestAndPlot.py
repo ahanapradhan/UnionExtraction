@@ -300,7 +300,7 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
         self.hq_keys = ["Q16"]
         self.do_experiment()
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_plot_Q16_nep(self):
         self.conn.config.detect_nep = True
         self.hqs = [Q16_nep]

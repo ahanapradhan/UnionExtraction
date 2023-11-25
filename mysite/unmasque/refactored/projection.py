@@ -4,15 +4,12 @@ import math
 import random
 
 import numpy as np
+from sympy import symbols, expand, collect, nsimplify
 
-from sympy import symbols, factor, expand, collect, nsimplify
-
-from .util.common_queries import get_star
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import is_number, isQ_result_empty, get_unused_dummy_val, get_format, \
     get_val_plus_delta, get_char
 from ..src.util import constants
-
 
 
 def cover_special_chars(curr_str, value_used):
