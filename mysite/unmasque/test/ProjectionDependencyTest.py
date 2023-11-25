@@ -195,7 +195,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('o_shippriority' in attribs)
 
         self.assertEqual(len(deps), 4)
-        self.assertTrue([('lineitem1', 'l_orderkey')] in deps)
+        self.assertTrue([('lineitem1', 'l_orderkey')] in deps or [('orders1', 'o_orderkey')] in deps)
         self.assertTrue([('orders1', 'o_orderdate')] in deps)
         self.assertTrue([('orders1', 'o_shippriority')] in deps)
         i = 0

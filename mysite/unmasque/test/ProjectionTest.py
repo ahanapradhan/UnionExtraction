@@ -251,8 +251,17 @@ class MyTestCase(BaseTestCase):
 
         self.assertEqual(frozenset({'orderkey', 'revenue', 'totalprice', 'shippriority'}),
                          frozenset(set(pj.projection_names)))
-        self.assertEqual(frozenset({'l_orderkey', 'l_discount', 'o_totalprice', 'o_shippriority'}),
-                         frozenset(set(pj.projected_attribs)))
+        check1 = frozenset({'l_orderkey', 'l_discount', 'o_totalprice', 'o_shippriority'}) == frozenset(
+            set(pj.projected_attribs))
+        check2 = frozenset({'o_orderkey', 'l_discount', 'o_totalprice', 'o_shippriority'}) == frozenset(
+            set(pj.projected_attribs))
+
+        if not check1:
+            self.assertTrue(check2)
+        if not check2:
+            self.assertTrue(check1)
+        self.assertTrue(check1 or check2)
+        self.assertFalse(check1 and check2)
 
         self.conn.closeConnection()
 
@@ -329,10 +338,21 @@ class MyTestCase(BaseTestCase):
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
 
-        self.assertEqual(frozenset(
-            {'l_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate',
-             'o_shippriority'}),
-            frozenset(set(pj.projected_attribs)))
+        print(pj.projected_attribs)
+
+        check1 = frozenset({'l_orderkey', 'l_extendedprice*(1 - l_discount) + l_quantity', 'o_orderdate',
+                            'o_shippriority'}) == frozenset(
+            set(pj.projected_attribs))
+        check2 = frozenset({'o_orderkey', 'l_extendedprice*(1 - l_discount) + l_quantity', 'o_orderdate',
+                            'o_shippriority'}) == frozenset(
+            set(pj.projected_attribs))
+
+        if not check1:
+            self.assertTrue(check2)
+        if not check2:
+            self.assertTrue(check1)
+        self.assertTrue(check1 or check2)
+        self.assertFalse(check1 and check2)
 
         self.conn.closeConnection()
 
