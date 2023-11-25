@@ -18,3 +18,4 @@ mysite/unmasque/src/pipeline/__init__.py
 mysite/unmasque/src/pipeline/abstract/__init__.py
 *.xml
 *.log
+*.patch

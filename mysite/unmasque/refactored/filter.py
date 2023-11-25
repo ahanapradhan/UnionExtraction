@@ -328,6 +328,6 @@ def get_constants_for(datatype):
         while_cut_off = 0
         delta = 1
     elif datatype == 'float' or datatype == 'numeric':
-        while_cut_off = 0.00001
+        while_cut_off = 0.01
         delta = 0.01
     return delta, while_cut_off
