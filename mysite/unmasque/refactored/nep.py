@@ -59,6 +59,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         while not matched and loop_count < self.loop_count_cutoff:
             for i in range(len(self.core_relations)):
                 loop_count += 1
+                self.logger.debug(f"loop count {loop_count}")
 
                 tabname = self.core_relations[i]
                 self.logger.info("NEP may exists")

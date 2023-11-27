@@ -35,6 +35,16 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_for_numeric_filter_NEP(self):
+        self.conn.config.detect_nep = True
+        query = "select c_mktsegment as segment from customer,nation,orders where " \
+                "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+                "and n_name not LIKE 'B%';"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
     def test_for_filter(self):
         for i in range(10):
             lower = random.randint(1, 100)
