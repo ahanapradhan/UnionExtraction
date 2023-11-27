@@ -82,10 +82,10 @@ class MyTestCase(BaseTestCase):
 
     def test_Q(self):
         q = "Select l_shipmode, sum(l_extendedprice) as revenue " \
-              "From lineitem " \
-              "Where l_shipdate >= '1994-01-01' " \
-              "and l_quantity <= 23.0 " \
-              "Group By l_shipmode Limit 100; "
+            "From lineitem " \
+            "Where l_shipdate >= '1994-01-01' " \
+            "and l_quantity <= 23.0 " \
+            "Group By l_shipmode Limit 100; "
         self.conn.connectUsingParams()
         rc_hash = ResultComparator(self.conn, True)
         matched_hash = rc_hash.doJob(q, q)
@@ -99,15 +99,15 @@ class MyTestCase(BaseTestCase):
 
     def test_Q_groupby_change(self):
         q = "Select l_shipmode, sum(l_extendedprice) as revenue, l_returnflag " \
-              "From lineitem " \
-              "Where l_shipdate >= '1994-01-01' " \
-              "and l_quantity <= 23.0 " \
-              "Group By l_shipmode, l_returnflag; "
-        eq = "Select l_shipmode, sum(l_extendedprice) as revenue, l_returnflag " \
             "From lineitem " \
             "Where l_shipdate >= '1994-01-01' " \
             "and l_quantity <= 23.0 " \
-            "Group By l_returnflag, l_shipmode; "
+            "Group By l_shipmode, l_returnflag; "
+        eq = "Select l_shipmode, sum(l_extendedprice) as revenue, l_returnflag " \
+             "From lineitem " \
+             "Where l_shipdate >= '1994-01-01' " \
+             "and l_quantity <= 23.0 " \
+             "Group By l_returnflag, l_shipmode; "
         self.conn.connectUsingParams()
         rc_hash = ResultComparator(self.conn, True)
         matched_hash = rc_hash.doJob(q, eq)
@@ -121,15 +121,15 @@ class MyTestCase(BaseTestCase):
 
     def test_Q_nep(self):
         q = "Select l_shipmode, sum(l_extendedprice) as revenue " \
-              "From lineitem " \
-              "Where l_shipdate >= '1994-01-01' " \
-              "and l_quantity <= 23.0 " \
-              "Group By l_shipmode Limit 100; "
+            "From lineitem " \
+            "Where l_shipdate >= '1994-01-01' " \
+            "and l_quantity <= 23.0 " \
+            "Group By l_shipmode Limit 100; "
         eq = "Select l_shipmode, sum(l_extendedprice) as revenue " \
-              "From lineitem " \
-              "Where l_shipdate >= '1994-01-01' " \
-              "and l_quantity <= 23.0 and l_linenumber <> 4" \
-              "Group By l_shipmode Limit 100; "
+             "From lineitem " \
+             "Where l_shipdate >= '1994-01-01' " \
+             "and l_quantity <= 23.0 and l_linenumber <> 4" \
+             "Group By l_shipmode Limit 100; "
         self.conn.connectUsingParams()
         rc_hash = ResultComparator(self.conn, True)
         matched_hash = rc_hash.doJob(q, eq)
@@ -140,6 +140,36 @@ class MyTestCase(BaseTestCase):
         matched_diff = rc_diff.doJob(q, eq)
         self.assertFalse(matched_diff)
         self.conn.closeConnection()
+
+    def test_create_table_from_qh(self):
+        q_h = "select c_mktsegment as segment from customer,nation,orders where " \
+              "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+              "and n_name = 'ARGENTINA';"
+        self.conn.connectUsingParams()
+        self.conn.execute_sql(["drop view if exists r_e;", f"create view r_e as {q_h};"])
+        rc_hash = ResultComparator(self.conn, True)
+        try:
+            rc_hash.create_table_from_Qh(q_h)
+        except Exception:
+            self.assertFalse(True)
+            self.conn.execute_sql(["drop view if exists r_e;"])
+        self.assertTrue(True)
+        self.conn.execute_sql(["drop view if exists r_e;"])
+
+    def test_for_numeric_filter(self):
+        query = "select c_mktsegment as segment from customer,nation,orders where " \
+                "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+                "and n_name = 'ARGENTINA';"
+        eq = "select c_mktsegment as segment from customer,nation,orders where " \
+             "c_acctbal >= 999.996 and c_acctbal <= 5000.004 and c_nationkey = n_nationkey and c_custkey = " \
+             "o_custkey " \
+             "and n_name = 'ARGENTINA';"
+        self.conn.connectUsingParams()
+        rc_hash = ResultComparator(self.conn, True)
+        matched_hash = rc_hash.doJob(query, eq)
+        self.assertTrue(matched_hash)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

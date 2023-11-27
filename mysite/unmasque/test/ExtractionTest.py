@@ -10,6 +10,19 @@ from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
+def set_optimizer_params(is_on):
+    if is_on:
+        option = "on"
+    else:
+        option = "off"
+
+    mergejoin_option = f"SET enable_mergejoin = {option};"
+    indexscan_option = f"SET enable_indexscan = {option};"
+    sort_option = f"SET enable_sort = {option};"
+
+    return [mergejoin_option, indexscan_option, sort_option]
+
+
 class MyTestCase(BaseTestCase):
 
     def __init__(self, *args, **kwargs):
@@ -24,6 +37,25 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         print(eq)
         self.assertTrue(f"Where s_suppkey  >= {lower} and s_suppkey <= {upper};" in eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_for_numeric_filter(self):
+        query = "select c_mktsegment as segment from customer,nation,orders where " \
+                "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+                "and n_name = 'ARGENTINA';"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_for_numeric_filter_NEP(self):
+        self.conn.config.detect_nep = True
+        query = "select c_mktsegment as segment from customer,nation,orders where " \
+                "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+                "and n_name not LIKE 'B%';"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
         self.assertTrue(self.pipeline.correct)
 
     def test_for_filter(self):
@@ -159,6 +191,30 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
+        self.conn.closeConnection()
+
+    def test_extract_Q3_optimizer_options_off(self):
+        self.conn.connectUsingParams()
+        self.conn.execute_sql(set_optimizer_params(False))
+        key = 'Q3'
+        query = queries.queries_dict[key]
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_extract_Q3_optimizer_options_on(self):
+        self.conn.connectUsingParams()
+        self.conn.execute_sql(set_optimizer_params(True))
+        key = 'Q3'
+        query = queries.queries_dict[key]
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
     def test_extraction_Q3(self):
@@ -494,9 +550,9 @@ class MyTestCase(BaseTestCase):
     def test_Q21_mukul_thesis(self):
         self.conn.connectUsingParams()
         query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \
-            "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
-            "and s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name " \
-            "Order By numwait desc, s_name Limit 100;"
+                "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
+                "and s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name " \
+                "Order By numwait desc, s_name Limit 100;"
         self.conn.config.detect_nep = True
 
         self.conn.connectUsingParams()
@@ -508,18 +564,18 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     @pytest.mark.skip
-    def test_Q21(self): # enable it after fixing order by
+    def test_Q21(self):  # enable it after fixing order by
         query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \
-            "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
-            "and s_nationkey = n_nationkey Group By s_name " \
-            "Order By numwait desc, s_name Limit 100;"
+                "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
+                "and s_nationkey = n_nationkey Group By s_name " \
+                "Order By numwait desc, s_name Limit 100;"
         self.conn.connectUsingParams()
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
-    
+
     @pytest.mark.skip
     def test_6_mul(self):
         for i in range(10):

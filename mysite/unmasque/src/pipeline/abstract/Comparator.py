@@ -62,7 +62,7 @@ class Comparator(Base):
     def create_table_from_Qh(self, Q_h):
         # Create an empty table with name temp2
         self.connectionHelper.execute_sql([drop_table(self.r_h),
-                                           "Create unlogged table " + self.r_h + " (like " + self.r_e + ");"])
+                                           f"Create unlogged table {self.r_h} (like {self.r_e});"])
         result = self.app.doJob(Q_h)
         self.insert_data_into_Qh_table(result)
 
@@ -92,11 +92,12 @@ class Comparator(Base):
 
     def insert_into_r_h_values(self, header, values):
         header_ = str(header).replace('\'', '')
+        header_ = header_.replace(',)', ')')
         str_values = str(values)
-        if str_values.startswith('('):
-            self.connectionHelper.execute_sql(['INSERT INTO ' + self.r_h + header_ + ' VALUES ' + str(values) + '; '])
-        else:
-            self.connectionHelper.execute_sql(['INSERT INTO ' + self.r_h + ' VALUES (' + str(values) + '); '])
+        str_values = str_values.replace(",)", ")")
+        if not str_values.startswith('('):
+            str_values = f"({str_values})"
+        self.connectionHelper.execute_sql([f"INSERT INTO {self.r_h}{header_} VALUES {str_values};"])
 
     def insert_data_into_Qh_table(self, res_Qh):
         # Filling the table temp2
