@@ -66,13 +66,13 @@ class ProjectionFactory:
             pj.subquery_count = len(self.fromData_list)
         else:
             pj = Projection(self.connectionHelper,
-                            self.global_join_graph[0].global_attrib_types,
+                            self.joinData_list[0].global_attrib_types,
                             self.fromData_list[0].core_relations,
                             self.filterData_list[0].filter_predicates,
                             self.global_join_graph,
-                            self.global_join_graph[0].global_all_attribs,
+                            self.joinData_list[0].global_all_attribs,
                             self.d_min_instance_dict,
-                            self.global_join_graph[0].global_key_attributes)
+                            self.joinData_list[0].global_key_attributes)
         return pj
 
     def form_other_params(self):
