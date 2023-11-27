@@ -15,7 +15,6 @@ class NepComparator(ResultComparator):
 
 
 class NEP(Minimizer, GenerationPipeLineBase):
-
     loop_count_cutoff = 10
     '''
     NEP extractor do not terminate if input Q_E is not correct. This cutoff is to prevent infinite looping
@@ -57,17 +56,20 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.Q_E = Q_E
         loop_count = 0
         while not matched and loop_count < self.loop_count_cutoff:
-            for i in range(len(self.core_relations)):
+            i = 0
+            for tabname in self.core_relations:
                 loop_count += 1
                 self.logger.debug(f"loop count {loop_count}")
 
-                tabname = self.core_relations[i]
+                # tabname = self.core_relations[i]
                 self.logger.info("NEP may exists")
                 nep_exists = True
                 self.backup_relation(tabname)
 
                 core_sizes = self.getCoreSizes()
                 self.Q_E = self.get_nep(core_sizes, tabname, query, i)
+
+                i += 1
 
                 if self.Q_E is None:
                     self.logger.error("Something is wrong")
@@ -178,10 +180,12 @@ class NEP(Minimizer, GenerationPipeLineBase):
             return False
 
     def extract_NEP_value(self, query, tabname, i):
+        self.logger.debug("extract NEP val ", tabname, i)
         res = self.app.doJob(query)
         if len(res) > 1:
             return False
         attrib_list = self.global_all_attribs[i]
+        self.logger.debug("attrib list: ", attrib_list)
         filterAttribs = []
         filterAttribs = self.check_per_attrib(attrib_list,
                                               tabname,
