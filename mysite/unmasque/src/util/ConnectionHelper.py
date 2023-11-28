@@ -5,6 +5,19 @@ from .configParser import Config
 from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA
 
 
+def set_optimizer_params(is_on):
+    if is_on:
+        option = "on"
+    else:
+        option = "off"
+
+    mergejoin_option = f"SET enable_mergejoin = {option};"
+    indexscan_option = f"SET enable_indexscan = {option};"
+    sort_option = f"SET enable_sort = {option};"
+
+    return [mergejoin_option, indexscan_option, sort_option]
+
+
 def cus_execute_sqls(cur, sqls):
     # print(cur)
     for sql in sqls:
@@ -91,8 +104,9 @@ class ConnectionHelper:
             self.conn.close()
             self.conn = None
 
-    def connectUsingParams(self):
+    def connectUsingParams(self, disable_options=False):
         self.conn = psycopg2.connect(self.paramString)
+        self.execute_sql(set_optimizer_params(not disable_options))
 
     def getConnection(self):
         if self.conn is None:

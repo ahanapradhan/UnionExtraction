@@ -6,22 +6,10 @@ import pytest
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from mysite.unmasque.test.src.Optimizer_config import set_optimizer_params
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from mysite.unmasque.test.util.queries import Q3, Q6
-
-
-def set_optimizer_params(is_on):
-    if is_on:
-        option = "on"
-    else:
-        option = "off"
-
-    mergejoin_option = f"SET enable_mergejoin = {option};"
-    indexscan_option = f"SET enable_indexscan = {option};"
-    sort_option = f"SET enable_sort = {option};"
-
-    return [mergejoin_option, indexscan_option, sort_option]
 
 
 class MyTestCase(BaseTestCase):
@@ -45,8 +33,8 @@ class MyTestCase(BaseTestCase):
             lower = random.randint(1, 1000)
             upper = random.randint(lower + 1, 5000)
             query = f"select c_mktsegment as segment from customer,nation,orders where " \
-                f"c_acctbal between {lower} and {upper} and c_nationkey = n_nationkey and c_custkey = o_custkey " \
-                f"and n_name = 'ARGENTINA';"
+                    f"c_acctbal between {lower} and {upper} and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+                    f"and n_name = 'ARGENTINA';"
             eq = self.pipeline.doJob(query)
             self.assertTrue(eq is not None)
             print(eq)

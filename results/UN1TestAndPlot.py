@@ -8,7 +8,8 @@ from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.src.validator import validate_gb, validate_ob
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, Q16_nep, Q3_1, Q16_nep_2
+from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, Q16_nep, Q3_1, Q16_nep_2, \
+    Q_r
 
 
 class TpchExtractionPipelineTestCase(BaseTestCase):
@@ -25,6 +26,7 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
         self.gb_correct = False
         self.ob_correct = False
         self.result_correct = False
+        self.ob_remark = "-"
 
     def create_latex_table_of_queries(self):
         if os.path.isfile(self.latex_filename):
@@ -104,7 +106,8 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
             with open(self.dat_filename, "a") as myfile:
                 myfile.write(dat_line)
 
-            self.add_extraction_summary(self.hq_keys[0], self.gb_correct, self.ob_correct, self.result_correct)
+            self.add_extraction_summary(self.hq_keys[0], self.gb_correct, self.ob_correct,
+                                        self.result_correct, self.ob_remark)
 
             idx += 1
 
@@ -178,10 +181,8 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
 
         self.result_correct = self.pipeline.correct
 
-        check = validate_gb(query, u_Q)
-        self.gb_correct = check
-        check = validate_ob(query, u_Q)
-        self.ob_correct = check
+        self.gb_correct = validate_gb(query, u_Q)
+        self.ob_correct, self.ob_remark = validate_ob(query, u_Q)
 
         return t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_from_clause, t_view_min, t_where_clause
 
@@ -307,7 +308,7 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
         self.hq_keys = ["Q16_nep"]
         self.do_experiment()
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_plot_Q16_nep_2(self):
         self.conn.config.detect_nep = True
         self.hqs = [Q16_nep_2]
@@ -335,17 +336,23 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
         self.hq_keys = ["Q21"]
         self.do_experiment()
 
+    def test_plot_Q_r(self):
+        self.conn.config.detect_nep = True
+        self.hqs = [Q_r]
+        self.hq_keys = ["Q_r"]
+        self.do_experiment()
+
     @pytest.fixture(scope="session", autouse=True)
     def do_something(self):
         if os.path.isfile(self.summary_filename):
             os.remove(self.summary_filename)
 
         with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"Q id\t\t\t\tGb Correct?\tOb Correct?\tResult Correct?\n")
+            myfile.write(f"Qno\t\t\t\tGb Correct?\tOb Correct?\tResult Correct?\tOb Remark\n")
 
-    def add_extraction_summary(self, hq_key, gb_correct, ob_correct, result_correct):
+    def add_extraction_summary(self, hq_key, gb_correct, ob_correct, result_correct, ob_remark):
         with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"{hq_key}\t\t\t\t{gb_correct}\t\t{ob_correct}\t\t{result_correct}\n")
+            myfile.write(f"{hq_key}\t\t\t\t{gb_correct}\t\t{ob_correct}\t\t{result_correct}\t\t{ob_remark}\n")
 
 
 if __name__ == '__main__':
