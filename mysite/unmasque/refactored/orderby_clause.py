@@ -236,8 +236,8 @@ class OrderBy(GenerationPipeLineBase):
                                     string = copy.deepcopy(filter_attrib_dict[(tabname_inner, attrib_inner)])
                                     second = string.replace('%', get_char(
                                         get_val_plus_delta('char', get_dummy_val_for('char'), 1)), 1)
-                                first.replace('%', '')
-                                second.replace('%', '')
+                                first = first.replace('%', '')
+                                second = second.replace('%', '')
                             else:
                                 first = get_char(get_dummy_val_for('char'))
                                 second = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 1))

@@ -121,14 +121,11 @@ class Filter(WhereClause):
         if operator == '<=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
-                if mid_val == low and not isQ_result_empty(new_result):
-                    high = mid_val
-                if low == high:
+                if mid_val == low or high == mid_val:
                     self.revert_filter_changes(tabname)
                     break
                 if isQ_result_empty(new_result):
-                    new_val = get_val_plus_delta(datatype, mid_val, -1 * delta)
-                    high = new_val
+                    high = mid_val
                 else:
                     low = mid_val
                 self.revert_filter_changes(tabname)
@@ -137,14 +134,11 @@ class Filter(WhereClause):
         if operator == '>=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
-                if mid_val == high and not isQ_result_empty(new_result):
-                    low = mid_val
-                if low == high:
+                if mid_val == high or low == mid_val:
                     self.revert_filter_changes(tabname)
                     break
                 if isQ_result_empty(new_result):
-                    new_val = get_val_plus_delta(datatype, mid_val, delta)
-                    low = new_val
+                    low = mid_val
                 else:
                     high = mid_val
                 self.revert_filter_changes(tabname)
@@ -152,12 +146,10 @@ class Filter(WhereClause):
 
         else:  # =, i.e. datatype == 'int', date
             is_low = True
+            is_low = self.run_app_for_a_val(datatype, is_low, low, query, query_front)
+            self.revert_filter_changes(tabname)
             is_high = True
-            # updatequery
-            is_low = self.run_app_for_a_val(datatype, is_low,
-                                            low, query, query_front)
-            is_high = self.run_app_for_a_val(datatype, is_high,
-                                             high, query, query_front)
+            is_high = self.run_app_for_a_val(datatype, is_high, high, query, query_front)
             self.revert_filter_changes(tabname)
             return not is_low and not is_high
 
@@ -324,10 +316,12 @@ class Filter(WhereClause):
 
 
 def get_constants_for(datatype):
-    if datatype == 'int' or datatype == 'date':
+    if datatype in ('int', 'date'):
         while_cut_off = 0
         delta = 1
-    elif datatype == 'float' or datatype == 'numeric':
-        while_cut_off = 0.01
+    elif datatype in ('float', 'numeric'):
+        while_cut_off = 0.00
         delta = 0.01
+    else:
+        raise ValueError(f"Unsupported datatype: {datatype}")
     return delta, while_cut_off

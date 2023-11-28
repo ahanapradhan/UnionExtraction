@@ -104,9 +104,8 @@ class ConnectionHelper:
             self.conn.close()
             self.conn = None
 
-    def connectUsingParams(self, disable_options=False):
+    def connectUsingParams(self):
         self.conn = psycopg2.connect(self.paramString)
-        self.execute_sql(set_optimizer_params(not disable_options))
 
     def getConnection(self):
         if self.conn is None:
@@ -156,7 +155,10 @@ class ConnectionHelper:
         return res, des
 
     def get_cursor(self):
-        return self.conn.cursor()
+        cur = self.conn.cursor()
+        for cmd in set_optimizer_params(False):
+            cur.execute(cmd)
+        return cur
 
     def get_DictCursor(self):
         return self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)

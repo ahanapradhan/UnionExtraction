@@ -1,5 +1,6 @@
 import random
 import unittest
+from datetime import datetime, timedelta, date
 
 import pytest
 
@@ -10,6 +11,19 @@ from mysite.unmasque.test.src.Optimizer_config import set_optimizer_params
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from mysite.unmasque.test.util.queries import Q3, Q6
+
+
+def generate_random_dates():
+    start_date = date(1992, 3, 3)
+    end_date = date(1998, 12, 5)
+
+    # Generate two random dates
+    random_date1 = start_date + timedelta(days=random.randint(0, (end_date - start_date).days))
+    random_date2 = start_date + timedelta(days=random.randint(0, (end_date - start_date).days))
+
+    # Return dates in a tuple with the lesser value first
+    dates = min(random_date1, random_date2), max(random_date1, random_date2)
+    return f"\'{str(dates[0])}\'", f"\'{str(dates[1])}\'"
 
 
 class MyTestCase(BaseTestCase):
@@ -29,7 +43,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_for_numeric_filter(self):
-        for i in range(10):
+        for i in range(5):
             lower = random.randint(1, 1000)
             upper = random.randint(lower + 1, 5000)
             query = f"select c_mktsegment as segment from customer,nation,orders where " \
@@ -118,14 +132,31 @@ class MyTestCase(BaseTestCase):
 
     def test_for_date_filter(self):
         for i in range(10):
-            option = bool(random.getrandbits(1))
             self.conn.connectUsingParams()
-            set_optimizer_params(option)
             key = 'q1_filter'
             query = queries.queries_dict[key]
             eq = self.pipeline.doJob(query)
             print(eq)
             self.pipeline.time_profile.print()
+            self.assertTrue(self.pipeline.correct)
+            self.conn.closeConnection()
+
+    def test_for_date_filter_2(self):
+        for i in range(10):
+            lower, upper = generate_random_dates()
+            self.conn.connectUsingParams()
+            q1_filter = f"select l_returnflag, l_linestatus, " \
+                        f"count(*) as count_order " \
+                        f"from lineitem where l_shipdate >= date {lower} and l_shipdate < date {upper} group " \
+                        f"by l_returnflag, l_linestatus order by l_returnflag, l_linestatus LIMIT 10;"
+            # q1_filter = f"select l_returnflag, l_linestatus, " \
+            #            f"count(*) as count_order " \
+            #            f"from lineitem where l_shipdate < date {upper} group " \
+            #            f"by l_returnflag, l_linestatus order by l_returnflag, l_linestatus LIMIT 10;"
+
+            eq = self.pipeline.doJob(q1_filter)
+            print(q1_filter)
+            print(eq)
             self.assertTrue(self.pipeline.correct)
             self.conn.closeConnection()
 

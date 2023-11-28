@@ -1,17 +1,2 @@
 Qno				Gb Correct?	Ob Correct?	Result Correct?	Ob Remark
-Q1				True		True		True		Mismatched ordering attribute {ob_e} against {ob_h}
-Q10				True		False		True		Extra ordering attributes!
-Q11				True		False		True		Extra ordering attributes!
-Q16				False		False		False		Some ordering attribute is missing!
-Q16_nep				True		False		True		Some ordering attribute is missing!
-Q16_nep_2				True		False		True		Some ordering attribute is missing!
-Q17				True		True		True		-
-Q18				True		False		True		Extra ordering attributes!
-Q2				True		True		True		-
-Q21				True		False		False		Some ordering attribute is missing!
-Q3				True		False		True		Extra ordering attributes!
-Q3_1				True		False		True		Extra ordering attributes!
-Q4				True		False		False		Extra ordering attributes!
-Q5				True		False		False		Extra ordering attributes!
-Q6				True		False		True		Extra ordering attributes!
-Q_r				True		True		True		-
+Q4				True		False		True		Extra ordering attributes!
