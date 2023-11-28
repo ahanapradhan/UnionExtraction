@@ -8,6 +8,7 @@ from mysite.unmasque.refactored.util.utils import isQ_result_empty
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from mysite.unmasque.test.util.queries import Q3, Q6
 
 
 def set_optimizer_params(is_on):
@@ -40,13 +41,16 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_for_numeric_filter(self):
-        query = "select c_mktsegment as segment from customer,nation,orders where " \
-                "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
-                "and n_name = 'ARGENTINA';"
-        eq = self.pipeline.doJob(query)
-        self.assertTrue(eq is not None)
-        print(eq)
-        self.assertTrue(self.pipeline.correct)
+        for i in range(10):
+            lower = random.randint(1, 1000)
+            upper = random.randint(lower + 1, 5000)
+            query = f"select c_mktsegment as segment from customer,nation,orders where " \
+                f"c_acctbal between {lower} and {upper} and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+                f"and n_name = 'ARGENTINA';"
+            eq = self.pipeline.doJob(query)
+            self.assertTrue(eq is not None)
+            print(eq)
+            self.assertTrue(self.pipeline.correct)
 
     def test_for_numeric_filter_NEP(self):
         self.conn.config.detect_nep = True
@@ -124,6 +128,31 @@ class MyTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
         self.conn.closeConnection()
 
+    def test_for_date_filter(self):
+        for i in range(10):
+            option = bool(random.getrandbits(1))
+            self.conn.connectUsingParams()
+            set_optimizer_params(option)
+            key = 'q1_filter'
+            query = queries.queries_dict[key]
+            eq = self.pipeline.doJob(query)
+            print(eq)
+            self.pipeline.time_profile.print()
+            self.assertTrue(self.pipeline.correct)
+            self.conn.closeConnection()
+
+    def test_for_date_filter_1(self):
+        for i in range(10):
+            option = bool(random.getrandbits(1))
+            self.conn.connectUsingParams()
+            set_optimizer_params(option)
+            query = Q6
+            eq = self.pipeline.doJob(query)
+            print(eq)
+            self.pipeline.time_profile.print()
+            self.assertTrue(self.pipeline.correct)
+            self.conn.closeConnection()
+
     def test_extraction_tpch_q1_filter(self):
         self.conn.connectUsingParams()
         key = 'q1_filter'
@@ -195,8 +224,7 @@ class MyTestCase(BaseTestCase):
     def test_extract_Q3_optimizer_options_off(self):
         self.conn.connectUsingParams()
         self.conn.execute_sql(set_optimizer_params(False))
-        key = 'Q3'
-        query = queries.queries_dict[key]
+        query = Q3
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
@@ -207,8 +235,7 @@ class MyTestCase(BaseTestCase):
     def test_extract_Q3_optimizer_options_on(self):
         self.conn.connectUsingParams()
         self.conn.execute_sql(set_optimizer_params(True))
-        key = 'Q3'
-        query = queries.queries_dict[key]
+        query = Q3
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)

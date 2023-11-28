@@ -140,7 +140,7 @@ class OrderBy(GenerationPipeLineBase):
 
     def generateData(self, obj, orderby_list, filter_attrib_dict, curr_orderby, query):
         attrib_types_dict = {}
-        
+
         for entry in self.global_attrib_types:
             attrib_types_dict[(entry[0], entry[1])] = entry[2]
         # check if it is a key attribute, #NO CHECKING ON KEY ATTRIBUTES
@@ -150,7 +150,7 @@ class OrderBy(GenerationPipeLineBase):
             for elt in self.global_join_graph:
                 if obj.attrib in elt:
                     key_elt = elt
-            
+
         if not obj.dependency:
             # if obj.name not in self.global_attrib_dict['order by']:
             #    self.global_attrib_dict['order by'].append(obj.name)
@@ -235,7 +235,8 @@ class OrderBy(GenerationPipeLineBase):
                         insert_values1.append(first)
                         insert_values2.append(second)
                         if k == no_of_db - 1 and (any([(attrib_inner in i) for i in
-                                                       obj.attrib_dependency]) or 'Count' in obj.aggregation) or ( k == no_of_db - 1 and key_elt and attrib_inner in key_elt):
+                                                       obj.attrib_dependency]) or 'Count' in obj.aggregation) or (
+                                k == no_of_db - 1 and key_elt and attrib_inner in key_elt):
                             # swap first and second
                             self.logger.debug("Swapping", attrib_inner)
                             self.logger.debug("Attribute Order", att_order)
@@ -257,7 +258,7 @@ class OrderBy(GenerationPipeLineBase):
                     self.logger.debug("Insert 1", insert_values1)
                     self.logger.debug("Insert 2", insert_values2)
                     self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
-                #nr = self.app.doJob("select * from lineitem;")
+                # nr = self.app.doJob("select * from lineitem;")
                 # for i in nr:
                 #     self.logger.debug(i)
                 new_result = self.app.doJob(query)
