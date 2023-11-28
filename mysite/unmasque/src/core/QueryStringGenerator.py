@@ -68,8 +68,9 @@ class QueryStringGenerator(Base):
         self.where_op = " and ".join(joins)
 
     def generate_query_string(self, core_relations, ej, fl, pj, gb, agg, ob, lm):
-        core_relations.sort()
-        self.from_op = ", ".join(core_relations)
+        relations = copy.deepcopy(core_relations)
+        relations.sort()
+        self.from_op = ", ".join(relations)
         self.generate_join_string(ej)
 
         if self.where_op and len(fl.filter_predicates) > 0:
