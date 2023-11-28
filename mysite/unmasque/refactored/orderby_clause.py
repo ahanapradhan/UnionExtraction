@@ -28,24 +28,33 @@ class CandidateAttribute:
         self.logger.debug('')
 
 
-def tryConvertToInt(logger, val):
+def tryConvert(logger, val):
     temp = 0
+    changed = False
     try:
         temp = int(val)
+        changed = True
     except ValueError as e:
         logger.debug("Not int error, ", e)
         temp = val
+    if not changed:
+        try:
+            temp = float(val)
+            changed = True
+        except ValueError as e:
+            logger.debug("Not int error, ", e)
+            temp = val
     return temp
 
 
 def checkOrdering(logger, obj, result):
     if len(result) < 2:
         return None
-    reference_value = tryConvertToInt(logger, result[1][obj.index])
+    reference_value = tryConvert(logger, result[1][obj.index])
     for i in range(2, len(result)):
         logger.debug(result)
-        if tryConvertToInt(logger, result[i][obj.index]) != reference_value:
-            return 'asc' if tryConvertToInt(logger, result[i][obj.index]) > reference_value else 'desc'
+        if tryConvert(logger, result[i][obj.index]) != reference_value:
+            return 'asc' if tryConvert(logger, result[i][obj.index]) > reference_value else 'desc'
     return None
 
 
