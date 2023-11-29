@@ -156,8 +156,8 @@ class ConnectionHelper:
 
     def get_cursor(self):
         cur = self.conn.cursor()
-        for cmd in set_optimizer_params(False):
-            cur.execute(cmd)
+        # for cmd in set_optimizer_params(False):
+        #     cur.execute(cmd)
         return cur
 
     def get_DictCursor(self):
