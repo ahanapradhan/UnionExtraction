@@ -232,7 +232,7 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
         if os.path.isfile(self.plot_filename):
             os.remove(self.plot_filename)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_plot_Q1(self):
         self.conn.config.detect_nep = False
         self.hqs = [Q1]
@@ -281,28 +281,28 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
         self.hq_keys = ["Q6"]
         self.do_experiment()
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_plot_Q10(self):
         self.conn.config.detect_nep = False
         self.hqs = [Q10]
         self.hq_keys = ["Q10"]
         self.do_experiment()
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_plot_Q11(self):
         self.conn.config.detect_nep = False
         self.hqs = [Q11]
         self.hq_keys = ["Q11"]
         self.do_experiment()
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_plot_Q16(self):
         self.conn.config.detect_nep = True
         self.hqs = [Q16]
         self.hq_keys = ["Q16"]
         self.do_experiment()
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_plot_Q16_nep(self):
         self.conn.config.detect_nep = True
         self.hqs = [Q16_nep]

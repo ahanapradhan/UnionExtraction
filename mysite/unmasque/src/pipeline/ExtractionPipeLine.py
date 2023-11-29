@@ -214,7 +214,8 @@ class ExtractionPipeLine(GenericPipeLine):
                       vm.global_min_instance_dict)
             self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
-            eq = nep.Q_E
+            if nep.Q_E:
+                eq = nep.Q_E
             time_profile.update_for_nep(nep.local_elapsed_time)
             self.update_state(NEP_ + DONE)
 

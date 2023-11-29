@@ -9,7 +9,7 @@ Q17				True		True		True		-
 Q18				True		False		True		Extra ordering attributes!
 Q2				True		True		True		-
 Q21				True		False		False		Some ordering attribute is missing!
-Q3				True		True		True		-
+Q3				True		False		True		Extra ordering attributes!
 Q3_1				True		False		True		Extra ordering attributes!
 Q4				True		False		True		Extra ordering attributes!
 Q5				True		False		True		Extra ordering attributes!
