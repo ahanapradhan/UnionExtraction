@@ -80,3 +80,5 @@ Q21 = "Select s_name, count(*) as numwait From supplier, lineitem l1, orders, na
 Q_r = "select c_mktsegment as segment from customer,nation,orders where " \
       "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
       "and n_name not LIKE 'B%';"
+
+Q_dt = "select n_comment from nation, region where n_name = 'BRAZIL';"

@@ -9,7 +9,7 @@ from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.src.validator import validate_gb, validate_ob
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, Q16_nep, Q3_1, Q16_nep_2, \
-    Q_r
+    Q_r, Q_dt
 
 
 class TpchExtractionPipelineTestCase(BaseTestCase):
@@ -342,6 +342,12 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
         self.conn.config.detect_nep = True
         self.hqs = [Q_r]
         self.hq_keys = ["Q_r"]
+        self.do_experiment()
+
+    def test_plot_Q_dt(self):
+        self.conn.config.detect_nep = False
+        self.hqs = [Q_dt]
+        self.hq_keys = ["Q_dt"]
         self.do_experiment()
 
     @pytest.fixture(scope="session", autouse=True)
