@@ -1,7 +1,10 @@
+import copy
+
 import pandas as pd
 
 from mysite.unmasque.refactored.equi_join import EquiJoin
 from mysite.unmasque.src.core.abstract.ExtractorModuleBase import ExtractorModuleBase
+from mysite.unmasque.src.core.abstract.dataclass.SubQueryData import SubQueryData
 from mysite.unmasque.src.core.abstract.dataclass.from_clause_data_class import FromData
 from mysite.unmasque.src.core.abstract.dataclass.join_data_class import JoinData
 from mysite.unmasque.src.core.abstract.spj_QueryStringGenerator import generate_join_string
@@ -36,48 +39,55 @@ def form_global_key_attributes(join_graph):
     return key_attributes
 
 
-class MultipleEquiJoin(ExtractorModuleBase):
+class ManyEquiJoin(ExtractorModuleBase):
 
     def __init__(self, connectionHelper,
                  global_key_lists,
                  core_relations,
                  global_min_instance_dict):
         super().__init__(connectionHelper, "Multiple Equi Join")
-        self.d_min_DictData = []
-        self.fromData = []
-        self.joinData = []
+        self.subquery_data = []
         self.intersection = False
         self.intersection_flag = False
         self.tab_tuple_sig_dict = {}
-        self.join_extractor = EquiJoin(self.connectionHelper, global_key_lists, core_relations, global_min_instance_dict)
+        self.joinEdge_extractor = EquiJoin(self.connectionHelper, global_key_lists,
+                                           core_relations, global_min_instance_dict)
 
     def is_intersection_present(self):
         if not self.intersection_flag:
-            self.intersection = any(len(value) > 2 for value in self.join_extractor.global_min_instance_dict.values())
+            self.intersection = any(len(value) > 2 for value in self.joinEdge_extractor.global_min_instance_dict.values())
             self.intersection_flag = True
         return self.intersection
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
-        check = self.join_extractor.doJob(query)
+        check = self.joinEdge_extractor.doJob(query)
         if not check:
             return False
+        self.get_actual_join_data()
+        self.set_aux_data()
+        return True
+
+    def get_actual_join_data(self):
         if self.is_intersection_present():
             self.get_multiple_join_graphs()
         else:
-            default_d_min_dict = {}
-            for table in self.join_extractor.core_relations:
-                default_d_min_dict[table] = '(0,1)'
-            self.fill_in_data_fields(self.join_extractor.core_relations, self.join_extractor.global_join_graph,
-                                     default_d_min_dict)
+            self.get_only_join_graph()
 
-        for joindata in self.joinData:
-            joindata.global_all_attribs = self.join_extractor.global_all_attribs
-            joindata.global_attrib_types = self.join_extractor.global_attrib_types
-        return True
+    def set_aux_data(self):
+        for s in self.subquery_data:
+            s.equi_join.global_all_attribs = copy.deepcopy(self.joinEdge_extractor.global_all_attribs)
+            s.equi_join.global_attrib_types = copy.deepcopy(self.joinEdge_extractor.global_attrib_types)
+
+    def get_only_join_graph(self):
+        default_d_min_dict = {}
+        for table in self.joinEdge_extractor.core_relations:
+            default_d_min_dict[table] = '(0,1)'
+        self.fill_in_data_fields(self.joinEdge_extractor.core_relations, self.joinEdge_extractor.global_join_graph,
+                                 default_d_min_dict)
 
     def get_multiple_join_graphs(self):
-        self.join_extractor.restore_d_min_from_dict_data()
+        self.joinEdge_extractor.restore_d_min_from_dict_data()
         self.get_matching_tuples()
         self.do_traversal()
 
@@ -90,14 +100,12 @@ class MultipleEquiJoin(ExtractorModuleBase):
             self.fill_in_data_fields(from_tabs, join_graph, d_min_dict)
 
     def fill_in_data_fields(self, from_tabs, join_graph, d_min_dict):
-        from_data = FromData()
-        join_data = JoinData()
-        from_data.core_relations = from_tabs
-        join_data.global_join_graph = join_graph
-        join_data.global_key_attributes = form_global_key_attributes(join_graph)
-        self.fromData.append(from_data)
-        self.joinData.append(join_data)
-        self.d_min_DictData.append(self.populate_min_instance_dict(d_min_dict))
+        subquery = SubQueryData()
+        subquery.from_clause.core_relations = from_tabs
+        subquery.equi_join.global_join_graph = join_graph
+        subquery.equi_join.global_key_attributes = form_global_key_attributes(join_graph)
+        subquery.d_min_dict = self.populate_min_instance_dict(d_min_dict)
+        self.subquery_data.append(subquery)
 
     def populate_min_instance_dict(self, d_min_dict):
         data_dict = {}
@@ -139,10 +147,10 @@ class MultipleEquiJoin(ExtractorModuleBase):
         return from_tabs, join_graph, d_min_dict
 
     def get_matching_tuples(self):
-        self.tab_tuple_sig_dict = {key_tab: {} for key_tab in self.join_extractor.global_min_instance_dict}
+        self.tab_tuple_sig_dict = {key_tab: {} for key_tab in self.joinEdge_extractor.global_min_instance_dict}
 
-        for edge in self.join_extractor.global_join_graph:
-            tabs = [self.join_extractor.find_tabname_for_given_attrib(e) for e in edge]
+        for edge in self.joinEdge_extractor.global_join_graph:
+            tabs = [self.joinEdge_extractor.find_tabname_for_given_attrib(e) for e in edge]
             ctids = [f"{tab}.ctid" for tab in tabs]
             from_op = ", ".join(tabs)
             select_op = ", ".join(ctids)

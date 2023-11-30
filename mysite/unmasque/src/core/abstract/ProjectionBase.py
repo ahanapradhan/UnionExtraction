@@ -18,12 +18,19 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
         else:
             self.attribs_to_check = attribs_to_check
         self.skip_equals = skip_equals
+        self.projection_dep = None
 
     def find_dep_one_round(self, query, s_values):
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
         if not check:
             self.logger.error("Some problem while identifying the dependency list!")
         return projected_attrib, projection_names, projection_dep, check
+
+    def doBasicExtractJob(self, query):
+        s_values = []
+        projected_attribs, projection_names, \
+            projection_dep, check = self.find_dep_one_round(query, s_values)
+        return check, s_values, projected_attribs, projection_names, projection_dep
 
     def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)

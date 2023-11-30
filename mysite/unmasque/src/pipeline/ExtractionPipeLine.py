@@ -1,12 +1,10 @@
-import copy
 
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..core.factory import ProjectionFactory
-from ..core.multiple_equi_joins import MultipleEquiJoin
-from ..core.multiple_filters import MultipleFilter
-from ..core.multiple_projections import MultipleProjection
+from ..core.multiple_equi_joins import ManyEquiJoin
+from ..core.multiple_filters import ManyFilter
 from ..core.n_minimizer import NMinimizer
 from mysite.unmasque.src.core.abstract.spj_QueryStringGenerator import SPJQueryStringGenerator
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
@@ -18,7 +16,6 @@ from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
 from ...refactored.nep import NEP
 from ...refactored.orderby_clause import OrderBy
-from ...refactored.projection import Projection
 
 
 class ExtractionPipeLine(GenericPipeLine):
@@ -109,10 +106,10 @@ class ExtractionPipeLine(GenericPipeLine):
         Join Graph Extraction
         '''
         self.update_state(EQUI_JOIN + START)
-        ej = MultipleEquiJoin(self.connectionHelper,
-                              key_lists,
-                              core_relations,
-                              global_min_instance_dict)
+        ej = ManyEquiJoin(self.connectionHelper,
+                          key_lists,
+                          core_relations,
+                          global_min_instance_dict)
         self.update_state(EQUI_JOIN + RUNNING)
         check = ej.doJob(query)
         self.update_state(EQUI_JOIN + DONE)
@@ -133,10 +130,8 @@ class ExtractionPipeLine(GenericPipeLine):
         Filters Extraction
         '''
         self.update_state(FILTER + START)
-        fl = MultipleFilter(self.connectionHelper,
-                            key_lists,
-                            ej.fromData, ej.joinData,
-                            ej.d_min_DictData)
+        fl = ManyFilter(self.connectionHelper,
+                        key_lists, ej.subquery_data)
         self.update_state(FILTER + RUNNING)
         check = fl.doJob(query)
         self.update_state(FILTER + DONE)
@@ -157,10 +152,9 @@ class ExtractionPipeLine(GenericPipeLine):
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
-        pj_factory = ProjectionFactory(self.connectionHelper,
-                                       ej.fromData, ej.joinData,
-                                       ej.join_extractor.global_join_graph,
-                                       fl.filterData, core_relations,
+        pj_factory = ProjectionFactory(self.connectionHelper, ej.subquery_data,
+                                       ej.joinEdge_extractor.global_join_graph,
+                                       core_relations,
                                        global_min_instance_dict)
         pj = pj_factory.doCreateJob()
         next_modules.append(pj)
@@ -176,7 +170,12 @@ class ExtractionPipeLine(GenericPipeLine):
         if not pj.done:
             self.logger.error("Some error while projection extraction. Aborting extraction!")
             can_progress = False
-        return can_progress, next_modules
+
+        if len(ej.subquery_data) > 1:
+            halt = True
+        else:
+            halt = False
+        return can_progress, next_modules, halt, ej.subquery_data
 
     def run_generation_pipeline(self, query, core_relations,
                                 modules, global_min_instance_dict,
@@ -285,7 +284,7 @@ class ExtractionPipeLine(GenericPipeLine):
 
         global_min_instance_dict = minimizer_modules[self.DB_MIN_IDX].global_min_instance_dict
 
-        can_progress, mutation_modules = self.run_mutation_pipeline(query,
+        can_progress, mutation_modules, halt, subquery_data = self.run_mutation_pipeline(query,
                                                                     key_lists,
                                                                     core_relations,
                                                                     global_min_instance_dict,
@@ -293,9 +292,9 @@ class ExtractionPipeLine(GenericPipeLine):
         if not can_progress:
             return None, time_profile
 
-        if mutation_modules[self.JOIN_IDX].intersection:
+        if halt:
             if can_progress:
-                eq = self.generate_intersection_query_string(mutation_modules)
+                eq = self.generate_intersection_query_string(subquery_data)
             else:
                 eq = None
             return eq, time_profile
@@ -330,20 +329,19 @@ class ExtractionPipeLine(GenericPipeLine):
         return eq, time_profile
 
     def prepare_modules_for_singleQuery(self, mutation_modules):
-        joins = mutation_modules[self.JOIN_IDX].join_extractor
-        filters = mutation_modules[self.FILTER_IDX].filterData[0]
-        useful_mutation_modules = [joins, filters, mutation_modules[self.PROJECTION_IDX]]
+        useful_mutation_modules = [mutation_modules[self.JOIN_IDX].joinEdge_extractor,
+                                   mutation_modules[self.FILTER_IDX].filter_extractor,
+                                   mutation_modules[self.PROJECTION_IDX].projection_extractor]
         return useful_mutation_modules
 
-    def generate_intersection_query_string(self, mutation_modules):
+    def generate_intersection_query_string(self, subquery_data):
         subq_strings = []
         subquery_generator = SPJQueryStringGenerator(self.connectionHelper)
-        froms = mutation_modules[self.JOIN_IDX].fromData
-        joins = mutation_modules[self.JOIN_IDX].joinData
-        filters = mutation_modules[self.PROJECTION_IDX].filterData
-        projections = mutation_modules[self.PROJECTION_IDX].projectionData
-        for i in range(len(froms)):
-            subq_modules = [froms[i].core_relations, joins[i], filters[i], projections[i]]
+        for i in range(len(subquery_data)):
+            subquery = subquery_data[i]
+            subq_modules = [subquery.from_clause.core_relations,
+                            subquery.equi_join,
+                            subquery.filter, subquery.projection]
             subq_str = "(" + subquery_generator.generate_query_string(subq_modules) + ")"
             subq_str = subq_str.replace(";", "")
             subq_strings.append(subq_str)

@@ -1,7 +1,6 @@
 from itertools import chain
 
-from mysite.unmasque.refactored.projection import Projection
-from mysite.unmasque.src.core.multiple_projections import MultipleProjection
+from mysite.unmasque.src.core.multiple_projections import ManyProjection
 
 
 def find_common_items(lists):
@@ -22,21 +21,19 @@ def get_merged_list(nested_list):
 
 
 class ProjectionFactory:
-    def __init__(self, connectionHelper, fromData_list, joinData_list, global_join_graph, filterData_list,
+    def __init__(self, connectionHelper, subquery_data, global_join_graph,
                  core_relations,
                  d_min_instance_dict):
         self.connectionHelper = connectionHelper
-        self.fromData_list = fromData_list
-        self.joinData_list = joinData_list
         self.global_join_graph = global_join_graph
-        self.filterData_list = filterData_list
         self.core_relations = core_relations
         self.d_min_instance_dict = d_min_instance_dict
+        self.subquery_data = subquery_data
 
     def find_attribs_to_check(self):
         predicates = []
-        for each_filter in self.filterData_list:
-            predicates.append(frozenset(each_filter.filter_predicates))
+        for subquery in self.subquery_data:
+            predicates.append(frozenset(subquery.filter.filter_predicates))
         common_filters = find_common_items(predicates)
         print(common_filters)
         return common_filters
@@ -44,7 +41,7 @@ class ProjectionFactory:
     def doCreateJob(self):
         attribs_to_check = self.find_attribs_to_check()
 
-        if len(self.filterData_list) > 1:
+        if len(self.subquery_data) > 1:
             local_attrib_types = []
             global_all_attribs, global_attrib_types, global_key_attributes = self.form_other_params()
 
@@ -52,7 +49,19 @@ class ProjectionFactory:
                 for atypes in global_attrib_types:
                     if atypes[0] == attrib[0] and atypes[1] == attrib[1]:
                         local_attrib_types.append(atypes)
+        else:
+            subquery = self.subquery_data[0]
+            global_all_attribs = subquery.equi_join.global_all_attribs
+            global_attrib_types = subquery.equi_join.global_attrib_types
+            global_key_attributes = subquery.equi_join.global_key_attributes
 
+        projection_ob = ManyProjection(self.connectionHelper,
+                                       global_all_attribs, global_attrib_types, global_key_attributes,
+                                       self.core_relations, self.global_join_graph, self.subquery_data,
+                                       self.d_min_instance_dict, attribs_to_check)
+        return projection_ob
+
+        '''
             pj = MultipleProjection(self.connectionHelper,
                                     global_all_attribs,
                                     global_attrib_types,
@@ -74,24 +83,25 @@ class ProjectionFactory:
                             self.d_min_instance_dict,
                             self.joinData_list[0].global_key_attributes)
         return pj
+        '''
 
     def form_other_params(self):
         _global_all_attribs = set()
-        for joindata in self.joinData_list:
-            for attrib in joindata.global_all_attribs:
-                _global_all_attribs.add(frozenset(attrib))
-        global_all_attribs = list(_global_all_attribs)
-
         _global_attrib_types = set()
-        for joindata in self.joinData_list:
-            for attrib in joindata.global_attrib_types:
-                _global_attrib_types.add(attrib)
-        global_attrib_types = list(_global_attrib_types)
-
         _global_key_attributes = set()
-        for joindata in self.joinData_list:
-            for attrib in joindata.global_key_attributes:
+
+        for subquery in self.subquery_data:
+            for attrib in subquery.equi_join.global_all_attribs:
+                _global_all_attribs.add(frozenset(attrib))
+
+            for attrib in subquery.equi_join.global_attrib_types:
+                _global_attrib_types.add(attrib)
+
+            for attrib in subquery.equi_join.global_key_attributes:
                 _global_key_attributes.add(attrib)
+
+        global_all_attribs = list(_global_all_attribs)
+        global_attrib_types = list(_global_attrib_types)
         global_key_attributes = list(_global_key_attributes)
 
         return global_all_attribs, global_attrib_types, global_key_attributes

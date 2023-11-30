@@ -1,6 +1,7 @@
 import math
 import math
 import random
+from datetime import date
 
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify
@@ -8,6 +9,15 @@ from sympy import symbols, expand, collect, nsimplify
 from ..refactored.util.utils import get_unused_dummy_val, get_val_plus_delta, count_empty_lists_in
 from ..src.core.abstract.ProjectionBase import ProjectionBase
 from ..src.util import constants
+
+
+def get_different_value(param):
+    if isinstance(param, str):
+        return param[::-1]
+    if isinstance(param, date):
+        return date(param.year, param.day, param.month)
+    else:
+        return param * -1
 
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
@@ -31,12 +41,19 @@ class Projection(ProjectionBase):
         Suppose a column is dependent on a and b, corresponding index of that column in param_list will contain, [a,b,a*b]
         """
         self.param_list = []
+        self.need_full_extraction = True
 
     def doExtractJob(self, query):
-        s_values = []
-        projected_attrib, projection_names, projection_dep, check = self.find_dep_one_round(query, s_values)
+        check, s_values, projected_attrib, projection_names, projection_dep = self.doBasicExtractJob(query)
         if not check:
             return False
+        if self.need_full_extraction:
+            check = self.doFurtherExtraction(query, s_values, projection_names, projection_dep)
+        self.projected_attribs = projected_attrib
+        self.projection_names = projection_names
+        return check
+
+    def doFurtherExtraction(self, query, s_values, projection_names, projection_dep):
         if if_dependencies_found_incomplete(projection_names, projection_dep):
             for s_v in s_values:
                 if s_v[2] is not None:
@@ -50,14 +67,12 @@ class Projection(ProjectionBase):
         projection_sol = self.find_solution_on_multi(projected_attrib, projection_names,
                                                      projection_dep, query)
         # self.build_equation(projected_attrib, projection_dep, projection_sol)
-        self.projected_attribs = projected_attrib
-        self.projection_names = projection_names
         self.dependencies = projection_dep
         self.solution = projection_sol
         self.logger.debug("Result ", projection_names, projected_attrib, projection_sol, self.param_list)
         return True
 
-    def find_dependencies_on_multi(self, projected_attrib, projection_names, query):
+    def find_dependencies_on_multi(self, projected_attrib, query):
         projection_dep = []
         indices_to_check = []
         self.logger.debug("Projected Attrib", projected_attrib)
@@ -398,6 +413,9 @@ class Projection(ProjectionBase):
                 used_val.append(vals[0][idx])
                 used_val.append(vals[1][idx])
         return used_val
+
+    def get_different_val(self, attrib, tabname, prev):
+        return get_different_value(prev)
 
 
 def get_param_values_external(coeff_arr):

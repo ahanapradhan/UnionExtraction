@@ -4,7 +4,7 @@ import unittest
 
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
-from mysite.unmasque.src.core.multiple_equi_joins import MultipleEquiJoin
+from mysite.unmasque.src.core.multiple_equi_joins import ManyEquiJoin
 from mysite.unmasque.test.util import tpchSettings
 
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -99,20 +99,20 @@ class MyTestCase(BaseTestCase):
 
         self.see_tables_with_ctid()
 
-        equi_join = MultipleEquiJoin(self.conn, tpchSettings.key_lists, relations, global_min_instance_dict)
-        equi_join.join_extractor.mock = True
+        equi_join = ManyEquiJoin(self.conn, tpchSettings.key_lists, relations, global_min_instance_dict)
+        equi_join.joinEdge_extractor.mock = True
 
         check = equi_join.doJob(query)
         self.assertTrue(check)
 
-        print(equi_join.joinData)
-        self.assertEqual(2, len(equi_join.joinData))
+        self.assertEqual(2, len(equi_join.subquery_data))
 
         one = False
         two = False
-        for i in range(2):
-            from_tabs = equi_join.fromData[i].core_relations
-            join_graph = equi_join.joinData[i].global_join_graph
+        for i in range(len(equi_join.subquery_data)):
+            subquery = equi_join.subquery_data[i]
+            from_tabs = subquery.from_clause.core_relations
+            join_graph = subquery.equi_join.global_join_graph
             froms = frozenset(from_tabs)
             if froms == frozenset(['orders', 'customer']):
                 self.assertEqual(1, len(join_graph))

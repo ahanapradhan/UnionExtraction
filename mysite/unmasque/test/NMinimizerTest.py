@@ -2,7 +2,7 @@ import unittest
 
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
-from mysite.unmasque.src.core.multiple_equi_joins import MultipleEquiJoin
+from mysite.unmasque.src.core.multiple_equi_joins import ManyEquiJoin
 from mysite.unmasque.src.core.n_minimizer import NMinimizer
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -69,18 +69,17 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(not isQ_result_empty(res))
         nm.see_d_min()
 
-        equijoin = MultipleEquiJoin(self.conn, tpchSettings.key_lists, relations, nm.global_min_instance_dict)
+        equijoin = ManyEquiJoin(self.conn, tpchSettings.key_lists, relations, nm.global_min_instance_dict)
         equijoin.mock = True
 
         check = equijoin.doJob(query)
         self.assertTrue(check)
 
-        print(equijoin.subqueries)
-        self.assertEqual(2, len(equijoin.subqueries))
+        self.assertEqual(2, len(equijoin.subquery_data))
 
-        for subquery in equijoin.subqueries:
-            from_tabs = subquery[0]
-            join_graph = subquery[1]
+        for subquery in equijoin.subquery_data:
+            from_tabs = subquery.from_clause.core_relations
+            join_graph = subquery.equi_join.global_join_graph
             froms = frozenset(from_tabs)
             self.assertEqual(frozenset(['customer', 'nation']), froms)
             self.assertEqual(1, len(join_graph))
@@ -126,20 +125,19 @@ class MyTestCase(BaseTestCase):
         print(res)
         nm.see_d_min()
 
-        equijoin = MultipleEquiJoin(self.conn, tpchSettings.key_lists, relations, nm.global_min_instance_dict)
+        equijoin = ManyEquiJoin(self.conn, tpchSettings.key_lists, relations, nm.global_min_instance_dict)
         equijoin.mock = True
 
         check = equijoin.doJob(query)
         self.assertTrue(check)
 
-        print(equijoin.subqueries)
-        self.assertEqual(2, len(equijoin.subqueries))
+        self.assertEqual(2, len(equijoin.subquery_data))
 
         one = False
         two = False
-        for subquery in equijoin.subqueries:
-            from_tabs = subquery[0]
-            join_graph = subquery[1]
+        for subquery in equijoin.subquery_data:
+            from_tabs = subquery.from_clause.core_relations
+            join_graph = subquery.equi_join.global_join_graph
             froms = frozenset(from_tabs)
             if froms == frozenset(['nation', 'customer']):
                 self.assertEqual(1, len(join_graph))
