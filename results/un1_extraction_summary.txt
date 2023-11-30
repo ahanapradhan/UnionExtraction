@@ -1,17 +1,18 @@
-Qno				Gb Correct?	Ob Correct?	Result Correct?	Ob Remark
-Q1				True		True		True		-
-Q10				True		False		True		Extra ordering attributes!
-Q11				True		False		True		Extra ordering attributes!
-Q16				False		False		False		Some ordering attribute is missing!
-Q16_nep				True		False		True		Some ordering attribute is missing!
-Q16_nep_2				True		False		True		Some ordering attribute is missing!
-Q17				True		True		True		-
-Q18				True		False		True		Extra ordering attributes!
-Q2				True		True		True		-
-Q21				True		False		False		Some ordering attribute is missing!
-Q3				True		False		True		Extra ordering attributes!
-Q3_1				True		False		True		Extra ordering attributes!
-Q4				True		False		True		Extra ordering attributes!
-Q5				True		False		True		Extra ordering attributes!
-Q6				True		False		True		Extra ordering attributes!
-Q_r				True		True		True		-
+Qno                Gb Correct?     Ob Correct?     Same Ob_h?     count(*) ob?     Ob_suffix?     Result Correct?
+Q1                 True            True            True           False            False          True           
+Q2                 True            True            True           False            False          True           
+Q4                 True            False           True           False            True           True           
+Q5                 True            False           True           False            True           True           
+Q6                 True            False           True           False            True           True           
+Q11                True            False           True           False            True           True           
+Q10                True            False           True           False            True           True           
+Q3                 True            False           True           False            True           True           
+Q16                False           False           True           True             False          False          
+Q17                True            True            True           False            False          True           
+Q18                True            False           True           False            True           True           
+Q21                True            False           True           True             False          False          
+Q16_nep            True            False           True           True             False          True           
+Q3_1               True            False           True           False            True           True           
+Q16_nep_2          True            False           True           True             False          True           
+Q_r                True            True            True           False            False          True           
+Q_dt               True            True            True           False            False          True           

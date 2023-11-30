@@ -5,8 +5,10 @@ import pytest
 from pygnuplot import gnuplot
 
 from mysite.unmasque.refactored.executable import Executable
+from mysite.unmasque.refactored.result_comparator import ResultComparator
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
-from mysite.unmasque.test.src.validator import validate_gb, validate_ob
+from mysite.unmasque.test.src.validator import validate_gb, validate_ob, Ob_suffix, count_ob, same_hidden_ob, \
+    pretty_print
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, Q16_nep, Q3_1, Q16_nep_2, \
     Q_r, Q_dt
@@ -26,7 +28,12 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
         self.gb_correct = False
         self.ob_correct = False
         self.result_correct = False
+        self.ob_suffix = False
+        self.same_hidden_ob = True
+        self.count_ob = False
         self.ob_remark = "-"
+        self.QNO_GBCORRECT_HEADER = "Qno                Gb Correct?"
+        self.space_len = len(self.QNO_GBCORRECT_HEADER)
 
     def create_latex_table_of_queries(self):
         if os.path.isfile(self.latex_filename):
@@ -106,8 +113,7 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
             with open(self.dat_filename, "a") as myfile:
                 myfile.write(dat_line)
 
-            self.add_extraction_summary(self.hq_keys[0], self.gb_correct, self.ob_correct,
-                                        self.result_correct, self.ob_remark)
+            self.add_extraction_summary(self.hq_keys[0])
 
             idx += 1
 
@@ -182,7 +188,11 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
         self.result_correct = self.pipeline.correct
 
         self.gb_correct = validate_gb(query, u_Q)
-        self.ob_correct, self.ob_remark = validate_ob(query, u_Q)
+        ob_dict = validate_ob(query, u_Q)
+        self.same_hidden_ob = ob_dict[same_hidden_ob]
+        self.ob_suffix = ob_dict[Ob_suffix]
+        self.count_ob = ob_dict[count_ob]
+        self.ob_correct = self.same_hidden_ob and (not self.ob_suffix) and (not self.count_ob)
 
         return t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_from_clause, t_view_min, t_where_clause
 
@@ -356,11 +366,68 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
             os.remove(self.summary_filename)
 
         with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"Qno\t\t\t\tGb Correct?\tOb Correct?\tResult Correct?\tOb Remark\n")
+            myfile.write(f"{self.QNO_GBCORRECT_HEADER}     "
+                         f"Ob Correct?     "
+                         f"Same Ob_h?     "
+                         f"count(*) ob?     "
+                         f"Ob_suffix?     "
+                         f"Result Correct?\n")
 
-    def add_extraction_summary(self, hq_key, gb_correct, ob_correct, result_correct, ob_remark):
+    def get_hspace(self, header, value):
+        if value:
+            correct_flag = f"{value} "
+        else:
+            correct_flag = f"{value}"
+        hspace_len = len(header) - len(correct_flag)
+        hspace = ""
+        for i in range(hspace_len):
+            hspace += " "
+        return f"{correct_flag}{hspace}"
+
+    def add_extraction_summary(self, hq_key):
         with open(self.summary_filename, "a") as myfile:
-            myfile.write(f"{hq_key}\t\t\t\t{gb_correct}\t\t{ob_correct}\t\t{result_correct}\t\t{ob_remark}\n")
+            prefix = pretty_print(hq_key, self.gb_correct)
+            hspace_len = len("Gb_correct?     ") - 5
+            hspace1 = ""
+            for i in range(hspace_len):
+                hspace1 += " "
+            entry2 = self.get_hspace("Ob_correct?     ", self.ob_correct)
+            entry3 = self.get_hspace("Same Ob_h?     ", self.same_hidden_ob)
+            entry4 = self.get_hspace("count(*) ob?     ", self.count_ob)
+            entry5 = self.get_hspace("Ob_suffix?     ", self.ob_suffix)
+            entry6 = self.get_hspace("Result Correct?", self.result_correct)
+            myfile.write(f"{prefix}{hspace1}"
+                         f"{entry2}"
+                         f"{entry3}"
+                         f"{entry4}"
+                         f"{entry5}"
+                         f"{entry6}\n")
+
+    def test_revise_extraction_summary(self):
+        self.hqs = [Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, Q16_nep, Q3_1, Q16_nep_2, Q_r, Q_dt]
+        self.hq_keys = ["Q1", "Q2", "Q4", "Q5", "Q6", "Q11", "Q10", "Q3", "Q16", "Q17", "Q18", "Q21",
+                        "Q16_nep", "Q3_1", "Q16_nep_2", "Q_r", "Q_dt"]
+        for idx in range(len(self.hqs)):
+            query = self.hqs[idx]
+            q_e_file = "/e_" + self.hq_keys[idx] + ".sql"
+            with open(self.extracted_U + q_e_file) as e_q_filename:
+                q_e = e_q_filename.read()
+
+                rc = ResultComparator(self.conn, True)
+                self.conn.connectUsingParams()
+                self.result_correct = rc.doJob(query, q_e)
+                if self.result_correct is None:
+                    self.result_correct = False
+                self.conn.closeConnection()
+
+                self.gb_correct = validate_gb(query, q_e)
+                ob_dict = validate_ob(query, q_e)
+                self.same_hidden_ob = ob_dict[same_hidden_ob]
+                self.ob_suffix = ob_dict[Ob_suffix]
+                self.count_ob = ob_dict[count_ob]
+                self.ob_correct = self.same_hidden_ob and (not self.ob_suffix) and (not self.count_ob)
+
+                self.add_extraction_summary(self.hq_keys[idx])
 
 
 if __name__ == '__main__':
