@@ -1,3 +1,5 @@
+import copy
+
 from mysite.unmasque.refactored.abstract.ExtractorBase import Base
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import get_datatype, get_format, get_min_and_max_val
@@ -68,8 +70,9 @@ class SPJQueryStringGenerator(Base):
 
     def generate_query_string(self, modules):
         core_relations, ej, fl, pj = get_modules(modules)
-        core_relations.sort()
-        self.from_op = ", ".join(core_relations)
+        relations = copy.deepcopy(core_relations)
+        relations.sort()
+        self.from_op = ", ".join(relations)
         self.where_op = generate_join_string(ej.global_join_graph)
 
         if fl is not None:
