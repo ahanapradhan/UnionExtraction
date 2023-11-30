@@ -24,6 +24,7 @@ class MyTestCase(BaseTestCase):
                 "o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15' " \
                 "Group By l_orderkey, o_totalprice, o_shippriority " \
                 "Order by revenue desc, o_totalprice Limit 10;"
+
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
