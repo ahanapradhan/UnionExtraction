@@ -30,9 +30,9 @@ def if_dependencies_found_incomplete(projection_names, projection_dep):
 
 class Projection(ProjectionBase):
     def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates, join_graph,
-                 global_all_attribs, global_min_instance_dict, global_key_attribs):
+                 global_all_attribs, global_min_instance_dict, global_key_attribs, attribs_to_check=None):
         super().__init__(connectionHelper, "projection", global_all_attribs, global_attrib_types, global_key_attribs,
-                         core_relations, join_graph, filter_predicates, global_min_instance_dict)
+                         core_relations, join_graph, filter_predicates, global_min_instance_dict, attribs_to_check)
         self.dependencies = None
         self.solution = None
         self.syms = []

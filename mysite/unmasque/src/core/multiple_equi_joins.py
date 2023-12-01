@@ -4,9 +4,7 @@ import pandas as pd
 
 from mysite.unmasque.refactored.equi_join import EquiJoin
 from mysite.unmasque.src.core.abstract.ExtractorModuleBase import ExtractorModuleBase
-from mysite.unmasque.src.core.abstract.dataclass.SubQueryData import SubQueryData
-from mysite.unmasque.src.core.abstract.dataclass.from_clause_data_class import FromData
-from mysite.unmasque.src.core.abstract.dataclass.join_data_class import JoinData
+from mysite.unmasque.src.core.dataclass.SubQueryData import SubQueryData
 from mysite.unmasque.src.core.abstract.spj_QueryStringGenerator import generate_join_string
 
 
@@ -76,7 +74,6 @@ class ManyEquiJoin(ExtractorModuleBase):
 
     def set_aux_data(self):
         for s in self.subquery_data:
-            s.equi_join.global_all_attribs = copy.deepcopy(self.joinEdge_extractor.global_all_attribs)
             s.equi_join.global_attrib_types = copy.deepcopy(self.joinEdge_extractor.global_attrib_types)
 
     def get_only_join_graph(self):
@@ -105,6 +102,10 @@ class ManyEquiJoin(ExtractorModuleBase):
         subquery.equi_join.global_join_graph = join_graph
         subquery.equi_join.global_key_attributes = form_global_key_attributes(join_graph)
         subquery.d_min_dict = self.populate_min_instance_dict(d_min_dict)
+        for tab in from_tabs:
+            i = self.joinEdge_extractor.core_relations.index(tab)
+            tab_attribs = self.joinEdge_extractor.global_all_attribs[i]
+            subquery.equi_join.global_all_attribs.append(tab_attribs)
         self.subquery_data.append(subquery)
 
     def populate_min_instance_dict(self, d_min_dict):

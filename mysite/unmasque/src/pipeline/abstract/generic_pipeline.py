@@ -91,3 +91,9 @@ class GenericPipeLine:
 
     def get_state(self):
         return self.state.state
+
+    def update_query_string_info(self, info):
+        pass
+
+    def generate_query_string(self):
+        pass

@@ -2,13 +2,13 @@ import copy
 
 from mysite.unmasque.refactored.filter import Filter
 from mysite.unmasque.src.core.abstract.ExtractorModuleBase import ExtractorModuleBase
-from mysite.unmasque.src.core.abstract.dataclass.filter_data_class import FilterData
 
 
 def set_extractor_params(filter_extractor, subquery):
     filter_extractor.core_relations = subquery.from_clause.core_relations
     filter_extractor.global_min_instance_dict = subquery.d_min_dict
     filter_extractor.global_key_attributes = subquery.equi_join.global_key_attributes
+    filter_extractor.global_all_attribs = subquery.equi_join.global_all_attribs
 
 
 class ManyFilter(ExtractorModuleBase):

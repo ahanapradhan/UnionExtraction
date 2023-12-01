@@ -7,8 +7,7 @@ from .util.common_queries import get_tabname_4, update_sql_query_tab_attribs, in
     form_update_query_with_value_where, select_attribs_from_relation_where
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
     get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff
-from ..src.core.abstract.dataclass.filter_data_class import FilterData
-from ..src.core.abstract.dataclass.only_filter_data import OnlyFilterData
+from mysite.unmasque.src.core.dataclass.only_filter_data import OnlyFilterData
 
 
 class Filter(WhereClause, OnlyFilterData):
@@ -155,7 +154,7 @@ class Filter(WhereClause, OnlyFilterData):
 
         if operator == '<=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
-                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, where_key)
                 if mid_val == low or high == mid_val:
                     self.revert_filter_changes(tabname)
                     break
@@ -168,7 +167,7 @@ class Filter(WhereClause, OnlyFilterData):
 
         if operator == '>=':
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
-                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front)
+                mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front, where_key)
                 if mid_val == high or low == mid_val:
                     self.revert_filter_changes(tabname)
                     break
@@ -181,10 +180,10 @@ class Filter(WhereClause, OnlyFilterData):
 
         else:  # =, i.e. datatype == 'int', date
             is_low = True
-            is_low = self.run_app_for_a_val(datatype, is_low, low, query, query_front)
+            is_low = self.run_app_for_a_val(datatype, is_low, low, query, query_front, where_key)
             self.revert_filter_changes(tabname)
             is_high = True
-            is_high = self.run_app_for_a_val(datatype, is_high, high, query, query_front)
+            is_high = self.run_app_for_a_val(datatype, is_high, high, query, query_front, where_key)
             self.revert_filter_changes(tabname)
             return not is_low and not is_high
 

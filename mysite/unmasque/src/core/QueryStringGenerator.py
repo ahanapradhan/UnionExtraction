@@ -44,7 +44,7 @@ class QueryStringGenerator(SPJQueryStringGenerator):
         return output
 
     def refine_Query1(self, modules):
-        ej, pj, gb, agg, ob, lm = modules[1], modules[3], modules[4], modules[5], modules[6], modules[7]
+        ej, pj, gb, agg, ob, lm = modules[0], modules[2], modules[3], modules[4], modules[5], modules[6]
         global_key_attributes = ej.global_key_attributes
 
         self.logger.debug("inside:   reveal_proc_support.refine_Query")

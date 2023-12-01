@@ -1,5 +1,3 @@
-from itertools import chain
-
 from mysite.unmasque.src.core.multiple_projections import ManyProjection
 
 
@@ -13,11 +11,6 @@ def find_common_items(lists):
         print("common_items: ", common_items)
 
     return list(common_items)
-
-
-def get_merged_list(nested_list):
-    flattened_list = list(set(chain(*nested_list)))
-    return flattened_list
 
 
 class ProjectionFactory:
@@ -41,9 +34,12 @@ class ProjectionFactory:
     def doCreateJob(self):
         attribs_to_check = self.find_attribs_to_check()
 
-        if len(self.subquery_data) > 1:
+        is_intersection = (len(self.subquery_data) > 1)
+
+        if is_intersection:
             local_attrib_types = []
-            global_all_attribs, global_attrib_types, global_key_attributes = self.form_other_params()
+            global_all_attribs, global_attrib_types, global_key_attributes, \
+                global_all_filter_predicates = self.form_other_params()
 
             for attrib in attribs_to_check:
                 for atypes in global_attrib_types:
@@ -54,41 +50,21 @@ class ProjectionFactory:
             global_all_attribs = subquery.equi_join.global_all_attribs
             global_attrib_types = subquery.equi_join.global_attrib_types
             global_key_attributes = subquery.equi_join.global_key_attributes
+            global_all_filter_predicates = subquery.filter.filter_predicates
 
         projection_ob = ManyProjection(self.connectionHelper,
                                        global_all_attribs, global_attrib_types, global_key_attributes,
-                                       self.core_relations, self.global_join_graph, self.subquery_data,
-                                       self.d_min_instance_dict, attribs_to_check)
+                                       self.core_relations, self.global_join_graph,
+                                       global_all_filter_predicates,
+                                       self.subquery_data, self.d_min_instance_dict,
+                                       attribs_to_check, is_intersection)
         return projection_ob
-
-        '''
-            pj = MultipleProjection(self.connectionHelper,
-                                    global_all_attribs,
-                                    global_attrib_types,
-                                    global_key_attributes,
-                                    self.core_relations,
-                                    self.global_join_graph,
-                                    self.filterData_list,
-                                    attribs_to_check,
-                                    self.d_min_instance_dict,
-                                    local_attrib_types)
-            pj.subquery_count = len(self.fromData_list)
-        else:
-            pj = Projection(self.connectionHelper,
-                            self.joinData_list[0].global_attrib_types,
-                            self.fromData_list[0].core_relations,
-                            self.filterData_list[0].filter_predicates,
-                            self.global_join_graph,
-                            self.joinData_list[0].global_all_attribs,
-                            self.d_min_instance_dict,
-                            self.joinData_list[0].global_key_attributes)
-        return pj
-        '''
 
     def form_other_params(self):
         _global_all_attribs = set()
         _global_attrib_types = set()
         _global_key_attributes = set()
+        _global_all_filter_predicates = set()
 
         for subquery in self.subquery_data:
             for attrib in subquery.equi_join.global_all_attribs:
@@ -100,8 +76,12 @@ class ProjectionFactory:
             for attrib in subquery.equi_join.global_key_attributes:
                 _global_key_attributes.add(attrib)
 
+            for attrib in subquery.filter.filter_predicates:
+                _global_all_filter_predicates.add(attrib)
+
         global_all_attribs = list(_global_all_attribs)
         global_attrib_types = list(_global_attrib_types)
         global_key_attributes = list(_global_key_attributes)
+        global_all_filter_predicates = list(_global_all_filter_predicates)
 
-        return global_all_attribs, global_attrib_types, global_key_attributes
+        return global_all_attribs, global_attrib_types, global_key_attributes, global_all_filter_predicates

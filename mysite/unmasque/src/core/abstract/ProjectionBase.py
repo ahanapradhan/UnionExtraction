@@ -1,22 +1,22 @@
 import copy
 
 from mysite.unmasque.refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from mysite.unmasque.refactored.util.common_queries import get_star
 from mysite.unmasque.refactored.util.utils import isQ_result_empty, find_diff_idx
-from mysite.unmasque.src.core.abstract.dataclass.projection_data_class import ProjectionData
+from mysite.unmasque.src.core.dataclass.projection_data_class import ProjectionData
 
 
 class ProjectionBase(GenerationPipeLineBase, ProjectionData):
 
     def __init__(self, connectionHelper, name, global_all_attribs, global_attrib_types, global_key_attributes,
-                 core_relations, join_graph, filter_predicates, global_min_instance_dict, attribs_to_check=None, skip_equals=True):
+                 core_relations, join_graph, filter_predicates, global_min_instance_dict, attribs_to_check,
+                 skip_equals=True):
         ProjectionData.__init__(self)
         GenerationPipeLineBase.__init__(self, connectionHelper, name, core_relations, global_all_attribs,
                                         global_attrib_types, join_graph, filter_predicates,
                                         global_min_instance_dict, global_key_attributes)
-        if attribs_to_check is None:
-            self.attribs_to_check = self.global_attrib_types
-        else:
-            self.attribs_to_check = attribs_to_check
+
+        self.attribs_to_check = attribs_to_check
         self.skip_equals = skip_equals
         self.projection_dep = None
 
@@ -28,8 +28,7 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
 
     def doBasicExtractJob(self, query):
         s_values = []
-        projected_attribs, projection_names, \
-            projection_dep, check = self.find_dep_one_round(query, s_values)
+        projected_attribs, projection_names, projection_dep, check = self.find_dep_one_round(query, s_values)
         return check, s_values, projected_attribs, projection_names, projection_dep
 
     def find_projection_dependencies(self, query, s_values):
@@ -78,6 +77,8 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
         val = self.get_different_val(attrib, tabname, prev)
         self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
         self.update_with_val(attrib, tabname, val)
+        check, _ = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
+        self.logger.debug(check)
         return val, prev
 
     def check_impact_of_non_key_attribs(self, attrib, new_result, projection_dep, query, tabname):

@@ -3,7 +3,7 @@ import copy
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..util.common_queries import get_column_details_for_table, select_attribs_from_relation
 from ..util.utils import is_int
-from ...src.core.abstract.dataclass.whereclause_data_class import WhereData
+from mysite.unmasque.src.core.dataclass.whereclause_data_class import WhereData
 
 
 class WhereClause(MutationPipeLineBase, WhereData):

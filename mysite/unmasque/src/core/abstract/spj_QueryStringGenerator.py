@@ -39,7 +39,7 @@ def handle_range_preds(datatype, pred, pred_op):
 
 
 def get_modules(modules):
-    core_relations, ej, fl, pj = modules[0], modules[1], modules[2], modules[3]
+    core_relations, ej, fl, pj = modules[-1], modules[0], modules[1], modules[2]
     return core_relations, ej, fl, pj
 
 
@@ -50,6 +50,9 @@ class SPJQueryStringGenerator(Base):
         self.select_op = ''
         self.from_op = ''
         self.where_op = ''
+
+    def generate_setOp_query_String(self, subquery_data):
+        pass
 
     def update_select_op(self, elt, first_occur, i, pj):
         if elt != pj.projection_names[i] and pj.projection_names[i] != '':
@@ -62,7 +65,7 @@ class SPJQueryStringGenerator(Base):
         return first_occur
 
     def refine_Query1(self, modules):
-        pj = modules[3]
+        pj = modules[2]
         first_occur = True
         for i in range(len(pj.projected_attribs)):
             elt = pj.projected_attribs[i]

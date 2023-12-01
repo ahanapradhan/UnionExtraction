@@ -1,6 +1,6 @@
 import unittest
 
-from mysite.unmasque.src.core.factory import find_common_items
+from mysite.unmasque.src.core.factories.projection_factory import find_common_items
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -11,7 +11,7 @@ class MyTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.pipeline = ExtractionPipeLine(self.conn)
-        self.pipeline.validate_extraction = False
+        self.pipeline.validate_extraction = True
 
     def test_intersect(self):
         a = [1, 2, 3]
@@ -54,10 +54,10 @@ class MyTestCase(BaseTestCase):
         check = eq.count(self.INTERSECT)
         self.assertEqual(check, 1)
         self.assertTrue("Select c_mktsegment as segment\nFrom customer, nation\nWhere c_nationkey = n_nationkey" in eq)
-        self.assertTrue(
-            "Select c_mktsegment as segment\nFrom customer, nation, orders\nWhere c_nationkey = n_nationkey and "
-            "c_custkey = o_custkey" in eq)
-        # self.assertTrue(self.pipeline.correct)
+        # self.assertTrue(
+        #    "Select c_mktsegment as segment\nFrom customer, nation, orders\nWhere c_nationkey = n_nationkey and "
+        #    "c_custkey = o_custkey" in eq)
+        self.assertTrue(self.pipeline.correct)
 
     def test_abhinav_thesis_q2(self): # minimization is too slow. Need to implmenent n-ary division based minimization
         query = "select o_orderstatus, o_totalprice " \
@@ -86,8 +86,10 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
         self.conn.connectUsingParams()
-        self.conn.execute_sql(["create table partsuppx as select * from partsupp where ctid = '(52, 32)' or ctid = '(227,45)';"])
-        self.conn.execute_sql(["create table supplierx as select * from supplier where ctid = '(7, 34)' or ctid = '(18, 40)';"])
+        self.conn.execute_sql(["create table partsuppx as select * from partsupp where ctid = '(52, 32)' or ctid = '("
+                               "227,45)';"])
+        self.conn.execute_sql(["create table supplierx as select * from supplier where ctid = '(7, 34)' or ctid = '("
+                               "18, 40)';"])
         self.conn.closeConnection()
 
         eq = self.pipeline.doJob(query)

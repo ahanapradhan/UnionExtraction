@@ -6,8 +6,7 @@ from .util.common_queries import get_tabname_4, update_tab_attrib_with_value, in
 from .util.utils import get_all_combo_lists, get_two_different_vals, construct_two_lists
 
 from .abstract.where_clause import WhereClause
-from mysite.unmasque.src.core.abstract.dataclass.join_data_class import JoinData
-from ..src.core.abstract.dataclass.only_join_data_class import OnlyJoinData
+from mysite.unmasque.src.core.dataclass.only_join_data_class import OnlyJoinData
 
 
 def remove_edge_from_join_graph_dicts(curr_list, list1, list2, global_key_lists):

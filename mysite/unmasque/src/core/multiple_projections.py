@@ -11,18 +11,25 @@ class ManyProjection(ExtractorModuleBase):
                  global_key_attributes,
                  core_relations,
                  all_join_edges,
+                 all_filter_predicates,
                  subquery_data,
                  global_min_instance_dict,
-                 attribs_to_check):
+                 attribs_to_check, is_intersection):
         super().__init__(connectionHelper, "Multiple Projection")
         self.subquery_data = subquery_data
+        self.intersection = is_intersection
+        if not self.intersection:
+            attribs_to_check = global_all_attribs
         self.projection_extractor = Projection(connectionHelper, global_attrib_types, core_relations,
-                                               attribs_to_check, all_join_edges,
-                                               global_all_attribs, global_min_instance_dict, global_key_attributes)
+                                               all_filter_predicates, all_join_edges,
+                                               global_all_attribs, global_min_instance_dict,
+                                               global_key_attributes, attribs_to_check)
 
-    def doActualJob(self, query):
-        if len(self.subquery_data) > 1:
+    def doActualJob(self, args):
+        query = self.extract_params_from_args(args)
+        if self.intersection:
             self.projection_extractor.need_full_extraction = False
+            self.projection_extractor.skip_equals = False
         check = self.projection_extractor.doJob(query)
         if check:
             self.fill_in_data_fields(self.projection_extractor.projected_attribs,
@@ -44,50 +51,3 @@ class ManyProjection(ExtractorModuleBase):
                     x += 1
                 for k in sorted(remove_idx, reverse=True):
                     del subquery.filter.filter_predicates[k]
-
-'''
-class MultipleProjection(ProjectionBase):
-    def __init__(self, connectionHelper,
-                 global_all_attribs,
-                 global_attrib_types,
-                 global_key_attributes,
-                 core_relations,
-                 join_graph,
-                 filterData_list,
-                 possibleProjectionFilter_list,
-                 global_min_instance_dict,
-                 attribs_to_check):
-        super().__init__(connectionHelper, "Multiple Projection", global_all_attribs, global_attrib_types,
-                         global_key_attributes, core_relations, join_graph, possibleProjectionFilter_list,
-                         global_min_instance_dict, attribs_to_check, False)
-        self.min_instance_dict_list = global_min_instance_dict
-        self.possibleProjectionFilter_list = possibleProjectionFilter_list
-        self.filterData = filterData_list
-        self.projectionData = []
-        self.subquery_count = 1
-
-    def doExtractJob(self, query):
-        s_values = []
-        self.projected_attribs, self.projection_names, projection_dep, check = self.find_dep_one_round(query, s_values)
-        if not check:
-            return False
-        for i in range(self.subquery_count):
-            pData = ProjectionData()
-            pData.projected_attribs = self.projected_attribs
-            pData.projection_names = self.projection_names
-            self.projectionData.append(pData)
-            filterData = self.filterData[i]
-            remove_idx = []
-            for attrib in self.projected_attribs:
-                x = 0
-                for f in filterData.filter_predicates:
-                    if f[1] == attrib:
-                        remove_idx.append(x)
-                    x += 1
-                for k in sorted(remove_idx, reverse=True):
-                    del filterData.filter_predicates[k]
-        return True
-
-    def get_different_val(self, attrib, tabname, prev):
-        return get_different_value(prev)
-'''

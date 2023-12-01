@@ -1,12 +1,11 @@
-
 from .abstract.generic_pipeline import GenericPipeLine
-from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
-from ..core.factory import ProjectionFactory
+from ..core.factories.projection_factory import ProjectionFactory
+from ..core.factories.query_generation_factory import QueryGeneratorFactory
+
 from ..core.multiple_equi_joins import ManyEquiJoin
 from ..core.multiple_filters import ManyFilter
 from ..core.n_minimizer import NMinimizer
-from mysite.unmasque.src.core.abstract.spj_QueryStringGenerator import SPJQueryStringGenerator
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
     NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION
 from ...refactored.aggregation import Aggregation
@@ -32,7 +31,21 @@ class ExtractionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Extraction PipeLine")
+        self.subquery_data = None
+        self.pipeline_modules = None
         self.global_pk_dict = {}
+        self.is_intersection = False
+        self.q_generatr_factory = None
+
+    def update_query_string_info(self, info):
+        self.subquery_data = info[0]
+        self.pipeline_modules = info[1] + info[2]
+        self.pipeline_modules.append(info[3])
+
+    def generate_query_string(self):
+        if self.is_intersection:
+            return self.q_generatr_factory.generate_setOp_query_string(self.subquery_data)
+        return self.q_generatr_factory.generate_query_string(self.pipeline_modules)
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
@@ -123,6 +136,9 @@ class ExtractionPipeLine(GenericPipeLine):
         if not can_progress:
             return False
 
+        self.is_intersection = ej.intersection
+        self.q_generatr_factory = QueryGeneratorFactory(self.is_intersection, self.connectionHelper)
+
         next_modules.append(ej)
         self.JOIN_IDX = len(next_modules) - 1
 
@@ -171,19 +187,17 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while projection extraction. Aborting extraction!")
             can_progress = False
 
-        if len(ej.subquery_data) > 1:
-            halt = True
-        else:
-            halt = False
-        return can_progress, next_modules, halt, ej.subquery_data
+        return can_progress, next_modules, ej.subquery_data
 
     def run_generation_pipeline(self, query, core_relations,
                                 modules, global_min_instance_dict,
-                                time_profile):
+                                time_profile, can_progress):
+        if self.is_intersection:
+            return can_progress, []
+
         ej, fl, pj = modules[self.JOIN_IDX], modules[self.FILTER_IDX], \
             modules[self.PROJECTION_IDX]
         next_modules = []
-        can_progress = True
 
         self.update_state(GROUP_BY + START)
         gb = GroupBy(self.connectionHelper, ej.global_attrib_types, core_relations, fl.filter_predicates,
@@ -284,20 +298,13 @@ class ExtractionPipeLine(GenericPipeLine):
 
         global_min_instance_dict = minimizer_modules[self.DB_MIN_IDX].global_min_instance_dict
 
-        can_progress, mutation_modules, halt, subquery_data = self.run_mutation_pipeline(query,
-                                                                    key_lists,
-                                                                    core_relations,
-                                                                    global_min_instance_dict,
-                                                                    time_profile)
+        can_progress, mutation_modules, subquery_data = self.run_mutation_pipeline(query,
+                                                                                   key_lists,
+                                                                                   core_relations,
+                                                                                   global_min_instance_dict,
+                                                                                   time_profile)
         if not can_progress:
             return None, time_profile
-
-        if halt:
-            if can_progress:
-                eq = self.generate_intersection_query_string(subquery_data)
-            else:
-                eq = None
-            return eq, time_profile
 
         useful_mutation_modules = self.prepare_modules_for_singleQuery(mutation_modules)
 
@@ -305,25 +312,22 @@ class ExtractionPipeLine(GenericPipeLine):
                                                                         core_relations,
                                                                         useful_mutation_modules,
                                                                         global_min_instance_dict,
-                                                                        time_profile)
+                                                                        time_profile, can_progress)
         if not can_progress:
             return None, time_profile
 
-        q_generator = QueryStringGenerator(self.connectionHelper)
+        self.update_query_string_info([subquery_data, useful_mutation_modules, generation_modules, core_relations])
 
-        useful_modules = useful_mutation_modules + generation_modules
-        useful_modules.insert(0, core_relations)
-        eq = q_generator.generate_query_string(useful_modules)
-        self.logger.debug("extracted query:\n", eq)
+        eq = self.generate_query_string()
 
         eq = self.extract_NEP(core_relations, minimizer_modules[self.CS2_IDX].sizes,
-                              useful_mutation_modules[self.JOIN_IDX], eq,
-                              useful_mutation_modules[self.FILTER_IDX].filter_predicates,
-                              q_generator, query,
+                              self.pipeline_modules[self.JOIN_IDX], eq,
+                              self.pipeline_modules[self.FILTER_IDX].filter_predicates,
+                              self.q_generatr_factory.q_generator, query,
                               time_profile, global_min_instance_dict)
 
         # last component in the pipeline should do this
-        time_profile.update_for_app(generation_modules[self.LIMIT_IDX].app.method_call_count)
+        time_profile.update_for_app(self.pipeline_modules[0].app.method_call_count)
 
         self.update_state(DONE)
         return eq, time_profile
@@ -334,24 +338,12 @@ class ExtractionPipeLine(GenericPipeLine):
                                    mutation_modules[self.PROJECTION_IDX].projection_extractor]
         return useful_mutation_modules
 
-    def generate_intersection_query_string(self, subquery_data):
-        subq_strings = []
-        subquery_generator = SPJQueryStringGenerator(self.connectionHelper)
-        for i in range(len(subquery_data)):
-            subquery = subquery_data[i]
-            subq_modules = [subquery.from_clause.core_relations,
-                            subquery.equi_join,
-                            subquery.filter, subquery.projection]
-            subq_str = "(" + subquery_generator.generate_query_string(subq_modules) + ")"
-            subq_str = subq_str.replace(";", "")
-            subq_strings.append(subq_str)
-        eq = "\n INTERSECT \n".join(subq_strings)
-        eq = eq + ";"
-        return eq
-
     def extract_NEP(self, core_relations, sizes, ej, eq, filter_predicates,
                     q_generator, query, time_profile,
                     global_min_instance_dict):
+
+        if self.is_intersection:
+            return eq
 
         if self.connectionHelper.config.detect_nep:
             self.update_state(NEP_ + START)

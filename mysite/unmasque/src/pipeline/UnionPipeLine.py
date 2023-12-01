@@ -1,5 +1,6 @@
 from .ExtractionPipeLine import ExtractionPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
+from ..core.factories.query_generation_factory import QueryGeneratorFactory
 from ..core.union import Union
 from ..util.constants import UNION, START, DONE, RUNNING
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
@@ -11,6 +12,13 @@ class UnionPipeLine(GenericPipeLine):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Union PipeLine")
         self.old_pipeline = ExtractionPipeLine(self.connectionHelper)
+        self.subqueries = []
+
+    def update_query_string_info(self, info):
+        self.subqueries.append(info)
+
+    def generate_query_string(self):
+        return self.old_pipeline.q_generatr_factory.generate_setOp_query_string(self.subqueries)
 
     def extract(self, query):
         # opening and closing connection actions are vital.
@@ -27,7 +35,6 @@ class UnionPipeLine(GenericPipeLine):
 
         self.connectionHelper.closeConnection()
 
-        u_eq = []
         pipeLineError = False
 
         for rels in p:
@@ -47,9 +54,7 @@ class UnionPipeLine(GenericPipeLine):
 
             if eq is not None:
                 self.logger.debug(eq)
-                eq = eq.replace('Select', '(Select')
-                eq = eq.replace(';', ')')
-                u_eq.append(eq)
+                self.update_query_string_info(eq)
             else:
                 pipeLineError = True
                 break
@@ -57,12 +62,7 @@ class UnionPipeLine(GenericPipeLine):
             if time_profile is not None:
                 self.time_profile.update(time_profile)
 
-        u_Q = "\n UNION ALL \n".join(u_eq)
-        u_Q += ";"
-
-        if "UNION ALL" not in u_Q:
-            if u_Q.startswith('(') and u_Q.endswith(');'):
-                u_Q = u_Q[1:-2] + ';'
+        u_Q = self.generate_query_string()
 
         result = ""
         if pipeLineError:
