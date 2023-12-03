@@ -150,6 +150,13 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while group by extraction. Aborting extraction!")
             return None, time_profile
 
+        for elt in fl.filter_predicates:
+            if elt[1] not in gb.group_by_attrib and elt[1] in pj.projected_attribs and (elt[2] == '=' or elt[2] == 'equal'):
+                gb.group_by_attrib.append(elt[1])
+
+
+
+
         self.update_state(AGGREGATE + START)
         agg = Aggregation(self.connectionHelper, ej.global_key_attributes, ej.global_attrib_types, core_relations,
                           fl.filter_predicates, ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs,
