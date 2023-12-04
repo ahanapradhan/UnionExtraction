@@ -54,9 +54,6 @@ class MyTestCase(BaseTestCase):
         check = eq.count(self.INTERSECT)
         self.assertEqual(check, 1)
         self.assertTrue("Select c_mktsegment as segment\nFrom customer, nation\nWhere c_nationkey = n_nationkey" in eq)
-        # self.assertTrue(
-        #    "Select c_mktsegment as segment\nFrom customer, nation, orders\nWhere c_nationkey = n_nationkey and "
-        #    "c_custkey = o_custkey" in eq)
         self.assertTrue(self.pipeline.correct)
 
     def test_abhinav_thesis_q2(self): # minimization is too slow. Need to implmenent n-ary division based minimization

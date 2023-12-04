@@ -23,13 +23,14 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return args[0]
 
     def construct_filter_attribs_dict(self):
-        # get filter values and their allowed minimum and maximum value
         filter_attrib_dict = {}
-        for entry in self.global_filter_predicates:
-            if len(entry) > 4 and 'like' not in entry[2].lower() and 'equal' not in entry[2].lower():
-                filter_attrib_dict[(entry[0], entry[1])] = (entry[3], entry[4])
-            else:
-                filter_attrib_dict[(entry[0], entry[1])] = entry[3]
+        if self.global_filter_predicates is not None:
+            # get filter values and their allowed minimum and maximum value
+            for entry in self.global_filter_predicates:
+                if len(entry) > 4 and 'like' not in entry[2].lower() and 'equal' not in entry[2].lower():
+                    filter_attrib_dict[(entry[0], entry[1])] = (entry[3], entry[4])
+                else:
+                    filter_attrib_dict[(entry[0], entry[1])] = entry[3]
         return filter_attrib_dict
 
     def doActualJob(self, args):

@@ -37,14 +37,8 @@ class ProjectionFactory:
         is_intersection = (len(self.subquery_data) > 1)
 
         if is_intersection:
-            local_attrib_types = []
-            global_all_attribs, global_attrib_types, global_key_attributes, \
-                global_all_filter_predicates = self.form_other_params()
-
-            for attrib in attribs_to_check:
-                for atypes in global_attrib_types:
-                    if atypes[0] == attrib[0] and atypes[1] == attrib[1]:
-                        local_attrib_types.append(atypes)
+            global_all_attribs, global_attrib_types, global_key_attributes = self.form_other_params()
+            global_all_filter_predicates = None
         else:
             subquery = self.subquery_data[0]
             global_all_attribs = subquery.equi_join.global_all_attribs
@@ -64,7 +58,6 @@ class ProjectionFactory:
         _global_all_attribs = set()
         _global_attrib_types = set()
         _global_key_attributes = set()
-        _global_all_filter_predicates = set()
 
         for subquery in self.subquery_data:
             for attrib in subquery.equi_join.global_all_attribs:
@@ -76,12 +69,8 @@ class ProjectionFactory:
             for attrib in subquery.equi_join.global_key_attributes:
                 _global_key_attributes.add(attrib)
 
-            for attrib in subquery.filter.filter_predicates:
-                _global_all_filter_predicates.add(attrib)
-
         global_all_attribs = list(_global_all_attribs)
         global_attrib_types = list(_global_attrib_types)
         global_key_attributes = list(_global_key_attributes)
-        global_all_filter_predicates = list(_global_all_filter_predicates)
 
-        return global_all_attribs, global_attrib_types, global_key_attributes, global_all_filter_predicates
+        return global_all_attribs, global_attrib_types, global_key_attributes
