@@ -77,8 +77,8 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
         val = self.get_different_val(attrib, tabname, prev)
         self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
         self.update_with_val(attrib, tabname, val)
-        check, _ = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
-        self.logger.debug(check)
+        # check, _ = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
+        # self.logger.debug(check)
         return val, prev
 
     def check_impact_of_non_key_attribs(self, attrib, new_result, projection_dep, query, tabname):
