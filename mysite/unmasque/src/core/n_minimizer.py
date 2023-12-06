@@ -1,10 +1,17 @@
 from _decimal import Decimal
 from datetime import date
+from itertools import combinations
 
 from ..util.constants import DONE
 from ...refactored.abstract.MinimizerBase import Minimizer
 from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view, select_previous_ctid, \
     get_row_count, select_start_ctid_of_any_table, drop_table
+
+
+def get_combinations(original_list, choose):
+    result_list = [list(combination) for combination in combinations(original_list, choose)]
+    print(result_list)
+    return result_list
 
 
 def is_ctid_less_than(x, end_ctid):
@@ -201,8 +208,11 @@ class NMinimizer(Minimizer):
     def try_binary_halving(self, query, tab):
         return self.get_start_and_end_ctids(self.core_sizes, query, tab, get_tabname_1(tab))
 
-    def calculate_mid_ctids(self, start_page, end_page, size):
-        mid_page = int((start_page + end_page) / 2)
+    def try_ternary_trisecting(self, query, tab):
+        pass
+
+    def calculate_mid_ctids(self, start_page, end_page, size, ary=0.5):
+        mid_page = int((start_page + end_page) * ary)
         mid_ctid1 = "(" + str(mid_page) + ",1)"
         mid_ctid2 = "(" + str(mid_page) + ",2)"
         return mid_ctid1, mid_ctid2

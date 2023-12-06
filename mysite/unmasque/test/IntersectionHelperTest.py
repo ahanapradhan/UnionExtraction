@@ -1,6 +1,7 @@
 import unittest
 
 from mysite.unmasque.src.core.factories.projection_factory import find_common_items2
+from mysite.unmasque.src.core.n_minimizer import get_combinations
 
 
 class MyTestCase(unittest.TestCase):
@@ -56,6 +57,24 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(result_dict), 1)
         val_AUTOMOBILE = result_dict['AUTOMOBILE']
         self.assertEqual(len(val_AUTOMOBILE), 2)
+
+    def test_combinations(self):
+        two_l = [0, 1, 2]
+        res_two_l = get_combinations(two_l, 2)
+        print(res_two_l)
+        self.assertEqual(len(res_two_l), 3)
+        self.assertTrue([0, 1] in res_two_l)
+        self.assertTrue([0, 2] in res_two_l)
+        self.assertTrue([1, 2] in res_two_l)
+
+        three_l = [1, 2, 3, 4]
+        res_three_l = get_combinations(three_l, 3)
+        print(res_three_l)
+        self.assertEqual(len(res_three_l), 4)
+        self.assertTrue([1, 2, 3] in res_three_l)
+        self.assertTrue([1, 2, 4] in res_three_l)
+        self.assertTrue([2, 3, 4] in res_three_l)
+        self.assertTrue([1, 3, 4] in res_three_l)
 
 
 if __name__ == '__main__':

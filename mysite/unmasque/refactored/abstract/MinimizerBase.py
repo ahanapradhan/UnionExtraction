@@ -67,8 +67,8 @@ class Minimizer(Base):
         self.connectionHelper.execute_sql([drop_view(tabname)])
         return end_ctid, start_ctid
 
-    def calculate_mid_ctids(self, start_page, end_page, size):
-        mid_row = int(size / 2)
+    def calculate_mid_ctids(self, start_page, end_page, size, ary=0.5):
+        mid_row = int(size * ary)
         mid_ctid1 = "(" + str(0) + "," + str(mid_row) + ")"
         mid_ctid2 = "(" + str(0) + "," + str(mid_row + 1) + ")"
         return mid_ctid1, mid_ctid2
