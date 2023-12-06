@@ -13,7 +13,7 @@ def get_different_value(param):
     if isinstance(param, str):
         return param[::-1]
     if isinstance(param, date):
-        return date(param.year, param.day, param.month)
+        return date(param.year - 1, param.month, param.day)
     else:
         return param * -1
 

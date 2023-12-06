@@ -127,9 +127,9 @@ class Minimizer(Base):
         self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
         return core_sizes
 
-    def determine_mid_ctid_from_db(self, tabname):
+    def determine_mid_ctid_from_db(self, tabname, ary=0.5):
         count = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
-        mid_idx = int(count / 2)
+        mid_idx = int(count * ary)
         if not mid_idx:
             return None, None
         offset = str(mid_idx - 1)

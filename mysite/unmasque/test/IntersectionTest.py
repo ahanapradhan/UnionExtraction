@@ -46,6 +46,22 @@ class MyTestCase(BaseTestCase):
         self.assertTrue("Select c_mktsegment as segment\nFrom customer, nation\nWhere c_nationkey = n_nationkey" in eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_custom_date(self):
+        query = "select l_shipdate as checked_date from lineitem, orders " \
+                "where l_orderkey = o_orderkey  " \
+                "and o_orderstatus = 'F' " \
+                "INTERSECT " \
+                "select o_orderdate as checked_date from orders, lineitem, customer " \
+                "where l_orderkey = o_orderkey " \
+                "and o_custkey = c_custkey " \
+                "and o_orderstatus = 'O' " \
+                "and l_shipmode = 'RAIL' and c_acctbal < 1000;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        check = eq.count(self.INTERSECT)
+        self.assertEqual(check, 1)
+        self.assertTrue(self.pipeline.correct)
+
     def test_abhinav_thesis_q2(self):  # minimization is too slow. Need to implmenent n-ary division based minimization
         query = "select o_orderstatus, o_totalprice " \
                 "from customer,orders where c_custkey = o_custkey and o_orderdate < date '1995-03-10' " \
