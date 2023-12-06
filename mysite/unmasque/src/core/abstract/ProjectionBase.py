@@ -18,18 +18,12 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
 
         self.attribs_to_check = attribs_to_check
         self.skip_equals = skip_equals
-        self.projection_dep = None
 
     def find_dep_one_round(self, query, s_values):
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
         if not check:
             self.logger.error("Some problem while identifying the dependency list!")
         return projected_attrib, projection_names, projection_dep, check
-
-    def doBasicExtractJob(self, query):
-        s_values = []
-        projected_attribs, projection_names, projection_dep, check = self.find_dep_one_round(query, s_values)
-        return check, s_values, projected_attribs, projection_names, projection_dep
 
     def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)
@@ -51,17 +45,15 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
         s_value_dict = {}
 
         for entry in self.attribs_to_check:
-            tabname = entry[0]
-            attrib = entry[1]
-            self.logger.debug("checking for ", tabname, attrib)
-            if attrib not in self.global_key_attributes:
-                val = self.check_impact_of_non_key_attribs(attrib, new_result, projection_dep, query,
-                                                           tabname)
+            tab_attrib = (entry[0], entry[1])
+            # self.logger.debug("checking for ", tabname, attrib)
+            if tab_attrib[1] not in self.global_key_attributes:
+                val = self.check_impact_of_non_key_attribs(new_result, projection_dep, query, tab_attrib)
             else:
-                val, keys_to_skip = self.check_impact_of_key_attribs(attrib, new_result, projection_dep, query, tabname,
-                                                                     keys_to_skip, s_value_dict)
-            if attrib not in keys_to_skip:
-                s_values.append((tabname, attrib, val))
+                val, keys_to_skip = self.check_impact_of_key_attribs(new_result, projection_dep, query, keys_to_skip,
+                                                                     s_value_dict, tab_attrib)
+            if tab_attrib[1] not in keys_to_skip:
+                s_values.append((tab_attrib[0], tab_attrib[1], val))
 
         for i in range(len(projection_names)):
             if len(projection_dep[i]) == 1:
@@ -72,21 +64,25 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
 
         return projected_attrib, projection_names, projection_dep, True
 
-    def update_attrib_to_see_impact(self, attrib, tabname):
+    def update_attrib_to_see_impact(self, tab_attrib):
+        attrib = tab_attrib[0]
+        tabname = tab_attrib[1]
         prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
         val = self.get_different_val(attrib, tabname, prev)
         self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
-        self.update_with_val(attrib, tabname, val)
+        self.update_with_val((attrib, tabname), val)
         # check, _ = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
         # self.logger.debug(check)
         return val, prev
 
-    def check_impact_of_non_key_attribs(self, attrib, new_result, projection_dep, query, tabname):
+    def check_impact_of_non_key_attribs(self, new_result, projection_dep, query, tab_attrib):
+        tabname = tab_attrib[0]
+        attrib = tab_attrib[1]
         if self.skip_equals:
             for fe in self.global_filter_predicates:
                 if fe[1] == attrib and (fe[2] == 'equal' or fe[2] == '='):
                     return
-        val, prev = self.update_attrib_to_see_impact(attrib, tabname)
+        val, prev = self.update_attrib_to_see_impact((attrib, tabname))
         new_result1 = self.app.doJob(query)
         if len(new_result1) > 1:
             new_result1 = list(new_result1[1])
@@ -94,11 +90,12 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
             if diff:
                 for d in diff:
                     projection_dep[d].append((tabname, attrib))
-            self.update_with_val(attrib, tabname, prev)
+            self.update_with_val((attrib, tabname), prev)
         return val
 
-    def check_impact_of_key_attribs(self, attrib, new_result, projection_dep, query, tabname,
-                                    keys_to_skip, s_value_dict):
+    def check_impact_of_key_attribs(self, new_result, projection_dep, query, keys_to_skip, s_value_dict, tab_attrib):
+        tabname = tab_attrib[0]
+        attrib = tab_attrib[1]
         if attrib in keys_to_skip:
             return s_value_dict[attrib], keys_to_skip
         other_attribs = []
@@ -109,16 +106,16 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
                 other_attribs.remove(attrib)
                 break
         if other_attribs:
-            val, prev = self.update_attrib_to_see_impact(attrib, tabname)
+            val, prev = self.update_attrib_to_see_impact((attrib, tabname))
             for other_attrib in other_attribs:
                 join_tabname = self.find_tabname_for_given_attrib(other_attrib)
                 join_tabnames.append(join_tabname)
                 self.logger.debug("update ", join_tabname, other_attrib, "with value ", val, " prev", prev)
-                self.update_with_val(other_attrib, join_tabname, val)
+                self.update_with_val((other_attrib, join_tabname), val)
             new_result1 = self.app.doJob(query)
-            self.update_with_val(attrib, tabname, prev)
+            self.update_with_val((attrib, tabname), prev)
             for i in range(len(other_attribs)):
-                self.update_with_val(other_attribs[i], join_tabnames[i], prev)
+                self.update_with_val((other_attribs[i], join_tabnames[i]), prev)
             if len(new_result1) > 1:
                 new_result1 = list(new_result1[1])
                 diff = find_diff_idx(new_result1, new_result)
@@ -129,5 +126,5 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
             for other_attrib in other_attribs:
                 s_value_dict[other_attrib] = val
         else:
-            val = self.check_impact_of_non_key_attribs(attrib, new_result, projection_dep, query, tabname)
+            val = self.check_impact_of_non_key_attribs(new_result, projection_dep, query, tab_attrib)
         return val, keys_to_skip

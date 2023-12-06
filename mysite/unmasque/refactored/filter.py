@@ -22,7 +22,6 @@ class Filter(WhereClause, OnlyFilterData):
                              global_key_lists,
                              core_relations,
                              global_min_instance_dict, global_key_attributes)
-        self.tab_key_value_dict = {}
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)

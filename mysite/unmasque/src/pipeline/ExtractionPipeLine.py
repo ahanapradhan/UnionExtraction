@@ -335,7 +335,7 @@ class ExtractionPipeLine(GenericPipeLine):
     def prepare_modules_for_singleQuery(self, mutation_modules):
         useful_mutation_modules = [mutation_modules[self.JOIN_IDX].joinEdge_extractor,
                                    mutation_modules[self.FILTER_IDX].filter_extractor,
-                                   mutation_modules[self.PROJECTION_IDX].projection_extractor]
+                                   mutation_modules[self.PROJECTION_IDX]]
         return useful_mutation_modules
 
     def extract_NEP(self, core_relations, sizes, ej, eq, filter_predicates,

@@ -43,3 +43,4 @@ class ManyFilter(ExtractorModuleBase):
         self.subquery_data[i].filter.filter_predicates = copy.deepcopy(fl.filter_predicates)
         self.subquery_data[i].filter.global_key_attributes = copy.deepcopy(fl.global_key_attributes)
         self.subquery_data[i].filter.global_attrib_types = copy.deepcopy(fl.global_attrib_types)
+        self.subquery_data[i].filter.tab_key_value_dict = copy.deepcopy(fl.tab_key_value_dict)

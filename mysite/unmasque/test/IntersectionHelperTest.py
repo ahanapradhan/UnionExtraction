@@ -35,6 +35,28 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(val_5[1], [('a', 'x', '=', 5, 5)])
         self.assertEqual(val_5[2], [('c', 'd', '=', 5, 5)])
 
+    def test_from_query(self):
+        li = [[('customer', 'c_mktsegment', 'equal', 'AUTOMOBILE', 'AUTOMOBILE'),
+               ('nation', 'n_name', 'equal', 'ARGENTINA', 'ARGENTINA')],
+              [('customer', 'c_mktsegment', 'equal', 'AUTOMOBILE', 'AUTOMOBILE'),
+               ('nation', 'n_name', 'equal', 'BRAZIL', 'BRAZIL')]]
+        result_dict = find_common_items2(li)
+        print(result_dict)
+        self.assertEqual(len(result_dict), 1)
+        val_AUTOMOBILE = result_dict['AUTOMOBILE']
+        self.assertEqual(len(val_AUTOMOBILE), 2)
+
+    def test_from_query1(self):
+        li = [[('customer', 'c_mktsegment', 'equal', 'AUTOMOBILE', 'AUTOMOBILE'),
+               ('nation', 'n_name', 'equal', 'BRAZIL', 'BRAZIL')],
+              [('customer', 'c_mktsegment', 'equal', 'AUTOMOBILE', 'AUTOMOBILE'),
+               ('nation', 'n_name', 'equal', 'ARGENTINA', 'ARGENTINA')]]
+        result_dict = find_common_items2(li)
+        print(result_dict)
+        self.assertEqual(len(result_dict), 1)
+        val_AUTOMOBILE = result_dict['AUTOMOBILE']
+        self.assertEqual(len(val_AUTOMOBILE), 2)
+
 
 if __name__ == '__main__':
     unittest.main()

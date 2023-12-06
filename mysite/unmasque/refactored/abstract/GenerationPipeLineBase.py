@@ -55,7 +55,9 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def doExtractJob(self, query):
         return True
 
-    def update_with_val(self, attrib, tabname, val):
+    def update_with_val(self, tab_attrib, val):
+        attrib = tab_attrib[0]
+        tabname = tab_attrib[1]
         if 'date' in self.attrib_types_dict[(tabname, attrib)]:
             update_q = update_tab_attrib_with_value(attrib, tabname, get_format('date', val))
         elif 'int' in self.attrib_types_dict[(tabname, attrib)] \
