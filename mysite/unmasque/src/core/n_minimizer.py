@@ -8,6 +8,15 @@ from ...refactored.util.common_queries import alter_table_rename_to, get_tabname
     get_row_count, select_start_ctid_of_any_table, drop_table
 
 
+def make_total_ctid_list(end_ctid, mid_ctid_list, start_ctid):
+    ctid_list = [start_ctid]
+    for mid_ctid in mid_ctid_list:
+        ctid_list.append(mid_ctid[0])
+        ctid_list.append(mid_ctid[1])
+    ctid_list.append(end_ctid)
+    return ctid_list
+
+
 def get_combinations(original_list, choose):
     result_list = [list(combination) for combination in combinations(original_list, choose)]
     print(result_list)
@@ -100,7 +109,6 @@ class NMinimizer(Minimizer):
 
     def do_row_by_row_elimination(self, query, start_ctid, tab):
         while True:
-            size = self.core_sizes[tab]
             self.connectionHelper.execute_sql([drop_view(tab)])
             self.swicth_transaction(tab)
             ok = self.is_ok_to_eliminate_previous_tuple(tab, query, start_ctid)
@@ -208,9 +216,6 @@ class NMinimizer(Minimizer):
     def try_binary_halving(self, query, tab):
         return self.get_start_and_end_ctids(self.core_sizes, query, tab, get_tabname_1(tab))
 
-    def try_ternary_trisecting(self, query, tab):
-        pass
-
     def calculate_mid_ctids(self, start_page, end_page, size, ary=0.5):
         mid_page = int((start_page + end_page) * ary)
         mid_ctid1 = "(" + str(mid_page) + ",1)"
@@ -219,20 +224,27 @@ class NMinimizer(Minimizer):
 
     def create_view_execute_app_drop_view(self,
                                           end_ctid,
-                                          mid_ctid1,
-                                          mid_ctid2,
+                                          mid_ctid_list,
                                           query,
                                           start_ctid,
                                           tabname,
                                           tabname1):
-        if self.check_result_for_half(start_ctid, mid_ctid1, tabname1, tabname, query):
-            # Take the upper half
-            end_ctid = mid_ctid1
-        elif self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
-            # Take the lower half
-            start_ctid = mid_ctid2
+        ctid_list = make_total_ctid_list(end_ctid, mid_ctid_list, start_ctid)
+        cut_count = len(mid_ctid_list)
+        base_idx = [i for i in range(0, cut_count + 1)]
+        combs = get_combinations(base_idx, cut_count)
+        valid_ctid_range = None
+
+        for idx in combs:
+            param_ctids = []
+            for i in idx:
+                param_ctids.append(ctid_list[2 * i])
+                param_ctids.append(ctid_list[2 * i + 1])
+            if self.check_result_for_half(param_ctids, tabname1, tabname, query):
+                valid_ctid_range = param_ctids
+                break
         # self.connectionHelper.execute_sql([drop_view(tabname)])
-        return end_ctid, start_ctid
+        return valid_ctid_range
 
     def format_insert_values(self, val):
         lval = []

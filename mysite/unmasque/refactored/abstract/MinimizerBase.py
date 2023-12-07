@@ -4,7 +4,6 @@ from ..util.common_queries import create_view_as_select_star_where_ctid, drop_vi
     get_ctid_from, create_table_as_select_star_from_ctid, drop_table, get_row_count, get_star, \
     create_table_as_select_star_from, get_tabname_4, select_ctid_from_tabname_offset, select_next_ctid
 from ..util.utils import isQ_result_empty
-
 from ...refactored.abstract.ExtractorBase import Base
 from ...refactored.executable import Executable
 
@@ -52,20 +51,22 @@ class Minimizer(Base):
 
     def create_view_execute_app_drop_view(self,
                                           end_ctid,
-                                          mid_ctid1,
-                                          mid_ctid2,
+                                          mid_ctid_list,
                                           query,
                                           start_ctid,
                                           tabname,
                                           tabname1):
-        if not self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
-            # Take the upper half
-            end_ctid = mid_ctid1
-        else:
-            # Take the lower half
-            start_ctid = mid_ctid2
+
+        for mid_ctid in mid_ctid_list:
+            mid_ctid1, mid_ctid2 = mid_ctid[0], mid_ctid[1]
+            if not self.check_result_for_half([mid_ctid2, end_ctid], tabname1, tabname, query):
+                # Take the upper half
+                end_ctid = mid_ctid1
+            else:
+                # Take the lower half
+                start_ctid = mid_ctid2
         self.connectionHelper.execute_sql([drop_view(tabname)])
-        return end_ctid, start_ctid
+        return [start_ctid, end_ctid]
 
     def calculate_mid_ctids(self, start_page, end_page, size, ary=0.5):
         mid_row = int(size * ary)
@@ -75,31 +76,33 @@ class Minimizer(Base):
 
     def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
         self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
-        end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
+        end_ctid, mid_ctid_list, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
 
-        if mid_ctid1 is None:
+        if any(None in tpl for tpl in mid_ctid_list):
             self.connectionHelper.execute_sql([alter_table_rename_to(tabname1, tabname)])
             return None, None
 
-        self.logger.debug(start_ctid, mid_ctid1, mid_ctid2, end_ctid)
-        end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid,
-                                                                      mid_ctid1,
-                                                                      mid_ctid2,
-                                                                      query,
-                                                                      start_ctid,
-                                                                      tabname,
-                                                                      tabname1)
-        return end_ctid, start_ctid
+        self.logger.debug(start_ctid, " ".join(f"{tpl}" for tpl in mid_ctid_list), end_ctid)
+        ctid_range = self.create_view_execute_app_drop_view(end_ctid,
+                                                            mid_ctid_list,
+                                                            query,
+                                                            start_ctid,
+                                                            tabname,
+                                                            tabname1)
+        return ctid_range[1], ctid_range[0]
 
-    def get_mid_ctids(self, core_sizes, tabname, tabname1):
+    def get_mid_ctids(self, core_sizes, tabname, tabname1, ary=2):
         start_page, start_row = self.get_boundary("min", tabname1)
         end_page, end_row = self.get_boundary("max", tabname1)
         start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
         end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
-        mid_ctid1, mid_ctid2 = self.calculate_mid_ctids(start_page, end_page, core_sizes[tabname])
-        if start_ctid == mid_ctid1:
-            mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
-        return end_ctid, mid_ctid1, mid_ctid2, start_ctid
+        mid_ctid_list = []
+        for i in range(1, ary):
+            mid_ctid1, mid_ctid2 = self.calculate_mid_ctids(start_page, end_page, core_sizes[tabname], i / ary)
+            if start_ctid == mid_ctid1:
+                mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1, i / ary)
+            mid_ctid_list.append((mid_ctid1, mid_ctid2))
+        return end_ctid, mid_ctid_list, start_ctid
 
     def get_boundary(self, min_or_max, tabname):
         m_ctid = self.connectionHelper.execute_sql_fetchone_0(get_ctid_from(min_or_max, tabname))
@@ -109,7 +112,9 @@ class Minimizer(Base):
         page = int(m_ctid2[0])
         return page, row
 
-    def check_result_for_half(self, start_ctid, end_ctid, tab, view, query):
+    def check_result_for_half(self, ctids, tab, view, query):
+        start_ctid, end_ctid = ctids[0], ctids[1]
+        self.logger.debug(f"checking for: {start_ctid}, {end_ctid}")
         self.connectionHelper.execute_sql(
             [create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
         new_result = self.app.doJob(query)
@@ -182,6 +187,3 @@ class Minimizer(Base):
 
     def do_minimizeJob(self, query):
         return True
-
-
-

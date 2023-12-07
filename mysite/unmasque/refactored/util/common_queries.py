@@ -76,6 +76,26 @@ def create_view_as(view, q):
     return f"create view {view}  as {q}"
 
 
+def create_view_as_select_star_where_ctid_range(ctid_list, view, tab):
+    where_clause = get_where_clause_for_ctid_range(ctid_list)
+    return f"create view {view} as select * from {tab} where {where_clause};"
+
+
+def create_table_as_select_star_where_ctid_range(ctid_list, tab, fromtab):
+    where_clause = get_where_clause_for_ctid_range(ctid_list)
+    return f"create table {tab} as select * from {fromtab} where {where_clause};"
+
+
+def get_where_clause_for_ctid_range(ctid_list):
+    where_clause_ = []
+    for ctids in ctid_list:
+        _start_citd = str(ctids[0])
+        _end_ctid = str(ctids[1])
+        where_clause_ += f"(ctid >= '{_start_citd}' and ctid <= '{_end_ctid}')"
+    where_clause = " or ".join(where_clause_)
+    return where_clause
+
+
 def create_view_as_select_star_where_ctid(mid_ctid1, start_ctid, view, tab):
     _start_citd = str(start_ctid)
     _end_ctid = str(mid_ctid1)

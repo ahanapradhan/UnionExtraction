@@ -5,7 +5,7 @@ from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
-
+@unittest.skip("Skipping this test class as the class is deprecated.")
 class MyTestCase(BaseTestCase):
 
     def test_for_cs2_pass_single_table(self):

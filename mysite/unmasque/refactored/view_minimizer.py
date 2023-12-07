@@ -1,3 +1,7 @@
+import warnings
+
+from deprecated import deprecated
+
 from .abstract.MinimizerBase import Minimizer
 from ..refactored.util.common_queries import alter_table_rename_to, get_min_max_ctid, \
     get_tabname_1, \
@@ -17,11 +21,13 @@ def extract_start_and_end_page(logger, rctid):
     return end_ctid, end_page, start_ctid, start_page
 
 
+@deprecated(reason="This class is deprecated. Use NMinimizer instead.")
 class ViewMinimizer(Minimizer):
 
     def __init__(self, connectionHelper,
                  core_relations, core_sizes,
                  sampling_status):
+        warnings.warn("do not use", DeprecationWarning)
         super().__init__(connectionHelper, core_relations, core_sizes, "View_Minimizer")
         self.cs2_passed = sampling_status
 
@@ -46,9 +52,13 @@ class ViewMinimizer(Minimizer):
             mid_ctid1 = "(" + str(mid_page) + ",1)"
             mid_ctid2 = "(" + str(mid_page) + ",2)"
 
-            end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid,
-                                                                          mid_ctid1, mid_ctid2, query,
-                                                                          start_ctid, tabname, tabname1)
+            mid_ctid_list = [(mid_ctid1, mid_ctid2)]
+
+            ctid_range = self.create_view_execute_app_drop_view(end_ctid,
+                                                                mid_ctid_list, query,
+                                                                start_ctid, tabname, tabname1)
+            start_ctid = ctid_range[0]
+            end_ctid = ctid_range[1]
             start_ctid2 = start_ctid.split(",")
             start_page = int(start_ctid2[0][1:])
             end_ctid2 = end_ctid.split(",")

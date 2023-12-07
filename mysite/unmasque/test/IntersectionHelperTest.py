@@ -76,6 +76,13 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue([2, 3, 4] in res_three_l)
         self.assertTrue([1, 3, 4] in res_three_l)
 
+    def test_combination1(self):
+        one_l = [0, 1]
+        res_one_l = get_combinations(one_l, 1)
+        print(one_l)
+        self.assertEqual(len(res_one_l), 2)
+        self.assertEqual([[0], [1]], res_one_l)
+
 
 if __name__ == '__main__':
     unittest.main()
