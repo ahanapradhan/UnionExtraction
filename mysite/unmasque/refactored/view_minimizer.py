@@ -85,6 +85,8 @@ class ViewMinimizer(Minimizer):
 
     def do_binary_halving_1(self, core_sizes, query, tabname, tabname1):
         while int(core_sizes[tabname]) > 1:
-            end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
+            ctids = self.get_valid_ctid_range(core_sizes, query, tabname, tabname1)
+            start_ctid = ctids[0][0]
+            end_ctid = ctids[0][1]
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes

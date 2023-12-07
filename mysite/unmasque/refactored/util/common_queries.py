@@ -91,7 +91,8 @@ def get_where_clause_for_ctid_range(ctid_list):
     for ctids in ctid_list:
         _start_citd = str(ctids[0])
         _end_ctid = str(ctids[1])
-        where_clause_ += f"(ctid >= '{_start_citd}' and ctid <= '{_end_ctid}')"
+        where_clause_.append(f"(ctid >= '{_start_citd}' and ctid <= '{_end_ctid}')")
+
     where_clause = " or ".join(where_clause_)
     return where_clause
 

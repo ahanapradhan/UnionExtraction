@@ -49,6 +49,38 @@ class MyTestCase(BaseTestCase):
         nm.see_d_min()
         self.conn.closeConnection()
 
+    def test_for_single_relation_ternary_trisect(self):
+        self.conn.connectUsingParams()
+        nm = NMinimizer(self.conn, [self.tab_nation], tpchSettings.all_size)
+        nm.mock = True
+        nm.ary = 3
+        query = "select * from nation where n_name = 'EGYPT';"
+        print(query)
+        check = nm.doJob(query)
+        self.assertTrue(check)
+        self.assertEqual(1, nm.core_sizes[self.tab_nation])
+        app = Executable(self.conn)
+        res = app.doJob(query)
+        self.assertTrue(not isQ_result_empty(res))
+        nm.see_d_min()
+        self.conn.closeConnection()
+
+    def test_for_single_relation_ternary_trisect1(self):
+        self.conn.connectUsingParams()
+        nm = NMinimizer(self.conn, [self.tab_nation], tpchSettings.all_size)
+        nm.mock = True
+        # nm.ary = 3
+        query = "select n_regionkey from nation group by n_regionkey having count(*) >= 3;"
+        print(query)
+        check = nm.doJob(query)
+        self.assertTrue(check)
+        self.assertEqual(3, nm.core_sizes[self.tab_nation])
+        app = Executable(self.conn)
+        res = app.doJob(query)
+        self.assertTrue(not isQ_result_empty(res))
+        nm.see_d_min()
+        self.conn.closeConnection()
+
     def test_for_multiple_relations(self):
         self.conn.connectUsingParams()
         relations = [self.tab_nation, self.tab_customer]

@@ -90,11 +90,11 @@ class NEP(Minimizer, GenerationPipeLineBase):
         tabname1 = get_tabname_1(tabname)
         while core_sizes[tabname] > 1:
             self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
-            end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
-            if end_ctid is None:
+            ctid_range, check = self.get_valid_ctid_range(core_sizes, query, tabname, tabname1)
+            if not check:
                 self.connectionHelper.execute_sql([alter_table_rename_to(tabname1, tabname)])
                 return  # no role on NEP
-            core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
+            core_sizes = self.update_with_remaining_size(core_sizes, ctid_range, tabname, tabname1)
 
         # self.see_d_min()
 
@@ -105,19 +105,19 @@ class NEP(Minimizer, GenerationPipeLineBase):
         else:
             return self.Q_E
 
-    def get_mid_ctids(self, core_sizes, tabname, tabname1, ary=2):
+    def get_mid_ctids(self, core_sizes, tabname, tabname1):
         start_page, start_row = self.get_boundary("min", tabname1)
         end_page, end_row = self.get_boundary("max", tabname1)
         start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
         end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
-        mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1, 1/ary)
+        mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
         return end_ctid, [mid_ctid1, mid_ctid2], start_ctid
 
-    def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
+    def get_valid_ctid_range(self, core_sizes, query, tabname, tabname1):
         end_ctid, mid_ctid_list, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
 
         if None in mid_ctid_list:
-            return None, None
+            return [[start_ctid, end_ctid]], False
 
         self.logger.debug(start_ctid, mid_ctid_list[0], mid_ctid_list[1], end_ctid)
         ctid_range = self.create_view_execute_app_drop_view(end_ctid,
@@ -126,7 +126,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                                             start_ctid,
                                                             tabname,
                                                             tabname1)
-        return ctid_range[1], ctid_range[0]
+        return ctid_range, True
 
     def create_view_execute_app_drop_view(self,
                                           end_ctid,
@@ -137,10 +137,10 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                           tabname1):
         for mid_ctid in mid_ctid_list:
             mid_ctid1, mid_ctid2 = mid_ctid[0], mid_ctid[1]
-            if self.check_result_for_half([mid_ctid2, end_ctid], tabname1, tabname, query):
+            if self.check_result_for_ctid_range([mid_ctid2, end_ctid], tabname1, tabname, query):
                 # Take the lower half
                 start_ctid = mid_ctid2
-            elif self.check_result_for_half([start_ctid, mid_ctid1], tabname1, tabname, query):
+            elif self.check_result_for_ctid_range([start_ctid, mid_ctid1], tabname1, tabname, query):
                 # Take the upper half
                 end_ctid = mid_ctid1
             else:
@@ -149,7 +149,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.connectionHelper.execute_sql([drop_view(tabname)])
         return [start_ctid, end_ctid]
 
-    def check_result_for_half(self, ctids, tab, view, query):
+    def check_result_for_ctid_range(self, ctids, tab, view, query):
         start_ctid, end_ctid = ctids[0], ctids[1]
         self.connectionHelper.execute_sql([drop_view(view),
                                            create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])

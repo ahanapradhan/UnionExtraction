@@ -48,7 +48,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue("Select c_mktsegment as segment\nFrom customer, nation\nWhere c_nationkey = n_nationkey" in eq)
         self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_custom_date(self):
         query = "select l_shipdate as checked_date from lineitem, orders " \
                 "where l_orderkey = o_orderkey  " \
@@ -110,7 +110,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(check, 1)
         self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_abhinav_thesis_q2(self):  # minimization is too slow. Need to implmenent n-ary division based minimization
         query = "select o_orderstatus, o_totalprice " \
                 "from customer,orders where c_custkey = o_custkey and o_orderdate < date '1995-03-10' " \
@@ -123,34 +123,23 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(check, 1)
         self.assertTrue("Select o_orderstatus, o_totalprice\nFrom customer, orders\nWhere c_custkey = o_custkey")
         self.assertTrue("Select o_orderstatus, o_totalprice\nFrom lineitem, orders\nWhere l_orderkey = o_orderkey")
+        self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_abhinav_thesis_q3(self):
         query = "select p_container,p_retailprice,ps_availqty " \
-                "from part,supplierx,partsuppx where p_partkey = ps_partkey and s_suppkey = ps_suppkey and " \
+                "from part,supplier,partsupp where p_partkey = ps_partkey and s_suppkey = ps_suppkey and " \
                 "p_brand='Brand#45' intersect select p_container,p_retailprice,ps_availqty " \
-                "from part,supplierx,partsuppx where p_partkey = ps_partkey and s_suppkey=ps_suppkey and " \
+                "from part,supplier,partsupp where p_partkey = ps_partkey and s_suppkey=ps_suppkey and " \
                 "p_brand='Brand#15';"
-        # supplier ctid = '(7, 34)' or ctid = '(18, 40)'
-        # partsupp '(52, 32)', '(227,45)'
-        # part: ERROR
-        self.conn.connectUsingParams()
-        self.conn.execute_sql(["drop table if exists partsuppx;", "drop table if exists supplierx;"])
-        self.conn.closeConnection()
-
-        self.conn.connectUsingParams()
-        self.conn.execute_sql(["create table partsuppx as select * from partsupp where ctid = '(52, 32)' or ctid = '("
-                               "227,45)';"])
-        self.conn.execute_sql(["create table supplierx as select * from supplier where ctid = '(7, 34)' or ctid = '("
-                               "18, 40)';"])
-        self.conn.closeConnection()
 
         eq = self.pipeline.doJob(query)
         print(eq)
         check = eq.count(self.INTERSECT)
-        self.conn.connectUsingParams()
-        self.conn.execute_sql(["drop table if exists partsuppx;", "drop table if exists supplierx;"])
-        self.conn.closeConnection()
+        self.assertEqual(check, 1)
+        self.assertTrue(self.pipeline.correct)
+
+
 
 
 if __name__ == '__main__':

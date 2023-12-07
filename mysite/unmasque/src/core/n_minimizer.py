@@ -5,7 +5,7 @@ from itertools import combinations
 from ..util.constants import DONE
 from ...refactored.abstract.MinimizerBase import Minimizer
 from ...refactored.util.common_queries import alter_table_rename_to, get_tabname_1, drop_view, select_previous_ctid, \
-    get_row_count, select_start_ctid_of_any_table, drop_table
+    get_row_count, select_start_ctid_of_any_table, drop_table, get_ctid_from
 
 
 def make_total_ctid_list(end_ctid, mid_ctid_list, start_ctid):
@@ -74,18 +74,27 @@ class NMinimizer(Minimizer):
         self.may_exclude = {}
         self.must_include = {}
         self.view_drop_count = 0
+        self.max_ary = 4
 
     def do_minimizeJob(self, query):
         for tab in self.core_relations:
+            self.ary = 2
             self.minimize_table(query, tab)
         return True
 
     def minimize_table(self, query, tab):
-        end_ctid, start_ctid = self.do_binary_halving_till_possible(query, tab)
-        if end_ctid is None:
-            return
+        while self.ary < self.max_ary:
+            ctid_range = self.do_bulk_minimization_till_possible(query, tab)
+            if None in ctid_range:
+                break
+            self.logger.debug(ctid_range)
+            self.ary += 1
 
-        self.logger.debug(start_ctid, end_ctid)
+        end_ctid = self.connectionHelper.execute_sql_fetchone_0(get_ctid_from("max", tab))
+        start_ctid = self.connectionHelper.execute_sql_fetchone_0(get_ctid_from("min", tab))
+
+        if is_ctid_equal(start_ctid, end_ctid):
+            return
 
         self.may_exclude[tab] = []  # set of tuples that can be removed for getting non empty result
         self.must_include[tab] = []  # set of tuples that must be preserved for getting non empty result
@@ -123,18 +132,18 @@ class NMinimizer(Minimizer):
             else:
                 return DONE
 
-    def do_binary_halving_till_possible(self, query, tab):
+    def do_bulk_minimization_till_possible(self, query, tab):
+        self.logger.debug(f"++++++++****************< {self.ary} Divisions in bulk >**************+++++++++++")
         while True:
             tab_size = self.core_sizes[tab]
-            end_ctid, start_ctid = self.try_binary_halving(query, tab)
-            if end_ctid is None:  # could not reduce anymore
+            ctid_range, check = self.get_valid_ctid_range(self.core_sizes, query, tab, get_tabname_1(tab))
+            if check:
+                self.core_sizes = self.update_with_remaining_size(self.core_sizes, ctid_range, tab, get_tabname_1(tab))
+                self.logger.debug(tab_size, self.core_sizes[tab])
+                # if tab_size == self.core_sizes[tab]:  # did not reduce anymore
+            else:
                 break
-            self.core_sizes = self.update_with_remaining_size(self.core_sizes, end_ctid,
-                                                              start_ctid, tab, get_tabname_1(tab))
-            self.logger.debug(tab_size, self.core_sizes[tab])
-            if tab_size == self.core_sizes[tab]:  # did not reduce anymore
-                break
-        return end_ctid, start_ctid
+        return ctid_range
 
     def create_table_with_selected_ctids(self, tab, fromtab):
         include_ctids = []
@@ -213,11 +222,8 @@ class NMinimizer(Minimizer):
             # self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab))])
             self.view_drop_count = 0
 
-    def try_binary_halving(self, query, tab):
-        return self.get_start_and_end_ctids(self.core_sizes, query, tab, get_tabname_1(tab))
-
-    def calculate_mid_ctids(self, start_page, end_page, size, ary=0.5):
-        mid_page = int((start_page + end_page) * ary)
+    def calculate_mid_ctids(self, start_page, end_page, size, n=1):
+        mid_page = int((start_page + end_page) * (n/self.ary))
         mid_ctid1 = "(" + str(mid_page) + ",1)"
         mid_ctid2 = "(" + str(mid_page) + ",2)"
         return mid_ctid1, mid_ctid2
@@ -238,9 +244,8 @@ class NMinimizer(Minimizer):
         for idx in combs:
             param_ctids = []
             for i in idx:
-                param_ctids.append(ctid_list[2 * i])
-                param_ctids.append(ctid_list[2 * i + 1])
-            if self.check_result_for_half(param_ctids, tabname1, tabname, query):
+                param_ctids.append([ctid_list[2 * i], ctid_list[2 * i + 1]])
+            if self.check_result_for_ctid_range(param_ctids, tabname1, tabname, query):
                 valid_ctid_range = param_ctids
                 break
         # self.connectionHelper.execute_sql([drop_view(tabname)])
