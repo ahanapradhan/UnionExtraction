@@ -18,6 +18,32 @@ def get_different_value(param):
         return param * -1
 
 
+def merge_output(init_list, output_list):
+    if init_list is None:
+        return copy.deepcopy(output_list)
+    for i in range(len(init_list)):
+        if init_list[i] == '' and output_list[i] != '':
+            init_list[i] = output_list[i]
+    return init_list
+
+
+def remove_specific_filter(logger, subquery):
+    remove_idx = []
+    logger.debug("filter:", subquery.filter.filter_predicates)
+    for attrib in subquery.projection.projected_attribs:
+        if attrib == '':
+            continue
+        x = 0
+        for f in subquery.filter.filter_predicates:
+            if f[1] == attrib:
+                remove_idx.append(x)
+            x += 1
+    for k in sorted(remove_idx, reverse=True):
+        logger.debug(f"remove filter {str(subquery.filter.filter_predicates[k])}")
+        del subquery.filter.filter_predicates[k]
+    logger.debug("filter:", subquery.filter.filter_predicates)
+
+
 class ManyProjection(ProjectionBase):
     def __init__(self, connectionHelper,
                  global_all_attribs,
@@ -89,7 +115,12 @@ class ManyProjection(ProjectionBase):
 
         projected_attrib = [[] for _ in range(len(self.subquery_data))]
         keys_to_skip = [[] for _ in range(len(self.subquery_data))]
-        projection_dep = [[[] for _ in range(len(projection_names))] for _ in range(len(self.subquery_data))]
+        projection_dep = []
+        for _ in range(len(self.subquery_data)):
+            subquery_projection_dep = []
+            for _ in range(len(projection_names[0])):
+                subquery_projection_dep.append([])
+            projection_dep.append(subquery_projection_dep)
 
         s_value_dict = [{} for _ in range(len(self.subquery_data))]
         val_cache_dict = {}
@@ -153,6 +184,10 @@ class ManyProjection(ProjectionBase):
             if check:
                 self.fill_in_data_fields(self.projected_attribs,
                                          self.projection_names)
+        for i in range(len(self.subquery_data)):
+            subquery = self.subquery_data[i]
+            remove_specific_filter(self.logger, subquery)
+
         return check
 
     def get_different_val(self, attrib, tabname, prev):
@@ -161,15 +196,13 @@ class ManyProjection(ProjectionBase):
     def fill_in_data_fields(self, projected_attribs, projection_names):
         for i in range(len(self.subquery_data)):
             subquery = self.subquery_data[i]
-            subquery.projection.projected_attribs = copy.deepcopy(projected_attribs[i])
-            subquery.projection.projection_names = copy.deepcopy(projection_names[i])
+            self.fill_in_projectionData(i, projected_attribs, projection_names, subquery)
+            # remove_specific_filter(self.logger, subquery)
+
+    def fill_in_projectionData(self, i, projected_attribs, projection_names, subquery):
+        subquery.projection.projected_attribs = merge_output(subquery.projection.projected_attribs,
+                                                             projected_attribs[i])
+        subquery.projection.projection_names = merge_output(subquery.projection.projection_names,
+                                                            projection_names[i])
+        if subquery.projection.global_all_attribs != self.global_all_attribs:
             subquery.projection.global_all_attribs = copy.deepcopy(self.global_all_attribs)
-            remove_idx = []
-            for attrib in subquery.projection.projected_attribs:
-                x = 0
-                for f in subquery.filter.filter_predicates:
-                    if f[1] == attrib:
-                        remove_idx.append(x)
-                    x += 1
-                for k in sorted(remove_idx, reverse=True):
-                    del subquery.filter.filter_predicates[k]

@@ -140,7 +140,5 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
 
-
-
 if __name__ == '__main__':
     unittest.main()

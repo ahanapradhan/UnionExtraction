@@ -50,6 +50,8 @@ class Cs2(Base):
         self.take_backup()
         query = self.extract_params_from_args(args)
 
+        self.iteration_count = 0  # hack to disable
+
         while self.iteration_count > 0:
             done = self.correlated_sampling(query, sizes)
             if not done:
