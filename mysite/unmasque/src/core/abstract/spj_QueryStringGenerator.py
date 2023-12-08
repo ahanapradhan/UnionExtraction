@@ -69,7 +69,7 @@ class SPJQueryStringGenerator(Base):
         first_occur = True
         for i in range(len(pj.projected_attribs)):
             elt = pj.projected_attribs[i]
-            self.update_select_op(elt, first_occur, i, pj)
+            first_occur = self.update_select_op(elt, first_occur, i, pj)
 
     def generate_query_string(self, modules):
         core_relations, ej, fl, pj = get_modules(modules)

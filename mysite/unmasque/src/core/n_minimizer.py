@@ -140,8 +140,7 @@ class NMinimizer(Minimizer):
             if check:
                 self.core_sizes = self.update_with_remaining_size(self.core_sizes, ctid_range, tab, get_tabname_1(tab))
                 self.logger.debug(tab_size, self.core_sizes[tab])
-                # if tab_size == self.core_sizes[tab]:  # did not reduce anymore
-            else:
+            if tab_size == self.core_sizes[tab]:  # did not reduce anymore
                 break
         return ctid_range
 

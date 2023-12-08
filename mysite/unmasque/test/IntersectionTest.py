@@ -2,8 +2,14 @@ import unittest
 
 import pytest
 
+from mysite.unmasque.src.core.abstract.spj_QueryStringGenerator import SPJQueryStringGenerator
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+
+
+class TestProjectData:
+    projection_names = []
+    projected_attribs = []
 
 
 class MyTestCase(BaseTestCase):
@@ -138,6 +144,18 @@ class MyTestCase(BaseTestCase):
         check = eq.count(self.INTERSECT)
         self.assertEqual(check, 1)
         self.assertTrue(self.pipeline.correct)
+
+    def test_q_sample(self):
+        q_gen = SPJQueryStringGenerator(self.conn)
+        pj = TestProjectData()
+        pj.projection_names.append('o_orderstatus')
+        pj.projection_names.append('o_totalprice')
+
+        pj.projected_attribs.append('o_orderstatus')
+        pj.projected_attribs.append('o_totalprice')
+        pjs = [pj, pj, pj]
+        q_gen.refine_Query1(pjs)
+        self.assertEqual(q_gen.select_op, "o_orderstatus, o_totalprice")
 
 
 if __name__ == '__main__':

@@ -7,10 +7,22 @@ from mysite.unmasque.refactored.util.utils import isQ_result_empty, find_diff_id
 from mysite.unmasque.src.core.abstract.ProjectionBase import ProjectionBase
 
 
+def complementary_char(char):
+    if 'A' <= char <= 'Z':
+        return chr(ord('A') + ord('Z') - ord(char))
+    elif 'a' <= char <= 'z':
+        return chr(ord('a') + ord('z') - ord(char))
+    else:
+        return char.swapcase()
+
+
 def get_different_value(param):
     if param is None:
         return None
     if isinstance(param, str):
+        if len(param) == 1:
+            change = complementary_char(param)
+            return change
         return param[::-1]
     if isinstance(param, date):
         return date(param.year - 1, param.month, param.day)
