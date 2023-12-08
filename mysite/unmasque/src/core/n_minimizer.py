@@ -74,7 +74,8 @@ class NMinimizer(Minimizer):
         self.may_exclude = {}
         self.must_include = {}
         self.view_drop_count = 0
-        self.max_ary = 4
+        self.max_ary = 10
+        self.size_threshold = 500
 
     def do_minimizeJob(self, query):
         for tab in self.core_relations:
@@ -88,6 +89,9 @@ class NMinimizer(Minimizer):
             if None in ctid_range:
                 break
             self.logger.debug(ctid_range)
+            if self.core_sizes[tab] <= self.size_threshold:
+                # no more bulk minimization required. Now can resort to row-by-row elim
+                break
             self.ary += 1
 
         end_ctid = self.connectionHelper.execute_sql_fetchone_0(get_ctid_from("max", tab))

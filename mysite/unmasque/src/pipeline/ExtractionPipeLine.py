@@ -320,7 +320,7 @@ class ExtractionPipeLine(GenericPipeLine):
 
         eq = self.generate_query_string()
 
-        eq = self.extract_NEP(core_relations, minimizer_modules[self.CS2_IDX].sizes,
+        eq = self.extract_NEP(all_relations, core_relations, minimizer_modules[self.CS2_IDX].sizes,
                               self.pipeline_modules[self.JOIN_IDX], eq,
                               self.pipeline_modules[self.FILTER_IDX].filter_predicates,
                               self.q_generatr_factory.q_generator, query,
@@ -338,7 +338,7 @@ class ExtractionPipeLine(GenericPipeLine):
                                    mutation_modules[self.PROJECTION_IDX]]
         return useful_mutation_modules
 
-    def extract_NEP(self, core_relations, sizes, ej, eq, filter_predicates,
+    def extract_NEP(self, all_relations, core_relations, sizes, ej, eq, filter_predicates,
                     q_generator, query, time_profile,
                     global_min_instance_dict):
 
@@ -350,6 +350,7 @@ class ExtractionPipeLine(GenericPipeLine):
             nep = NEP(self.connectionHelper, core_relations, sizes, self.global_pk_dict, ej.global_all_attribs,
                       ej.global_attrib_types, filter_predicates, ej.global_key_attributes, q_generator,
                       global_min_instance_dict)
+            nep.set_all_relations(all_relations)
             self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
             if nep.Q_E:

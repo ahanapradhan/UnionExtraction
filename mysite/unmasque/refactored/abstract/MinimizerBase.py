@@ -34,7 +34,7 @@ class Minimizer(Base):
             return True
         return False
 
-    def getCoreSizes(self):
+    def getCoreSizes(self):  # do not use this method to get size after minimization + sanitization
         core_sizes = {}
         for table in self.core_relations:
             core_sizes[table] = self.all_sizes[table]
@@ -71,7 +71,7 @@ class Minimizer(Base):
         return [start_ctid, end_ctid]
 
     def calculate_mid_ctids(self, start_page, end_page, size, n=1):
-        mid_row = int(size * (n/self.ary))
+        mid_row = int(size * (n / self.ary))
         mid_ctid1 = "(" + str(0) + "," + str(mid_row) + ")"
         mid_ctid2 = "(" + str(0) + "," + str(mid_row + 1) + ")"
         return mid_ctid1, mid_ctid2
@@ -139,7 +139,7 @@ class Minimizer(Base):
 
     def determine_mid_ctid_from_db(self, tabname, n=1):
         count = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
-        mid_idx = int(count * (n/self.ary))
+        mid_idx = int(count * (n / self.ary))
         if not mid_idx:
             return None, None
         offset = str(mid_idx - 1)

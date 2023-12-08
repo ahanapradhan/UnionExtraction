@@ -2,7 +2,7 @@ from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
 from .util.common_queries import alter_table_rename_to, create_view_as_select_star_where_ctid, \
-    get_tabname_1, drop_view, drop_table, get_restore_name, create_table_as_select_star_from
+    get_tabname_1, drop_view, drop_table, get_restore_name, create_table_as_select_star_from, get_row_count
 
 
 class NepComparator(ResultComparator):
@@ -12,7 +12,7 @@ class NepComparator(ResultComparator):
 
 
 class NEP(Minimizer, GenerationPipeLineBase):
-    loop_count_cutoff = 30
+    loop_count_cutoff = 10
     '''
     NEP extractor do not terminate if input Q_E is not correct. This cutoff is to prevent infinite looping
     It imposes on the user the following restriction: hidden query cannot have more than 10 NEPs.
@@ -36,6 +36,12 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
+
+    def getCoreSizes(self):
+        core_sizes = {}
+        for table in self.core_relations:
+            core_sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(get_row_count(table))
+        return core_sizes
 
     def doActualJob(self, args):
         query, Q_E = self.extract_params_from_args(args)
@@ -135,19 +141,18 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                           start_ctid,
                                           tabname,
                                           tabname1):
-        for mid_ctid in mid_ctid_list:
-            mid_ctid1, mid_ctid2 = mid_ctid[0], mid_ctid[1]
-            if self.check_result_for_ctid_range([mid_ctid2, end_ctid], tabname1, tabname, query):
-                # Take the lower half
-                start_ctid = mid_ctid2
-            elif self.check_result_for_ctid_range([start_ctid, mid_ctid1], tabname1, tabname, query):
-                # Take the upper half
-                end_ctid = mid_ctid1
-            else:
-                self.logger.error("something is wrong!")
-                return None, None
+        mid_ctid1, mid_ctid2 = mid_ctid_list[0], mid_ctid_list[1]
+        if self.check_result_for_ctid_range([mid_ctid2, end_ctid], tabname1, tabname, query):
+            # Take the lower half
+            start_ctid = mid_ctid2
+        elif self.check_result_for_ctid_range([start_ctid, mid_ctid1], tabname1, tabname, query):
+            # Take the upper half
+            end_ctid = mid_ctid1
+        else:
+            self.logger.error("something is wrong!")
+            return None, None
         self.connectionHelper.execute_sql([drop_view(tabname)])
-        return [start_ctid, end_ctid]
+        return [[start_ctid, end_ctid]]
 
     def check_result_for_ctid_range(self, ctids, tab, view, query):
         start_ctid, end_ctid = ctids[0], ctids[1]
