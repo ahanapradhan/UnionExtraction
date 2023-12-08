@@ -53,20 +53,21 @@ class ManyEquiJoin(ExtractorModuleBase):
 
     def is_intersection_present(self):
         if not self.intersection_flag:
-            self.intersection = any(len(value) > 2 for value in self.joinEdge_extractor.global_min_instance_dict.values())
+            self.intersection = any(len(value) > 2 for
+                                    value in self.joinEdge_extractor.global_min_instance_dict.values())
             self.intersection_flag = True
         return self.intersection
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
         check = self.joinEdge_extractor.doJob(query)
-        if not check:
-            return False
         self.get_actual_join_data()
         self.set_aux_data()
-        return True
+        return check
 
     def get_actual_join_data(self):
+        self.joinEdge_extractor.restore_d_min_from_dict_data()
+        self.get_matching_tuples()
         if self.is_intersection_present():
             self.get_multiple_join_graphs()
         else:
@@ -84,11 +85,6 @@ class ManyEquiJoin(ExtractorModuleBase):
                                  default_d_min_dict)
 
     def get_multiple_join_graphs(self):
-        self.joinEdge_extractor.restore_d_min_from_dict_data()
-        self.get_matching_tuples()
-        self.do_traversal()
-
-    def do_traversal(self):
         all_tabs = sorted(self.tab_tuple_sig_dict, key=lambda key: len(self.tab_tuple_sig_dict[key]), reverse=True)
         tab = all_tabs[0]
         tab_entry = self.tab_tuple_sig_dict[tab]

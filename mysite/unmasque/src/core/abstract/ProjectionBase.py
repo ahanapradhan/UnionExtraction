@@ -9,15 +9,13 @@ from mysite.unmasque.src.core.dataclass.projection_data_class import ProjectionD
 class ProjectionBase(GenerationPipeLineBase, ProjectionData):
 
     def __init__(self, connectionHelper, name, global_all_attribs, global_attrib_types, global_key_attributes,
-                 core_relations, join_graph, filter_predicates, global_min_instance_dict, attribs_to_check,
-                 skip_equals=True):
+                 core_relations, join_graph, filter_predicates, global_min_instance_dict, attribs_to_check):
         ProjectionData.__init__(self)
         GenerationPipeLineBase.__init__(self, connectionHelper, name, core_relations, global_all_attribs,
                                         global_attrib_types, join_graph, filter_predicates,
                                         global_min_instance_dict, global_key_attributes)
 
         self.attribs_to_check = attribs_to_check
-        self.skip_equals = skip_equals
 
     def find_dep_one_round(self, query, s_values):
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
@@ -65,23 +63,15 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
         return projected_attrib, projection_names, projection_dep, True
 
     def update_attrib_to_see_impact(self, tab_attrib):
-        attrib = tab_attrib[0]
-        tabname = tab_attrib[1]
+        attrib, tabname = tab_attrib[0], tab_attrib[1]
         prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
         val = self.get_different_val(attrib, tabname, prev)
         self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
         self.update_with_val((attrib, tabname), val)
-        # check, _ = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
-        # self.logger.debug(check)
         return val, prev
 
     def check_impact_of_non_key_attribs(self, new_result, projection_dep, query, tab_attrib):
-        tabname = tab_attrib[0]
-        attrib = tab_attrib[1]
-        if self.skip_equals:
-            for fe in self.global_filter_predicates:
-                if fe[1] == attrib and (fe[2] == 'equal' or fe[2] == '='):
-                    return
+        tabname, attrib = tab_attrib[0], tab_attrib[1]
         val, prev = self.update_attrib_to_see_impact((attrib, tabname))
         new_result1 = self.app.doJob(query)
         if len(new_result1) > 1:
@@ -90,6 +80,12 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
             if diff:
                 for d in diff:
                     projection_dep[d].append((tabname, attrib))
+            else:
+                try:
+                    d = new_result1.index(prev)
+                    projection_dep[d].append((tabname, attrib))
+                except ValueError:
+                    pass
             self.update_with_val((attrib, tabname), prev)
         return val
 

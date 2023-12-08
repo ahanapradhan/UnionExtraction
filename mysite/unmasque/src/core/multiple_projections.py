@@ -66,14 +66,9 @@ class ManyProjection(ProjectionBase):
                  subquery_data,
                  global_min_instance_dict,
                  attribs_to_check):
-        super().__init__(connectionHelper, "Multiple Projection", global_all_attribs,
-                         global_attrib_types,
-                         global_key_attributes,
-                         core_relations, all_join_edges,
-                         None,
-                         global_min_instance_dict,
-                         attribs_to_check,
-                         False)
+        super().__init__(connectionHelper, "Multiple Projection", global_all_attribs, global_attrib_types,
+                         global_key_attributes, core_relations, all_join_edges, None, global_min_instance_dict,
+                         attribs_to_check)
         self.subquery_data = subquery_data
         self.attrib_to_check_dict = attribs_to_check
 
@@ -95,15 +90,6 @@ class ManyProjection(ProjectionBase):
         else:
             update_q = update_tab_attrib_with_quoted_value_where(tabname, attrib, val, wherekey)
         self.connectionHelper.execute_sql([update_q])
-
-    def check_impact_of_non_key_attribs(self, new_result, projection_dep, query, tab_attrib):
-        attrib = tab_attrib[1]
-        if self.skip_equals:
-            for fe in self.global_filter_predicates:
-                if fe[1] == attrib and (fe[2] == 'equal' or fe[2] == '='):
-                    return
-        val, prev = self.update_attrib_to_see_impact(tab_attrib)
-        return val, prev
 
     def update_attrib_to_see_impact(self, tab_attrib):
         tabname, attrib, i = tab_attrib[0], tab_attrib[1], tab_attrib[2]
@@ -143,7 +129,7 @@ class ManyProjection(ProjectionBase):
             val_cache_dict[i] = [entry[0], entry[1]]
             # self.logger.debug("checking for ", tabname, attrib)
             if tab_attrib[1] not in self.global_key_attributes:
-                val, prev = self.check_impact_of_non_key_attribs(new_result, projection_dep, query, tab_attrib)
+                val, prev = self.update_attrib_to_see_impact(tab_attrib)
                 val_cache_dict[i].append(prev)  # storing prev value with tabname and attrib
 
         new_result1 = self.app.doJob(query)

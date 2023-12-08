@@ -53,8 +53,13 @@ class Filter(WhereClause, OnlyFilterData):
             key_idx = columns.index(key)
             value = self.global_min_instance_dict[tab][1][key_idx]
             self.tab_key_value_dict[tab] = (key, value)
+        if not len(self.tab_key_value_dict):
+            for tab in self.core_relations:
+                self.tab_key_value_dict[tab] = None
 
     def get_where_key_val_sql(self, tab):
+        if self.tab_key_value_dict[tab] is None:
+            return ""
         key = self.tab_key_value_dict[tab][0]
         value = self.tab_key_value_dict[tab][1]
         where_condition = f"where {key} = {value}"
