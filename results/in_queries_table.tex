@@ -1,0 +1,23 @@
+{\tiny
+\begin{longtable}{|p{0.5cm}|p{7cm}|p{7cm}|}
+\hline
+{\bf Q. No.} & {\bf Hidden Query} & {\bf Extracted Query} \\\hline\hline
+IQ1&
+SELECT c\_mktsegment as segment FROM customer, nation WHERE n\_nationkey = c\_nationkey AND n\_name = 'BRAZIL' INTERSECT SELECT c\_mktsegment as segment FROM customer, nation WHERE n\_nationkey = c\_nationkey AND n\_name = 'ARGENTINA';&
+(Select c\_mktsegment as segment From customer, nation Where c\_nationkey = n\_nationkey and n\_name  = 'ARGENTINA')  INTERSECT  (Select c\_mktsegment as segment From customer, nation Where c\_nationkey = n\_nationkey and n\_name  = 'BRAZIL');\\\hline
+IQ2&
+select c\_mktsegment as segment from customer,nation where c\_acctbal < 3000 and c\_nationkey = n\_nationkey and n\_name = 'BRAZIL' intersect select c\_mktsegment as segment from customer,nation,orders where c\_acctbal between 1000 and 5000 and c\_nationkey = n\_nationkey and c\_custkey = o\_custkey and n\_name = 'ARGENTINA';&
+(Select c\_mktsegment as segment From customer, nation, orders Where c\_nationkey = n\_nationkey and c\_custkey = o\_custkey and n\_name  = 'ARGENTINA' and c\_acctbal  >= 999.995 and c\_acctbal <= 5000.004)  INTERSECT  (Select c\_mktsegment as segment From customer, nation Where c\_nationkey = n\_nationkey and n\_name  = 'BRAZIL' and c\_acctbal  <= 2999.994);\\\hline
+IQ3&
+select l\_shipdate as checked\_date from lineitem, orders where l\_orderkey = o\_orderkey  and o\_orderstatus = 'F' INTERSECT select o\_orderdate as checked\_date from orders, lineitem, customer where l\_orderkey = o\_orderkey and o\_custkey = c\_custkey and o\_orderstatus = 'O' and l\_shipmode = 'RAIL' and c\_acctbal < 1000;&
+(Select o\_orderdate as checked\_date From customer, lineitem, orders Where l\_orderkey = o\_orderkey and c\_custkey = o\_custkey and o\_orderstatus  = 'O' and l\_shipmode  = 'RAIL' and c\_acctbal  <= 999.994)  INTERSECT  (Select l\_shipdate as checked\_date From lineitem, orders Where l\_orderkey = o\_orderkey and o\_orderstatus  = 'F');\\\hline
+IQ4&
+select l\_shipdate as checked\_date, l\_returnflag, l\_shipinstruct from lineitem, orders where l\_orderkey = o\_orderkey  and o\_orderstatus = 'F' INTERSECT select o\_orderdate as checked\_date, l\_returnflag, l\_shipinstruct from orders, lineitem, customer where l\_orderkey = o\_orderkey and o\_custkey = c\_custkey and o\_orderstatus = 'O' and l\_shipmode = 'RAIL' and c\_acctbal < 1000;&
+(Select o\_orderdate as checked\_date, l\_returnflag, l\_shipinstruct From customer, lineitem, orders Where l\_orderkey = o\_orderkey and c\_custkey = o\_custkey and o\_orderstatus  = 'O' and l\_shipmode  = 'RAIL' and c\_acctbal  <= 999.994)  INTERSECT  (Select l\_shipdate as checked\_date, l\_returnflag, l\_shipinstruct From lineitem, orders Where l\_orderkey = o\_orderkey and o\_orderstatus  = 'F');\\\hline
+IQ5&
+select o\_orderstatus, o\_totalprice from customer,orders where c\_custkey = o\_custkey and o\_orderdate < date '1995-03-10' intersect select o\_orderstatus, o\_totalprice from lineitem, orders where o\_orderkey = l\_orderkey and o\_orderdate > date '1995-03-10' and l\_shipmode = 'AIR';&
+(Select o\_orderstatus, o\_totalprice From customer, orders Where c\_custkey = o\_custkey and o\_orderdate  <= '1995-03-09')  INTERSECT  (Select o\_orderstatus, o\_totalprice From lineitem, orders Where l\_orderkey = o\_orderkey and o\_orderdate  >= '1995-03-11' and l\_shipmode  = 'AIR');\\\hline
+IQ6&
+select p\_container,p\_retailprice,ps\_availqty from part,supplier,partsupp where p\_partkey = ps\_partkey and s\_suppkey = ps\_suppkey and p\_brand='Brand#45' intersect select p\_container,p\_retailprice,ps\_availqty from part,supplier,partsupp where p\_partkey = ps\_partkey and s\_suppkey=ps\_suppkey and p\_brand='Brand#15';&
+(Select p\_container, p\_retailprice, ps\_availqty From part, partsupp, supplier Where ps\_suppkey = s\_suppkey and p\_partkey = ps\_partkey and p\_brand  = 'Brand#15')  INTERSECT  (Select p\_container, p\_retailprice, ps\_availqty From part, partsupp, supplier Where ps\_suppkey = s\_suppkey and p\_partkey = ps\_partkey and p\_brand  = 'Brand#45');\\\hline
+\end{longtable}}

@@ -103,7 +103,7 @@ class ManyProjection(ProjectionBase):
     def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
-            self.logger.error("Unmasque: \n some error in generating new database. "
+            self.logger.error("Unmasque: some error in generating new database. "
                               "Result is empty. Can not identify "
                               "projections completely.")
             return [], [], [], False
@@ -129,9 +129,36 @@ class ManyProjection(ProjectionBase):
             val_cache_dict[i] = [entry[0], entry[1]]
             # self.logger.debug("checking for ", tabname, attrib)
             if tab_attrib[1] not in self.global_key_attributes:
-                val, prev = self.update_attrib_to_see_impact(tab_attrib)
-                val_cache_dict[i].append(prev)  # storing prev value with tabname and attrib
+                val = self.check_impact_of_non_key_attribs(new_result, projection_dep, query, tab_attrib,
+                                                           val_cache_dict)
+            else:
+                val, keys_to_skip[i] = self.check_impact_of_key_attribs(new_result, projection_dep[i], query,
+                                                                        keys_to_skip,
+                                                                        s_value_dict[i], tab_attrib, val_cache_dict)
+            if tab_attrib[1] not in keys_to_skip[i]:
+                s_values[i].append((tab_attrib[0], tab_attrib[1], val))
 
+        for idx in range(len(self.subquery_data)):
+            subquery_projection_names = projection_names[idx]
+            subquery_projection_dep = projection_dep[idx]
+            subquery_projected_attrib = projected_attrib[idx]
+            for i in range(len(subquery_projection_names)):
+                if len(subquery_projection_dep[i]) == 1:
+                    attrib_tup = subquery_projection_dep[i][0]
+                    subquery_projected_attrib.append(attrib_tup[1])
+                else:
+                    subquery_projected_attrib.append('')
+
+        return projected_attrib, projection_names, projection_dep, True
+
+    def check_impact_of_non_key_attribs(self, new_result, projection_dep, query, tab_attrib, val_cache_dict):
+        i = tab_attrib[2]
+        val, prev = self.update_attrib_to_see_impact(tab_attrib)
+        val_cache_dict[i].append(prev)  # storing prev value with tabname and attrib
+        self.update_projection_dep(new_result, projection_dep, query, val_cache_dict)
+        return val
+
+    def update_projection_dep(self, new_result, projection_dep, query, val_cache_dict):
         new_result1 = self.app.doJob(query)
         if len(new_result1) > 1:
             new_result1 = list(new_result1[1])
@@ -147,31 +174,44 @@ class ManyProjection(ProjectionBase):
                         subquery_projection_dep[d].append((tabname, attrib))
                     self.update_with_val((tabname, attrib, i), prev)
 
-            '''
-            Ignore Key attributes as-of-now. 
-            
-            else:
-                val, keys_to_skip = self.check_impact_of_key_attribs(new_result, projection_dep, query, keys_to_skip,
-                                                                     s_value_dict, tab_attrib)
-            if tab_attrib[1] not in keys_to_skip:
-                s_values.append((tab_attrib[0], tab_attrib[1], val))
-            '''
-
-        for idx in range(len(self.subquery_data)):
-            subquery_projection_names = projection_names[idx]
-            subquery_projection_dep = projection_dep[idx]
-            subquery_projected_attrib = projected_attrib[idx]
-            for i in range(len(subquery_projection_names)):
-                if len(subquery_projection_dep[i]) == 1:
-                    attrib_tup = subquery_projection_dep[i][0]
-                    subquery_projected_attrib.append(attrib_tup[1])
-                else:
-                    subquery_projected_attrib.append('')
-
-        return projected_attrib, projection_names, projection_dep, True
+    def check_impact_of_key_attribs(self, new_result, projection_dep, query, keys_to_skip, s_value_dict, tab_attrib, val_cache_dict):
+        tabname, attrib, i = tab_attrib[0], tab_attrib[1], tab_attrib[2]
+        if attrib in keys_to_skip:
+            return s_value_dict[attrib], keys_to_skip
+        other_attribs = []
+        join_tabnames = []
+        for join_edge in self.subquery_data[i].global_join_graph:
+            if attrib in join_edge:
+                other_attribs = copy.deepcopy(join_edge)
+                other_attribs.remove(attrib)
+                break
+        if other_attribs:
+            val, prev = self.update_attrib_to_see_impact((attrib, tabname))
+            for other_attrib in other_attribs:
+                join_tabname = self.find_tabname_for_given_attrib(other_attrib)
+                join_tabnames.append(join_tabname)
+                self.logger.debug("update ", join_tabname, other_attrib, "with value ", val, " prev", prev)
+                self.update_with_val((other_attrib, join_tabname), val)
+            new_result1 = self.app.doJob(query)
+            self.update_with_val((attrib, tabname), prev)
+            for i in range(len(other_attribs)):
+                self.update_with_val((other_attribs[i], join_tabnames[i]), prev)
+            if len(new_result1) > 1:
+                new_result1 = list(new_result1[1])
+                diff = find_diff_idx(new_result1, new_result)
+                if diff:
+                    for d in diff:
+                        projection_dep[d].append((tabname, attrib))
+            keys_to_skip = keys_to_skip + other_attribs
+            for other_attrib in other_attribs:
+                s_value_dict[other_attrib] = val
+        else:
+            val = self.check_impact_of_non_key_attribs(new_result, projection_dep, query, tab_attrib, val_cache_dict)
+        return val, keys_to_skip
 
     def doBasicExtractJob(self, query):
-        self.projected_attribs, self.projection_names, _, check = self.find_projection_dependencies(query, s_values=[])
+        s_values = [[] for _ in range(len(self.subquery_data))]
+        self.projected_attribs, self.projection_names, _, check = self.find_projection_dependencies(query, s_values)
         return check
 
     def doExtractJob(self, query):

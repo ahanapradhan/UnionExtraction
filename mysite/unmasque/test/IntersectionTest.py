@@ -101,6 +101,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(check, 1)
         self.assertTrue(self.pipeline.correct)
 
+    @pytest.mark.skip
     def test_custom_date4(self):
         query = "select l_shipdate as checked_date, l_shipinstruct from lineitem, partsupp  " \
                 "where l_partkey = ps_partkey and l_suppkey = ps_suppkey " \

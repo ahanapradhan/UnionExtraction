@@ -46,10 +46,10 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
             tab_attrib = (entry[0], entry[1])
             # self.logger.debug("checking for ", tabname, attrib)
             if tab_attrib[1] not in self.global_key_attributes:
-                val = self.check_impact_of_non_key_attribs(new_result, projection_dep, query, tab_attrib)
+                val = self.check_impact_of_non_key_attribs(new_result, projection_dep, query, tab_attrib, {})
             else:
                 val, keys_to_skip = self.check_impact_of_key_attribs(new_result, projection_dep, query, keys_to_skip,
-                                                                     s_value_dict, tab_attrib)
+                                                                     s_value_dict, tab_attrib, {})
             if tab_attrib[1] not in keys_to_skip:
                 s_values.append((tab_attrib[0], tab_attrib[1], val))
 
@@ -70,7 +70,7 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
         self.update_with_val((attrib, tabname), val)
         return val, prev
 
-    def check_impact_of_non_key_attribs(self, new_result, projection_dep, query, tab_attrib):
+    def check_impact_of_non_key_attribs(self, new_result, projection_dep, query, tab_attrib, val_cache_dict):
         tabname, attrib = tab_attrib[0], tab_attrib[1]
         val, prev = self.update_attrib_to_see_impact((attrib, tabname))
         new_result1 = self.app.doJob(query)
@@ -89,7 +89,7 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
             self.update_with_val((attrib, tabname), prev)
         return val
 
-    def check_impact_of_key_attribs(self, new_result, projection_dep, query, keys_to_skip, s_value_dict, tab_attrib):
+    def check_impact_of_key_attribs(self, new_result, projection_dep, query, keys_to_skip, s_value_dict, tab_attrib, val_cache_dict):
         tabname = tab_attrib[0]
         attrib = tab_attrib[1]
         if attrib in keys_to_skip:
@@ -122,5 +122,5 @@ class ProjectionBase(GenerationPipeLineBase, ProjectionData):
             for other_attrib in other_attribs:
                 s_value_dict[other_attrib] = val
         else:
-            val = self.check_impact_of_non_key_attribs(new_result, projection_dep, query, tab_attrib)
+            val = self.check_impact_of_non_key_attribs(new_result, projection_dep, query, tab_attrib, val_cache_dict)
         return val, keys_to_skip
