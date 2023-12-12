@@ -36,7 +36,7 @@ class FromClause(Base, FromData):
             except Exception as error:
                 self.logger.error("Error Occurred in table extraction. Error: " + str(error))
                 self.connectionHelper.execute_sql(["ROLLBACK;"])
-                exit(1)
+                # exit(1)
 
             self.connectionHelper.execute_sql(["ROLLBACK;"])
 
