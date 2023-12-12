@@ -76,12 +76,14 @@ class FromClause(Base):
         return super().doJob(*args)
 
     def doActualJob(self, args):
+        self.connectionHelper.execute_sql(["set statement_timeout to '2s';"])
         query, method = self.extract_params_from_args(args)
         self.core_relations = []
         if method == "rename":
             self.get_core_relations_by_rename(query)
         else:
             self.get_core_relations_by_error(query)
+        self.connectionHelper.execute_sql(["set statement_timeout to DEFAULT;"])
         return self.core_relations
 
     def get_key_lists(self):
