@@ -72,6 +72,8 @@ class OrderBy(GenerationPipeLineBase):
         self.orderby_list = []
         self.global_dependencies = global_dependencies
         self.orderBy_string = ''
+        #self.contains_count_order = False
+        #self.curr_orderby = ''
         self.has_orderBy = True
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
@@ -80,13 +82,14 @@ class OrderBy(GenerationPipeLineBase):
         cand_list = self.construct_candidate_list()
         # CHECK ORDER BY ON COUNT
         self.orderBy_string = self.remove_equality_predicates(cand_list, filter_attrib_dict, query)
-        self.check_order_by_on_count(cand_list, self.orderBy_string, filter_attrib_dict, query)
+        #self.check_order_by_on_count(cand_list, self.orderBy_string, filter_attrib_dict, query)
         self.has_orderBy = self.orderBy_string or self.orderby_list
         return True
 
     def check_order_by_on_count(self, cand_list, curr_orderby, filter_attrib_dict, query):
         for elt in cand_list:
             if COUNT not in elt.aggregation:
+                self.logger.debug("Skipping, NO COUNT")
                 continue
             for i in range(len(self.orderby_list) + 1):
                 temp_orderby_list = []
@@ -97,8 +100,10 @@ class OrderBy(GenerationPipeLineBase):
                     break
                 else:
                     if order != NO_ORDER:
+                        self.logger.debug("Order by on count", order)
                         self.orderby_list.insert(i, (elt, order))
-                        curr_orderby += COUNT_STAR + " " + order + ", "
+                        self.logger.debug("Order by list", self.orderby_list)
+                        self.orderBy_string += elt.name + " " + order + ", "
                         break
 
     def remove_equality_predicates(self, cand_list, filter_attrib_dict, query):
@@ -115,13 +120,16 @@ class OrderBy(GenerationPipeLineBase):
         while self.has_orderBy and cand_list:
             remove_list = []
             self.has_orderBy = False
+            row_num = 2
             for elt in cand_list:
                 if COUNT in elt.aggregation:
-                    continue
-                order = self.generateData(elt, self.orderby_list, filter_attrib_dict, curr_orderby, query)
+                    row_num = 3
+            for elt in cand_list:
+                order = self.generateData(elt, self.orderby_list, filter_attrib_dict, curr_orderby, query, row_num)
                 if order is None:
                     remove_list.append(elt)
                 elif order != NO_ORDER:
+                    #self.logger.debug("Order by eq", order)
                     self.has_orderBy = True
                     self.orderby_list.append((elt, order))
                     curr_orderby += elt.name + " " + order + ", "
@@ -147,7 +155,7 @@ class OrderBy(GenerationPipeLineBase):
             i.debug_print()
         return cand_list
 
-    def generateData(self, obj, orderby_list, filter_attrib_dict, curr_orderby, query):
+    def generateData(self, obj, orderby_list, filter_attrib_dict, curr_orderby, query, row_num):
         attrib_types_dict = {}
 
         for entry in self.global_attrib_types:
@@ -169,6 +177,7 @@ class OrderBy(GenerationPipeLineBase):
             # Fill 3 rows in any one table (with a a b values) and 2 in all others (with a b values) in D1
             # Fill 3 rows in any one table (with a b b values) and 2 in all others (with a b values) in D2
             same_value_list = []
+            #self.logger.debug("ORDER BY LIST", orderby_list)
             for elt in orderby_list:
                 for i in elt[0].attrib_dependency:
                     key_f = None
@@ -256,20 +265,19 @@ class OrderBy(GenerationPipeLineBase):
                         if any([(attrib_inner in i) for i in same_value_list]):
                             insert_values2[-1] = insert_values1[-1]
                     flag = True
-                    if COUNT in obj.aggregation and tabname_inner == first_rel:
+                    if row_num == 3:
                         insert_rows.append(tuple(insert_values1))
                         insert_rows.append(tuple(insert_values1))
                         insert_rows.append(tuple(insert_values2))
                     else:
                         insert_rows.append(tuple(insert_values1))
                         insert_rows.append(tuple(insert_values2))
+                        
                     self.logger.debug(att_order)
                     self.logger.debug("Insert 1", insert_values1)
                     self.logger.debug("Insert 2", insert_values2)
                     self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
-                # nr = self.app.doJob("select * from lineitem;")
-                # for i in nr:
-                #     self.logger.debug(i)
+                    
                 new_result = self.app.doJob(query)
                 self.logger.debug("New Result", k, new_result)
                 if isQ_result_empty(new_result):
@@ -281,6 +289,7 @@ class OrderBy(GenerationPipeLineBase):
                 order[k] = checkOrdering(self.logger, obj, new_result)
                 self.logger.debug("Order", k, order)
             if order[0] is not None and order[1] is not None and order[0] == order[1]:
+                self.logger.debug("Order Found", order[0])
                 return order[0]
             else:
                 return NO_ORDER
