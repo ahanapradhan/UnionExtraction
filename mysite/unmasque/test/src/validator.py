@@ -32,6 +32,12 @@ count_ob = "count_ob"
 
 
 def validate_ob(q_h, q_e):
+    attrib_e_o = ""
+    attrib_h_o = ""
+    sort_order_e = ""
+    sort_order_h = ""
+    index_error = False
+
     ob_dict = {same_hidden_ob: True, Ob_suffix: False, count_ob: True}
 
     if q_h is None or q_e is None:
@@ -57,8 +63,11 @@ def validate_ob(q_h, q_e):
     elif len(ob_h) < len(ob_e):
         ob_dict[Ob_suffix] = True
     for i in range(len(ob_h)):
-        attrib_e_o, attrib_h_o, sort_order_h, sort_order_e = format_ob_attribs(i, ob_e, ob_h)
-        if attrib_h_o != attrib_e_o:
+        try:
+            attrib_e_o, attrib_h_o, sort_order_h, sort_order_e = format_ob_attribs(i, ob_e, ob_h)
+        except IndexError:
+            index_error = True
+        if attrib_h_o != attrib_e_o or index_error:
             ob_dict[same_hidden_ob] = False
         else:
             if sort_order_h and sort_order_e and sort_order_h != sort_order_e:
@@ -78,6 +87,7 @@ def validate_ob(q_h, q_e):
 
 
 def format_ob_attribs(i, ob_e, ob_h):
+    print(i)
     ob_attrib_h, sort_order_h = format_ob_attrib(i, ob_h)
     ob_attrib_e, sort_order_e = format_ob_attrib(i, ob_e)
     return ob_attrib_e, ob_attrib_h, sort_order_h, sort_order_e
