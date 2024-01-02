@@ -403,6 +403,7 @@ class TpchExtractionPipelineTestCase(BaseTestCase):
                          f"{entry5}"
                          f"{entry6}\n")
 
+    # @pytest.mark.skip
     def test_revise_extraction_summary(self):
         self.hqs = [Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, Q16_nep, Q3_1, Q16_nep_2, Q_r, Q_dt]
         self.hq_keys = ["Q1", "Q2", "Q4", "Q5", "Q6", "Q11", "Q10", "Q3", "Q16", "Q17", "Q18", "Q21",
