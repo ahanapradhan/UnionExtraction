@@ -30,7 +30,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(FROM_CLAUSE + START)
         fc = FromClause(self.connectionHelper)
         self.update_state(FROM_CLAUSE + RUNNING)
-        check = fc.doJob(query, "rename")
+        check = fc.doJob(query, "error")
         self.update_state(FROM_CLAUSE + DONE)
         self.time_profile.update_for_from_clause(fc.local_elapsed_time)
         if not check or not fc.done:

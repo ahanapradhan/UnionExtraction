@@ -621,6 +621,16 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    def test_correlated_nested_query(self):
+        query = "select c_name from customer where c_acctbal > (select count(o_totalprice) from orders where " \
+                "c_custkey = o_custkey);"
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        # self.assertTrue(eq is not None)
+        print(eq)
+        # self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
     @pytest.mark.skip
     def test_6_mul(self):
         for i in range(10):
