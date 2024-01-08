@@ -76,14 +76,14 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
-    def test_correlated_nested_query_by_rename(self):
+    def test_correlated_nested_query(self):
         query = "select c_name from customer where c_acctbal > (select count(o_totalprice) from orders where " \
                 "c_custkey = o_custkey);"
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         fc = FromClause(self.conn)
 
-        rels = fc.doJob(query, "rename")
+        rels = fc.doJob(query)
         self.assertEqual(len(rels), 2)
         self.assertTrue('customer' in rels)
         self.assertTrue('orders' in rels)

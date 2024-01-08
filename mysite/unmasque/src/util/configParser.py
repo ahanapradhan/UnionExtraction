@@ -1,6 +1,7 @@
 import configparser
 from pathlib import Path
 
+from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP
 
@@ -28,6 +29,7 @@ class Config:
         self.config_loaded = False
         self.detect_union = False
         self.detect_nep = False
+        self.app_type = ApplicationType.SQL_ERR_FWD
 
     def parse_config(self):
         if self.config_loaded:
