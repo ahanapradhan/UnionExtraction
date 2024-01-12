@@ -80,33 +80,11 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         '''
-        Join Graph Extraction
-        '''
-        self.update_state(EQUI_JOIN + START)
-        ej = EquiJoin(self.connectionHelper,
-                      key_lists,
-                      core_relations,
-                      vm.global_min_instance_dict)
-        self.update_state(EQUI_JOIN + RUNNING)
-        check = ej.doJob(query)
-        self.update_state(EQUI_JOIN + DONE)
-        time_profile.update_for_where_clause(ej.local_elapsed_time)
-        if not check:
-            self.logger.info("Cannot find Join Predicates.")
-        if not ej.done:
-            self.logger.error("Some error while Join Predicate extraction. Aborting extraction!")
-            return None, time_profile
-
-        '''
         Filters Extraction
         '''
         self.update_state(FILTER + START)
 
-        fl = Filter(self.connectionHelper,
-                    key_lists,
-                    core_relations,
-                    vm.global_min_instance_dict,
-                    ej.global_key_attributes)
+        fl = Filter(self.connectionHelper, key_lists, core_relations, vm.global_min_instance_dict)
         self.update_state(FILTER + RUNNING)
         check = fl.doJob(query)
         self.update_state(FILTER + DONE)

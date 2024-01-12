@@ -71,8 +71,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('l_partkey' in wc.global_key_attributes)
 
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels, minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q17)
         print(filters)
@@ -154,9 +153,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('r_regionkey' in wc.global_key_attributes)
         self.assertTrue('n_regionkey' in wc.global_key_attributes)
 
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict,
-                    wc.global_key_attributes)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels, minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q23_1)
         print(filters)
@@ -191,8 +188,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('ps_partkey' in wc.global_key_attributes)
 
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels, minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q18_test)
         # print(filters)
@@ -225,8 +221,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('ps_partkey' in wc.global_key_attributes)
 
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels, minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q18_test1)
         print(filters)
@@ -271,8 +266,7 @@ class MyTestCase(BaseTestCase):
 
         self.assertEqual(len(wc.global_key_attributes), 4)
 
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+        wc = Filter(self.conn, tpchSettings.key_lists, from_rels, minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q3)
         print(filters)

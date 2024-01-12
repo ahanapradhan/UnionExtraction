@@ -10,17 +10,12 @@ from .abstract.where_clause import WhereClause
 
 class Filter(WhereClause):
 
-    def __init__(self, connectionHelper,
-                 global_key_lists,
-                 core_relations,
-                 global_min_instance_dict,
-                 global_key_attributes):
+    def __init__(self, connectionHelper, global_key_lists, core_relations, global_min_instance_dict):
         super().__init__(connectionHelper,
                          global_key_lists,
                          core_relations,
                          global_min_instance_dict)
         self.filter_predicates = None
-        self.global_key_attributes = global_key_attributes
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
@@ -44,11 +39,11 @@ class Filter(WhereClause):
             attrib_list = self.global_all_attribs[i]
             total_attribs = total_attribs + len(attrib_list)
             for attrib in attrib_list:
-                if attrib not in self.global_key_attributes:  # filter is allowed only on non-key attribs
-                    self.extract_filter_on_attrib(attrib, attrib_max_length, d_plus_value, filter_attribs,
+                # if attrib not in self.global_key_attributes:  # filter is allowed only on non-key attribs
+                self.extract_filter_on_attrib(attrib, attrib_max_length, d_plus_value, filter_attribs,
                                                   query, tabname)
 
-                    self.logger.debug("filter_attribs", filter_attribs)
+                self.logger.debug("filter_attribs", filter_attribs)
         return filter_attribs
 
     def extract_filter_on_attrib(self, attrib, attrib_max_length, d_plus_value, filter_attribs, query, tabname):

@@ -165,6 +165,23 @@ class MyTestCase(BaseTestCase):
             self.assertEqual(len(minimizer.global_min_instance_dict[tab]), 2)
         self.conn.closeConnection()
 
+    def test_correlated_nested_query(self):
+        query = "select c_name from customer where c_acctbal > (select count(o_totalprice) from orders where " \
+                "c_custkey = o_custkey);"
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+
+        from_rels = ['customer', 'orders']
+
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
+        check = minimizer.doJob(query)
+        self.assertTrue(check)
+        self.assertEqual(len(minimizer.local_other_info_dict['Result Cardinality']), 1)
+        for tab in from_rels:
+            self.assertEqual(len(minimizer.global_min_instance_dict[tab]), 2)
+            print(minimizer.global_min_instance_dict[tab])
+        self.conn.closeConnection()
+
     """
     def test_for_cs2_fail_dup(self):
         hq = "select o_orderdate, l_extendedprice, n2.n_name " \
