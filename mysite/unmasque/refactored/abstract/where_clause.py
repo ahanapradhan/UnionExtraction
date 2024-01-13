@@ -7,11 +7,8 @@ from ..util.utils import is_int
 
 class WhereClause(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper,
-                 global_key_lists,
-                 core_relations,
-                 global_min_instance_dict):
-        super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Where_clause")
+    def __init__(self, connectionHelper, global_key_lists, core_relations, global_min_instance_dict, name):
+        super().__init__(connectionHelper, core_relations, global_min_instance_dict, name)
         self.global_key_lists = global_key_lists
         # init data
         self.global_attrib_types = []

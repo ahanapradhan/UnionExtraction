@@ -4,6 +4,7 @@ from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
     NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION
 from ...refactored.aggregation import Aggregation
+from ...refactored.aoa import AlgebraicPredicate
 from ...refactored.cs2 import Cs2
 from ...refactored.equi_join import EquiJoin
 from ...refactored.filter import Filter
@@ -84,16 +85,19 @@ class ExtractionPipeLine(GenericPipeLine):
         '''
         self.update_state(FILTER + START)
 
-        fl = Filter(self.connectionHelper, key_lists, core_relations, vm.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.connectionHelper, key_lists, core_relations, vm.global_min_instance_dict)
+        fl = aoa.filter_extractor
         self.update_state(FILTER + RUNNING)
-        check = fl.doJob(query)
+        check = aoa.doJob(query)
         self.update_state(FILTER + DONE)
-        time_profile.update_for_where_clause(fl.local_elapsed_time)
+        time_profile.update_for_where_clause(aoa.local_elapsed_time)
         if not check:
             self.logger.info("Cannot find Filter Predicates.")
-        if not fl.done:
+        if not aoa.done:
             self.logger.error("Some error while Filter Predicate extraction. Aborting extraction!")
             return None, time_profile
+
+        return check, time_profile
 
         '''
         Projection Extraction
