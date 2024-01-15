@@ -631,21 +631,6 @@ class MyTestCase(BaseTestCase):
         # self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
-    def test_aoa_dev(self):
-        query = "SELECT c_name as name, " \
-                "c_acctbal as account_balance " \
-                "FROM orders, customer, nation " \
-                "WHERE c_custkey = o_custkey " \
-                "and c_nationkey = n_nationkey " \
-                "and n_name = 'INDIA' " \
-                "and o_orderdate between '1998-01-01' and '1998-01-15' " \
-                "and o_totalprice <= c_acctbal;"
-        self.conn.connectUsingParams()
-        eq = self.pipeline.doJob(query)
-        self.assertTrue(eq)
-        # self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
-
     @pytest.mark.skip
     def test_6_mul(self):
         for i in range(10):

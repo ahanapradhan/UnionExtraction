@@ -1,23 +1,6 @@
 from mysite.unmasque.refactored.abstract.where_clause import WhereClause
 from mysite.unmasque.refactored.filter import Filter
 
-def stirling_second_kind(n, m):
-    if n < m:
-        return 0
-
-    # Initialize a 2D array to store Stirling numbers
-    dp = [[0] * (m + 1) for _ in range(n + 1)]
-
-    # Base cases
-    for i in range(n + 1):
-        dp[i][0] = 0
-        dp[i][1] = 1
-
-    for i in range(1, n + 1):
-        for j in range(2, min(i, m) + 1):
-            dp[i][j] = j * dp[i - 1][j] + dp[i - 1][j - 1]
-
-    return dp[n][m]
 
 def partitions_with_min_elements(arr, min_elements=2):
     n = len(arr)
@@ -52,12 +35,14 @@ def partitions_with_min_elements(arr, min_elements=2):
     partitions = dp(0, [[]] * min_elements, min_elements)
     return partitions
 
+
 def process_entry(l):
     _l = []
     for em in l:
         em_set = frozenset(em)
         _l.append(em_set)
     return frozenset(_l)
+
 
 def merge_equivalent_paritions(arr):
     paritions = partitions_with_min_elements(arr)
@@ -88,12 +73,22 @@ class AlgebraicPredicate(WhereClause):
         check = self.filter_extractor.doJob(query)
         if not check:
             return False
-        self.find_eq_join_graph()
+        self.find_eq_join_graph(query)
         return True
 
-    def find_eq_join_graph(self):
+    def find_eq_join_graph(self, query):
+        self.algebraic_eq_predicates = []
         partition_eq_dict = self.preprocess_for_aeqa()
         self.logger.debug(partition_eq_dict)
+        for key in partition_eq_dict.keys():
+            filter_attribs = []
+            datatype = self.filter_extractor.get_datatype(partition_eq_dict[key][0])
+            prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(partition_eq_dict[key])
+            self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list, datatype)
+            if filter_attribs:
+                partition_eq_dict[key].extend(filter_attribs)
+            self.algebraic_eq_predicates.append(partition_eq_dict[key])
+        self.logger.debug(self.algebraic_eq_predicates)
 
     def preprocess_for_aeqa(self):
         partition_eq_dict = {}

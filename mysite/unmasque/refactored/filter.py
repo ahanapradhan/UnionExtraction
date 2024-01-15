@@ -21,6 +21,16 @@ class Filter(WhereClause):
         self.logger.debug(self.filter_predicates)
         return self.filter_predicates
 
+    def prepare_attrib_set_for_bulk_mutation(self, attrib_list):
+        d_plus_value = copy.deepcopy(self.global_d_plus_value)
+        attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
+        prepared_attrib_list = []
+        for tab_attrib in attrib_list:
+            tab, attrib = tab_attrib[0], tab_attrib[1]
+            one_attrib = (tab, attrib, attrib_max_length, d_plus_value)
+            prepared_attrib_list.append(one_attrib)
+        return prepared_attrib_list
+
     def get_filter_predicates(self, query):
         filter_attribs = []
         total_attribs = 0
@@ -36,7 +46,7 @@ class Filter(WhereClause):
             attrib_list = self.global_all_attribs[i]
             total_attribs = total_attribs + len(attrib_list)
             for attrib in attrib_list:
-                datatype = self.get_datatype(tabname, attrib)
+                datatype = self.get_datatype((tabname, attrib))
                 one_attrib = (tabname, attrib, attrib_max_length, d_plus_value)
                 # if attrib not in self.global_key_attributes:  # filter is allowed only on non-key attribs
                 self.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
@@ -44,7 +54,8 @@ class Filter(WhereClause):
                 self.logger.debug("filter_attribs", filter_attribs)
         return filter_attribs
 
-    def get_datatype(self, tabname, attrib):
+    def get_datatype(self, tab_attrib):
+        tabname, attrib = tab_attrib[0], tab_attrib[1]
         if 'int' in self.global_attrib_types_dict[(tabname, attrib)]:
             return 'int'
         elif 'date' in self.global_attrib_types_dict[(tabname, attrib)]:
