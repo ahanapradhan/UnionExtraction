@@ -81,13 +81,18 @@ class AlgebraicPredicate(WhereClause):
         partition_eq_dict = self.preprocess_for_aeqa()
         self.logger.debug(partition_eq_dict)
         for key in partition_eq_dict.keys():
-            filter_attribs = []
-            datatype = self.filter_extractor.get_datatype(partition_eq_dict[key][0])
-            prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(partition_eq_dict[key])
-            self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list, datatype)
-            if filter_attribs:
-                partition_eq_dict[key].extend(filter_attribs)
-            self.algebraic_eq_predicates.append(partition_eq_dict[key])
+            equi_join_group = partition_eq_dict[key]
+            if len(equi_join_group) <= 3:
+                filter_attribs = []
+                datatype = self.filter_extractor.get_datatype(equi_join_group[0])
+                prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
+                self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
+                                                                   datatype)
+                if filter_attribs:
+                    partition_eq_dict[key].extend(filter_attribs)
+                self.algebraic_eq_predicates.append(partition_eq_dict[key])
+            else:
+                raise ValueError("Higher Group Handling not implemented yet.")
         self.logger.debug(self.algebraic_eq_predicates)
 
     def preprocess_for_aeqa(self):

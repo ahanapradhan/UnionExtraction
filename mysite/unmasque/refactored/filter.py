@@ -77,7 +77,8 @@ class Filter(WhereClause):
         elif datatype == 'str':
             # Group mutation is not implemented for string/text/char/varchar data type
             one_attrib = attrib_list[0]
-            tabname, attrib, attrib_max_length, d_plus_value = one_attrib[0], one_attrib[1], one_attrib[2], one_attrib[3]
+            tabname, attrib, attrib_max_length, d_plus_value = one_attrib[0], one_attrib[1], one_attrib[2], one_attrib[
+                3]
             self.handle_string_filter(attrib, attrib_max_length, d_plus_value, filter_attribs, tabname, query)
 
         elif datatype == 'numeric':
@@ -90,10 +91,8 @@ class Filter(WhereClause):
             tab_set.add(tabname)
             self.connectionHelper.execute_sql([f"update {tabname} set {attrib} = {str(val)};"])
         new_result = self.app.doJob(query)
-        if isQ_result_empty(new_result):
-            self.revert_filter_changes_in_tabset(tab_set)
-            return False
-        return True
+        self.revert_filter_changes_in_tabset(tab_set)
+        return not isQ_result_empty(new_result)
 
     def revert_filter_changes_in_tabset(self, tabset):
         for tabname in tabset:
@@ -109,7 +108,8 @@ class Filter(WhereClause):
                                                   attrib_list)  # True implies row was still present
 
         mandatory_attrib = attrib_list[0]
-        tabname, attrib, attrib_max_length, d_plus_value = mandatory_attrib[0], mandatory_attrib[1], mandatory_attrib[2], mandatory_attrib[3]
+        tabname, attrib, attrib_max_length, d_plus_value = mandatory_attrib[0], mandatory_attrib[1], mandatory_attrib[
+            2], mandatory_attrib[3]
         # inference based on flag_min and flag_max
         if not min_present and not max_present:
             equalto_flag = self.get_filter_value(query, 'int', float(d_plus_value[attrib]) - .01,
@@ -178,22 +178,18 @@ class Filter(WhereClause):
             return high
 
         else:  # =, i.e. datatype == 'int', date
-            is_low = True
-            is_low = self.run_app_for_a_val(datatype, is_low, low, query, query_front)
+            is_low = self.run_app_for_a_val(datatype, low, query, query_front_set)
             self.revert_filter_changes_in_tabset(tab_set)
-            is_high = True
-            is_high = self.run_app_for_a_val(datatype, is_high, high, query, query_front)
+            is_high = self.run_app_for_a_val(datatype, high, query, query_front_set)
             self.revert_filter_changes_in_tabset(tab_set)
             return not is_low and not is_high
 
-    def run_app_for_a_val(self, datatype, is_low, low, query, query_front):
-        low_query = form_update_query_with_value(query_front, datatype, low)
-        self.connectionHelper.execute_sql([low_query])
+    def run_app_for_a_val(self, datatype, low, query, query_front_set):
+        for query_front in query_front_set:
+            low_query = form_update_query_with_value(query_front, datatype, low)
+            self.connectionHelper.execute_sql([low_query])
         new_result = self.app.doJob(query)
-        if isQ_result_empty(new_result):
-            is_low = False
-        # put filter_
-        return is_low
+        return not isQ_result_empty(new_result)
 
     def run_app_with_mid_val(self, datatype, high, low, query, query_front_set):
         mid_val = get_mid_val(datatype, high, low)
