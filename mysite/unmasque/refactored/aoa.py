@@ -80,20 +80,31 @@ class AlgebraicPredicate(WhereClause):
         self.algebraic_eq_predicates = []
         partition_eq_dict = self.preprocess_for_aeqa()
         self.logger.debug(partition_eq_dict)
-        for key in partition_eq_dict.keys():
-            equi_join_group = partition_eq_dict[key]
-            if len(equi_join_group) <= 3:
-                filter_attribs = []
-                datatype = self.filter_extractor.get_datatype(equi_join_group[0])
-                prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
-                self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
-                                                                   datatype)
-                if filter_attribs:
-                    partition_eq_dict[key].extend(filter_attribs)
-                self.algebraic_eq_predicates.append(partition_eq_dict[key])
-            else:
-                raise ValueError("Higher Group Handling not implemented yet.")
+        while partition_eq_dict:
+            check_again_dict = {}
+            for key in partition_eq_dict.keys():
+                equi_join_group = partition_eq_dict[key]
+                if len(equi_join_group) <= 3:
+                    self.handle_unit_eq_group(equi_join_group, query)
+                else:
+                    done = self.handle_higher_eq_groups(equi_join_group, query)
+                    remaining_group = [eq for eq in equi_join_group if eq not in done]
+                    check_again_dict[key] = remaining_group
+            partition_eq_dict = check_again_dict
         self.logger.debug(self.algebraic_eq_predicates)
+
+    def handle_unit_eq_group(self, equi_join_group, query):
+        filter_attribs = []
+        datatype = self.filter_extractor.get_datatype(equi_join_group[0])
+        prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
+        self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
+                                                           datatype)
+        if filter_attribs[0][2] == '=' or filter_attribs[0][2] == 'equal':
+            return False
+        if filter_attribs:
+            equi_join_group.extend(filter_attribs)
+        self.algebraic_eq_predicates.append(equi_join_group)
+        return True
 
     def preprocess_for_aeqa(self):
         partition_eq_dict = {}
@@ -115,3 +126,19 @@ class AlgebraicPredicate(WhereClause):
         self.logger.debug(self.arithmetic_eq_predicates)
         filtered_dict = {key: value for key, value in partition_eq_dict.items() if len(value) > 1}
         return filtered_dict
+
+    def handle_higher_eq_groups(self, equi_join_group, query):
+        seq = list(range(len(equi_join_group)))
+        t_all_paritions = merge_equivalent_paritions(seq)
+        done = None
+        for part in t_all_paritions:
+            check_part = min(part, key=len)
+            attrib_list = []
+            for i in check_part:
+                attrib_list.append(equi_join_group[i])
+            check = self.handle_unit_eq_group(attrib_list, query)
+            if check:
+                done = attrib_list
+                break
+        return done
+
