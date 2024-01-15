@@ -8,6 +8,7 @@ def get_header_from_cursour_desc(desc):
     header = '(' + ', '.join(t) + ')'
     return header
 
+
 def get_combs(elems):
     powerset = lambda s: [set(combo) for r in range(len(s) + 1) for combo in combinations(s, r)]
     pw_elems = powerset(elems)

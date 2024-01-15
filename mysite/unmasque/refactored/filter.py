@@ -266,8 +266,11 @@ class Filter(WhereClause):
         self.revert_filter_changes(tabname)
 
     def revert_filter_changes(self, tabname):
-        self.connectionHelper.execute_sql([truncate_table(tabname),
-                                           insert_into_tab_select_star_fromtab(tabname, get_tabname_4(tabname))])
+        if not self.mock:
+            self.connectionHelper.execute_sql([truncate_table(tabname),
+                                               insert_into_tab_select_star_fromtab(tabname, get_tabname_4(tabname))])
+        else:
+            super().revert_filter_changes(tabname)
 
     def checkStringPredicate(self, query, tabname, attrib):
         # updatequery

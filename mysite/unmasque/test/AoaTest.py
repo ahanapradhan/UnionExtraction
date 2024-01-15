@@ -143,6 +143,7 @@ class MyTestCase(BaseTestCase):
                 f"and o_totalprice <= c_acctbal;"
 
         aoa = AlgebraicPredicate(self.conn, None, relations, global_min_instance_dict)
+        aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
         self.assertEqual(len(aoa.algebraic_eq_predicates), 2)

@@ -69,6 +69,7 @@ class AlgebraicPredicate(WhereClause):
         self.algebraic_eq_predicates = None
 
     def doActualJob(self, args):
+        self.filter_extractor.mock = self.mock
         query = self.extract_params_from_args(args)
         check = self.filter_extractor.doJob(query)
         if not check:
@@ -99,9 +100,9 @@ class AlgebraicPredicate(WhereClause):
         prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
                                                            datatype)
-        if filter_attribs[0][2] == '=' or filter_attribs[0][2] == 'equal':
-            return False
-        if filter_attribs:
+        if len(filter_attribs) > 0:
+            if filter_attribs[0][2] == '=' or filter_attribs[0][2] == 'equal':
+                return False
             equi_join_group.extend(filter_attribs)
         self.algebraic_eq_predicates.append(equi_join_group)
         return True

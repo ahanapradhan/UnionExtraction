@@ -1,8 +1,19 @@
 import copy
 
 from .MutationPipeLineBase import MutationPipeLineBase
-from ..util.common_queries import get_column_details_for_table, select_attribs_from_relation
+from ..util.common_queries import get_column_details_for_table, select_attribs_from_relation, truncate_table
 from ..util.utils import is_int
+
+
+def parse_for_int(val):
+    try:
+        v_int = int(val)
+        v_int = str(val)
+    except ValueError:
+        v_int = f"\'{str(val)}\'"
+    except TypeError:
+        v_int = f"\'{str(val)}\'"
+    return v_int
 
 
 class WhereClause(MutationPipeLineBase):
@@ -18,6 +29,16 @@ class WhereClause(MutationPipeLineBase):
 
         self.global_attrib_types_dict = {}
         self.global_attrib_dict = {}
+
+    def revert_filter_changes(self, tabname):
+        values = self.global_min_instance_dict[tabname]
+        headers = values[0]
+        comma_sep_h = ", ".join(headers)
+        tuple_ = [parse_for_int(e) for e in values[1]]
+        comma_sep_v = ", ".join(tuple_)
+        ddl_ql = f"insert into {tabname}({comma_sep_h}) values({comma_sep_v});"
+        self.connectionHelper.execute_sql([truncate_table(tabname),
+                                           ddl_ql])
 
     def get_init_data(self):
         if len(self.global_attrib_types) + len(self.global_all_attribs) + len(self.global_d_plus_value) + len(
