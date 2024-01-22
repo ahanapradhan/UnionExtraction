@@ -81,6 +81,7 @@ class MyTestCase(BaseTestCase):
                 f"and o_totalprice <= c_acctbal;"
 
         aoa = AlgebraicPredicate(self.conn, None, relations, global_min_instance_dict)
+        aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
         self.assertEqual(len(aoa.algebraic_eq_predicates), 2)
@@ -194,3 +195,9 @@ class MyTestCase(BaseTestCase):
         se = frozenset({one, two})
         i = min(se, key=len)
         self.assertEqual(one, i)
+
+    def test_aoa_bigchain(self):
+        query = "select s_name, c_name, n_name from customer, orders, lineitem, supplier, nation " \
+                "where c_custkey = o_custkey  " \
+                "and o_orderkey = l_orderkey and l_suppkey = s_suppkey " \
+                "and s_nationkey = c_nationkey and c_nationkey = n_nationkey;"
