@@ -1,3 +1,5 @@
+import copy
+
 from mysite.unmasque.refactored.abstract.where_clause import WhereClause
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
 
@@ -65,6 +67,55 @@ def merge_equivalent_paritions(arr):
     return my_list
 
 
+def add_concrete_bounds_as_edge(pred_list, edge_set):
+    for pred in pred_list:
+        edge = []
+        if pred[2] == '<=':
+            edge.append((pred[0], pred[1]))
+            edge.append(pred[4])
+        elif pred[2] == '>=':
+            edge.append(pred[3])
+            edge.append((pred[0], pred[1]))
+        edge_set.append(edge)
+
+
+def create_attrib_set(ineq_group):
+    C_E = set()
+    for pred in ineq_group:
+        C_E.add((pred[0], pred[1]))
+    return list(C_E)
+
+
+def get_out_edges(edge_set, tab_attrib):
+    next_attribs = []
+    for edge in edge_set:
+        if edge[0] == tab_attrib and isinstance(edge[1], tuple) and len(edge[1]) == 2:
+            next_attribs.append(edge[1])
+    return next_attribs
+
+
+def get_concrete_LB_in_edge(edge_set, tab_attrib):
+    for edge in edge_set:
+        if edge[1] == tab_attrib and not isinstance(edge[0], tuple):
+            return edge
+
+
+def get_concrete_UB_out_edge(edge_set, tab_attrib):
+    for edge in edge_set:
+        if edge[0] == tab_attrib and not isinstance(edge[1], tuple):
+            return edge
+
+
+def create_v_lj(ineq_group, C_next):
+    v_lj_list = []
+    for tab_attrib in C_next:
+        tab, attrib = tab_attrib[0], tab_attrib[1]
+        for pred in ineq_group:
+            if pred[0] == tab and pred[1] == attrib and pred[2] == '>=':
+                v_lj_list.append(pred[3])
+    return v_lj_list
+
+
 class AlgebraicPredicate(WhereClause):
     def __init__(self, connectionHelper, global_key_lists,
                  core_relations, global_min_instance_dict):
@@ -73,7 +124,6 @@ class AlgebraicPredicate(WhereClause):
         self.filter_extractor = Filter(self.connectionHelper, global_key_lists,
                                        core_relations, global_min_instance_dict)
         self.aoa_predicates = None
-        self.aeq_predicates = None
         self.arithmetic_eq_predicates = None
         self.algebraic_eq_predicates = None
         self.arithmetic_ineq_predicates = None
@@ -86,8 +136,18 @@ class AlgebraicPredicate(WhereClause):
             return False
         partition_eq_dict, ineqaoa_preds = self.preprocess_for_aeqa()
         self.find_eq_join_graph(query, partition_eq_dict)
-        self.find_ineq_aoa(query, ineqaoa_preds)
+        self.aoa_predicates = self.find_ineq_aoa_algo3(query, ineqaoa_preds)
+        self.logger.debug("E: ", self.aoa_predicates)
         return True
+
+    def do_bound_check_again(self, tab_attrib, datatype, query):
+        filter_attribs = []
+        d_plus_value = copy.deepcopy(self.global_d_plus_value)
+        attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
+        one_attrib = (tab_attrib[0], tab_attrib[1], attrib_max_length, d_plus_value)
+        self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
+        self.logger.debug("filter_attribs", filter_attribs)
+        return filter_attribs
 
     def is_dmin_val_same_as_B(self, pred, is_UB, datatype, peer_tab_attrib):
         tab, attrib = pred[0], pred[1]
@@ -105,23 +165,49 @@ class AlgebraicPredicate(WhereClause):
             return result <= delta
         return val == _B
 
-    def find_ineq_aoa(self, query, ineqaoa_preds):
+    def find_ineq_aoa_algo3(self, query, ineqaoa_preds):
         filtered_dict = self.isolate_ineq_aoa_preds_per_datatype(ineqaoa_preds)
         self.logger.debug(self.arithmetic_ineq_predicates)
         self.logger.debug(filtered_dict)
+        E = []
         for key in filtered_dict:
+            edge_set = []
             ineq_group = filtered_dict[key]
-            edge = self.create_dashed_edges(ineq_group, key)
-            self.logger.debug("Directed edge: ", edge)
+            C_E = create_attrib_set(ineq_group)
+            self.create_dashed_edges(ineq_group, key, edge_set)
+            add_concrete_bounds_as_edge(ineq_group, edge_set)
+            self.logger.debug("Directed edge: ", edge_set)
+            unvisited = copy.deepcopy(C_E)
+            self.logger.debug("unvisited: ", unvisited)
+            # while unvisited:
+            for attrib in unvisited:
+                self.logger.debug("attrib:", attrib)
+                C_next = get_out_edges(edge_set, attrib)
+                self.logger.debug(attrib, C_next)
+                V_lj_prev = create_v_lj(ineq_group, C_next)
+                self.logger.debug("LBs prev:", C_next, V_lj_prev)
+                self.mutate_attrib(attrib, key, ineq_group)
+                for c in C_next:
+                    f_e = self.do_bound_check_again(c, key, query)
+                    self.logger.debug(c, f_e)
+                    if V_lj_prev and not f_e \
+                            or not V_lj_prev and f_e\
+                            or V_lj_prev[C_next.index(c)] != f_e[C_next.index(c)]:
+                        edge_set.remove(get_concrete_LB_in_edge(edge_set, c))
+                        _UB = get_concrete_UB_out_edge(edge_set, attrib)
+                        if _UB:
+                            edge_set.remove(_UB)
+                    else:
+                        edge_set.remove((attrib, c))
+            E.extend(edge_set)
+        return E
 
-    def create_dashed_edges(self, ineq_group, key):
+    def create_dashed_edges(self, ineq_group, key, edge_set):
         seq = get_all_two_combs(ineq_group)
-        edge_set = []
         for e in seq:
             one, two = e[0], e[1]
             self.create_dashed_edge_from_oneTotwo(edge_set, key, one, two)
             self.create_dashed_edge_from_oneTotwo(edge_set, key, two, one)
-        return edge_set
 
     def create_dashed_edge_from_oneTotwo(self, edge_set, key, one, two):
         tab_attrib = (one[0], one[1])
@@ -214,3 +300,10 @@ class AlgebraicPredicate(WhereClause):
                 done = attrib_list
                 break
         return done
+
+    def mutate_attrib(self, attrib, datatype, ineq_group):
+        for pred in ineq_group:
+            if attrib[0] == pred[0] and attrib[1] == pred[1]:
+                check = self.is_dmin_val_same_as_B(pred, False, datatype, attrib)
+                mutate_with = pred[4] if check else pred[3]
+                self.connectionHelper.execute_sql([f"update {attrib[0]} set {attrib[1]} = {mutate_with};"])

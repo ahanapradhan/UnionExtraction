@@ -96,6 +96,8 @@ class MyTestCase(BaseTestCase):
                 high = eq[2][4]
                 self.assertEqual(low, low_val + 1)
                 self.assertEqual(high, high_val)
+        self.assertEqual(len(aoa.aoa_predicates), 1)
+        self.assertTrue((('orders', 'o_totalprice'), ('customer', 'c_acctbal')) in aoa.aoa_predicates)
 
     def test_aoa_dev_higher_group(self):
         relations = [self.tab_orders, self.tab_customer, self.tab_nation]
