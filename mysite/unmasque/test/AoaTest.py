@@ -98,6 +98,10 @@ class MyTestCase(BaseTestCase):
                 self.assertEqual(high, high_val)
         self.assertEqual(len(aoa.aoa_predicates), 1)
         self.assertTrue((('orders', 'o_totalprice'), ('customer', 'c_acctbal')) in aoa.aoa_predicates)
+        print("=======================")
+        print(aoa.where_clause)
+        print("=======================")
+        self.conn.closeConnection()
 
     def test_aoa_dev_date_pred(self):
         relations = [self.tab_lineitem, self.tab_orders]
@@ -151,6 +155,9 @@ class MyTestCase(BaseTestCase):
         self.assertTrue((('lineitem', 'l_commitdate'), ('lineitem', 'l_receiptdate')) in aoa.aoa_predicates)
         self.assertTrue([datetime.date(1993, 7, 1), ('orders', 'o_orderdate')] in aoa.aoa_predicates)
         self.assertTrue([('orders', 'o_orderdate'), datetime.date(1993, 9, 30)] in aoa.aoa_predicates)
+        print("=======================")
+        print(aoa.where_clause)
+        print("=======================")
 
         self.conn.closeConnection()
 

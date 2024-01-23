@@ -2,6 +2,8 @@ import copy
 
 from mysite.unmasque.refactored.abstract.where_clause import WhereClause
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
+from mysite.unmasque.refactored.util.utils import get_format, get_datatype, get_datatype_of_val
+from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
 
 
 def get_all_two_combs(items):
@@ -115,6 +117,14 @@ def create_v_lj(ineq_group, C_next):
     return v_lj_list
 
 
+def add_pred_for(aoa_l, pred):
+    if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
+        pred.append(aoa_l[1])
+    else:
+        pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
+    return aoa_l
+
+
 class AlgebraicPredicate(WhereClause):
     def __init__(self, connectionHelper, global_key_lists,
                  core_relations, global_min_instance_dict):
@@ -129,7 +139,28 @@ class AlgebraicPredicate(WhereClause):
         self.where_clause = ""
 
     def generate_where_clause(self):
-        pass
+        predicates = []
+        for eq_join in self.algebraic_eq_predicates:
+            join_edge = list(item[1] for item in eq_join)
+            join_edge.sort()
+            join_e = f"{join_edge[0]} = {join_edge[1]}"
+            predicates.append(join_e)
+        for a_eq in self.arithmetic_eq_predicates:
+            datatype = self.filter_extractor.get_datatype((a_eq[0], a_eq[1]))
+            pred = f"{a_eq[1]} = {get_format(datatype, a_eq[3])}"
+            predicates.append(pred)
+        for a_ineq in self.arithmetic_ineq_predicates:
+            datatype = self.filter_extractor.get_datatype((a_ineq[0], a_ineq[1]))
+            pred_op = a_ineq[1] + " "
+            pred_op = handle_range_preds(datatype, a_ineq, pred_op)
+            predicates.append(pred_op)
+        for aoa in self.aoa_predicates:
+            pred = []
+            add_pred_for(aoa[0], pred)
+            add_pred_for(aoa[1], pred)
+            predicates.append(" <= ".join(pred))
+
+        self.where_clause = "\n and ".join(predicates)
 
     def doActualJob(self, args):
         self.filter_extractor.mock = self.mock
@@ -141,6 +172,7 @@ class AlgebraicPredicate(WhereClause):
         self.find_eq_join_graph(query, partition_eq_dict)
         self.aoa_predicates = self.find_ineq_aoa_algo3(query, ineqaoa_preds)
         self.logger.debug("E: ", self.aoa_predicates)
+        self.generate_where_clause()
         return True
 
     def do_bound_check_again(self, tab_attrib, datatype, query):

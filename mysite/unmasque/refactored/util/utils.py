@@ -50,6 +50,20 @@ def is_number(s):
         return False
 
 
+def is_date(s):
+    return isinstance(s, datetime.date)
+
+
+def get_datatype_of_val(val):
+    if is_date(val):
+        return 'date'
+    elif is_int(val):
+        return 'int'
+    elif is_number(val):
+        return 'numeric'
+    else:
+        raise ValueError
+
 def get_unused_dummy_val(datatype, value_used):
     if datatype == 'int':
         dint = constants.dummy_int
@@ -138,7 +152,7 @@ def get_mid_val(datatype, high, low):
     if datatype == 'date':
         mid_val = low + datetime.timedelta(days=int(math.floor((high - low).days / 2)))
     elif datatype == 'int':
-        mid_val = low + int((high - low)/2)
+        mid_val = low + int((high - low) / 2)
     else:  # numeric
         mid_val = (high + low) / 2
         mid_val = round(mid_val, 3)
