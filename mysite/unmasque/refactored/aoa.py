@@ -69,14 +69,13 @@ def merge_equivalent_paritions(arr):
 
 def add_concrete_bounds_as_edge(pred_list, edge_set):
     for pred in pred_list:
-        edge = []
         if pred[2] == '<=':
-            edge.append((pred[0], pred[1]))
-            edge.append(pred[4])
+            edge_set.append([(pred[0], pred[1]), pred[4]])
         elif pred[2] == '>=':
-            edge.append(pred[3])
-            edge.append((pred[0], pred[1]))
-        edge_set.append(edge)
+            edge_set.append([pred[3], (pred[0], pred[1])])
+        elif pred[2] == 'range':
+            edge_set.append([pred[3], (pred[0], pred[1])])
+            edge_set.append([(pred[0], pred[1]), pred[4]])
 
 
 def create_attrib_set(ineq_group):
@@ -127,6 +126,10 @@ class AlgebraicPredicate(WhereClause):
         self.arithmetic_eq_predicates = None
         self.algebraic_eq_predicates = None
         self.arithmetic_ineq_predicates = None
+        self.where_clause = ""
+
+    def generate_where_clause(self):
+        pass
 
     def doActualJob(self, args):
         self.filter_extractor.mock = self.mock
@@ -142,8 +145,8 @@ class AlgebraicPredicate(WhereClause):
 
     def do_bound_check_again(self, tab_attrib, datatype, query):
         filter_attribs = []
-        d_plus_value = copy.deepcopy(self.global_d_plus_value)
-        attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
+        d_plus_value = copy.deepcopy(self.filter_extractor.global_d_plus_value)
+        attrib_max_length = copy.deepcopy(self.filter_extractor.global_attrib_max_length)
         one_attrib = (tab_attrib[0], tab_attrib[1], attrib_max_length, d_plus_value)
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
         self.logger.debug("filter_attribs", filter_attribs)
@@ -191,7 +194,7 @@ class AlgebraicPredicate(WhereClause):
                     f_e = self.do_bound_check_again(c, key, query)
                     self.logger.debug(c, f_e)
                     if V_lj_prev and not f_e \
-                            or not V_lj_prev and f_e\
+                            or not V_lj_prev and f_e \
                             or V_lj_prev[C_next.index(c)] != f_e[C_next.index(c)]:
                         edge_set.remove(get_concrete_LB_in_edge(edge_set, c))
                         _UB = get_concrete_UB_out_edge(edge_set, attrib)
@@ -230,7 +233,7 @@ class AlgebraicPredicate(WhereClause):
         self.arithmetic_ineq_predicates = []
         for key in datatype_dict:
             if len(datatype_dict[key]) == 1:
-                self.arithmetic_ineq_predicates.append(datatype_dict[key])
+                self.arithmetic_ineq_predicates.extend(datatype_dict[key])
         return filtered_dict
 
     def find_eq_join_graph(self, query, partition_eq_dict):
@@ -306,4 +309,6 @@ class AlgebraicPredicate(WhereClause):
             if attrib[0] == pred[0] and attrib[1] == pred[1]:
                 check = self.is_dmin_val_same_as_B(pred, False, datatype, attrib)
                 mutate_with = pred[4] if check else pred[3]
+                if datatype == 'date':
+                    mutate_with = f"\'{mutate_with}\'"
                 self.connectionHelper.execute_sql([f"update {attrib[0]} set {attrib[1]} = {mutate_with};"])

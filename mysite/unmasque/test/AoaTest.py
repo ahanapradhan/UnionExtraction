@@ -99,6 +99,61 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(aoa.aoa_predicates), 1)
         self.assertTrue((('orders', 'o_totalprice'), ('customer', 'c_acctbal')) in aoa.aoa_predicates)
 
+    def test_aoa_dev_date_pred(self):
+        relations = [self.tab_lineitem, self.tab_orders]
+        self.conn.connectUsingParams()
+
+        self.conn.execute_sql([f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+                               f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+                               f"VALUES (2999943, 35074, \'F\', 299094.06, \'1993, 9, 7\', \'3-MEDIUM\', "
+                               f"\'Clerk#000000475\', 0,"
+                               f"\'hely ironic requests. bold\');",
+
+                               f"Insert into lineitem(l_orderkey, l_partkey,l_suppkey,l_linenumber,l_quantity,"
+                               f"l_extendedprice,"
+                               f"l_discount,l_tax,l_returnflag,l_linestatus,l_shipdate,l_commitdate,l_receiptdate,"
+                               f"l_shipinstruct,l_shipmode,l_comment)"
+                               f" VALUES (2999943, 55442, 4226, 4, 2.00, 2794.88, 0.06, 0.08, \'R\', \'F\', \'1993, "
+                               f"10, 15\',"
+                               f"\'1993, 10, 24\', \'1993, 11, 1\', \'DELIVER IN PERSON\', \'TRUCK\', \'s. slyly "
+                               f"speci\');"
+                               ])
+
+        global_min_instance_dict = {'orders': [
+            ('o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority',
+             'o_clerk', 'o_shippriority', 'o_comment'),
+            (2999943, 35074, 'F', 299094.06, datetime.date(1993, 9, 7), '3-MEDIUM', 'Clerk#000000475', 0,
+             'hely ironic requests. bold')],
+            'lineitem': [('l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
+                          'l_discount', 'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate',
+                          'l_receiptdate', 'l_shipinstruct', 'l_shipmode', 'l_comment'),
+                         (2999943, 55442, 4226, 4, 2.00, 2794.88, 0.06, 0.08, 'R', 'F', datetime.date(1993, 10, 15),
+                          datetime.date(1993, 10, 24), datetime.date(1993, 11, 1), 'DELIVER IN PERSON', 'TRUCK',
+                          's. slyly speci')]
+        }
+
+        query = "Select o_orderpriority, count(*) as order_count " \
+                "From orders, lineitem Where l_orderkey = o_orderkey " \
+                "and o_orderdate >= '1993-07-01' and o_orderdate < '1993-10-01'" \
+                " and l_commitdate <= l_receiptdate Group By o_orderpriority Order By o_orderpriority;"
+
+        aoa = AlgebraicPredicate(self.conn, None, relations, global_min_instance_dict)
+        aoa.mock = True
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        self.assertEqual(len(aoa.algebraic_eq_predicates), 1)
+        self.assertTrue(('lineitem', 'l_orderkey') in aoa.algebraic_eq_predicates[0])
+        self.assertTrue(('orders', 'o_orderkey') in aoa.algebraic_eq_predicates[0])
+
+        self.assertEqual(len(aoa.arithmetic_ineq_predicates), 0)
+
+        self.assertEqual(len(aoa.aoa_predicates), 3)
+        self.assertTrue((('lineitem', 'l_commitdate'), ('lineitem', 'l_receiptdate')) in aoa.aoa_predicates)
+        self.assertTrue([datetime.date(1993, 7, 1), ('orders', 'o_orderdate')] in aoa.aoa_predicates)
+        self.assertTrue([('orders', 'o_orderdate'), datetime.date(1993, 9, 30)] in aoa.aoa_predicates)
+
+        self.conn.closeConnection()
+
     def test_aoa_dev_higher_group(self):
         relations = [self.tab_orders, self.tab_customer, self.tab_nation]
         self.conn.connectUsingParams()
@@ -165,20 +220,6 @@ class MyTestCase(BaseTestCase):
     def test_ordering_problem_aoa_dev(self):
         for i in range(1, 100):
             self.test_aoa_dev_2()
-
-    def test_aoa_dev(self):
-        query = "SELECT c_name as name, " \
-                "c_acctbal as account_balance " \
-                "FROM orders, customer, nation " \
-                "WHERE o_custkey > 2500 and c_custkey = o_custkey and c_custkey <= 5000" \
-                "and c_nationkey = n_nationkey " \
-                "and o_orderdate between '1998-01-01' and '1998-01-15' " \
-                "and o_totalprice <= c_acctbal;"
-        self.conn.connectUsingParams()
-        eq = self.pipeline.doJob(query)
-        self.assertTrue(eq)
-        # self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
 
     def test_paritions(self):
         # Example usage
