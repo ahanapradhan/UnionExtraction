@@ -92,6 +92,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         self.assertEqual(len(aoa.algebraic_eq_predicates), 3)
         self.assertEqual(len(aoa.arithmetic_eq_predicates), 1)
+        self.assertEqual(len(aoa.aoa_predicates), 5)
 
         print(aoa.where_clause)
 
