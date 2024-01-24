@@ -24,21 +24,23 @@ class MyTestCase(BaseTestCase):
                 "and ps_supplycost <= 500 " \
                 "and l_linenumber = 1 " \
                 "Order By l_orderkey Limit 10;"
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings.key_lists)
-        cs2.iteration_count = 0
-        check = cs2.doJob(query)
-        self.assertTrue(cs2.done)
-
-        vm = ViewMinimizer(self.conn, core_rels, cs2.sizes, cs2.passed)
-        check = vm.doJob(query)
-        self.assertTrue(vm.done and check)
-
-        aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, core_rels, vm.global_min_instance_dict)
-        check = aoa.doJob(query)
+        aoa, check = self.run_pipeline(core_rels, query)
         self.assertTrue(check)
         print(aoa.where_clause)
 
         self.conn.closeConnection()
+
+    def test_non_key_aoa_join(self):
+        self.conn.connectUsingParams()
+        core_rels = ['lineitem', 'partsupp']
+        query = "Select l_shipmode From lineitem, partsupp " \
+                "Where ps_partkey = l_partkey and ps_suppkey = l_suppkey and ps_availqty = l_linenumber " \
+                "Group By l_shipmode " \
+                "Order By l_shipmode Limit 5;"
+        aoa, check = self.run_pipeline(core_rels, query)
+        self.assertTrue(check)
+        self.assertEqual(len(aoa.algebraic_eq_predicates), 3)
+        print(aoa.where_clause)
 
     def test_date_predicate_aoa(self):
         self.conn.connectUsingParams()
@@ -48,17 +50,7 @@ class MyTestCase(BaseTestCase):
                 "and o_orderdate >= '1993-07-01' and o_orderdate < '1993-10-01'" \
                 " and l_commitdate <= l_receiptdate Group By o_orderpriority Order By o_orderpriority;"
 
-        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings.key_lists)
-        cs2.iteration_count = 0
-        check = cs2.doJob(query)
-        self.assertTrue(cs2.done)
-
-        vm = ViewMinimizer(self.conn, core_rels, cs2.sizes, cs2.passed)
-        check = vm.doJob(query)
-        self.assertTrue(vm.done and check)
-
-        aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, core_rels, vm.global_min_instance_dict)
-        check = aoa.doJob(query)
+        aoa, check = self.run_pipeline(core_rels, query)
         self.assertTrue(check)
         self.assertEqual(len(aoa.algebraic_eq_predicates), 1)
         self.assertTrue(('lineitem', 'l_orderkey') in aoa.algebraic_eq_predicates[0])
@@ -69,6 +61,18 @@ class MyTestCase(BaseTestCase):
         self.assertTrue([datetime.date(1993, 7, 1), ('orders', 'o_orderdate')] in aoa.aoa_predicates)
         self.assertTrue([('orders', 'o_orderdate'), datetime.date(1993, 9, 30)] in aoa.aoa_predicates)
         self.conn.closeConnection()
+
+    def run_pipeline(self, core_rels, query):
+        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings.key_lists)
+        cs2.iteration_count = 0
+        check = cs2.doJob(query)
+        self.assertTrue(cs2.done)
+        vm = ViewMinimizer(self.conn, core_rels, cs2.sizes, cs2.passed)
+        check = vm.doJob(query)
+        self.assertTrue(vm.done and check)
+        aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, core_rels, vm.global_min_instance_dict)
+        check = aoa.doJob(query)
+        return aoa, check
 
     def test_aoa_dev(self):
         query = "SELECT c_name as name, " \
