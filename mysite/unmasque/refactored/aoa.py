@@ -170,6 +170,11 @@ class AlgebraicPredicate(WhereClause):
             return False
         partition_eq_dict, ineqaoa_preds = self.preprocess_for_aeqa()
         self.find_eq_join_graph(query, partition_eq_dict)
+        
+        for eq_join in self.algebraic_eq_predicates:
+            if len(eq_join) == 3:
+                ineqaoa_preds.append(eq_join[2])
+
         self.aoa_predicates = self.find_ineq_aoa_algo3(query, ineqaoa_preds)
         self.logger.debug("E: ", self.aoa_predicates)
         self.generate_where_clause()

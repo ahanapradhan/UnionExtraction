@@ -10,6 +10,36 @@ from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
+    def test_multiple_aoa(self):
+        self.conn.connectUsingParams()
+        core_rels = ['orders', 'lineitem', 'partsupp']
+        query = "Select l_quantity, l_shipinstruct From orders, lineitem, partsupp " \
+                "Where ps_partkey = l_partkey " \
+                "and ps_suppkey = l_suppkey " \
+                "and o_orderkey = l_orderkey " \
+                "and l_shipdate >= o_orderdate " \
+                "and ps_availqty <= l_orderkey " \
+                "and l_extendedprice <= 20000 " \
+                "and o_totalprice <= 60000 " \
+                "and ps_supplycost <= 500 " \
+                "and l_linenumber = 1 " \
+                "Order By l_orderkey Limit 10;"
+        cs2 = Cs2(self.conn, tpchSettings.relations, core_rels, tpchSettings.key_lists)
+        cs2.iteration_count = 0
+        check = cs2.doJob(query)
+        self.assertTrue(cs2.done)
+
+        vm = ViewMinimizer(self.conn, core_rels, cs2.sizes, cs2.passed)
+        check = vm.doJob(query)
+        self.assertTrue(vm.done and check)
+
+        aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, core_rels, vm.global_min_instance_dict)
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+
+        self.conn.closeConnection()
+
     def test_date_predicate_aoa(self):
         self.conn.connectUsingParams()
         core_rels = ['orders', 'lineitem']

@@ -34,6 +34,69 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
         super().tearDown()
 
+    def test_multiple_aoa(self):
+        self.conn.connectUsingParams()
+        core_rels = ['orders', 'lineitem', 'partsupp']
+        query = "Select l_quantity, l_shipinstruct From orders, lineitem, partsupp " \
+                "Where ps_partkey = l_partkey " \
+                "and ps_suppkey = l_suppkey " \
+                "and o_orderkey = l_orderkey " \
+                "and l_shipdate >= o_orderdate " \
+                "and ps_availqty <= l_orderkey " \
+                "and l_extendedprice <= 20000 " \
+                "and o_totalprice <= 60000 " \
+                "and ps_supplycost <= 500 " \
+                "and l_linenumber = 1 " \
+                "Order By l_orderkey Limit 10;"
+
+        self.conn.execute_sql([
+            f"Insert into lineitem(l_orderkey,l_partkey,l_suppkey,l_linenumber,l_quantity,"
+            f"l_extendedprice,"
+            f"l_discount,l_tax,l_returnflag,l_linestatus,l_shipdate,l_commitdate,l_receiptdate,"
+            f"l_shipinstruct,l_shipmode,l_comment)"
+            f" VALUES (2999749,84936, 4937, 1, 1.00, 1920.93,0.01, 0.02, \'N\', \'O\', \'1998, 5, 6\',"
+            f"\'1998, 5, 4\', \'1998, 5, 30\',\'COLLECT COD              \', \'AIR       \',"
+            f"\'esias. furiously final foxes detec\');",
+
+            f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+            f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+            f"VALUES (2999749, 122899, \'O\', 56924.25, \'1998, 2, 8\', \'5-LOW\', \'Clerk#000000555\', 0, "
+            f"\'luffily. slyly regular deposits will snooze. furiously pending asymptot\');",
+
+            f"Insert into partsupp(ps_partkey, ps_suppkey, ps_availqty, ps_supplycost, ps_comment) "
+            f"VALUES (84936, 4937, 8444, 26.97, \'riously final instructions. pinto beans cajole. "
+            f"idly even packages haggle doggedly furiously regular \');"
+        ])
+
+        global_min_instance_dict = {'orders': [
+            ('o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority',
+             'o_clerk', 'o_shippriority', 'o_comment'),
+            (2999749, 122899, 'O', 56924.25, datetime.date(1998, 2, 8), '5-LOW', 'Clerk#000000555', 0,
+             'luffily. slyly regular deposits will snooze. furiously pending asymptot')],
+            'lineitem': [('l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
+                          'l_discount', 'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate',
+                          'l_receiptdate', 'l_shipinstruct', 'l_shipmode', 'l_comment'),
+                         (2999749, 84936, 4937, 1, 1.00, 1920.93,
+                          0.01, 0.02, 'N', 'O', datetime.date(1998, 5, 6),
+                          datetime.date(1998, 5, 4), datetime.date(1998, 5, 30),
+                          'COLLECT COD              ', 'AIR       ',
+                          'esias. furiously final foxes detec')],
+            'partsupp': [('ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment'),
+                         (84936, 4937, 8444, 26.97,
+                          'riously final instructions. pinto beans cajole. idly even packages haggle doggedly '
+                          'furiously regular ')]}
+
+        aoa = AlgebraicPredicate(self.conn, None, core_rels, global_min_instance_dict)
+        aoa.mock = True
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        self.assertEqual(len(aoa.algebraic_eq_predicates), 3)
+        self.assertEqual(len(aoa.arithmetic_eq_predicates), 1)
+
+        print(aoa.where_clause)
+
+        self.conn.closeConnection()
+
     def test_aoa_dev_2(self):
         relations = [self.tab_orders, self.tab_customer, self.tab_nation]
         self.conn.connectUsingParams()
