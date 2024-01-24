@@ -43,7 +43,7 @@ class MyTestCase(BaseTestCase):
         print(aoa.where_clause)
         self.assertEqual(aoa.where_clause.count("and"), 8)
         self.assertEqual(aoa.where_clause.count("<="), 6)
-        self.assertEqual(aoa.where_clause.count("="), 3)
+        self.assertEqual(aoa.where_clause.count(" ="), 3)
         self.conn.closeConnection()
 
     def test_multiple_aoa_1(self):
