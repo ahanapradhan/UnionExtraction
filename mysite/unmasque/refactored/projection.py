@@ -179,7 +179,7 @@ class Projection(GenerationPipeLineBase):
         projection_dep = self.find_dependencies_on_multi(attrib_types_dict, projected_attrib, projection_names, query)
         projection_sol = self.find_solution_on_multi(attrib_types_dict, projected_attrib, projection_names,
                                                      projection_dep, query)
-        #self.build_equation(projected_attrib, projection_dep, projection_sol)
+        # self.build_equation(projected_attrib, projection_dep, projection_sol)
         self.projected_attribs = projected_attrib
         self.projection_names = projection_names
         self.dependencies = projection_dep
@@ -191,8 +191,6 @@ class Projection(GenerationPipeLineBase):
         # some projections still not identified.
         newfilterList = copy.deepcopy(self.global_filter_predicates)
         while '' in projected_attrib and len(newfilterList):
-            #self.truncate_core_relations()
-
             curr_attrib, curr_value, value_used = construct_value_used_for_filtered_attribs(
                 attrib_types_dict, newfilterList, value_used)
 
@@ -200,9 +198,7 @@ class Projection(GenerationPipeLineBase):
                 add_value_used_for_one_filtered_attrib(attrib_types_dict, curr_attrib, curr_value, entry,
                                                        value_used)
 
-            #value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
             value_used = self.construct_value_used_with_dmin()
-            #self.logger.debug("Compare between\n", value_used, "\n", n_value_used)
             new_result = self.app.doJob(query)
             if isQ_result_empty(new_result):
                 self.logger.error("Unmasque: \n some error in generating new database. "
@@ -213,9 +209,6 @@ class Projection(GenerationPipeLineBase):
         return True
 
     def find_projection_on_unfiltered_attribs(self, attrib_types_dict, query):
-        #self.truncate_core_relations()
-        #value_used = self.construct_values_used(attrib_types_dict)
-        #value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
         value_used = self.construct_value_used_with_dmin()
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
@@ -280,7 +273,6 @@ class Projection(GenerationPipeLineBase):
             newfilterList.remove(val)
 
     def find_dependencies_on_multi(self, attrib_types_dict, projected_attrib, projection_names, query):
-        #self.truncate_core_relations()
         projection_dep = []
         indices_to_check = []
         self.logger.debug("Projected Attrib", projected_attrib)
@@ -289,8 +281,6 @@ class Projection(GenerationPipeLineBase):
             projection_dep.append([])
             indices_to_check.append(i)
         self.logger.debug("Indices To check", indices_to_check)
-        # value_used = self.construct_values_used(attrib_types_dict)
-        # value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
         value_used = self.construct_value_used_with_dmin()
         # Prev Result to check for changes
         prev_result = self.app.doJob(query)
@@ -434,15 +424,16 @@ class Projection(GenerationPipeLineBase):
                 self.param_list.append([])
                 self.syms.append([])
             else:
-                
-                #self.truncate_core_relations()
-                #value_used = self.construct_values_used(attrib_types_dict)
-                #value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
+
+                # self.truncate_core_relations()
+                # value_used = self.construct_values_used(attrib_types_dict)
+                # value_used = self.construct_values_for_attribs(value_used, attrib_types_dict)
                 value_used = self.construct_value_used_with_dmin()
                 prev_result = self.app.doJob(query)
                 self.logger.debug("Inside else", value_used)
                 solution.append(
-                    self.get_solution(attrib_types_dict, projected_attrib, projection_dep, projection_names, idx_pro, prev_result,
+                    self.get_solution(attrib_types_dict, projected_attrib, projection_dep, projection_names, idx_pro,
+                                      prev_result,
                                       value_used, query))
         return solution
 
@@ -450,7 +441,8 @@ class Projection(GenerationPipeLineBase):
     Solve Ax=b to get the expression of the output column
     """
 
-    def get_solution(self, attrib_types_dict, projected_attrib, projection_dep, projection_names, idx, prev_res, value_used, query):
+    def get_solution(self, attrib_types_dict, projected_attrib, projection_dep, projection_names, idx, prev_res,
+                     value_used, query):
         dep = projection_dep[idx]
         n = len(dep)
         fil_check = []
@@ -466,7 +458,7 @@ class Projection(GenerationPipeLineBase):
             syms = sorted(syms, key=lambda x: str(x))
             self.logger.debug("symbols", syms)
             for i in syms:
-                res *= (1+i)
+                res *= (1 + i)
             self.logger.debug("Sym List", expand(res).args)
             self.syms.append(get_param_values_external(syms))
             self.logger.debug("Another List", self.syms)
@@ -501,7 +493,7 @@ class Projection(GenerationPipeLineBase):
             coeff[0][i] = temp_array[i]
 
         coeff[0][2 ** n - 1] = 1
-        
+
         local_param_list = self.get_param_list(sorted([i[1] for i in dep]))
         self.logger.debug("Param List", local_param_list)
         self.param_list.append(local_param_list)
@@ -563,9 +555,9 @@ class Projection(GenerationPipeLineBase):
         solution = np.around(solution, decimals=0)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
-            final_res += (ele*solution[i]) 
-        self.logger.debug("Coeff of 1", solution[len(self.syms[idx])-1])
-        final_res += 1*solution[-1]
+            final_res += (ele * solution[i])
+        self.logger.debug("Coeff of 1", solution[len(self.syms[idx]) - 1])
+        final_res += 1 * solution[-1]
         self.logger.debug("Equation", coeff, b)
         self.logger.debug("Solution", solution)
         # self.logger.debug("Final", final_res, nsimplify(collect(final_res, local_symbol_list)))
@@ -582,8 +574,7 @@ class Projection(GenerationPipeLineBase):
                                                                        self.param_list[idx_pro])
 
     def build_equation_helper(self, solution, dependencies, param_l):
-        
-        
+
         n = len(dependencies)
         # syms = " ".join(dependencies[:n])
         # syms = symbols(syms)
@@ -662,4 +653,3 @@ def get_subsets_helper(deps, res, curr, idx):
         curr.append(deps[i])
         get_subsets_helper(deps, res, curr, i + 1)
         curr.pop()
-        

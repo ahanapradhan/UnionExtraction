@@ -2,7 +2,7 @@ import copy
 
 from mysite.unmasque.refactored.abstract.where_clause import WhereClause
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
-from mysite.unmasque.refactored.util.utils import get_format, get_datatype, get_datatype_of_val
+from mysite.unmasque.refactored.util.utils import get_format, get_datatype, get_datatype_of_val, get_mid_val
 from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
 
 
@@ -10,7 +10,7 @@ def get_all_two_combs(items):
     seq = []
     for i in range(0, len(items)):
         for j in range(i + 1, len(items)):
-            print(f"{str(i)} {str(j)}")
+            # print(f"{str(i)} {str(j)}")
             seq.append([items[i], items[j]])
     return seq
 
@@ -117,6 +117,13 @@ def create_v_lj(ineq_group, C_next):
     return v_lj_list
 
 
+def create_v_lj_2(ineq_group, c):
+    tab, attrib = c[0], c[1]
+    for pred in ineq_group:
+        if pred[0] == tab and pred[1] == attrib and pred[2] == '>=':
+            return pred[3]
+
+
 def add_pred_for(aoa_l, pred):
     if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
         pred.append(aoa_l[1])
@@ -205,6 +212,17 @@ class AlgebraicPredicate(WhereClause):
             return result <= delta
         return val == _B
 
+    def is_dmin_val_lessEqualTo_as_B(self, pred, is_UB, datatype, peer_tab_attrib):
+        tab, attrib = pred[0], pred[1]
+        peer_tab, peer_attrib = peer_tab_attrib[0], peer_tab_attrib[1]
+        _B = pred[4] if is_UB else pred[3]
+        values = self.global_min_instance_dict[peer_tab]
+        attribs, vals = values[0], values[1]
+        attrib_idx = attribs.index(peer_attrib)
+        val = vals[attrib_idx]
+        self.logger.debug(f"{tab}.{attrib} vs. {peer_tab}.{peer_attrib}: {str(val)}, {str(_B)}")
+        return val <= _B
+
     def find_ineq_aoa_algo3(self, query, ineqaoa_preds):
         filtered_dict = self.isolate_ineq_aoa_preds_per_datatype(ineqaoa_preds)
         self.logger.debug(self.arithmetic_ineq_predicates)
@@ -224,16 +242,40 @@ class AlgebraicPredicate(WhereClause):
                 self.logger.debug("attrib:", attrib)
                 C_next = get_out_edges(edge_set, attrib)
                 self.logger.debug(attrib, C_next)
-                V_lj_prev = create_v_lj(ineq_group, C_next)
-                self.logger.debug("LBs prev:", C_next, V_lj_prev)
-                self.mutate_attrib(attrib, key, ineq_group)
                 for c in C_next:
+                    v_lj_prev = create_v_lj_2(ineq_group, c)
+                    self.logger.debug("LB prev:", c, v_lj_prev)
+
+                    impact = True
+
+                    self.mutate_attrib_with_B(attrib, key, ineq_group, True)
                     f_e = self.do_bound_check_again(c, key, query)
                     self.logger.debug(c, f_e)
-                    if V_lj_prev and not f_e \
-                            or not V_lj_prev and f_e \
-                            or V_lj_prev[C_next.index(c)] != f_e[C_next.index(c)]:
-                        edge_set.remove(get_concrete_LB_in_edge(edge_set, c))
+                    if len(f_e) > 0 and v_lj_prev != f_e[0][3]:
+                        impact = impact and True
+                    else:
+                        impact = impact and False
+
+                    self.mutate_attrib_with_B(attrib, key, ineq_group, False)
+                    f_e = self.do_bound_check_again(c, key, query)
+                    self.logger.debug(c, f_e)
+                    if len(f_e) > 0 and v_lj_prev != f_e[0][3]:
+                        impact = impact and True
+                    else:
+                        impact = impact and False
+
+                    self.mutate_attrib(attrib, c, key, ineq_group)
+                    f_e = self.do_bound_check_again(c, key, query)
+                    self.logger.debug(c, f_e)
+                    if len(f_e) > 0 and v_lj_prev != f_e[0][3]:
+                        impact = impact and True
+                    else:
+                        impact = impact and False
+
+                    if impact:
+                        _LB = get_concrete_LB_in_edge(edge_set, c)
+                        if _LB:
+                            edge_set.remove(_LB)
                         _UB = get_concrete_UB_out_edge(edge_set, attrib)
                         if _UB:
                             edge_set.remove(_UB)
@@ -252,7 +294,7 @@ class AlgebraicPredicate(WhereClause):
     def create_dashed_edge_from_oneTotwo(self, edge_set, key, one, two):
         tab_attrib = (one[0], one[1])
         peer_tab_attrib = (two[0], two[1])
-        check = self.is_dmin_val_same_as_B(one, False, key, peer_tab_attrib)
+        check = self.is_dmin_val_lessEqualTo_as_B(one, False, key, peer_tab_attrib)
         self.logger.debug(check)
         if check:
             edge_set.append(tuple([peer_tab_attrib, tab_attrib]))
@@ -341,11 +383,30 @@ class AlgebraicPredicate(WhereClause):
                 break
         return done
 
-    def mutate_attrib(self, attrib, datatype, ineq_group):
+    def mutate_attrib(self, attrib, c, datatype, ineq_group):
+        _UB, _LB = 0, 0
         for pred in ineq_group:
             if attrib[0] == pred[0] and attrib[1] == pred[1]:
-                check = self.is_dmin_val_same_as_B(pred, False, datatype, attrib)
-                mutate_with = pred[4] if check else pred[3]
-                if datatype == 'date':
-                    mutate_with = f"\'{mutate_with}\'"
-                self.connectionHelper.execute_sql([f"update {attrib[0]} set {attrib[1]} = {mutate_with};"])
+                _UB = pred[4]
+        for pred in ineq_group:
+            if c[0] == pred[0] and c[1] == pred[1]:
+                _LB = pred[3]
+        mutate_with = get_mid_val(datatype, _UB, _LB)
+
+        if datatype == 'date':
+            mutate_with = f"\'{mutate_with}\'"
+        self.connectionHelper.execute_sql([f"update {attrib[0]} set {attrib[1]} = {mutate_with};"])
+
+    def mutate_attrib_with_B(self, attrib, datatype, ineq_group, is_UB):
+        _UB = 0
+        for pred in ineq_group:
+            if attrib[0] == pred[0] and attrib[1] == pred[1]:
+                if is_UB:
+                    _UB = pred[4]
+                else:
+                    _UB = pred[3]
+        mutate_with = _UB
+
+        if datatype == 'date':
+            mutate_with = f"\'{mutate_with}\'"
+        self.connectionHelper.execute_sql([f"update {attrib[0]} set {attrib[1]} = {mutate_with};"])

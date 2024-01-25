@@ -193,7 +193,7 @@ class Filter(WhereClause):
 
     def run_app_with_mid_val(self, datatype, high, low, query, query_front_set):
         mid_val = get_mid_val(datatype, high, low)
-        self.logger.debug(f"low: {low}, high: {high}, mid: {mid_val}")
+        # self.logger.debug(f"low: {low}, high: {high}, mid: {mid_val}")
         for q_front in query_front_set:
             update_query = form_update_query_with_value(q_front, datatype, mid_val)
             self.connectionHelper.execute_sql([update_query])
