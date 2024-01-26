@@ -120,7 +120,7 @@ def create_v_lj(ineq_group, C_next):
 def create_v_lj_2(ineq_group, c):
     tab, attrib = c[0], c[1]
     for pred in ineq_group:
-        if pred[0] == tab and pred[1] == attrib and pred[2] == '>=':
+        if pred[0] == tab and pred[1] == attrib and (pred[2] == '>='):
             return pred[3]
 
 
@@ -182,8 +182,13 @@ class AlgebraicPredicate(WhereClause):
             if len(eq_join[-1]) == 5:
                 ineqaoa_preds.append(eq_join[-1])
 
-        self.aoa_predicates = self.find_ineq_aoa_algo3(query, ineqaoa_preds)
+        self.aoa_predicates, maps = self.find_ineq_aoa_algo3(query, ineqaoa_preds)
+        self.optimize_aoa_predicates()
         self.logger.debug("E: ", self.aoa_predicates)
+
+        a_LBs, a_UBs = maps[0], maps[1]
+        self.logger.debug("a_LBs: ", a_LBs)
+
         self.generate_where_clause()
         return True
 
@@ -212,18 +217,18 @@ class AlgebraicPredicate(WhereClause):
             return result <= delta
         return val == _B
 
-    def is_dmin_val_lessEqualTo_as_B(self, pred, is_UB, datatype, peer_tab_attrib):
-        tab, attrib = pred[0], pred[1]
-        peer_tab, peer_attrib = peer_tab_attrib[0], peer_tab_attrib[1]
-        _B = pred[4] if is_UB else pred[3]
-        values = self.global_min_instance_dict[peer_tab]
+    def is_dmin_val_lessEqualTo_as_B(self, other, myself):
+        tab, attrib, _oB = myself[0], myself[1], myself[4]
+        _B = other[3]
+        values = self.global_min_instance_dict[tab]
         attribs, vals = values[0], values[1]
-        attrib_idx = attribs.index(peer_attrib)
+        attrib_idx = attribs.index(attrib)
         val = vals[attrib_idx]
-        self.logger.debug(f"{tab}.{attrib} vs. {peer_tab}.{peer_attrib}: {str(val)}, {str(_B)}")
-        return val <= _B
+        return val <= _B <= _oB
 
     def find_ineq_aoa_algo3(self, query, ineqaoa_preds):
+        absorbed_UBs = {}
+        absorbed_LBs = {}
         filtered_dict = self.isolate_ineq_aoa_preds_per_datatype(ineqaoa_preds)
         self.logger.debug(self.arithmetic_ineq_predicates)
         self.logger.debug(filtered_dict)
@@ -246,43 +251,35 @@ class AlgebraicPredicate(WhereClause):
                     v_lj_prev = create_v_lj_2(ineq_group, c)
                     self.logger.debug("LB prev:", c, v_lj_prev)
 
-                    impact = True
-
                     self.mutate_attrib_with_B(attrib, key, ineq_group, True)
                     f_e = self.do_bound_check_again(c, key, query)
                     self.logger.debug(c, f_e)
                     if len(f_e) > 0 and v_lj_prev != f_e[0][3]:
-                        impact = impact and True
+                        UB_impact = True
                     else:
-                        impact = impact and False
+                        UB_impact = False
 
                     self.mutate_attrib_with_B(attrib, key, ineq_group, False)
                     f_e = self.do_bound_check_again(c, key, query)
                     self.logger.debug(c, f_e)
                     if len(f_e) > 0 and v_lj_prev != f_e[0][3]:
-                        impact = impact and True
+                        LB_impact = True
                     else:
-                        impact = impact and False
+                        LB_impact = False
 
-                    self.mutate_attrib(attrib, c, key, ineq_group)
-                    f_e = self.do_bound_check_again(c, key, query)
-                    self.logger.debug(c, f_e)
-                    if len(f_e) > 0 and v_lj_prev != f_e[0][3]:
-                        impact = impact and True
-                    else:
-                        impact = impact and False
-
-                    if impact:
+                    if UB_impact and LB_impact:
                         _LB = get_concrete_LB_in_edge(edge_set, c)
                         if _LB:
+                            absorbed_LBs[_LB[1]] = _LB
                             edge_set.remove(_LB)
                         _UB = get_concrete_UB_out_edge(edge_set, attrib)
                         if _UB:
+                            absorbed_UBs[_UB[0]] = _UB
                             edge_set.remove(_UB)
-                    else:
+                    elif not UB_impact and not LB_impact:
                         edge_set.remove((attrib, c))
             E.extend(edge_set)
-        return E
+        return E, (absorbed_LBs, absorbed_UBs)
 
     def create_dashed_edges(self, ineq_group, key, edge_set):
         seq = get_all_two_combs(ineq_group)
@@ -294,7 +291,7 @@ class AlgebraicPredicate(WhereClause):
     def create_dashed_edge_from_oneTotwo(self, edge_set, key, one, two):
         tab_attrib = (one[0], one[1])
         peer_tab_attrib = (two[0], two[1])
-        check = self.is_dmin_val_lessEqualTo_as_B(one, False, key, peer_tab_attrib)
+        check = self.is_dmin_val_lessEqualTo_as_B(one, two)
         self.logger.debug(check)
         if check:
             edge_set.append(tuple([peer_tab_attrib, tab_attrib]))
@@ -410,3 +407,13 @@ class AlgebraicPredicate(WhereClause):
         if datatype == 'date':
             mutate_with = f"\'{mutate_with}\'"
         self.connectionHelper.execute_sql([f"update {attrib[0]} set {attrib[1]} = {mutate_with};"])
+
+    def optimize_aoa_predicates(self):
+        seqs = get_all_two_combs(self.aoa_predicates)
+        to_remove = []
+        for seq in seqs:
+            if isinstance(seq[0], tuple) and isinstance(seq[1], tuple):
+                if seq[0][1] == seq[1][0] and (seq[0][0], seq[1][1]) in self.aoa_predicates:
+                    to_remove.append((seq[0][0], seq[1][1]))
+        for t_r in to_remove:
+            self.aoa_predicates.remove(t_r)

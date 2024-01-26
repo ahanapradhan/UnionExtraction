@@ -34,6 +34,57 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
         super().tearDown()
 
+    def test_dormant_aoa(self):
+        self.conn.connectUsingParams()
+        query = "Select l_shipmode, count(*) as count From orders, lineitem " \
+                "Where " \
+                "o_orderkey = l_orderkey " \
+                "and l_commitdate <= l_receiptdate " \
+                "and l_shipdate <= l_commitdate " \
+                "and l_receiptdate >= '1994-01-01' " \
+                "and l_receiptdate <= '1995-01-01' " \
+                "and l_extendedprice <= o_totalprice " \
+                "and l_extendedprice <= 70000 " \
+                "and o_totalprice >= 60000 " \
+                "Group By l_shipmode " \
+                "Order By l_shipmode;"
+        core_rels = ['orders', 'lineitem']
+
+        self.conn.execute_sql([
+            f"Insert into lineitem(l_orderkey,l_partkey,l_suppkey,l_linenumber,l_quantity,"
+            f"l_extendedprice,"
+            f"l_discount,l_tax,l_returnflag,l_linestatus,l_shipdate,l_commitdate,l_receiptdate,"
+            f"l_shipinstruct,l_shipmode,l_comment)"
+            f" VALUES (2999908,2997, 4248, 6, 19.00, 36099.81, 0.04, 0.08, \'R\', \'F\', \'1994, 7, 17\',"
+            f"\'1994, 7, 18\', \'1994, 8, 16\',\'NONE                     \', \'AIR       \',"
+            f"\'re. unusual frets after the sl\');",
+
+            f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+            f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+            f"VALUES (2999908,23014, \'F\', 168982.73, \'1994, 4, 30\', \'5-LOW\', \'Clerk#000000061\', 0, "
+            f"\'ost slyly around the blithely bold requests.\');"])
+
+        global_min_instance_dict = {'orders': [
+            ('o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority',
+             'o_clerk', 'o_shippriority', 'o_comment'),
+            (2999908, 23014, 'F', 168982.73, datetime.date(1994, 4, 30), '5-LOW', 'Clerk#000000061', 0,
+             'ost slyly around the blithely bold requests.')],
+            'lineitem': [('l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
+                          'l_discount', 'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate',
+                          'l_receiptdate', 'l_shipinstruct', 'l_shipmode', 'l_comment'),
+                         (2999908, 2997, 4248, 6, 19.00, 36099.81, 0.04, 0.08, 'R', 'F', datetime.date(1994, 7, 17),
+                          datetime.date(1994, 7, 18), datetime.date(1994, 8, 16),
+                          'NONE                     ', 'AIR       ',
+                          're. unusual frets after the sl')]}
+
+        aoa = AlgebraicPredicate(self.conn, None, core_rels, global_min_instance_dict)
+        aoa.mock = True
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.assertEqual(aoa.where_clause.count("and"), 7)
+        self.conn.closeConnection()
+
     def test_multiple_aoa(self):
         self.conn.connectUsingParams()
         core_rels = ['orders', 'lineitem', 'partsupp']
