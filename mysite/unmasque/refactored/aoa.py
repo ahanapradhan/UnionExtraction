@@ -2,8 +2,77 @@ import copy
 
 from mysite.unmasque.refactored.abstract.where_clause import WhereClause
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
-from mysite.unmasque.refactored.util.utils import get_format, get_datatype, get_datatype_of_val, get_mid_val
+from mysite.unmasque.refactored.util.utils import get_format, get_datatype_of_val, get_mid_val
 from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
+
+
+def is_sublist(lst, sublist):
+    lst_hash = [hash(el) for el in lst]
+    sublist_hash = [hash(el) for el in sublist]
+
+    seq = []
+    for s in sublist_hash:
+        if s in lst_hash:
+            s_idx = lst_hash.index(s)
+            seq.append(s_idx)
+    if not len(seq):
+        return False
+    start = seq[0]
+    for i in range(1, len(seq)):
+        if start + 1 != seq[i]:
+            return False
+        start = start + 1
+    return True
+
+
+def remove_subchians(chains):
+    to_remove = []
+    seq = get_all_two_combs(chains)
+    for s in seq:
+        if is_sublist(s[0], s[1]):
+            to_remove.append(s[1])
+    for r in to_remove:
+        chains.remove(r)
+    return chains
+
+
+def find_chains(graph, start, path=[]):
+    path = path + [start]
+    if start not in graph:
+        return [path]
+    chains = []
+    for node in graph[start]:
+        if node not in path:
+            new_chains = find_chains(graph, node, path)
+            for new_chain in new_chains:
+                chains.append(new_chain)
+    return chains
+
+
+def find_all_chains(input_map):
+    # Find all possible chains
+    all_chains = []
+    for key in input_map:
+        chains = find_chains(input_map, key)
+        all_chains.extend(chains)
+    _all_chains = remove_subchians(all_chains)
+    return _all_chains
+
+
+def remove_transitive_relations(input_list):
+    result = []
+
+    def is_transitive(tuple1, tuple2):
+        return tuple1[1] == tuple2[0]
+
+    for i in range(len(input_list)):
+        for j in range(len(input_list)):
+            if i != j and isinstance(input_list[i], tuple) and isinstance(input_list[j], tuple) \
+                    and is_transitive(input_list[i], input_list[j]):
+                break
+        else:
+            result.append(input_list[i])
+    return result
 
 
 def get_all_two_combs(items):
@@ -80,11 +149,27 @@ def add_concrete_bounds_as_edge(pred_list, edge_set):
             edge_set.append([(pred[0], pred[1]), pred[4]])
 
 
-def create_attrib_set(ineq_group):
+def create_attrib_set_from_filter_predicates(ineq_group):
     C_E = set()
     for pred in ineq_group:
         C_E.add((pred[0], pred[1]))
     return list(C_E)
+
+
+def create_adjacency_map_from_aoa_predicates(aoa_preds):
+    C_E = {}
+    for pred in aoa_preds:
+        if not isinstance(pred[0], tuple) or not isinstance(pred[1], tuple):
+            continue
+        if pred[0] in C_E.keys():
+            C_E[pred[0]].append(pred[1])
+        else:
+            C_E[pred[0]] = [pred[1]]
+    return C_E
+
+
+def get_one_chain_from_adjecancy_map(aoa_map):
+    pass
 
 
 def get_out_edges(edge_set, tab_attrib):
@@ -188,6 +273,10 @@ class AlgebraicPredicate(WhereClause):
 
         a_LBs, a_UBs = maps[0], maps[1]
         self.logger.debug("a_LBs: ", a_LBs)
+        self.logger.debug("a_UBs: ", a_UBs)
+
+        directed_paths = create_adjacency_map_from_aoa_predicates(self.aoa_predicates)
+        self.logger.debug(directed_paths)
 
         self.generate_where_clause()
         return True
@@ -236,7 +325,7 @@ class AlgebraicPredicate(WhereClause):
         for key in filtered_dict:
             edge_set = []
             ineq_group = filtered_dict[key]
-            C_E = create_attrib_set(ineq_group)
+            C_E = create_attrib_set_from_filter_predicates(ineq_group)
             self.create_dashed_edges(ineq_group, key, edge_set)
             add_concrete_bounds_as_edge(ineq_group, edge_set)
             self.logger.debug("Directed edge: ", edge_set)

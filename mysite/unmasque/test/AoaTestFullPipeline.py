@@ -1,14 +1,50 @@
 import datetime
 import unittest
 
-from mysite.unmasque.refactored.aoa import AlgebraicPredicate
+from mysite.unmasque.refactored.aoa import AlgebraicPredicate, find_chains, find_all_chains
 from mysite.unmasque.refactored.cs2 import Cs2
 from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
+
+
+
+def remove_transitive_relations(input_list):
+    result = []
+
+    def is_transitive(tuple1, tuple2):
+        return tuple1[1] == tuple2[0]
+
+    for i in range(len(input_list)):
+        is_transitive_relation = any(is_transitive(input_list[i], j) for j in input_list)
+        if not is_transitive_relation:
+            result.append(input_list[i])
+
+    return result
+
+
 class MyTestCase(BaseTestCase):
+
+    def test_chain(self):
+        # Given map
+        input_map = {
+            ('lineitem', 'l_extendedprice'): [('orders', 'o_totalprice')],
+            ('lineitem', 'l_shipdate'): [('lineitem', 'l_commitdate')],
+            ('lineitem', 'l_commitdate'): [('lineitem', 'l_receiptdate')]
+        }
+
+        all_chains = find_all_chains(input_map)
+
+        print(all_chains)
+
+    def test_optimize(self):
+        input_tuples = [('a', 'b'), ('b', 'c'), ('c', 'd'), ('a', 'c'), ('b', 'd'), ('a', 'd')]
+        result_tuples = remove_transitive_relations(input_tuples)
+        self.assertTrue(('a', 'b') in result_tuples)
+        self.assertTrue(('b', 'c') in result_tuples)
+        self.assertTrue(('c', 'd') in result_tuples)
 
     def test_dormant_aoa(self):
         self.conn.connectUsingParams()
