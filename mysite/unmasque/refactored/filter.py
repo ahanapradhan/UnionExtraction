@@ -68,21 +68,25 @@ class Filter(WhereClause):
             raise ValueError
 
     def extract_filter_on_attrib_set(self, filter_attribs, query, attrib_list, datatype):
-        if datatype == 'int':
-            self.handle_date_or_int_filter('int', filter_attribs, query, attrib_list)
-
-        elif datatype == 'date':
-            self.handle_date_or_int_filter('date', filter_attribs, query, attrib_list)
-
-        elif datatype == 'str':
+        if datatype == 'str':
             # Group mutation is not implemented for string/text/char/varchar data type
             one_attrib = attrib_list[0]
-            tabname, attrib, attrib_max_length, d_plus_value = one_attrib[0], one_attrib[1], one_attrib[2], one_attrib[
-                3]
+            tabname, attrib, attrib_max_length, d_plus_value = one_attrib[0], \
+                one_attrib[1], one_attrib[2], one_attrib[3]
             self.handle_string_filter(attrib, attrib_max_length, d_plus_value, filter_attribs, tabname, query)
+        else:
+            min_val_domain, max_val_domain = get_min_and_max_val(datatype)
+            self.handle_filter_for_nonTextTypes(attrib_list, datatype, filter_attribs, max_val_domain, min_val_domain,
+                                                query)
 
+    def handle_filter_for_nonTextTypes(self, attrib_list, datatype, filter_attribs,
+                                       max_val_domain, min_val_domain, query):
+        if datatype == 'int' or datatype == 'date':
+            self.handle_point_filter(datatype, filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         elif datatype == 'numeric':
-            self.handle_numeric_filter(filter_attribs, query, attrib_list)
+            self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
+        else:
+            raise ValueError(" Not Handled! ")
 
     def checkAttribValueEffect(self, query, val, attrib_list):
         tab_set = set()
@@ -98,8 +102,8 @@ class Filter(WhereClause):
         for tabname in tabset:
             self.revert_filter_changes(tabname)
 
-    def handle_numeric_filter(self, filterAttribs, query, attrib_list):
-        min_val_domain, max_val_domain = get_min_and_max_val('numeric')
+    def handle_precision_filter(self, filterAttribs, query, attrib_list, min_val_domain, max_val_domain):
+        # min_val_domain, max_val_domain = get_min_and_max_val(datatype)
         # NUMERIC HANDLING
         # PRECISION TO BE GET FROM SCHEMA GRAPH
         min_present = self.checkAttribValueEffect(query, min_val_domain,
@@ -202,10 +206,10 @@ class Filter(WhereClause):
 
         # mukul
 
-    def handle_date_or_int_filter(self, datatype, filterAttribs, query, attrib_list):
+    def handle_point_filter(self, datatype, filterAttribs, query, attrib_list, min_val_domain, max_val_domain):
         # min and max domain values (initialize based on data type)
         # PLEASE CONFIRM THAT DATE FORMAT IN DATABASE IS YYYY-MM-DD
-        min_val_domain, max_val_domain = get_min_and_max_val(datatype)
+        # min_val_domain, max_val_domain = get_min_and_max_val(datatype)
         min_present = self.checkAttribValueEffect(query, get_format(datatype, min_val_domain),
                                                   attrib_list)  # True implies row
         # was still present

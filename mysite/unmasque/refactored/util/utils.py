@@ -64,6 +64,7 @@ def get_datatype_of_val(val):
     else:
         raise ValueError
 
+
 def get_unused_dummy_val(datatype, value_used):
     if datatype == 'int':
         dint = constants.dummy_int
