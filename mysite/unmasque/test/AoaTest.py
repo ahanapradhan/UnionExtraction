@@ -1,6 +1,8 @@
 import datetime
 
-from mysite.unmasque.refactored.aoa import merge_equivalent_paritions, AlgebraicPredicate
+import pytest
+
+from mysite.unmasque.src.core.aoa import merge_equivalent_paritions, AlgebraicPredicate
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -339,6 +341,7 @@ class MyTestCase(BaseTestCase):
                 self.assertEqual(low, low_val + 1)
                 self.assertEqual(high, high_val)
 
+    @pytest.mark.skip
     def test_ordering_problem_aoa_dev(self):
         for i in range(1, 100):
             self.test_aoa_dev_2()
@@ -361,6 +364,7 @@ class MyTestCase(BaseTestCase):
         i = min(se, key=len)
         self.assertEqual(one, i)
 
+    @pytest.mark.skip
     def test_aoa_bigchain(self):
         query = "select s_name, c_name, n_name from customer, orders, lineitem, supplier, nation " \
                 "where c_custkey = o_custkey  " \

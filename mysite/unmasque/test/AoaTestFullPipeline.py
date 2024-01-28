@@ -1,7 +1,8 @@
 import datetime
 import unittest
 
-from mysite.unmasque.refactored.aoa import AlgebraicPredicate, find_chains, find_all_chains
+from mysite.unmasque.src.core.aoa import AlgebraicPredicate
+from mysite.unmasque.src.util.aoa_utils import find_all_chains
 from mysite.unmasque.refactored.cs2 import Cs2
 from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
 from mysite.unmasque.test.util import tpchSettings

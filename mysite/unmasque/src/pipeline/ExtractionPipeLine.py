@@ -1,13 +1,11 @@
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
-from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
+from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, FILTER, \
     NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION
 from ...refactored.aggregation import Aggregation
-from ...refactored.aoa import AlgebraicPredicate
+from mysite.unmasque.src.core.aoa import AlgebraicPredicate
 from ...refactored.cs2 import Cs2
-from ...refactored.equi_join import EquiJoin
-from ...refactored.filter import Filter
 from ...refactored.from_clause import FromClause
 from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
