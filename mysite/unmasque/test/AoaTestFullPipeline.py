@@ -57,7 +57,7 @@ class MyTestCase(BaseTestCase):
         aoa, check = self.run_pipeline(core_rels, query)
         self.assertTrue(check)
         print(aoa.where_clause)
-
+        self.assertEqual(aoa.where_clause.count("and"), 7)
         self.conn.closeConnection()
 
     def test_multiple_aoa(self):

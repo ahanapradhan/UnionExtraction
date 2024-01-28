@@ -302,18 +302,20 @@ class AlgebraicPredicate(WhereClause):
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_predicates))
         self.logger.debug(directed_paths)
         for path in directed_paths:
-            # cb_UBs = self.check_for_CB_UB(path, a_LBs, aoa_UBs, aoa_LBs, query)
-            cb_LBs = self.check_for_CB_LB(path, a_LBs, aoa_LBs, query)
-            for cb_lb in cb_LBs:
-                datatype = self.filter_extractor.get_datatype((cb_lb[0], cb_lb[1]))
-                i_min, _ = get_min_and_max_val(datatype)
-                if cb_lb[3] != i_min:
-                    self.aoa_predicates.append([cb_lb[3], (cb_lb[0], cb_lb[1])])
-            # self.logger.debug("cb_UBs:", cb_UBs)
-            self.logger.debug("cb_LBs:", cb_LBs)
+            self.find_cb_lbs(a_LBs, aoa_LBs, path, query)
+            self.find_cb_ubs(a_UBs, aoa_UBs, path, query)
         self.revert_mutation_on_filter_global_min_instance_dict()
         self.generate_where_clause()
         return True
+
+    def find_cb_lbs(self, a_LBs, aoa_LBs, path, query):
+        cb_LBs = self.check_for_CB_LB(path, a_LBs, aoa_LBs, query)
+        for cb_lb in cb_LBs:
+            datatype = self.filter_extractor.get_datatype((cb_lb[0], cb_lb[1]))
+            i_min, _ = get_min_and_max_val(datatype)
+            if cb_lb[3] != i_min:
+                self.aoa_predicates.append([cb_lb[3], (cb_lb[0], cb_lb[1])])
+        self.logger.debug("cb_LBs:", cb_LBs)
 
     def check_for_CB_LB(self, directed_paths, a_LBs, aoa_LBs, query):
         if not len(directed_paths):
@@ -358,32 +360,32 @@ class AlgebraicPredicate(WhereClause):
     def revert_mutation_on_filter_global_min_instance_dict(self):
         self.filter_extractor.global_min_instance_dict = self.global_min_instance_dict
 
-    def check_for_CB_UB(self, directed_paths, a_LBs, aoa_UBs, aoa_LBs, query):
+    def check_for_CB_UB(self, directed_paths, a_UBs, aoa_UBs, query):
         if not len(directed_paths):
             return []
-        tab_attrib = directed_paths[0]
+        tab_attrib = directed_paths[-1]
         tab, attrib = tab_attrib[0], tab_attrib[1]
         filter_attribs = []
         datatype = self.filter_extractor.get_datatype(tab_attrib)
-        if tab_attrib in aoa_LBs.keys():
-            val = aoa_LBs[tab_attrib]
+        if tab_attrib in aoa_UBs.keys():
+            val = aoa_UBs[tab_attrib]
         else:
             i_min, i_max = get_min_and_max_val(datatype)
 
-            if tab_attrib in a_LBs.keys():
-                min_val = a_LBs[tab_attrib]
+            if tab_attrib in a_UBs.keys():
+                min_val = a_UBs[tab_attrib]
             else:
-                min_val = i_min
+                min_val = i_max
             prep = self.filter_extractor.prepare_attrib_set_for_bulk_mutation([tab_attrib])
             self.filter_extractor.handle_filter_for_nonTextTypes(prep, datatype, filter_attribs, i_max, min_val, query)
-            # self.logger.debug(filter_attribs)
+            self.logger.debug(filter_attribs)
             if not len(filter_attribs):
-                val = i_min
+                val = i_max
             else:
-                val = filter_attribs[0][3]
-        val = get_format(datatype, val)
-        update_tab_attrib_with_value(attrib, tab, val)
-        filter_attribs.append(self.check_for_CB_LB(directed_paths[1:], a_LBs, aoa_UBs, query))
+                val = filter_attribs[0][4]
+        self.mutate_filter_global_min_instance_dict(tab, attrib, val)
+        self.connectionHelper.execute_sql([update_tab_attrib_with_value(attrib, tab, get_format(datatype, val))])
+        filter_attribs.extend(self.check_for_CB_LB(directed_paths[1:], a_UBs, aoa_UBs, query))
         return filter_attribs
 
     def do_bound_check_again(self, tab_attrib, datatype, query):
@@ -599,3 +601,12 @@ class AlgebraicPredicate(WhereClause):
                     to_remove.append((seq[0][0], seq[1][1]))
         for t_r in to_remove:
             self.aoa_predicates.remove(t_r)
+
+    def find_cb_ubs(self, a_UBs, aoa_UBs, path, query):
+        cb_UBs = self.check_for_CB_UB(path, a_UBs, aoa_UBs, query)
+        for cb_ub in cb_UBs:
+            datatype = self.filter_extractor.get_datatype((cb_ub[0], cb_ub[1]))
+            _, i_max = get_min_and_max_val(datatype)
+            if cb_ub[4] != i_max:
+                self.aoa_predicates.append([(cb_ub[0], cb_ub[1]), cb_ub[4]])
+        self.logger.debug("cb_LBs:", cb_UBs)
