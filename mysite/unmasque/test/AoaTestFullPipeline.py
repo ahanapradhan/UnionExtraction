@@ -145,6 +145,7 @@ class MyTestCase(BaseTestCase):
         check = vm.doJob(query)
         self.assertTrue(vm.done and check)
         aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, core_rels, vm.global_min_instance_dict)
+        aoa.mock = True
         check = aoa.doJob(query)
         return aoa, check
 

@@ -609,4 +609,4 @@ class AlgebraicPredicate(WhereClause):
             _, i_max = get_min_and_max_val(datatype)
             if cb_ub[4] != i_max:
                 self.aoa_predicates.append([(cb_ub[0], cb_ub[1]), cb_ub[4]])
-        self.logger.debug("cb_LBs:", cb_UBs)
+        self.logger.debug("cb_UBs:", cb_UBs)
