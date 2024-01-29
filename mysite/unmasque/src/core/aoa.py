@@ -1,5 +1,7 @@
 import copy
 
+import numpy as np
+
 from mysite.unmasque.refactored.abstract.where_clause import WhereClause
 from mysite.unmasque.refactored.filter import Filter
 from mysite.unmasque.refactored.util.common_queries import update_tab_attrib_with_value
@@ -286,15 +288,25 @@ def split_directed_path(directed_path, is_UB):
         return directed_path[0], directed_path[1:]
 
 
-def get_C_E(aoa_predicates, param):
-    nodes = set()
-    for pred in aoa_predicates:
-        nodes.add(pred[0])
-        nodes.add(pred[1])
-    C_E = list(nodes)
+def optimize_by_matrix(C_E, aoa_predicates, h, w):
+    m = [[0 for x in range(w)] for y in range(h)]
     for pred in aoa_predicates:
         src_idx = C_E.index(pred[0])
         snk_idx = C_E.index(pred[1])
+        m[src_idx][snk_idx] = 1
+    print(np.matrix(m))
+    to_remove = []
+    for x in range(h):
+        for y in range(h):
+            if x != y:
+                for c in range(w):
+                    if m[x][c] and m[y][c] and m[x][y]:
+                        to_remove.append((x, c))
+    for r in to_remove:
+        x, c = r[0], r[1]
+        m[x][c] = 0
+    print(np.matrix(m))
+    return m
 
 
 class AlgebraicPredicate(WhereClause):
@@ -349,7 +361,7 @@ class AlgebraicPredicate(WhereClause):
                     ineqaoa_preds.append(pred)
 
         self.aoa_predicates, maps = self.find_ineq_aoa_algo3(query, ineqaoa_preds)
-        self.remove_transitive_aoa_chains()
+        self.optimize_aoa()
 
         a_LBs, a_UBs, aoa_LBs, aoa_UBs = maps[0], maps[1], maps[2], maps[3]
 
@@ -358,14 +370,26 @@ class AlgebraicPredicate(WhereClause):
             self.find_dormant_CBs(a_LBs, aoa_LBs, path, query, False)
             self.find_dormant_CBs(a_UBs, aoa_UBs, path, query, True)
 
-        c_e = get_C_E(self.aoa_predicates, False)
-
-        for key in c_e.keys():
-            self.logger.debug(f"{key} <= {c_e[key]}")
+        self.optimize_aoa()
 
         self.revert_mutation_on_filter_global_min_instance_dict()
         self.generate_where_clause()
         return True
+
+    def optimize_aoa(self):
+        nodes = set()
+        for pred in self.aoa_predicates:
+            nodes.add(pred[0])
+            nodes.add(pred[1])
+        C_E = list(nodes)
+        w, h = len(C_E), len(C_E)
+        m = optimize_by_matrix(C_E, self.aoa_predicates, h, w)
+        for x in range(h):
+            for c in range(w):
+                if not m[x][c]:
+                    for aoa in self.aoa_predicates:
+                        if aoa[0] == C_E[x] and aoa[1] == C_E[c]:
+                            self.aoa_predicates.remove(aoa)
 
     def add_CB_to_aoa(self, datatype, cb_b, is_UB):
         i_min, i_max = get_min_and_max_val(datatype)
