@@ -143,12 +143,10 @@ class MyTestCase(BaseTestCase):
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
+        print(aoa.where_clause)
         self.assertEqual(len(aoa.algebraic_eq_predicates), 3)
         self.assertEqual(len(aoa.arithmetic_eq_predicates), 1)
         self.assertEqual(len(aoa.aoa_predicates), 5)
-
-        print(aoa.where_clause)
-
         self.conn.closeConnection()
 
     def test_aoa_dev_2(self):

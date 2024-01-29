@@ -1,15 +1,11 @@
 import datetime
 import unittest
 
-from mysite.unmasque.src.core.aoa import AlgebraicPredicate
-from mysite.unmasque.src.util.aoa_utils import find_all_chains
+from mysite.unmasque.src.core.aoa import AlgebraicPredicate, find_all_chains
 from mysite.unmasque.refactored.cs2 import Cs2
 from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-
-
-
 
 
 def remove_transitive_relations(input_list):
@@ -27,25 +23,6 @@ def remove_transitive_relations(input_list):
 
 
 class MyTestCase(BaseTestCase):
-
-    def test_chain(self):
-        # Given map
-        input_map = {
-            ('lineitem', 'l_extendedprice'): [('orders', 'o_totalprice')],
-            ('lineitem', 'l_shipdate'): [('lineitem', 'l_commitdate')],
-            ('lineitem', 'l_commitdate'): [('lineitem', 'l_receiptdate')]
-        }
-
-        all_chains = find_all_chains(input_map)
-
-        print(all_chains)
-
-    def test_optimize(self):
-        input_tuples = [('a', 'b'), ('b', 'c'), ('c', 'd'), ('a', 'c'), ('b', 'd'), ('a', 'd')]
-        result_tuples = remove_transitive_relations(input_tuples)
-        self.assertTrue(('a', 'b') in result_tuples)
-        self.assertTrue(('b', 'c') in result_tuples)
-        self.assertTrue(('c', 'd') in result_tuples)
 
     def test_dormant_aoa(self):
         self.conn.connectUsingParams()
@@ -79,8 +56,8 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(aoa.where_clause)
         self.assertEqual(aoa.where_clause.count("and"), 8)
-        self.assertEqual(aoa.where_clause.count("<="), 6)
-        self.assertEqual(aoa.where_clause.count(" ="), 3)
+        self.assertEqual(aoa.where_clause.count("<="), 5)
+        self.assertEqual(aoa.where_clause.count(" ="), 4)
         self.conn.closeConnection()
 
     def test_multiple_aoa_1(self):
@@ -159,9 +136,10 @@ class MyTestCase(BaseTestCase):
                 "and o_orderdate between '1998-01-01' and '1998-01-15' " \
                 "and o_totalprice <= c_acctbal;"
         self.conn.connectUsingParams()
-        eq = self.pipeline.doJob(query)
-        self.assertTrue(eq)
-        # self.assertTrue(self.pipeline.correct)
+        core_rels = ['orders', 'customer', 'nation']
+        aoa, check = self.run_pipeline(core_rels, query)
+        self.assertTrue(check)
+        self.assertEqual(aoa.where_clause.count("and"), 6)
         self.conn.closeConnection()
 
 

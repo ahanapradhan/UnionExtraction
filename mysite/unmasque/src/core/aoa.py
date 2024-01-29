@@ -3,7 +3,7 @@ import copy
 import numpy as np
 
 from mysite.unmasque.refactored.abstract.where_clause import WhereClause
-from mysite.unmasque.refactored.filter import Filter
+from mysite.unmasque.refactored.filter import Filter, get_constants_for
 from mysite.unmasque.refactored.util.common_queries import update_tab_attrib_with_value
 from mysite.unmasque.refactored.util.utils import get_format, get_datatype_of_val, get_min_and_max_val
 from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
@@ -66,7 +66,6 @@ def get_all_two_combs(items):
     seq = []
     for i in range(0, len(items)):
         for j in range(i + 1, len(items)):
-            # print(f"{str(i)} {str(j)}")
             seq.append([items[i], items[j]])
     return seq
 
@@ -134,22 +133,6 @@ def left_over_aoa_CBs(absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, edge_s
         if not isinstance(edge[1], tuple):
             if edge[0] not in aoa_CB_UBs or edge[0] not in absorbed_UBs:
                 aoa_CB_UBs[edge[0]] = edge[1]
-
-
-def remove_transitive_relations(input_list):
-    result = []
-
-    def is_transitive(tuple1, tuple2):
-        return tuple1[1] == tuple2[0]
-
-    for i in range(len(input_list)):
-        for j in range(len(input_list)):
-            if i != j and isinstance(input_list[i], tuple) and isinstance(input_list[j], tuple) \
-                    and is_transitive(input_list[i], input_list[j]):
-                break
-        else:
-            result.append(input_list[i])
-    return result
 
 
 def partitions_with_min_elements(arr, min_elements=2):
@@ -247,8 +230,30 @@ def adjust_Bounds(LB_impact, UB_impact, absorbed_LBs, absorbed_UBs, aoa_CB_LBs, 
     elif not UB_impact and not LB_impact:
         edge_set.remove((attrib, c))
     if not absorbed:
-        aoa_CB_LBs[_LB[1]] = _LB[0]
-        aoa_CB_UBs[_UB[0]] = _UB[1]
+        if _LB:
+            aoa_CB_LBs[_LB[1]] = _LB[0]
+        if _UB:
+            aoa_CB_UBs[_UB[0]] = _UB[1]
+
+
+def adjust_Bounds2(LB_impact, UB_impact, absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, attrib, c, edge_set):
+    _LB = get_concrete_LB_in_edge(edge_set, c)
+    _UB = get_concrete_UB_out_edge(edge_set, attrib)
+    if _UB:
+        if UB_impact:
+            absorbed_UBs[_UB[0]] = _UB[1]
+            edge_set.remove(_UB)
+        else:
+            aoa_CB_UBs[_UB[0]] = _UB[1]
+    if _LB:
+        if LB_impact:
+            absorbed_LBs[_LB[1]] = _LB[0]
+            edge_set.remove(_LB)
+        else:
+            aoa_CB_LBs[_LB[1]] = _LB[0]
+
+    if not UB_impact and not LB_impact:
+        edge_set.remove((attrib, c))
 
 
 def get_val_bound_for_chain(i_min, i_max, filter_attrib, is_UB):
@@ -294,7 +299,6 @@ def optimize_by_matrix(C_E, aoa_predicates, h, w):
         src_idx = C_E.index(pred[0])
         snk_idx = C_E.index(pred[1])
         m[src_idx][snk_idx] = 1
-    print(np.matrix(m))
     to_remove = []
     for x in range(h):
         for y in range(h):
@@ -305,7 +309,6 @@ def optimize_by_matrix(C_E, aoa_predicates, h, w):
     for r in to_remove:
         x, c = r[0], r[1]
         m[x][c] = 0
-    print(np.matrix(m))
     return m
 
 
@@ -363,15 +366,14 @@ class AlgebraicPredicate(WhereClause):
         self.aoa_predicates, maps = self.find_ineq_aoa_algo3(query, ineqaoa_preds)
         self.optimize_aoa()
 
-        a_LBs, a_UBs, aoa_LBs, aoa_UBs = maps[0], maps[1], maps[2], maps[3]
-
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_predicates))
+        a_LBs, a_UBs, aoa_LBs, aoa_UBs = maps[0], maps[1], maps[2], maps[3]
         for path in directed_paths:
             self.find_dormant_CBs(a_LBs, aoa_LBs, path, query, False)
             self.find_dormant_CBs(a_UBs, aoa_UBs, path, query, True)
 
         self.optimize_aoa()
-
+        self.logger.debug(self.aoa_predicates)
         self.revert_mutation_on_filter_global_min_instance_dict()
         self.generate_where_clause()
         return True
@@ -405,27 +407,36 @@ class AlgebraicPredicate(WhereClause):
         for cb_b in cb_Bs:
             datatype = self.filter_extractor.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
             self.add_CB_to_aoa(datatype, cb_b, is_UB)
-        self.logger.debug("cb_Bs:", cb_Bs)
+        # self.logger.debug("cb_Bs:", cb_Bs)
+
+    def get_equi_join_group(self, tab_attrib):
+        for eq in self.algebraic_eq_predicates:
+            if tab_attrib in eq:
+                return eq
+        return [tab_attrib]
 
     def check_for_dormant_CB(self, directed_paths, a_Bs, aoa_Bs, query, is_UB):
         if not len(directed_paths):
             return []
         tab_attrib, pending_path = split_directed_path(directed_paths, is_UB)
-        tab, attrib = tab_attrib[0], tab_attrib[1]
+        tab_attrib_eq_group = self.get_equi_join_group(tab_attrib)
         filter_attribs = []
         datatype = self.filter_extractor.get_datatype(tab_attrib)
-        if tab_attrib in aoa_Bs.keys():
-            val = aoa_Bs[tab_attrib]
-        else:
+        val = None
+        for key in tab_attrib_eq_group:
+            if key in aoa_Bs.keys():
+                val = aoa_Bs[key]
+        if val is None:
             i_min, i_max = get_min_and_max_val(datatype)
             min_val, max_val = get_min_max_for_chain_bounds(i_min, i_max, tab_attrib, a_Bs, is_UB)
-            prep = self.filter_extractor.prepare_attrib_set_for_bulk_mutation([tab_attrib])
+            prep = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(tab_attrib_eq_group)
             self.filter_extractor.handle_filter_for_nonTextTypes(prep, datatype, filter_attribs, max_val, min_val,
                                                                  query)
-            self.logger.debug(filter_attribs)
             val = get_val_bound_for_chain(i_min, i_max, filter_attribs, is_UB)
-        self.mutate_filter_global_min_instance_dict(tab, attrib, val)
-        self.connectionHelper.execute_sql([update_tab_attrib_with_value(attrib, tab, get_format(datatype, val))])
+        for key in tab_attrib_eq_group:
+            tab, attrib = key[0], key[1]
+            self.mutate_filter_global_min_instance_dict(tab, attrib, val)
+            self.connectionHelper.execute_sql([update_tab_attrib_with_value(attrib, tab, get_format(datatype, val))])
         filter_attribs.extend(self.check_for_dormant_CB(pending_path, a_Bs, aoa_Bs, query, is_UB))
         return filter_attribs
 
@@ -459,7 +470,25 @@ class AlgebraicPredicate(WhereClause):
         attribs, vals = values[0], values[1]
         attrib_idx = attribs.index(attrib)
         val = vals[attrib_idx]
-        return val <= _B <= _oB
+        satisfied = self.do_numeric_drama(_B, _oB, attrib, tab, val)
+        return satisfied
+
+    def do_numeric_drama(self, _B, _oB, attrib, tab, val):
+        # all the following DRAMA is to handle "numeric" datatype
+        datatype = self.filter_extractor.get_datatype((tab, attrib))
+        satisfied = val <= _B <= _oB
+        if datatype == 'numeric':
+            delta, _ = get_constants_for(datatype)
+            bck_diff_1 = val - _B
+            bck_diff_2 = _B - _oB
+            alt_sat = True
+            if not satisfied:
+                if bck_diff_1 > 0:
+                    alt_sat = alt_sat & (abs(bck_diff_1) <= delta)
+                if bck_diff_2 > 0:
+                    alt_sat = alt_sat & (abs(bck_diff_2) <= delta)
+            return alt_sat or satisfied
+        return satisfied
 
     def find_ineq_aoa_algo3(self, query, ineqaoa_preds):
         absorbed_UBs, absorbed_LBs, aoa_CB_UBs, aoa_CB_LBs = {}, {}, {}, {}
@@ -478,21 +507,25 @@ class AlgebraicPredicate(WhereClause):
                     v_prev = create_v_lj_2(ineq_group, c_attrib)
                     UB_impact = self.is_impacted_by_Bound(attrib, c_attrib, ineq_group, key, query, v_prev, True)
                     LB_impact = self.is_impacted_by_Bound(attrib, c_attrib, ineq_group, key, query, v_prev, False)
-                    adjust_Bounds(LB_impact, UB_impact,
-                                  absorbed_LBs, absorbed_UBs,
-                                  aoa_CB_LBs, aoa_CB_UBs,
-                                  attrib, c_attrib, edge_set)
+                    adjust_Bounds2(LB_impact, UB_impact,
+                                   absorbed_LBs, absorbed_UBs,
+                                   aoa_CB_LBs, aoa_CB_UBs,
+                                   attrib, c_attrib, edge_set)
             left_over_aoa_CBs(absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, edge_set)
             E.extend(edge_set)
         return E, (absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs)
 
     def is_impacted_by_Bound(self, attrib, c, ineq_group, key, query, v_prev, is_UB):
+        datatype = self.filter_extractor.get_datatype(attrib)
+        i_min, i_max = get_min_and_max_val(datatype)
         self.mutate_attrib_with_Bound_val(attrib, key, ineq_group, is_UB)
         f_e = self.do_bound_check_again(c, key, query)
+        self.revert_mutation_on_filter_global_min_instance_dict()
+        _impact = False
         if len(f_e) > 0 and v_prev != f_e[0][3]:
             _impact = True
-        else:
-            _impact = False
+        elif not f_e and v_prev != i_min and v_prev != i_max:
+            _impact = True
         return _impact
 
     def create_dashed_edges(self, ineq_group, edge_set):
@@ -600,6 +633,9 @@ class AlgebraicPredicate(WhereClause):
                 self.connectionHelper.execute_sql([update_tab_attrib_with_value(get_attrib(tab_attrib),
                                                                                 get_tab(tab_attrib),
                                                                                 get_format(datatype, bound))])
+                self.mutate_filter_global_min_instance_dict(get_tab(tab_attrib),
+                                                            get_attrib(tab_attrib), bound)
+                break
 
     def remove_transitive_aoa_chains(self):
         seqs = get_all_two_combs(self.aoa_predicates)
