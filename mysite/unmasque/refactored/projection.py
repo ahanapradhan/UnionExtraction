@@ -446,8 +446,6 @@ class Projection(GenerationPipeLineBase):
         dep = projection_dep[idx]
         n = len(dep)
         fil_check = []
-        local_param_list = []  # param_list for only this output column
-        local_symbol_list = []
         sym_string = ''
         for i in dep:
             sym_string += (i[1] + " ")

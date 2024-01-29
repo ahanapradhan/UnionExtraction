@@ -34,7 +34,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return check
 
     def truncate_core_relations(self):
-        # Truncate all core relations
         for table in self.core_relations:
             self.connectionHelper.execute_sql([truncate_table(table)])
 
@@ -44,9 +43,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
 
     def update_attrib_in_table(self, attrib, value, tabname):
-
         update_query = update_tab_attrib_with_value(attrib, tabname, value)
-
         self.connectionHelper.execute_sql([update_query])
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
