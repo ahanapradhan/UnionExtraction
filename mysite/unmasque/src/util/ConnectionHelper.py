@@ -5,6 +5,19 @@ from .configParser import Config
 from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA
 
 
+def set_optimizer_params(is_on):
+    if is_on:
+        option = "on"
+    else:
+        option = "off"
+
+    mergejoin_option = f"SET enable_mergejoin = {option};"
+    indexscan_option = f"SET enable_indexscan = {option};"
+    sort_option = f"SET enable_sort = {option};"
+
+    return [mergejoin_option, indexscan_option, sort_option]
+
+
 def cus_execute_sqls(cur, sqls):
     # print(cur)
     for sql in sqls:
@@ -138,10 +151,14 @@ class ConnectionHelper:
         except psycopg2.ProgrammingError as e:
             print(e)
             print(e.diag.message_detail)
+            des = str(e)
         return res, des
 
     def get_cursor(self):
-        return self.conn.cursor()
+        cur = self.conn.cursor()
+        # for cmd in set_optimizer_params(False):
+        #     cur.execute(cmd)
+        return cur
 
     def get_DictCursor(self):
         return self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)

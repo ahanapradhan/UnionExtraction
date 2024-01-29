@@ -56,14 +56,24 @@ class QueryStringGenerator(Base):
         self.order_by_op = ''
         self.limit_op = None
 
-    def generate_query_string(self, core_relations, ej, fl, pj, gb, agg, ob, lm):
-        self.from_op = ", ".join(core_relations)
+    def generate_join_string(self, ej):
         joins = []
         for edge in ej.global_join_graph:
-            joins.append(" = ".join(edge))
+            edge.sort()
+            for i in range(len(edge) - 1):
+                left_e = edge[i]
+                right_e = edge[i + 1]
+                join_e = f"{left_e} = {right_e}"
+                joins.append(join_e)
         self.where_op = " and ".join(joins)
 
-        if len(joins) > 0 and len(fl.filter_predicates) > 0:
+    def generate_query_string(self, core_relations, ej, fl, pj, gb, agg, ob, lm):
+        relations = copy.deepcopy(core_relations)
+        relations.sort()
+        self.from_op = ", ".join(relations)
+        self.generate_join_string(ej)
+
+        if self.where_op and len(fl.filter_predicates) > 0:
             self.where_op += " and "
         self.where_op = self.add_filters(fl)
 

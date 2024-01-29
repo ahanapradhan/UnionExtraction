@@ -18,6 +18,13 @@ Q3 = "Select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_o
      "Group By l_orderkey, o_orderdate, o_shippriority " \
      "Order by revenue desc, o_orderdate Limit 10;"
 
+Q3_1 = "Select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority " \
+       "From customer, orders, lineitem " \
+       "Where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and " \
+       "o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15' " \
+       "Group By l_orderkey, o_shippriority, o_orderdate " \
+       "Order by revenue desc, o_orderdate Limit 10;"
+
 Q4 = "Select o_orderdate, o_orderpriority, count(*) as order_count " \
      "From orders " \
      "Where o_orderdate >= date '1997-07-01' and o_orderdate < date '1997-07-01' + interval '3' month " \
@@ -50,6 +57,14 @@ Q16 = "Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From pa
       "Where p_partkey = ps_partkey and p_brand = 'Brand#45' and p_type Like 'SMALL PLATED%' and p_size >= 4 " \
       "Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, p_type, p_size;"
 
+Q16_nep = "Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part " \
+          "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type Like 'SMALL PLATED%' and p_size >= 4 " \
+          "Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, p_type, p_size;"
+
+Q16_nep_2 = "Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part " \
+            "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and p_size >= " \
+            "4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, p_type, p_size;"
+
 Q17 = "Select AVG(l_extendedprice) as avgTOTAL From lineitem, part " \
       "Where p_partkey = l_partkey and p_brand = 'Brand#52' and p_container = 'LG CAN' ;"
 
@@ -61,3 +76,9 @@ Q21 = "Select s_name, count(*) as numwait From supplier, lineitem l1, orders, na
       "Where s_suppkey = l1.l_suppkey and o_orderkey = l1.l_orderkey and o_orderstatus = 'F' and " \
       "s_nationkey = n_nationkey and n_name = 'GERMANY' " \
       "Group By s_name Order by numwait desc, s_name Limit 100;"
+
+Q_r = "select c_mktsegment as segment from customer,nation,orders where " \
+      "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+      "and n_name not LIKE 'B%';"
+
+Q_dt = "select n_comment from nation, region where n_name = 'BRAZIL';"

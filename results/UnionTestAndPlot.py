@@ -73,7 +73,7 @@ class MyTestCase(BaseTestCase):
 
             expt.write("\\end{longtable}}")
 
-    def do_experiment(self, ITERATIONS=3):
+    def do_experiment(self, ITERATIONS=1):
         """
         read the queries folder and make a list of all query files
         """

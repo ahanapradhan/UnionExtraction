@@ -30,7 +30,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(FROM_CLAUSE + START)
         fc = FromClause(self.connectionHelper)
         self.update_state(FROM_CLAUSE + RUNNING)
-        check = fc.doJob(query, "rename")
+        check = fc.doJob(query)
         self.update_state(FROM_CLAUSE + DONE)
         self.time_profile.update_for_from_clause(fc.local_elapsed_time)
         if not check or not fc.done:
@@ -152,6 +152,11 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while group by extraction. Aborting extraction!")
             return None, time_profile
 
+        for elt in fl.filter_predicates:
+            if elt[1] not in gb.group_by_attrib and elt[1] in pj.projected_attribs and (
+                    elt[2] == '=' or elt[2] == 'equal'):
+                gb.group_by_attrib.append(elt[1])
+
         self.update_state(AGGREGATE + START)
         agg = Aggregation(self.connectionHelper, ej.global_key_attributes, ej.global_attrib_types, core_relations,
                           fl.filter_predicates, ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs,
@@ -216,7 +221,8 @@ class ExtractionPipeLine(GenericPipeLine):
                       vm.global_min_instance_dict)
             self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
-            eq = nep.Q_E
+            if nep.Q_E:
+                eq = nep.Q_E
             time_profile.update_for_nep(nep.local_elapsed_time)
             self.update_state(NEP_ + DONE)
 

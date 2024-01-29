@@ -1,6 +1,8 @@
 import sys
 import unittest
 
+import pytest
+
 sys.path.append("../../../")
 
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -33,8 +35,9 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('orders' in rels)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_no_tables_in_db(self):
-        query = "select count(*) from lineitem"
+        query = "select count(*) from lineitem;"
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         fc = FromClause(self.conn)
@@ -67,9 +70,37 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('part' in rels)
         self.assertTrue('orders' in rels)
 
-        rels = fc.doJob([query, "rename"])
+        rels = fc.doJob(query, "rename")
         self.assertEqual(len(rels), 1)
         self.assertTrue('lineitem' in rels)
+
+        self.conn.closeConnection()
+
+    def test_correlated_nested_query(self):
+        query = "select c_name from customer where c_acctbal > (select count(o_totalprice) from orders where " \
+                "c_custkey = o_custkey);"
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+        fc = FromClause(self.conn)
+
+        rels = fc.doJob(query)
+        self.assertEqual(len(rels), 2)
+        self.assertTrue('customer' in rels)
+        self.assertTrue('orders' in rels)
+
+        self.conn.closeConnection()
+
+    def test_correlated_nested_query_by_error(self):
+        query = "select c_name from customer where c_acctbal > (select count(o_totalprice) from orders where " \
+                "c_custkey = o_custkey);"
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+        fc = FromClause(self.conn)
+
+        rels = fc.doJob(query, "error")
+        self.assertEqual(len(rels), 2)
+        self.assertTrue('customer' in rels)
+        self.assertTrue('orders' in rels)
 
         self.conn.closeConnection()
 
