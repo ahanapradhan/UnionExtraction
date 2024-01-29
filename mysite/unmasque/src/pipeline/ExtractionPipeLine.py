@@ -103,6 +103,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(PROJECTION + START)
         pj = Projection(self.connectionHelper, fl.global_attrib_types, core_relations, fl.filter_predicates,
                         ej.global_join_graph, fl.global_all_attribs, vm.global_min_instance_dict)
+
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
         self.update_state(PROJECTION + DONE)
@@ -118,7 +119,8 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(GROUP_BY + START)
 
         gb = GroupBy(self.connectionHelper, ej.global_attrib_types, core_relations, fl.filter_predicates,
-                     ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs, vm.global_min_instance_dict)
+                     ej.global_all_attribs, ej.global_join_graph, pj.projected_attribs, vm.global_min_instance_dict,
+                     ej.global_key_attributes)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
         self.update_state(GROUP_BY + DONE)

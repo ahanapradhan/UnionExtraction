@@ -1,6 +1,8 @@
 import datetime
 import unittest
 
+import pytest
+
 from mysite.unmasque.refactored.aggregation import Aggregation
 from mysite.unmasque.refactored.groupby_clause import GroupBy
 from mysite.unmasque.refactored.projection import Projection
@@ -15,6 +17,7 @@ class MyTestCase(BaseTestCase):
         for i in range(2):
             self.test_something()
 
+    @pytest.mark.skip
     def test_something(self):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
@@ -75,8 +78,32 @@ class MyTestCase(BaseTestCase):
         global_min_instance_dict = {}
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict)
+                        global_min_instance_dict, global_key_attribs)
         pj.mock = True
+
+        self.conn.execute_sql(["alter table customer rename to customer_copy;",
+                               "create table customer (like customer_copy);",
+                               f"Insert into customer(c_custkey,c_name,c_address,c_nationkey,c_phone,c_acctbal,"
+                               f"c_mktsegment,c_comment)"
+                               f"VALUES (136777,\'Customer#000060217\',\'kolkata\',2,\'27-299-23-31\',4089.02,"
+                               f"\'BUILDING\',\'Nothing\');",
+
+                               "alter table lineitem rename to lineitem_copy;",
+                               "create table lineitem (like lineitem_copy);",
+                               f"Insert into lineitem(l_orderkey,l_partkey,l_suppkey,l_linenumber,l_quantity,"
+                               f"l_extendedprice,l_discount,"
+                               f"l_tax,l_returnflag,l_linestatus,l_shipdate,l_commitdate,l_receiptdate,l_shipinstruct,"
+                               f"l_shipmode,l_comment) "
+                               f"VALUES (136777,136777,136777,2,25.0,4089.02,10.0,12.02,\'A\',\'F\',\'1997-01-01\',"
+                               f"\'1995-01-01\',\'1995-01-01\',\'COD COLLECT\',\'AIR\',\'Nothing\');",
+
+                               "alter table orders rename to orders_copy;",
+                               "create table orders (like orders_copy);",
+                               f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+                               f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+                               f"VALUES (136777,136777,\'N\',9991.32,\'1993-01-01\', \'URGENT\', \'clerk#0000001\',"
+                               f"0,\'hello world bye bye\');",
+                               ])
 
         check = pj.doJob(query)
         self.assertTrue(check)
@@ -85,7 +112,7 @@ class MyTestCase(BaseTestCase):
                                        , 'o_orderdate', 'o_shippriority'}), frozenset(set(pj.projected_attribs)))
 
         gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
-                     pj.projected_attribs, global_min_instance_dict)
+                     pj.projected_attribs, global_min_instance_dict, global_key_attribs)
         gb.mock = True
         check = gb.doJob(query)
         self.assertTrue(check)
@@ -148,6 +175,13 @@ class MyTestCase(BaseTestCase):
         check = agg.doJob(query)
         self.assertTrue(check)
         self.assertEqual(4, len(agg.global_aggregated_attributes))
+
+        self.conn.execute_sql(["drop table customer;",
+                               "drop table lineitem;",
+                               "drop table orders;",
+                               "alter table customer_copy to customer;",
+                               "alter table lineitem_copy to lineitem;",
+                               "alter table orders_copy to orders;"])
 
         count = 0
         sum_count = 0

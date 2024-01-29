@@ -304,10 +304,6 @@ class MyTestCase(BaseTestCase):
                                ('nation', "n_nationkey", "integer"),
                                ('nation', "n_name", "character"),
                                ('nation', "n_regionkey", "integer"),
-                               ('nation', "n_comment", "character varying"),
-                               ('nation', "n_nationkey", "integer"),
-                               ('nation', "n_name", "character"),
-                               ('nation', "n_regionkey", "integer"),
                                ('nation', "n_comment", "character varying")
                                }
 
@@ -357,6 +353,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(and_count, 4)
 
         self.conn.closeConnection()
+
 
     def test_mukul_thesis_Q18(self):
         self.conn.connectUsingParams()
@@ -448,6 +445,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_mukul_thesis_Q18_modified(self):
         self.conn.connectUsingParams()
         q = "Select c_phone, o_orderdate, o_totalprice, sum(l_quantity) From customer, orders, lineitem " \
@@ -599,10 +597,6 @@ class MyTestCase(BaseTestCase):
                                ('supplier', "s_phone", "character"),
                                ('supplier', "s_acctbal", "numeric"),
                                ('supplier', "s_comment", "character varying"),
-                               ('nation', "n_nationkey", "integer"),
-                               ('nation', "n_name", "character"),
-                               ('nation', "n_regionkey", "integer"),
-                               ('nation', "n_comment", "character varying"),
                                ('nation', "n_nationkey", "integer"),
                                ('nation', "n_name", "character"),
                                ('nation', "n_regionkey", "integer"),

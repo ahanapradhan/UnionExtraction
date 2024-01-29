@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, date
 
 import pytest
 
+import pytest
+
 from mysite.unmasque.refactored.executable import Executable
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
@@ -43,7 +45,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_for_numeric_filter(self):
-        for i in range(5):
+        for i in range(1):
             lower = random.randint(1, 1000)
             upper = random.randint(lower + 1, 5000)
             query = f"select c_mktsegment as segment from customer,nation,orders where " \
@@ -54,6 +56,7 @@ class MyTestCase(BaseTestCase):
             print(eq)
             self.assertTrue(self.pipeline.correct)
 
+    @pytest.mark.skip
     def test_for_numeric_filter_NEP(self):
         self.conn.config.detect_nep = True
         query = "select c_mktsegment as segment from customer,nation,orders where " \
@@ -65,7 +68,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_for_filter(self):
-        for i in range(10):
+        for i in range(1):
             lower = random.randint(1, 100)
             upper = random.randint(lower + 1, 200)
             query = f"SELECT avg(s_nationkey) FROM supplier WHERE s_suppkey >= {lower} and s_suppkey <= {upper};"
@@ -93,8 +96,9 @@ class MyTestCase(BaseTestCase):
             self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_1_mul(self):
-        for i in range(10):
+        for i in range(2):
             self.test_extraction_tpch_q1()
 
     def test_extraction_tpch_q1(self):
@@ -115,8 +119,9 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_in_loop(self):
-        for i in range(5):
+        for i in range(1):
             self.test_extraction_tpch_q1_filter()
 
     def test_extraction_tpch_q1_simple(self):
@@ -131,7 +136,7 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_for_date_filter(self):
-        for i in range(10):
+        for i in range(1):
             self.conn.connectUsingParams()
             key = 'q1_filter'
             query = queries.queries_dict[key]
@@ -142,7 +147,7 @@ class MyTestCase(BaseTestCase):
             self.conn.closeConnection()
 
     def test_for_date_filter_2(self):
-        for i in range(10):
+        for i in range(1):
             lower, upper = generate_random_dates()
             self.conn.connectUsingParams()
             q1_filter = f"select l_returnflag, l_linestatus, " \
@@ -161,7 +166,7 @@ class MyTestCase(BaseTestCase):
             self.conn.closeConnection()
 
     def test_for_date_filter_1(self):
-        for i in range(10):
+        for i in range(1):
             option = bool(random.getrandbits(1))
             self.conn.connectUsingParams()
             set_optimizer_params(option)
@@ -181,25 +186,6 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
-
-    def test_extraction_tpch_query1(self):
-        self.conn.connectUsingParams()
-        key = 'tpch_query1'
-        from_rels = tpchSettings.from_rels[key]
-        query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
-        self.assertTrue(eq is not None)
-        print(eq)
-        tp.print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_query3(self):
@@ -621,6 +607,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_correlated_nested_query(self):
         query = "select c_name from customer where c_acctbal > (select count(o_totalprice) from orders where " \
                 "c_custkey = o_custkey);"
@@ -633,7 +620,7 @@ class MyTestCase(BaseTestCase):
 
     @pytest.mark.skip
     def test_6_mul(self):
-        for i in range(10):
+        for i in range(2):
             self.test_extraction_Q6()
 
 

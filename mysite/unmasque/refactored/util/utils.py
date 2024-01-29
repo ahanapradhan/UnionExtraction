@@ -7,6 +7,19 @@ from ...src.util import constants
 from ...src.util.constants import dummy_int, dummy_date, dummy_char
 
 
+def count_empty_lists_in(l):
+    return sum(x.count([]) for x in l)
+
+
+def find_diff_idx(list1, list2):
+    diffs = []
+    if len(list1) == len(list2):
+        for i in range(len(list1)):
+            if list1[i] != list2[i]:
+                diffs.append(i)
+    return diffs
+
+
 def isQ_result_empty(Res):
     if len(Res) <= 1:
         return True
