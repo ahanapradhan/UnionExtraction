@@ -24,8 +24,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
                  global_min_instance_dict):
         Minimizer.__init__(self, connectionHelper, core_relations, all_sizes, "NEP")
         GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", core_relations, global_all_attribs,
-                                        global_attrib_types, None, filter_predicates,
-                                        global_min_instance_dict, global_key_attributes)
+                                        global_attrib_types, None, filter_predicates, global_min_instance_dict,
+                                        global_key_attributes, aoa_predicates)
         self.filter_attrib_dict = {}
         self.attrib_types_dict = {}
         self.Q_E = ""

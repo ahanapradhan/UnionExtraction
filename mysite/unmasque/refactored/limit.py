@@ -11,7 +11,7 @@ class Limit(GenerationPipeLineBase):
     def __init__(self, connectionHelper, global_attrib_types, global_key_attributes, core_relations, filter_predicates,
                  global_all_attribs, global_groupby_attributes, global_min_instance_dict):
         super().__init__(connectionHelper, "Limit", core_relations, global_all_attribs, global_attrib_types, None,
-                         filter_predicates, global_min_instance_dict, global_key_attributes)
+                         filter_predicates, global_min_instance_dict, global_key_attributes, aoa_predicates)
         self.limit = None
         self.global_groupby_attributes = global_groupby_attributes
 

@@ -39,3 +39,10 @@ class MutationPipeLineBase(Base):
 
     def extract_params_from_args(self, args):
         return args[0]
+
+    def get_dmin_val(self, attrib, tab):
+        values = self.global_min_instance_dict[tab]
+        attribs, vals = values[0], values[1]
+        attrib_idx = attribs.index(attrib)
+        val = vals[attrib_idx]
+        return val

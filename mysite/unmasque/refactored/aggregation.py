@@ -116,7 +116,7 @@ class Aggregation(GenerationPipeLineBase):
                  global_all_attribs, join_graph, projected_attribs, has_groupby, groupby_attribs, dependencies,
                  solution, param_list, global_min_instance_dict):
         super().__init__(connectionHelper, "Aggregation", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict, global_key_attributes)
+                         join_graph, filter_predicates, global_min_instance_dict, global_key_attributes, aoa_predicates)
         self.global_aggregated_attributes = None
         self.global_projected_attributes = projected_attribs
         self.has_groupby = has_groupby

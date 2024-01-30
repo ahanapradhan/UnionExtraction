@@ -22,9 +22,9 @@ def if_dependencies_found_incomplete(projection_names, projection_dep):
 
 class Projection(GenerationPipeLineBase):
     def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates, join_graph,
-                 global_all_attribs, global_min_instance_dict, global_key_attribs):
+                 global_all_attribs, global_min_instance_dict, aoa_predicates):
         super().__init__(connectionHelper, "Projection", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict, global_key_attribs)
+                         join_graph, filter_predicates, global_min_instance_dict, None, aoa_predicates)
         self.projection_names = None
         self.projected_attribs = None
         self.dependencies = None
@@ -35,6 +35,14 @@ class Projection(GenerationPipeLineBase):
         Suppose a column is dependent on a and b, corresponding index of that column in param_list will contain, [a,b,a*b]
         """
         self.param_list = []
+
+    def do_init(self):
+        super().do_init()
+        C_E = set()
+        for edge in self.global_join_graph:
+            C_E.add(edge[0])
+            C_E.add(edge[1])
+        self.global_key_attributes = list(C_E)
 
     def doExtractJob(self, query):
         s_values = []
@@ -180,6 +188,7 @@ class Projection(GenerationPipeLineBase):
     """
     Solve Ax=b to get the expression of the output column
     """
+
     def get_solution(self, projected_attrib, projection_dep, projection_names, idx, prev_res, value_used, query):
         dep = projection_dep[idx]
         n = len(dep)

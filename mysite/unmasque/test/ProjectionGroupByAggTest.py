@@ -78,7 +78,7 @@ class MyTestCase(BaseTestCase):
         global_min_instance_dict = {}
 
         pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict, global_key_attribs)
+                        global_min_instance_dict, aoa_predicates)
         pj.mock = True
 
         self.conn.execute_sql(["alter table customer rename to customer_copy;",

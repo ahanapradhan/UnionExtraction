@@ -325,6 +325,9 @@ class AlgebraicPredicate(WhereClause):
         self.arithmetic_ineq_predicates = None
         self.where_clause = ""
 
+        self.join_graph = []
+        self.filter_predicates = []
+
     def generate_where_clause(self):
         predicates = []
         for eq_join in self.algebraic_eq_predicates:
@@ -332,15 +335,18 @@ class AlgebraicPredicate(WhereClause):
             join_edge.sort()
             join_e = f"{join_edge[0]} = {join_edge[1]}"
             predicates.append(join_e)
+            self.join_graph.append([join_edge[0], join_edge[1]])
         for a_eq in self.arithmetic_eq_predicates:
             datatype = self.filter_extractor.get_datatype((a_eq[0], a_eq[1]))
             pred = f"{a_eq[1]} = {get_format(datatype, a_eq[3])}"
             predicates.append(pred)
+            self.filter_predicates.append(a_eq)
         for a_ineq in self.arithmetic_ineq_predicates:
             datatype = self.filter_extractor.get_datatype((a_ineq[0], a_ineq[1]))
             pred_op = a_ineq[1] + " "
             pred_op = handle_range_preds(datatype, a_ineq, pred_op)
             predicates.append(pred_op)
+            self.filter_predicates.append(a_ineq)
         for aoa in self.aoa_predicates:
             pred = []
             add_pred_for(aoa[0], pred)
@@ -466,10 +472,7 @@ class AlgebraicPredicate(WhereClause):
     def is_dmin_val_leq_LB(self, other, myself):
         tab, attrib, _oB = myself[0], myself[1], myself[4]
         _B = other[3]
-        values = self.global_min_instance_dict[tab]
-        attribs, vals = values[0], values[1]
-        attrib_idx = attribs.index(attrib)
-        val = vals[attrib_idx]
+        val = self.get_dmin_val(attrib, tab)
         satisfied = self.do_numeric_drama(_B, _oB, attrib, tab, val)
         return satisfied
 

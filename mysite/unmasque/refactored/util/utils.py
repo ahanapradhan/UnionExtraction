@@ -156,7 +156,7 @@ def get_format(datatype, val):
     if datatype == 'date' or datatype == 'char' \
             or datatype == 'character' \
             or datatype == 'character varying':
-        return "'" + str(val) + "'"
+        return f"\'{str(val)}\'"
     elif datatype == 'float' or datatype == 'numeric':
         return str(round(val, 12))
     return str(val)

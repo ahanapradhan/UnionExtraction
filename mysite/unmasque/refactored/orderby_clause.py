@@ -64,7 +64,7 @@ class OrderBy(GenerationPipeLineBase):
                  global_all_attribs, join_graph, projected_attribs, global_projection_names, global_dependencies,
                  global_aggregated_attributes, global_min_instance_dict):
         super().__init__(connectionHelper, "Order By", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict, global_key_attributes)
+                         join_graph, filter_predicates, global_min_instance_dict, global_key_attributes, aoa_predicates)
         self.global_projection_names = global_projection_names
         self.projected_attribs = projected_attribs
         self.global_aggregated_attributes = global_aggregated_attributes

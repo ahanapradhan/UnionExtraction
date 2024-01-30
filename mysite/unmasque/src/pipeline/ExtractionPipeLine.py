@@ -95,14 +95,14 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while Filter Predicate extraction. Aborting extraction!")
             return None, time_profile
 
-        return check, time_profile
+        print(aoa.where_clause)
 
         '''
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
-        pj = Projection(self.connectionHelper, fl.global_attrib_types, core_relations, fl.filter_predicates,
-                        ej.global_join_graph, fl.global_all_attribs, vm.global_min_instance_dict)
+        pj = Projection(self.connectionHelper, fl.global_attrib_types, core_relations, aoa.filter_predicates,
+                        aoa.join_graph, fl.global_all_attribs, vm.global_min_instance_dict, aoa.aoa_predicates)
 
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
@@ -115,6 +115,9 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while projection extraction. Aborting extraction!")
             return None, time_profile
         self.logger.debug("Projection", pj.projected_attribs, pj.param_list, pj.dependencies)
+
+        return check, time_profile
+
 
         self.update_state(GROUP_BY + START)
 
