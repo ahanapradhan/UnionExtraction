@@ -112,11 +112,11 @@ def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner,
 
 
 class Aggregation(GenerationPipeLineBase):
-    def __init__(self, connectionHelper, global_key_attributes, global_attrib_types, core_relations, filter_predicates,
+    def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates,
                  global_all_attribs, join_graph, projected_attribs, has_groupby, groupby_attribs, dependencies,
-                 solution, param_list, global_min_instance_dict):
+                 solution, param_list, global_min_instance_dict, aoa_predicates):
         super().__init__(connectionHelper, "Aggregation", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict, global_key_attributes, aoa_predicates)
+                         join_graph, filter_predicates, global_min_instance_dict, None, aoa_predicates)
         self.global_aggregated_attributes = None
         self.global_projected_attributes = projected_attribs
         self.has_groupby = has_groupby
@@ -142,8 +142,8 @@ class Aggregation(GenerationPipeLineBase):
                 self.logger.debug("Group By Attribs", self.global_groupby_attributes)
                 self.logger.debug("Key attribs", key_list)
                 tc = False
-                for i in key_list:
-                    if i in self.global_groupby_attributes:
+                for _key in key_list:
+                    if _key in self.global_groupby_attributes:
                         tc = True
                 if tc:
                     continue
@@ -156,17 +156,13 @@ class Aggregation(GenerationPipeLineBase):
                 result_index_list = []
 
                 for j, dep in enumerate(self.dependencies):
-                    for i in dep:
-                        if attrib in i and self.global_aggregated_attributes[j][1] == '':
+                    for d in dep:
+                        if attrib in d and self.global_aggregated_attributes[j][1] == '':
                             result_index_list.append(j)
                             break
-                # if l==0:
-                #     continue
-                # else:
-                #     result_index_list = [j for j, x in enumerate(self.global_projected_attributes) if x == attrib]
 
                 groupby_key_flag = False
-                if attrib in self.global_key_attributes and attrib in self.global_groupby_attributes:
+                if attrib in self.joined_attribs and attrib in self.global_groupby_attributes:
                     groupby_key_flag = True
                 for result_index in result_index_list:
                     a, agg_array, b, k_value = get_k_value(attrib, self.attrib_types_dict, self.filter_attrib_dict,
@@ -174,13 +170,10 @@ class Aggregation(GenerationPipeLineBase):
 
                     self.truncate_core_relations()
                     temp_vals = []
-                    max_no_of_rows = self.insert_for_inner(a, attrib, self.attrib_types_dict, b, self.filter_attrib_dict, k_value,
-                                                           key_list, tabname, temp_vals, result_index)
-                    self.logger.debug(self.dependencies, result_index, \
-                                                       key_list, tabname, temp_vals, result_index)
-                    # print("Debug", self.dependencies, result_index)
-                    # sele = self.app.doJob(Q3_2) # FOR DEBUG
-                    # 
+                    max_no_of_rows = self.insert_for_inner(a, attrib, b, k_value, key_list, tabname, temp_vals,
+                                                           result_index)
+                    self.logger.debug(self.dependencies, result_index,
+                                      key_list, tabname, temp_vals, result_index)
 
                     if len(self.dependencies[result_index]) > 1:
                         self.logger.debug("Temp values", temp_vals)  # FOR DEBUG
@@ -201,24 +194,20 @@ class Aggregation(GenerationPipeLineBase):
                                 l.append(row[local_attrib_index])
                             temp_ar.append((local_attrib, l))
                         temp_ar = sorted(temp_ar, key=lambda x: x[0])
-                        self.logger.debug("Temp Arr", temp_ar) # FOR DEBUG
-                        for i in range(len(temp_ar)):
-                            if len(temp_ar[i][1]) < max_no_of_rows:
-                                while len(temp_ar[i][1]) < max_no_of_rows:
-                                    temp_ar[i][1].append(temp_ar[i][1][0])
-                        for i in range(max_no_of_rows):
+                        self.logger.debug("Temp Arr", temp_ar)  # FOR DEBUG
+                        for t in range(len(temp_ar)):
+                            if len(temp_ar[t][1]) < max_no_of_rows:
+                                while len(temp_ar[t][1]) < max_no_of_rows:
+                                    temp_ar[t][1].append(temp_ar[t][1][0])
+                        for _row in range(max_no_of_rows):
                             inter_val = []
                             eqn = 0
                             for j in range(len(self.dependencies[result_index])):
-                                inter_val.append(int(temp_ar[j][1][i]))
+                                inter_val.append(int(temp_ar[j][1][_row]))
                             n = len(self.dependencies[result_index])
 
-                            # for j in range(len(self.param_list[result_index])):
-                            #     ele = int(j / n)
-                            #     # coeff[0][j] = coeff[0][(j-n)]*coeff[0][(j+ele)%n]
-                            #     inter_val.append(inter_val[(j - n)] * inter_val[(j + ele) % n])
                             temp_arr = get_param_values_external(inter_val)
-                            self.logger.debug("Coeffs", temp_arr, local_sol) # FOR DEBUG
+                            self.logger.debug("Coeffs", temp_arr, local_sol)  # FOR DEBUG
                             inter_val = [0 for j in range(len(self.param_list[result_index]))]
                             for j in range(len(self.param_list[result_index])):
                                 inter_val[j] = temp_arr[j]
@@ -226,7 +215,7 @@ class Aggregation(GenerationPipeLineBase):
                             self.logger.debug("Intermediate Values of all", inter_val)  # FOR DEBUG
                             for j, val in enumerate(inter_val):
                                 eqn += (val * local_sol[j][0])
-                            #print("Expression", eqn) # FOR DEBUG
+                            # print("Expression", eqn) # FOR DEBUG
                             s += eqn
                             mi = eqn if eqn < mi else mi
                             ma = eqn if eqn > ma else ma
@@ -236,8 +225,8 @@ class Aggregation(GenerationPipeLineBase):
                         self.logger.debug("SUM, AV, MIN, MAX", s, av, mi, ma)
                         agg_array = [SUM, s, AVG, av, MIN, mi, MAX, ma, COUNT, max_no_of_rows]
                     new_result = self.app.doJob(query)
-                    self.logger.debug("New Result", new_result) # FOR DEBUG
-                    self.logger.debug("Comaparison", agg_array) # FOR DEBUG
+                    self.logger.debug("New Result", new_result)  # FOR DEBUG
+                    self.logger.debug("Comaparison", agg_array)  # FOR DEBUG
                     if isQ_result_empty(new_result):
                         self.logger.error('some error in generating new database. '
                                           'Result is empty. Can not identify aggregation')
@@ -253,8 +242,7 @@ class Aggregation(GenerationPipeLineBase):
 
         return True
 
-    def insert_for_inner(self, a, attrib, attrib_types_dict, b, filter_attrib_dict, k_value, key_list, tabname,
-                         temp_vals, result_index):
+    def insert_for_inner(self, a, attrib, b, k_value, key_list, tabname, temp_vals, result_index):
         max_no_of_rows = 0
         # For this table (tabname) and this attribute (attrib), fill all tables now
         for j in range(len(self.core_relations)):
@@ -263,51 +251,53 @@ class Aggregation(GenerationPipeLineBase):
 
             insert_rows = []
 
-            no_of_rows = get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner, result_index, self.dependencies)
+            no_of_rows = get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner, result_index,
+                                        self.dependencies)
 
             if no_of_rows > max_no_of_rows:
                 max_no_of_rows = no_of_rows
 
             self.logger.debug("tabname ", tabname, " tabname_inner ", tabname_inner, " no_of_rows ", no_of_rows)
 
-            att_order = '('
-            flag = False
+            attrib_list_str = ",".join(attrib_list_inner)
+            att_order = f"({attrib_list_str})"
+
             for k in range(no_of_rows):
                 insert_values = []
 
                 for attrib_inner in attrib_list_inner:
-                    #self.logger.debug("attribs", attrib, attrib_inner)
-                    if not flag:
-                        att_order += attrib_inner + ","
+                    datatype = self.get_datatype((tabname_inner, attrib_inner))
+
                     if (attrib_inner == attrib or attrib_inner in key_list) and k == no_of_rows - 1:
                         insert_values.append(b)
                     elif attrib_inner == attrib or attrib_inner in key_list:
                         insert_values.append(a)
-                    elif 'date' in attrib_types_dict[(tabname_inner, attrib_inner)]:
+                    elif datatype == 'date':
                         # check for filter
-                        if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                            date_val = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                            date_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
                         else:
                             date_val = get_val_plus_delta('date', get_dummy_val_for('date'), 2)
                         insert_values.append(ast.literal_eval(get_format('date', date_val)))
-                    elif 'int' in attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in \
-                            attrib_types_dict[(tabname_inner, attrib_inner)]:
+                    elif datatype == 'int' or datatype == 'numeric':
                         # check for filter
-                        if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                            number_val = filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                            number_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
                         else:
                             number_val = get_dummy_val_for('int')
-                        insert_values.append(get_format('int', number_val))
+                        insert_values.append(number_val)
                     else:
                         # check for filter
-                        if (tabname_inner, attrib_inner) in filter_attrib_dict.keys():
-                            plus_val = filter_attrib_dict[(tabname_inner, attrib_inner)].replace('%', '')
+                        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+                            attrib_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)]
+                            if isinstance(attrib_val, tuple):
+                                attrib_val = attrib_val[0]
+                            plus_val = attrib_val.replace('%', '')
                         else:
                             plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 2))
                         insert_values.append(plus_val)
                 insert_rows.append(tuple(insert_values))
 
-                flag = True
             self.logger.debug("Attribute Ordering: ", att_order)  # FOR DEBUG
             self.logger.debug("Rows: ", insert_rows)  # FOR DEBUG
             temp_vals.append(insert_rows)

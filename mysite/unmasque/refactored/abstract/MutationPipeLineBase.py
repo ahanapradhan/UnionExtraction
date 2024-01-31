@@ -46,3 +46,8 @@ class MutationPipeLineBase(Base):
         attrib_idx = attribs.index(attrib)
         val = vals[attrib_idx]
         return val
+
+    def truncate_core_relations(self):
+        for table in self.core_relations:
+            self.connectionHelper.execute_sql([truncate_table(table)])
+

@@ -1,7 +1,7 @@
 import ast
 
 from .MutationPipeLineBase import MutationPipeLineBase
-from ..util.common_queries import truncate_table, insert_into_tab_attribs_format, update_tab_attrib_with_value, \
+from ..util.common_queries import insert_into_tab_attribs_format, update_tab_attrib_with_value, \
     update_tab_attrib_with_quoted_value
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val, \
     get_min_and_max_val
@@ -20,7 +20,9 @@ def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):
         if attrib in LB_dict.keys() and filter_attrib_dict[attrib][0] < LB_dict[attrib]:
             filter_attrib_dict[attrib] = (LB_dict[attrib], filter_attrib_dict[attrib][1])
             del LB_dict[attrib]
-        if attrib in UB_dict.keys() and filter_attrib_dict[attrib][1] > UB_dict[attrib]:
+        if attrib in UB_dict.keys() and \
+                (len(filter_attrib_dict[attrib]) > 1 and filter_attrib_dict[attrib][1] > UB_dict[attrib])\
+                or (len(filter_attrib_dict[attrib]) == 1 and filter_attrib_dict[attrib][0] > UB_dict[attrib]):
             filter_attrib_dict[attrib] = (filter_attrib_dict[attrib][0], UB_dict[attrib])
             del UB_dict[attrib]
 
@@ -38,6 +40,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.attrib_types_dict = {}
         self.global_key_attributes = global_key_attributes
         self.global_aoa_predicates = aoa_predicates
+        self.joined_attribs = None
 
     def extract_params_from_args(self, args):
         return args[0]
@@ -73,7 +76,9 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def add_arithmetic_filters(self, filter_attrib_dict):
         for entry in self.global_filter_predicates:
-            if len(entry) > 4 and 'like' not in entry[2].lower() and 'equal' not in entry[2].lower():
+            if len(entry) > 4 and \
+                    'like' not in entry[2].lower() and \
+                    'equal' not in entry[2].lower():
                 filter_attrib_dict[(entry[0], entry[1])] = (entry[3], entry[4])
             else:
                 filter_attrib_dict[(entry[0], entry[1])] = entry[3]
@@ -114,13 +119,34 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def do_init(self):
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
+        if self.global_join_graph is None:
+            return
+        C_E = set()
+        for edge in self.global_join_graph:
+            C_E.add(edge[0])
+            C_E.add(edge[1])
+        self.joined_attribs = list(C_E)
 
-    def truncate_core_relations(self):
-        for table in self.core_relations:
-            self.connectionHelper.execute_sql([truncate_table(table)])
+    def get_datatype(self, tab_attrib):
+        if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'integer']):
+            return 'int'
+        elif 'date' in self.attrib_types_dict[tab_attrib]:
+            return 'date'
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit']):
+            return 'str'
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
+            return 'numeric'
+        else:
+            raise ValueError
+
+    def get_s_val_for_textType(self, attrib_inner, tabname_inner):
+        filtered_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)]
+        if isinstance(filtered_val, tuple):
+            filtered_val = filtered_val[0]
+        return filtered_val
 
     def insert_attrib_vals_into_table(self, att_order, attrib_list_inner, insert_rows, tabname_inner):
-        att_order, esc_string = get_escape_string(att_order, attrib_list_inner)
+        esc_string = get_escape_string(attrib_list_inner)
         insert_query = insert_into_tab_attribs_format(att_order, esc_string, tabname_inner)
         self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
 

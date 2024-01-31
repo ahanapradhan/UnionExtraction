@@ -215,14 +215,12 @@ def get_2_elems_sublists(l):
     return comb1
 
 
-def get_escape_string(att_order, attrib_list_inner):
+def get_escape_string(attrib_list_inner):
     esc_string = '(' + '%s'
     for k in range(1, len(attrib_list_inner)):
         esc_string = esc_string + ", " + '%s'
     esc_string = esc_string + ")"
-    att_order = att_order[:-1]
-    att_order += ')'
-    return att_order, esc_string
+    return esc_string
 
 
 def get_datatype(my_list, input_tuple):

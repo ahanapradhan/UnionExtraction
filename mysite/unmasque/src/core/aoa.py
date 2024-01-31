@@ -331,11 +331,12 @@ class AlgebraicPredicate(WhereClause):
     def generate_where_clause(self):
         predicates = []
         for eq_join in self.algebraic_eq_predicates:
-            join_edge = list(item[1] for item in eq_join)
+            join_edge = list(item[1] for item in eq_join if len(item) == 2)
             join_edge.sort()
-            join_e = f"{join_edge[0]} = {join_edge[1]}"
-            predicates.append(join_e)
-            self.join_graph.append([join_edge[0], join_edge[1]])
+            for i in range(0, len(join_edge)-1):
+                join_e = f"{join_edge[i]} = {join_edge[i+1]}"
+                predicates.append(join_e)
+                self.join_graph.append([join_edge[i], join_edge[i+1]])
         for a_eq in self.arithmetic_eq_predicates:
             datatype = self.filter_extractor.get_datatype((a_eq[0], a_eq[1]))
             pred = f"{a_eq[1]} = {get_format(datatype, a_eq[3])}"

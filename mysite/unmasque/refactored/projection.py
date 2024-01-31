@@ -36,14 +36,6 @@ class Projection(GenerationPipeLineBase):
         """
         self.param_list = []
 
-    def do_init(self):
-        super().do_init()
-        C_E = set()
-        for edge in self.global_join_graph:
-            C_E.add(edge[0])
-            C_E.add(edge[1])
-        self.global_key_attributes = list(C_E)
-
     def doExtractJob(self, query):
         s_values = []
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
@@ -61,7 +53,6 @@ class Projection(GenerationPipeLineBase):
 
         projection_sol = self.find_solution_on_multi(projected_attrib, projection_names,
                                                      projection_dep, query)
-        # self.build_equation(projected_attrib, projection_dep, projection_sol)
         self.projected_attribs = projected_attrib
         self.projection_names = projection_names
         self.dependencies = projection_dep
@@ -91,12 +82,12 @@ class Projection(GenerationPipeLineBase):
             tabname = entry[0]
             attrib = entry[1]
             self.logger.debug("checking for ", tabname, attrib)
-            if attrib not in self.global_key_attributes:
-                val = self.check_impact_of_non_key_attribs(attrib, new_result, projection_dep, query,
-                                                           tabname)
+            if attrib in self.joined_attribs:
+                val, keys_to_skip = self.check_impact_of_bulk_attribs(attrib, new_result, projection_dep, query,
+                                                                      tabname, keys_to_skip, s_value_dict)
             else:
-                val = self.check_impact_of_key_attribs(attrib, new_result, projection_dep, query, tabname,
-                                                       keys_to_skip, s_value_dict)
+                val = self.check_impact_of_single_attrib(attrib, new_result, projection_dep, query,
+                                                         tabname)
             s_values.append((tabname, attrib, val))
 
         for i in range(len(projection_names)):
@@ -108,10 +99,10 @@ class Projection(GenerationPipeLineBase):
 
         return projected_attrib, projection_names, projection_dep, True
 
-    def check_impact_of_key_attribs(self, attrib, new_result, projection_dep, query, tabname,
-                                    keys_to_skip, s_value_dict):
+    def check_impact_of_bulk_attribs(self, attrib, new_result, projection_dep, query, tabname,
+                                     keys_to_skip, s_value_dict):
         if attrib in keys_to_skip:
-            return s_value_dict[attrib]
+            return s_value_dict[attrib], keys_to_skip
         other_attribs = []
         join_tabnames = []
         for join_edge in self.global_join_graph:
@@ -140,8 +131,8 @@ class Projection(GenerationPipeLineBase):
             for other_attrib in other_attribs:
                 s_value_dict[other_attrib] = val
         else:
-            val = self.check_impact_of_non_key_attribs(attrib, new_result, projection_dep, query, tabname)
-        return val
+            val = self.check_impact_of_single_attrib(attrib, new_result, projection_dep, query, tabname)
+        return val, keys_to_skip
 
     def update_attrib_to_see_impact(self, attrib, tabname):
         prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
@@ -150,9 +141,9 @@ class Projection(GenerationPipeLineBase):
         self.update_with_val(attrib, tabname, val)
         return val, prev
 
-    def check_impact_of_non_key_attribs(self, attrib, new_result, projection_dep, query, tabname):
+    def check_impact_of_single_attrib(self, attrib, new_result, projection_dep, query, tabname):
         for fe in self.global_filter_predicates:
-            if fe[1] == attrib and (fe[2] == 'equal' or fe[2] == '='):
+            if fe[1] == attrib and (fe[2] == 'equal' or fe[2] == '=') and fe[1] not in self.joined_attribs:
                 return
         val, prev = self.update_attrib_to_see_impact(attrib, tabname)
         new_result1 = self.app.doJob(query)

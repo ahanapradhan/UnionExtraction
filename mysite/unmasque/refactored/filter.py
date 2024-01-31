@@ -14,6 +14,18 @@ class Filter(WhereClause):
         super().__init__(connectionHelper, global_key_lists, core_relations, global_min_instance_dict, "Filter")
         self.filter_predicates = None
 
+    def get_datatype(self, tab_attrib):
+        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer']):
+            return 'int'
+        elif 'date' in self.global_attrib_types_dict[tab_attrib]:
+            return 'date'
+        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit']):
+            return 'str'
+        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
+            return 'numeric'
+        else:
+            raise ValueError
+
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
         self.do_init()
@@ -53,19 +65,6 @@ class Filter(WhereClause):
 
                 self.logger.debug("filter_attribs", filter_attribs)
         return filter_attribs
-
-    def get_datatype(self, tab_attrib):
-        tabname, attrib = tab_attrib[0], tab_attrib[1]
-        if 'int' in self.global_attrib_types_dict[(tabname, attrib)]:
-            return 'int'
-        elif 'date' in self.global_attrib_types_dict[(tabname, attrib)]:
-            return 'date'
-        elif any(x in self.global_attrib_types_dict[(tabname, attrib)] for x in ['text', 'char', 'varbit']):
-            return 'str'
-        elif 'numeric' in self.global_attrib_types_dict[(tabname, attrib)]:
-            return 'numeric'
-        else:
-            raise ValueError
 
     def extract_filter_on_attrib_set(self, filter_attribs, query, attrib_list, datatype):
         if datatype == 'str':
