@@ -153,9 +153,23 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
         self.logger.debug("Aggregation", agg.global_aggregated_attributes)
 
+        self.logger.debug("===============================")
+        self.logger.debug("global_attrib_types: ", fl.global_attrib_types)
+        self.logger.debug("core_relations: ", core_relations)
+        self.logger.debug("filter_predicates: ", fl.filter_predicates)
+        self.logger.debug("global_all_attribs: ", fl.global_all_attribs)
+        self.logger.debug("join_graph: ", aoa.join_graph)
+        self.logger.debug("projected_attribs: ", pj.projected_attribs)
+        self.logger.debug("projection_names: ", pj.projection_names)
+        self.logger.debug("dependencies: ", pj.dependencies)
+        self.logger.debug("global_aggregated_attributes: ", agg.global_aggregated_attributes)
+        self.logger.debug("global_min_instance_dict: ", vm.global_min_instance_dict)
+        self.logger.debug("aoa_predicates: ", aoa.aoa_predicates)
+        self.logger.debug("=================---------=================")
+
         self.update_state(ORDER_BY + START)
         ob = OrderBy(self.connectionHelper, fl.global_attrib_types, core_relations,
-                     fl.filter_predicates, fl.global_all_attribs, aoa.join_graph, pj.projected_attribs,
+                     aoa.filter_predicates, fl.global_all_attribs, aoa.join_graph, pj.projected_attribs,
                      pj.projection_names, pj.dependencies, agg.global_aggregated_attributes,
                      vm.global_min_instance_dict, aoa.aoa_predicates)
         self.update_state(ORDER_BY + RUNNING)
@@ -163,14 +177,14 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(ORDER_BY + DONE)
         time_profile.update_for_order_by(ob.local_elapsed_time)
         if not ob.has_orderBy:
-            self.logger.info("Cannot find aggregations.")
+            self.logger.info("Cannot find order by.")
         if not ob.done:
-            self.logger.error("Some error while extrating aggregations. Aborting extraction!")
+            self.logger.error("Some error while extracting order by. Aborting extraction!")
             return None, time_profile
 
         self.update_state(LIMIT + START)
         lm = Limit(self.connectionHelper, fl.global_attrib_types, core_relations,
-                   fl.filter_predicates, aoa.join_graph, fl.global_all_attribs, gb.group_by_attrib,
+                   aoa.filter_predicates, aoa.join_graph, fl.global_all_attribs, gb.group_by_attrib,
                    vm.global_min_instance_dict, aoa.aoa_predicates)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
@@ -179,12 +193,8 @@ class ExtractionPipeLine(GenericPipeLine):
         if lm.limit is None:
             self.logger.info("Cannot find limit.")
         if not lm.done:
-            self.logger.error("Some error while extrating aggregations. Aborting extraction!")
+            self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
-
-        self.logger.debug("limit: ", lm.limit)
-
-        return check, time_profile
 
 
         q_generator = QueryStringGenerator(self.connectionHelper)

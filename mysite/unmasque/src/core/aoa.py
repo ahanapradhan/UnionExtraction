@@ -607,8 +607,12 @@ class AlgebraicPredicate(WhereClause):
         self.arithmetic_eq_predicates = []
         for key in eq_groups_dict.keys():
             if len(eq_groups_dict[key]) == 1:
+                if isinstance(key, str):
+                    op = 'equal'
+                else:
+                    op = '='
                 self.arithmetic_eq_predicates.append((get_tab(eq_groups_dict[key][0]),
-                                                      get_attrib(eq_groups_dict[key][0]), '=', key, key))
+                                                      get_attrib(eq_groups_dict[key][0]), op, key, key))
         eqJoin_group_dict = {key: value for key, value in eq_groups_dict.items() if len(value) > 1}
         return eqJoin_group_dict, ineq_filter_predicates
 

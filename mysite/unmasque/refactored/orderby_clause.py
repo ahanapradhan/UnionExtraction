@@ -2,7 +2,7 @@ import copy
 
 from .util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char, isQ_result_empty
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ..src.util.constants import COUNT, COUNT_STAR, NO_ORDER, SUM
+from ..src.util.constants import COUNT, NO_ORDER, SUM
 
 
 class CandidateAttribute:
@@ -29,7 +29,6 @@ class CandidateAttribute:
 
 
 def tryConvert(logger, val):
-    temp = 0
     changed = False
     try:
         temp = int(val)
@@ -53,36 +52,37 @@ def checkOrdering(logger, obj, result):
     reference_value = tryConvert(logger, result[1][obj.index])
     for i in range(2, len(result)):
         logger.debug(result)
-        if tryConvert(logger, result[i][obj.index]) != reference_value:
-            return 'asc' if tryConvert(logger, result[i][obj.index]) > reference_value else 'desc'
+        curr_val = tryConvert(logger, result[i][obj.index])
+        if curr_val != reference_value:
+            return 'asc' if curr_val > reference_value else 'desc'
     return None
 
 
 class OrderBy(GenerationPipeLineBase):
 
-    def __init__(self, connectionHelper, global_key_attributes, global_attrib_types, core_relations, filter_predicates,
+    def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates,
                  global_all_attribs, join_graph, projected_attribs, global_projection_names, global_dependencies,
-                 global_aggregated_attributes, global_min_instance_dict):
+                 global_aggregated_attributes, global_min_instance_dict, aoa_predicates):
         super().__init__(connectionHelper, "Order By", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict, global_key_attributes, aoa_predicates)
+                         join_graph, filter_predicates, global_min_instance_dict, None, aoa_predicates)
         self.global_projection_names = global_projection_names
         self.projected_attribs = projected_attribs
         self.global_aggregated_attributes = global_aggregated_attributes
         self.orderby_list = []
         self.global_dependencies = global_dependencies
         self.orderBy_string = ''
-        #self.contains_count_order = False
-        #self.curr_orderby = ''
         self.has_orderBy = True
 
     def doExtractJob(self, query):
         # ORDERBY ON PROJECTED COLUMNS ONLY
         # ASSUMING NO ORDER ON JOIN ATTRIBUTES
         cand_list = self.construct_candidate_list()
+        self.logger.debug("candidate list: ", cand_list)
         # CHECK ORDER BY ON COUNT
         self.orderBy_string = self.remove_equality_predicates(cand_list, query)
-        #self.check_order_by_on_count(cand_list, self.orderBy_string, filter_attrib_dict, query)
         self.has_orderBy = self.orderBy_string or self.orderby_list
+        self.logger.debug("order by string: ", self.orderBy_string)
+        self.logger.debug("order by list: ", self.orderby_list)
         return True
 
     def check_order_by_on_count(self, cand_list, query):
@@ -115,7 +115,7 @@ class OrderBy(GenerationPipeLineBase):
                     remove_list.append(elt)
         for elt in remove_list:
             cand_list.remove(elt)
-        curr_orderby = ""
+        curr_orderby = []
         while self.has_orderBy and cand_list:
             remove_list = []
             self.has_orderBy = False
@@ -128,15 +128,17 @@ class OrderBy(GenerationPipeLineBase):
                 if order is None:
                     remove_list.append(elt)
                 elif order != NO_ORDER:
-                    #self.logger.debug("Order by eq", order)
+                    # self.logger.debug("Order by eq", order)
                     self.has_orderBy = True
                     self.orderby_list.append((elt, order))
-                    curr_orderby += elt.name + " " + order + ", "
+                    curr_orderby.append(f"{elt.name} {order}")
                     remove_list.append(elt)
                     break
             for elt in remove_list:
                 cand_list.remove(elt)
-        return curr_orderby
+        s = ", ".join(curr_orderby)
+        self.logger.debug(s)
+        return s
 
     def construct_candidate_list(self):
         cand_list = []
@@ -155,28 +157,21 @@ class OrderBy(GenerationPipeLineBase):
         return cand_list
 
     def generateData(self, obj, orderby_list, query, row_num):
-        # attrib_types_dict = {}
-
-        #for entry in self.global_attrib_types:
-        #    attrib_types_dict[(entry[0], entry[1])] = entry[2]
         # check if it is a key attribute, #NO CHECKING ON KEY ATTRIBUTES
         self.logger.debug(obj.attrib)
         key_elt = None
-        if obj.attrib in self.global_key_attributes:
+        if obj.attrib in self.joined_attribs:
             for elt in self.global_join_graph:
                 if obj.attrib in elt:
                     key_elt = elt
 
         if not obj.dependency:
-            # if obj.name not in self.global_attrib_dict['order by']:
-            #    self.global_attrib_dict['order by'].append(obj.name)
             # ATTRIBUTES TO GET SAME VALUE FOR BOTH ROWS
             # EASY AS KEY ATTRIBUTES ARE NOT THERE IN ORDER AS PER ASSUMPTION SO FAR
             # IN CASE OF COUNT ---
             # Fill 3 rows in any one table (with a a b values) and 2 in all others (with a b values) in D1
             # Fill 3 rows in any one table (with a b b values) and 2 in all others (with a b values) in D2
             same_value_list = []
-            #self.logger.debug("ORDER BY LIST", orderby_list)
             for elt in orderby_list:
                 for i in elt[0].attrib_dependency:
                     key_f = None
@@ -193,33 +188,27 @@ class OrderBy(GenerationPipeLineBase):
             order = [None, None]
             # For this attribute (obj.attrib), fill all tables now
             for k in range(no_of_db):
-                # Truncate all core relations
                 self.truncate_core_relations()
                 for j in range(len(self.core_relations)):
-                    first_rel = self.core_relations[0]
                     tabname_inner = self.core_relations[j]
                     attrib_list_inner = self.global_all_attribs[j]
-                    insert_rows = []
-                    insert_values1 = []
-                    insert_values2 = []
-                    att_order = '('
-                    flag = False
+                    insert_rows, insert_values1, insert_values2 = [], [], []
+                    attrib_list_str = ",".join(attrib_list_inner)
+                    att_order = f"({attrib_list_str})"
                     for attrib_inner in attrib_list_inner:
-                        if not flag:
-                            att_order += attrib_inner + ","
-                        if 'date' in self.attrib_types_dict[(tabname_inner, attrib_inner)]:
+                        datatype = self.get_datatype((tabname_inner, attrib_inner))
+
+                        if datatype == 'date':
                             if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                                 first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-                                second = min \
-                                    (get_val_plus_delta('date', first, 1),
-                                     self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
+                                second = min(get_val_plus_delta('date', first, 1),
+                                             self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
                             else:
                                 first = get_dummy_val_for('date')
                                 second = get_val_plus_delta('date', first, 1)
                             first = get_format('date', first)
                             second = get_format('date', second)
-                        elif ('int' in self.attrib_types_dict[(tabname_inner, attrib_inner)] or 'numeric' in
-                              self.attrib_types_dict[(tabname_inner, attrib_inner)]):
+                        elif datatype in ['int', 'integer', 'numeric', 'float']:
                             # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
                             if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                                 first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
@@ -231,16 +220,17 @@ class OrderBy(GenerationPipeLineBase):
                         else:
                             if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                                 # EQUAL FILTER WILL NOT COME HERE
-                                if '_' in self.filter_attrib_dict[(tabname_inner, attrib_inner)]:
-                                    string = copy.deepcopy(self.filter_attrib_dict[(tabname_inner, attrib_inner)])
+                                s_val_text = self.get_s_val_for_textType(attrib_inner, tabname_inner)
+                                if '_' in s_val_text:
+                                    string = copy.deepcopy(s_val_text)
                                     first = string.replace('_', get_char(get_dummy_val_for('char')))
-                                    string = copy.deepcopy(self.filter_attrib_dict[(tabname_inner, attrib_inner)])
+                                    string = copy.deepcopy(s_val_text)
                                     second = string.replace('_', get_char(
                                         get_val_plus_delta('char', get_dummy_val_for('char'), 1)))
                                 else:
-                                    string = copy.deepcopy(self.filter_attrib_dict[(tabname_inner, attrib_inner)])
+                                    string = copy.deepcopy(s_val_text)
                                     first = string.replace('%', get_char(get_dummy_val_for('char')), 1)
-                                    string = copy.deepcopy(self.filter_attrib_dict[(tabname_inner, attrib_inner)])
+                                    string = copy.deepcopy(s_val_text)
                                     second = string.replace('%', get_char(
                                         get_val_plus_delta('char', get_dummy_val_for('char'), 1)), 1)
                                 first = first.replace('%', '')
@@ -262,7 +252,6 @@ class OrderBy(GenerationPipeLineBase):
                         self.logger.debug("same value", same_value_list)
                         if any([(attrib_inner in i) for i in same_value_list]):
                             insert_values2[-1] = insert_values1[-1]
-                    flag = True
                     if row_num == 3:
                         insert_rows.append(tuple(insert_values1))
                         insert_rows.append(tuple(insert_values1))
@@ -270,12 +259,12 @@ class OrderBy(GenerationPipeLineBase):
                     else:
                         insert_rows.append(tuple(insert_values1))
                         insert_rows.append(tuple(insert_values2))
-                        
+
                     self.logger.debug(att_order)
                     self.logger.debug("Insert 1", insert_values1)
                     self.logger.debug("Insert 2", insert_values2)
                     self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
-                    
+
                 new_result = self.app.doJob(query)
                 self.logger.debug("New Result", k, new_result)
                 if isQ_result_empty(new_result):
