@@ -79,25 +79,29 @@ def get_datatype_of_val(val):
 
 
 def get_unused_dummy_val(datatype, value_used):
-    if datatype == 'int':
+    if datatype in ['int', 'integer', 'numeric', 'float']:
         dint = constants.dummy_int
     elif datatype == 'date':
         dint = constants.dummy_date
-    elif datatype == 'char':
+    elif datatype in ['char', 'str']:
         if constants.dummy_char == 91:
             constants.dummy_char = 65
         dint = get_char(constants.dummy_char)
+    else:
+        raise ValueError
 
     while dint in value_used:
         dint = get_val_plus_delta(datatype, dint, 1)
 
-    if datatype == 'int':
+    if datatype in ['int', 'integer', 'numeric', 'float']:
         constants.dummy_int = dint
     elif datatype == 'date':
         constants.dummy_date = dint
-    elif datatype == 'char':
+    elif datatype in ['char', 'str']:
         dint = get_char(dint)
         constants.dummy_char = get_int(dint)
+    else:
+        raise ValueError
     return dint
 
 
@@ -155,7 +159,7 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
 def get_format(datatype, val):
     if datatype == 'date' or datatype == 'char' \
             or datatype == 'character' \
-            or datatype == 'character varying':
+            or datatype == 'character varying' or datatype == 'str':
         return f"\'{str(val)}\'"
     elif datatype == 'float' or datatype == 'numeric':
         return str(round(val, 12))

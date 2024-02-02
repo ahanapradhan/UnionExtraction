@@ -59,8 +59,8 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
         global_min_instance_dict = {}
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, filters, q_gen,
+                global_min_instance_dict, aoa.aoa_predicates)
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -115,8 +115,8 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = "l_quantity > 20 "
 
         global_min_instance_dict = {}
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, filters, q_gen,
+                global_min_instance_dict, aoa.aoa_predicates)
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -176,8 +176,8 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31'"
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, filters, q_gen,
+                global_min_instance_dict, aoa.aoa_predicates)
 
         o.mock = True
 
@@ -242,8 +242,8 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, filters, q_gen,
+                global_min_instance_dict, aoa.aoa_predicates)
 
         o.mock = True
 
@@ -339,8 +339,8 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, filters, q_gen,
+                global_min_instance_dict, aoa.aoa_predicates)
 
         o.mock = True
 
@@ -430,8 +430,8 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, filters, q_gen,
+                global_min_instance_dict, aoa.aoa_predicates)
 
         o.mock = True
 
@@ -521,8 +521,8 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, filters, q_gen,
+                global_min_instance_dict, aoa.aoa_predicates)
 
         o.mock = True
 
@@ -621,8 +621,8 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, filters, q_gen,
+                global_min_instance_dict, aoa.aoa_predicates)
 
         o.mock = True
 

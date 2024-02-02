@@ -103,43 +103,24 @@ class Projection(GenerationPipeLineBase):
                                      keys_to_skip, s_value_dict):
         if attrib in keys_to_skip:
             return s_value_dict[attrib], keys_to_skip
-        other_attribs = []
         join_tabnames = []
-        for join_edge in self.global_join_graph:
-            if attrib in join_edge:
-                other_attribs = copy.deepcopy(join_edge)
-                other_attribs.remove(attrib)
-                break
-        if other_attribs:
-            val, prev = self.update_attrib_to_see_impact(attrib, tabname)
-            for other_attrib in other_attribs:
-                join_tabname = self.find_tabname_for_given_attrib(other_attrib)
-                join_tabnames.append(join_tabname)
-                self.logger.debug("update ", join_tabname, other_attrib, "with value ", val, " prev", prev)
-                self.update_with_val(other_attrib, join_tabname, val)
-            new_result1 = self.app.doJob(query)
-            self.update_with_val(attrib, tabname, prev)
-            for i in range(len(other_attribs)):
-                self.update_with_val(other_attribs[i], join_tabnames[i], prev)
-            if len(new_result1) > 1:
-                new_result1 = list(new_result1[1])
-                diff = find_diff_idx(new_result1, new_result)
-                if diff:
-                    for d in diff:
-                        projection_dep[d].append((tabname, attrib))
-            keys_to_skip = keys_to_skip + other_attribs
-            for other_attrib in other_attribs:
-                s_value_dict[other_attrib] = val
-        else:
-            val = self.check_impact_of_single_attrib(attrib, new_result, projection_dep, query, tabname)
-        return val, keys_to_skip
+        other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
+        val, prev = self.update_attrib_to_see_impact(attrib, tabname)
+        self.update_attribs_bulk(join_tabnames, other_attribs, val)
+        new_result1 = self.app.doJob(query)
+        self.update_with_val(attrib, tabname, prev)
+        self.update_attribs_bulk(join_tabnames, other_attribs, prev)
 
-    def update_attrib_to_see_impact(self, attrib, tabname):
-        prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
-        val = self.get_different_val(attrib, tabname, prev)
-        self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
-        self.update_with_val(attrib, tabname, val)
-        return val, prev
+        if len(new_result1) > 1:
+            new_result1 = list(new_result1[1])
+            diff = find_diff_idx(new_result1, new_result)
+            if diff:
+                for d in diff:
+                    projection_dep[d].append((tabname, attrib))
+        keys_to_skip = keys_to_skip + other_attribs
+        for other_attrib in other_attribs:
+            s_value_dict[other_attrib] = val
+        return val, keys_to_skip
 
     def check_impact_of_single_attrib(self, attrib, new_result, projection_dep, query, tabname):
         for fe in self.global_filter_predicates:

@@ -1,4 +1,5 @@
 import ast
+import copy
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..util.common_queries import insert_into_tab_attribs_format, update_tab_attrib_with_value, \
@@ -6,6 +7,7 @@ from ..util.common_queries import insert_into_tab_attribs_format, update_tab_att
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val, \
     get_min_and_max_val
 
+NUMBER_TYPES = ['int', 'integer', 'numeric', 'float']
 
 def update_aoa_LB_UB(LB_dict, UB_dict, filter_attrib_dict):
     for attrib in LB_dict.keys():
@@ -157,36 +159,56 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def doExtractJob(self, query):
         return True
 
+    def get_other_attribs_in_eqJoin_grp(self, attrib):
+        other_attribs = []
+        for join_edge in self.global_join_graph:
+            if attrib in join_edge:
+                other_attribs = copy.deepcopy(join_edge)
+                other_attribs.remove(attrib)
+                break
+        return other_attribs
+
+    def update_attribs_bulk(self, join_tabnames, other_attribs, val):
+        for other_attrib in other_attribs:
+            join_tabname = self.find_tabname_for_given_attrib(other_attrib)
+            join_tabnames.append(join_tabname)
+            self.update_with_val(other_attrib, join_tabname, val)
+
+    def update_attrib_to_see_impact(self, attrib, tabname):
+        prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
+        val = self.get_different_val(attrib, tabname, prev)
+        self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
+        self.update_with_val(attrib, tabname, val)
+        return val, prev
+
     def update_with_val(self, attrib, tabname, val):
-        if 'date' in self.attrib_types_dict[(tabname, attrib)]:
-            update_q = update_tab_attrib_with_value(attrib, tabname, get_format('date', val))
-        elif 'int' in self.attrib_types_dict[(tabname, attrib)] \
-                or 'numeric' in self.attrib_types_dict[(tabname, attrib)]:
-            update_q = update_tab_attrib_with_value(attrib, tabname, val)
+        datatype = self.get_datatype((tabname, attrib))
+        if datatype == 'date' or datatype in NUMBER_TYPES:
+            update_q = update_tab_attrib_with_value(attrib, tabname, get_format(datatype, val))
         else:
             update_q = update_tab_attrib_with_quoted_value(tabname, attrib, val)
         self.connectionHelper.execute_sql([update_q])
 
     def get_val(self, attrib, tabname):
-        if 'date' in self.attrib_types_dict[(tabname, attrib)]:
+        datatype = self.get_datatype((tabname, attrib))
+        if datatype == 'date':
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = min(self.filter_attrib_dict[(tabname, attrib)][0],
                           self.filter_attrib_dict[(tabname, attrib)][1])
             else:
-                val = get_dummy_val_for('date')
-            val = ast.literal_eval(get_format('date', val))
+                val = get_dummy_val_for(datatype)
+            val = ast.literal_eval(get_format(datatype, val))
 
-        elif ('int' in self.attrib_types_dict[(tabname, attrib)]
-              or 'numeric' in self.attrib_types_dict[(tabname, attrib)]):
+        elif datatype in NUMBER_TYPES:
             # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = min(self.filter_attrib_dict[(tabname, attrib)][0],
                           self.filter_attrib_dict[(tabname, attrib)][1])
             else:
-                val = get_dummy_val_for('int')
+                val = get_dummy_val_for(datatype)
         else:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = self.filter_attrib_dict[(tabname, attrib)]
+                val = self.get_s_val_for_textType(attrib, tabname)
                 self.logger.debug(val)
                 val = val.replace('%', '')
             else:
@@ -204,23 +226,23 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return val
 
     def get_different_val(self, attrib, tabname, prev):
-        if 'date' in self.attrib_types_dict[(tabname, attrib)]:
+        datatype = self.get_datatype((tabname, attrib))
+        if datatype == 'date':
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = self.get_different_val_for_dmin(attrib, tabname, prev)
             else:
-                val = get_unused_dummy_val('date', [prev])
-            val = ast.literal_eval(get_format('date', val))
+                val = get_unused_dummy_val(datatype, [prev])
+            val = ast.literal_eval(get_format(datatype, val))
 
-        elif ('int' in self.attrib_types_dict[(tabname, attrib)]
-              or 'numeric' in self.attrib_types_dict[(tabname, attrib)]):
+        elif datatype in NUMBER_TYPES:
             # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = self.get_different_val_for_dmin(attrib, tabname, prev)
             else:
-                val = get_unused_dummy_val('int', [prev])
+                val = get_unused_dummy_val(datatype, [prev])
         else:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = self.filter_attrib_dict[(tabname, attrib)]
+                val = self.get_s_val_for_textType(attrib, tabname)
                 self.logger.debug(val)
                 val = val.replace('%', '')
             else:

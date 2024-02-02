@@ -328,6 +328,9 @@ class AlgebraicPredicate(WhereClause):
         self.join_graph = []
         self.filter_predicates = []
 
+    def get_supporting_global_params(self):
+        return self.filter_extractor.global_all_attribs, self.filter_extractor.global_attrib_types
+
     def generate_where_clause(self):
         predicates = []
         for eq_join in self.algebraic_eq_predicates:

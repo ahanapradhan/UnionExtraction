@@ -1,24 +1,25 @@
 import copy
 
+from tabulate import tabulate
 
 def create_zero_time_profile():
     return ElapsedTime()
 
 
 class ElapsedTime:
-    clause_keys = ["Union Detection:",
-                   "From Clause:",
-                   "Correlated Sampling:",
-                   "View Minimization:",
-                   "Where Clause:",
+    clause_keys = ["Union\n Detection:",
+                   "From\n Clause:",
+                   "Correlated\n Sampling:",
+                   "View\n Minimization:",
+                   "Where\n Clause:",
                    "Projection:",
-                   "Group BY:",
+                   "Group\n BY:",
                    "Aggregation:",
-                   "Order by:",
+                   "Order\n by:",
                    "Limit:",
                    "NEP: ",
-                   "Result Comparator:",
-                   "Number of Times Executable called: "
+                   "Result\n Comparator:",
+                   "Number of Times\n Executable called: "
                    ]
 
     def __init__(self):
@@ -112,7 +113,14 @@ class ElapsedTime:
                                            str(round(times[i] * 1000)) + " ms.")
             i += 1
 
-        print(self.display_string)
+        # print(self.display_string)
+
+        pp_tab = zip(self.clause_keys, times)
+
+        table = list(pp_tab)
+        header = ["Step", "Time (ms)"]
+        table.insert(0, header)
+        print(tabulate(table, headers='firstrow', tablefmt='fancy_grid'))
 
     def get_json_display_string(self):
         self.print()

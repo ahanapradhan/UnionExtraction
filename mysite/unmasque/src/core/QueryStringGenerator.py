@@ -3,8 +3,15 @@ import copy
 from ..util.constants import COUNT, SUM, max_str_len
 from ...refactored.abstract.ExtractorBase import Base
 from ...refactored.executable import Executable
-from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val
+from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val, get_datatype_of_val
 
+
+def add_pred_for(aoa_l, pred):
+    if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
+        pred.append(aoa_l[1])
+    else:
+        pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
+    return aoa_l
 
 def refine_aggregates(agg, wc):
     for i, attrib in enumerate(agg.global_projected_attributes):
@@ -58,26 +65,32 @@ class QueryStringGenerator(Base):
 
     def generate_join_string(self, ej):
         joins = []
-        for edge in ej.global_join_graph:
+        for edge in ej:
             edge.sort()
-            for i in range(len(edge) - 1):
-                left_e = edge[i]
-                right_e = edge[i + 1]
-                join_e = f"{left_e} = {right_e}"
-                joins.append(join_e)
-        self.where_op = " and ".join(joins)
+            # for i in range(len(edge) - 1):
+            #    left_e = edge[i]
+            #    right_e = edge[i + 1]
+            join_e = f"{edge[0]} = {edge[1]}"
+            joins.append(join_e)
+        self.where_op += " and ".join(joins)
 
-    def generate_query_string(self, core_relations, ej, fl, pj, gb, agg, ob, lm):
+    def generate_query_string(self, core_relations, pj, gb, agg, ob, lm, aoa):
         relations = copy.deepcopy(core_relations)
         relations.sort()
         self.from_op = ", ".join(relations)
-        self.generate_join_string(ej)
+        '''
+        self.generate_join_string(aoa.join_graph)
 
-        if self.where_op and len(fl.filter_predicates) > 0:
-            self.where_op += " and "
-        self.where_op = self.add_filters(fl)
+        if self.where_op and len(aoa.filter_predicates):
+            self.where_op += "\n and "
+        self.add_filters(aoa)
 
-        eq = self.refine_Query1(ej.global_key_attributes, pj, gb, agg, ob, lm)
+        if self.where_op and len(aoa.aoa_predicates):
+            self.where_op += "\n and "
+        self.add_aoa_predicates(aoa)
+        '''
+        self.where_op = aoa.where_clause
+        eq = self.refine_Query1(pj.joined_attribs, pj, gb, agg, ob, lm)
         return eq
 
     def add_filters(self, wc):
@@ -97,20 +110,18 @@ class QueryStringGenerator(Base):
 
             filters.append(pred_op)
         self.where_op += " and ".join(filters)
-        return self.where_op
 
     def assembleQuery(self):
-        output = "Select " + self.select_op \
-                 + "\n" + "From " + self.from_op
+        output = f"Select {self.select_op}\n From {self.from_op}"
         if self.where_op != '':
-            output = output + "\n" + "Where " + self.where_op
+            output = f"{output} \n Where {self.where_op}"
         if self.group_by_op != '':
-            output = output + "\n" + "Group By " + self.group_by_op
+            output = f"{output} \n Group By {self.group_by_op}"
         if self.order_by_op != '':
-            output = output + "\n" + "Order By " + self.order_by_op
+            output = f"{output} \n Order By {self.order_by_op}"
         if self.limit_op is not None:
-            output = output + "\n" + "Limit " + self.limit_op
-        output = output + ";"
+            output = f"{output} \n Limit {self.limit_op}"
+        output = f"{output};"
         return output
 
     def refine_Query1(self, global_key_attributes, pj, gb, agg, ob, lm):
@@ -167,7 +178,7 @@ class QueryStringGenerator(Base):
             else:
                 self.select_op = self.select_op + ", " + elt
 
-        self.order_by_op = ob.orderBy_string[:-2]
+        self.order_by_op = ob.orderBy_string
         if lm.limit is not None:
             self.limit_op = str(lm.limit)
         eq = self.assembleQuery()
@@ -372,3 +383,12 @@ class QueryStringGenerator(Base):
 
             index = index + 1
         return output
+
+    def add_aoa_predicates(self, aoa):
+        predicates = []
+        for _aoa in aoa.aoa_predicates:
+            pred = []
+            add_pred_for(_aoa[0], pred)
+            add_pred_for(_aoa[1], pred)
+            predicates.append(" <= ".join(pred))
+        self.where_op += " and ".join(predicates)

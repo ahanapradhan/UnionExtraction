@@ -84,7 +84,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(FILTER + START)
 
         aoa = AlgebraicPredicate(self.connectionHelper, key_lists, core_relations, vm.global_min_instance_dict)
-        fl = aoa.filter_extractor
+        global_all_attribs, global_attrib_types = aoa.get_supporting_global_params()
         self.update_state(FILTER + RUNNING)
         check = aoa.doJob(query)
         self.update_state(FILTER + DONE)
@@ -95,14 +95,12 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while Filter Predicate extraction. Aborting extraction!")
             return None, time_profile
 
-        print(aoa.where_clause)
-
         '''
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
-        pj = Projection(self.connectionHelper, fl.global_attrib_types, core_relations, aoa.filter_predicates,
-                        aoa.join_graph, fl.global_all_attribs, vm.global_min_instance_dict, aoa.aoa_predicates)
+        pj = Projection(self.connectionHelper, global_attrib_types, core_relations, aoa.filter_predicates,
+                        aoa.join_graph, global_all_attribs, vm.global_min_instance_dict, aoa.aoa_predicates)
 
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
@@ -118,8 +116,8 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.update_state(GROUP_BY + START)
 
-        gb = GroupBy(self.connectionHelper, fl.global_attrib_types, core_relations, aoa.filter_predicates,
-                     fl.global_all_attribs, aoa.join_graph, pj.projected_attribs, vm.global_min_instance_dict,
+        gb = GroupBy(self.connectionHelper, global_attrib_types, core_relations, aoa.filter_predicates,
+                     global_all_attribs, aoa.join_graph, pj.projected_attribs, vm.global_min_instance_dict,
                      aoa.aoa_predicates)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
@@ -132,14 +130,14 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while group by extraction. Aborting extraction!")
             return None, time_profile
 
-        for elt in fl.filter_predicates:
+        for elt in aoa.filter_predicates:
             if elt[1] not in gb.group_by_attrib and elt[1] in pj.projected_attribs and (
                     elt[2] == '=' or elt[2] == 'equal'):
                 gb.group_by_attrib.append(elt[1])
 
         self.update_state(AGGREGATE + START)
-        agg = Aggregation(self.connectionHelper, fl.global_attrib_types, core_relations,
-                          fl.filter_predicates, fl.global_all_attribs, aoa.join_graph, pj.projected_attribs,
+        agg = Aggregation(self.connectionHelper, global_attrib_types, core_relations,
+                          aoa.filter_predicates, global_all_attribs, aoa.join_graph, pj.projected_attribs,
                           gb.has_groupby, gb.group_by_attrib, pj.dependencies, pj.solution, pj.param_list,
                           vm.global_min_instance_dict, aoa.aoa_predicates)
         self.update_state(AGGREGATE + RUNNING)
@@ -151,25 +149,10 @@ class ExtractionPipeLine(GenericPipeLine):
         if not agg.done:
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
-        self.logger.debug("Aggregation", agg.global_aggregated_attributes)
-
-        self.logger.debug("===============================")
-        self.logger.debug("global_attrib_types: ", fl.global_attrib_types)
-        self.logger.debug("core_relations: ", core_relations)
-        self.logger.debug("filter_predicates: ", fl.filter_predicates)
-        self.logger.debug("global_all_attribs: ", fl.global_all_attribs)
-        self.logger.debug("join_graph: ", aoa.join_graph)
-        self.logger.debug("projected_attribs: ", pj.projected_attribs)
-        self.logger.debug("projection_names: ", pj.projection_names)
-        self.logger.debug("dependencies: ", pj.dependencies)
-        self.logger.debug("global_aggregated_attributes: ", agg.global_aggregated_attributes)
-        self.logger.debug("global_min_instance_dict: ", vm.global_min_instance_dict)
-        self.logger.debug("aoa_predicates: ", aoa.aoa_predicates)
-        self.logger.debug("=================---------=================")
 
         self.update_state(ORDER_BY + START)
-        ob = OrderBy(self.connectionHelper, fl.global_attrib_types, core_relations,
-                     aoa.filter_predicates, fl.global_all_attribs, aoa.join_graph, pj.projected_attribs,
+        ob = OrderBy(self.connectionHelper, global_attrib_types, core_relations,
+                     aoa.filter_predicates, global_all_attribs, aoa.join_graph, pj.projected_attribs,
                      pj.projection_names, pj.dependencies, agg.global_aggregated_attributes,
                      vm.global_min_instance_dict, aoa.aoa_predicates)
         self.update_state(ORDER_BY + RUNNING)
@@ -183,8 +166,8 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         self.update_state(LIMIT + START)
-        lm = Limit(self.connectionHelper, fl.global_attrib_types, core_relations,
-                   aoa.filter_predicates, aoa.join_graph, fl.global_all_attribs, gb.group_by_attrib,
+        lm = Limit(self.connectionHelper, global_attrib_types, core_relations,
+                   aoa.filter_predicates, aoa.join_graph, global_all_attribs, gb.group_by_attrib,
                    vm.global_min_instance_dict, aoa.aoa_predicates)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
@@ -196,12 +179,12 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-
         q_generator = QueryStringGenerator(self.connectionHelper)
-        eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
+        eq = q_generator.generate_query_string(core_relations, pj, gb, agg, ob, lm, aoa)
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self.extract_NEP(core_relations, cs2, ej, eq, fl, q_generator, query, time_profile, vm)
+        eq = self.extract_NEP(core_relations, cs2, eq, q_generator, query, time_profile, vm, global_all_attribs,
+                              global_attrib_types, aoa)
 
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
@@ -209,12 +192,12 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(DONE)
         return eq, time_profile
 
-    def extract_NEP(self, core_relations, cs2, ej, eq, fl, q_generator, query, time_profile, vm):
+    def extract_NEP(self, core_relations, cs2, eq, q_generator, query, time_profile, vm, global_all_attribs,
+                    global_attrib_types, aoa):
         if self.connectionHelper.config.detect_nep:
             self.update_state(NEP_ + START)
-            nep = NEP(self.connectionHelper, core_relations, cs2.sizes, self.global_pk_dict, ej.global_all_attribs,
-                      ej.global_attrib_types, fl.filter_predicates, ej.global_key_attributes, q_generator,
-                      vm.global_min_instance_dict)
+            nep = NEP(self.connectionHelper, core_relations, cs2.sizes, global_all_attribs, global_attrib_types,
+                      aoa.filter_predicates, q_generator, vm.global_min_instance_dict, aoa.aoa_predicates)
             self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
             if nep.Q_E:

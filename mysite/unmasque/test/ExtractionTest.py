@@ -1,8 +1,6 @@
 import random
 import unittest
-from datetime import datetime, timedelta, date
-
-import pytest
+from datetime import timedelta, date
 
 import pytest
 
@@ -56,7 +54,7 @@ class MyTestCase(BaseTestCase):
             print(eq)
             self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_for_numeric_filter_NEP(self):
         self.conn.config.detect_nep = True
         query = "select c_mktsegment as segment from customer,nation,orders where " \
@@ -622,6 +620,17 @@ class MyTestCase(BaseTestCase):
     def test_6_mul(self):
         for i in range(2):
             self.test_extraction_Q6()
+
+    def test_dormant_aoa(self):
+        self.conn.connectUsingParams()
+        query = "Select l_shipmode, count(*) as count From orders, lineitem " \
+                "Where o_orderkey = l_orderkey and l_commitdate <= l_receiptdate and l_shipdate <= l_commitdate " \
+                "and l_receiptdate >= '1994-01-01' and l_receiptdate <= '1995-01-01' and l_extendedprice <= " \
+                "o_totalprice and l_extendedprice <= 70000 and o_totalprice >= 60000 Group By l_shipmode " \
+                "Order By l_shipmode;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':

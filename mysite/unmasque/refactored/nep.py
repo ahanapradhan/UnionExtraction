@@ -19,19 +19,16 @@ class NEP(Minimizer, GenerationPipeLineBase):
     Of course we can set this cutoff to much higher value if needed.
     '''
 
-    def __init__(self, connectionHelper, core_relations, all_sizes, global_pk_dict, global_all_attribs,
-                 global_attrib_types, filter_predicates, global_key_attributes, query_generator,
-                 global_min_instance_dict):
+    def __init__(self, connectionHelper, core_relations, all_sizes, global_all_attribs, global_attrib_types,
+                 filter_predicates, query_generator, global_min_instance_dict, aoa_predicates):
         Minimizer.__init__(self, connectionHelper, core_relations, all_sizes, "NEP")
         GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", core_relations, global_all_attribs,
                                         global_attrib_types, None, filter_predicates, global_min_instance_dict,
-                                        global_key_attributes, aoa_predicates)
+                                        None, aoa_predicates)
         self.filter_attrib_dict = {}
         self.attrib_types_dict = {}
         self.Q_E = ""
-        self.global_pk_dict = global_pk_dict  # from initialization
         self.query_generator = query_generator
-
         self.nep_comparator = NepComparator(self.connectionHelper)
 
     def extract_params_from_args(self, args):
@@ -161,16 +158,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         query_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({query}) as q_h;")
         q_e_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({q_e}) as q_e;")
         self.logger.debug(f"q_e result: {q_e_result}, query result: {query_result}")
-        '''
-        if q_e_result >= 1 and query_result >= 1:
-            return True
-        elif q_e_result == 1 and query_result == 0:
-            return True
-        elif q_e_result == 0 and query_result == 1:
-            return False
-        elif q_e_result == 0 and query_result == 0:
-            return False
-        '''
         if q_e_result >= 1:
             return True
         elif not q_e_result:
@@ -195,16 +182,25 @@ class NEP(Minimizer, GenerationPipeLineBase):
     def check_per_attrib(self, attrib_list, tabname, query, filterAttribs):
         for attrib in attrib_list:
             self.logger.debug(tabname, attrib)
-            if attrib not in self.global_key_attributes:
-
-                prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
+            prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
+            if attrib not in self.joined_attribs:
                 val = self.get_different_val(attrib, tabname, prev)
                 self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
                 self.update_with_val(attrib, tabname, val)
 
                 new_result = self.app.doJob(query)
+                self.update_with_val(attrib, tabname, prev)
+            else:
+                join_tabnames = []
+                other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
+                val, prev = self.update_attrib_to_see_impact(attrib, tabname)
+                self.update_attribs_bulk(join_tabnames, other_attribs, val)
 
-                if len(new_result) > 1:
-                    filterAttribs.append((tabname, attrib, '<>', prev))
-                    self.logger.debug(filterAttribs, '++++++_______++++++')
-                    return filterAttribs
+                new_result = self.app.doJob(query)
+                self.update_with_val(attrib, tabname, prev)
+                self.update_attribs_bulk(join_tabnames, other_attribs, prev)
+
+            if len(new_result) > 1:
+                filterAttribs.append((tabname, attrib, '<>', prev))
+                self.logger.debug(filterAttribs, '++++++_______++++++')
+                return filterAttribs
