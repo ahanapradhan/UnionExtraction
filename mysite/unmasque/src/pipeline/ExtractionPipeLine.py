@@ -197,7 +197,7 @@ class ExtractionPipeLine(GenericPipeLine):
         if self.connectionHelper.config.detect_nep:
             self.update_state(NEP_ + START)
             nep = NEP(self.connectionHelper, core_relations, cs2.sizes, global_all_attribs, global_attrib_types,
-                      aoa.filter_predicates, q_generator, vm.global_min_instance_dict, aoa.aoa_predicates)
+                      aoa.join_graph, aoa.filter_predicates, q_generator, vm.global_min_instance_dict, aoa.aoa_predicates)
             self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
             if nep.Q_E:

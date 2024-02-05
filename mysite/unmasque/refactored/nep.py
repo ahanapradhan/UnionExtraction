@@ -20,10 +20,10 @@ class NEP(Minimizer, GenerationPipeLineBase):
     '''
 
     def __init__(self, connectionHelper, core_relations, all_sizes, global_all_attribs, global_attrib_types,
-                 filter_predicates, query_generator, global_min_instance_dict, aoa_predicates):
+                 join_graph, filter_predicates, query_generator, global_min_instance_dict, aoa_predicates):
         Minimizer.__init__(self, connectionHelper, core_relations, all_sizes, "NEP")
         GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", core_relations, global_all_attribs,
-                                        global_attrib_types, None, filter_predicates, global_min_instance_dict,
+                                        global_attrib_types, join_graph, filter_predicates, global_min_instance_dict,
                                         None, aoa_predicates)
         self.filter_attrib_dict = {}
         self.attrib_types_dict = {}
@@ -37,8 +37,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
     def doActualJob(self, args):
         query, Q_E = self.extract_params_from_args(args)
 
-        self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
-        self.filter_attrib_dict = self.construct_filter_attribs_dict()
+        super().do_init()
         nep_exists = False
 
         # Run the hidden query on the original database instance
@@ -180,27 +179,36 @@ class NEP(Minimizer, GenerationPipeLineBase):
         return False
 
     def check_per_attrib(self, attrib_list, tabname, query, filterAttribs):
+        single_attribs = [attrib for attrib in attrib_list if attrib not in self.joined_attribs]
+        joined_attribs = [attrib for attrib in attrib_list if attrib in self.joined_attribs]
+
+        self.check_per_single_attrib(single_attribs, filterAttribs, query, tabname)
+        self.check_per_joined_attrib(joined_attribs, filterAttribs, query, tabname)
+        return filterAttribs
+
+    def check_per_joined_attrib(self, attriblist, filterAttribs, query, tabname):
+        for attrib in attriblist:
+            join_tabnames = []
+            other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
+            val, prev = self.update_attrib_to_see_impact(attrib, tabname)
+            self.update_attribs_bulk(join_tabnames, other_attribs, val)
+            new_result = self.app.doJob(query)
+            self.update_with_val(attrib, tabname, prev)
+            self.update_attribs_bulk(join_tabnames, other_attribs, prev)
+            self.update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
+
+    def check_per_single_attrib(self, attrib_list, filterAttribs, query, tabname):
         for attrib in attrib_list:
             self.logger.debug(tabname, attrib)
             prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
-            if attrib not in self.joined_attribs:
-                val = self.get_different_val(attrib, tabname, prev)
-                self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
-                self.update_with_val(attrib, tabname, val)
+            val = self.get_different_val(attrib, tabname, prev)
+            self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
+            self.update_with_val(attrib, tabname, val)
+            new_result = self.app.doJob(query)
+            self.update_with_val(attrib, tabname, prev)
+            self.update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
 
-                new_result = self.app.doJob(query)
-                self.update_with_val(attrib, tabname, prev)
-            else:
-                join_tabnames = []
-                other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
-                val, prev = self.update_attrib_to_see_impact(attrib, tabname)
-                self.update_attribs_bulk(join_tabnames, other_attribs, val)
-
-                new_result = self.app.doJob(query)
-                self.update_with_val(attrib, tabname, prev)
-                self.update_attribs_bulk(join_tabnames, other_attribs, prev)
-
-            if len(new_result) > 1:
-                filterAttribs.append((tabname, attrib, '<>', prev))
-                self.logger.debug(filterAttribs, '++++++_______++++++')
-                return filterAttribs
+    def update_filter_attribs_from_res(self, new_result, filterAttribs, tabname, attrib, prev):
+        if len(new_result) > 1:
+            filterAttribs.append((tabname, attrib, '<>', prev))
+            self.logger.debug(filterAttribs, '++++++_______++++++')

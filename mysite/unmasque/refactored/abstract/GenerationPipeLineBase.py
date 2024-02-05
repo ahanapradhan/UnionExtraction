@@ -9,6 +9,7 @@ from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_f
 
 NUMBER_TYPES = ['int', 'integer', 'numeric', 'float']
 
+
 def update_aoa_LB_UB(LB_dict, UB_dict, filter_attrib_dict):
     for attrib in LB_dict.keys():
         if attrib in UB_dict.keys():
@@ -23,7 +24,7 @@ def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):
             filter_attrib_dict[attrib] = (LB_dict[attrib], filter_attrib_dict[attrib][1])
             del LB_dict[attrib]
         if attrib in UB_dict.keys() and \
-                (len(filter_attrib_dict[attrib]) > 1 and filter_attrib_dict[attrib][1] > UB_dict[attrib])\
+                (len(filter_attrib_dict[attrib]) > 1 and filter_attrib_dict[attrib][1] > UB_dict[attrib]) \
                 or (len(filter_attrib_dict[attrib]) == 1 and filter_attrib_dict[attrib][0] > UB_dict[attrib]):
             filter_attrib_dict[attrib] = (filter_attrib_dict[attrib][0], UB_dict[attrib])
             del UB_dict[attrib]
@@ -122,6 +123,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
         if self.global_join_graph is None:
+            self.joined_attribs = []
             return
         C_E = set()
         for edge in self.global_join_graph:

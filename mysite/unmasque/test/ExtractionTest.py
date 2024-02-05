@@ -632,6 +632,34 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.conn.closeConnection()
 
+    def test_paper_subquery1(self):
+        self.conn.connectUsingParams()
+        query = "SELECT c_name as name, (c_acctbal - o_totalprice) as account_balance " \
+                "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
+                "and c_nationkey = n_nationkey " \
+                "and n_name = 'INDIA' " \
+                "and o_orderdate between '1998-01-01' and '1998-01-05' ;"  # \
+        # "and o_totalprice <= c_acctbal;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.conn.closeConnection()
+
+    def test_paper_subquery2(self):
+        self.conn.connectUsingParams()
+        query = "SELECT s_name as name, " \
+                "(s_acctbal + o_totalprice) as account_balance " \
+                "FROM supplier, lineitem, orders, nation " \
+                "WHERE l_suppkey = s_suppkey " \
+                "and l_orderkey = o_orderkey " \
+                "and s_nationkey = n_nationkey and n_name = 'ARGENTINA' " \
+                "and o_orderdate between '1998-01-01' and '1998-01-05'; "  # \
+        # "and o_totalprice >= s_acctbal and o_totalprice >= 30000;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

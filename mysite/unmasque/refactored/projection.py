@@ -51,8 +51,7 @@ class Projection(GenerationPipeLineBase):
             self.logger.error("Some problem while identifying the dependency list!")
             return False
 
-        projection_sol = self.find_solution_on_multi(projected_attrib, projection_names,
-                                                     projection_dep, query)
+        projection_sol = self.find_solution_on_multi(projected_attrib, projection_dep, query)
         self.projected_attribs = projected_attrib
         self.projection_names = projection_names
         self.dependencies = projection_dep
@@ -137,7 +136,7 @@ class Projection(GenerationPipeLineBase):
             self.update_with_val(attrib, tabname, prev)
         return val
 
-    def find_solution_on_multi(self, projected_attrib, projection_names, projection_dep, query):
+    def find_solution_on_multi(self, projected_attrib, projection_dep, query):
         solution = []
         for idx_pro, ele in enumerate(projected_attrib):
             self.logger.debug("ele being checked", ele, idx_pro)
@@ -150,18 +149,16 @@ class Projection(GenerationPipeLineBase):
                 self.syms.append([])
             else:
                 value_used = self.construct_value_used_with_dmin()
-                prev_result = self.app.doJob(query)
                 self.logger.debug("Inside else", value_used)
                 solution.append(
-                    self.get_solution(projected_attrib, projection_dep, projection_names, idx_pro, prev_result,
-                                      value_used, query))
+                    self.get_solution(projected_attrib, projection_dep, idx_pro, value_used, query))
         return solution
 
     """
     Solve Ax=b to get the expression of the output column
     """
 
-    def get_solution(self, projected_attrib, projection_dep, projection_names, idx, prev_res, value_used, query):
+    def get_solution(self, projected_attrib, projection_dep, idx, value_used, query):
         dep = projection_dep[idx]
         n = len(dep)
         fil_check = []
@@ -214,25 +211,7 @@ class Projection(GenerationPipeLineBase):
         local_param_list = self.get_param_list(sorted([i[1] for i in dep]))
         self.logger.debug("Param List", local_param_list)
         self.param_list.append(local_param_list)
-        curr_rank = 1
-        outer_idx = 1
-        while outer_idx < 2 ** n and curr_rank < 2 ** n:
-            # Same algorithm as above with insertion of random values
-            # Additionally checking if rank of the matrix has become 2^n
-            for j in range(n):
-                mi = constants.pr_min
-                ma = constants.pr_max
-                if fil_check[j]:
-                    mi = fil_check[j][3]
-                    ma = fil_check[j][4]
-                coeff[outer_idx][j] = random.randrange(math.ceil(mi), math.floor(ma))
-            temp_array = get_param_values_external(coeff[outer_idx][:n])
-            for j in range(2 ** n - 1):
-                coeff[outer_idx][j] = temp_array[j]
-            coeff[outer_idx][2 ** n - 1] = 1.0
-            if np.linalg.matrix_rank(coeff) > curr_rank:
-                curr_rank += 1
-                outer_idx += 1
+        self.infinite_loop(coeff, fil_check, n)
         # print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
@@ -282,6 +261,28 @@ class Projection(GenerationPipeLineBase):
         # self.logger.debug("Final", final_res, nsimplify(collect(final_res, local_symbol_list)))
         projected_attrib[idx] = str(nsimplify(collect(final_res, local_symbol_list)))
         return solution
+
+    def infinite_loop(self, coeff, fil_check, n):
+        curr_rank = 1
+        outer_idx = 1
+        while outer_idx < 2 ** n and curr_rank < 2 ** n:
+            # Same algorithm as above with insertion of random values
+            # Additionally checking if rank of the matrix has become 2^n
+            for j in range(n):
+                mi = constants.pr_min
+                ma = constants.pr_max
+                if fil_check[j]:
+                    mi = fil_check[j][3]
+                    ma = fil_check[j][4]
+                coeff[outer_idx][j] = random.randrange(math.ceil(mi), math.floor(ma))
+            temp_array = get_param_values_external(coeff[outer_idx][:n])
+            for j in range(2 ** n - 1):
+                coeff[outer_idx][j] = temp_array[j]
+            coeff[outer_idx][2 ** n - 1] = 1.0
+            m_rank = np.linalg.matrix_rank(coeff)
+            if m_rank > curr_rank:
+                curr_rank += 1
+                outer_idx += 1
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
         # print("Full list", self.param_list)
