@@ -72,10 +72,89 @@ class MyTestCase(BaseTestCase):
 
         self.assertEqual("l_shipdate >= '1994-01-01' and l_quantity <= 23.0  and l_returnflag <> 'R' ", q_gen.where_op)
 
-        q_e = f"Select {q_gen.select_op}\nFrom {q_gen.from_op}\nWhere {q_gen.where_op}\n" \
-              f"Group By {q_gen.group_by_op}\nLimit {q_gen.limit_op};"
+        q_e = f"Select {q_gen.select_op}\n From {q_gen.from_op} \n Where {q_gen.where_op} \n" \
+              f" Group By {q_gen.group_by_op} \n Limit {q_gen.limit_op};"
         self.assertEqual(q_e, o.Q_E)
 
+        self.conn.closeConnection()
+
+    def test_for_numeric_filter_NEP(self):
+        self.conn.connectUsingParams()
+        query = "select c_mktsegment as segment from customer,nation,orders where " \
+                "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+                "and n_name not LIKE 'B%';"
+        Q_E = "select c_mktsegment as segment from customer,nation,orders where " \
+              "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey;"
+        core_rels = ['orders', 'customer', 'nation']
+        filters = [('customer', 'c_acctbal', '<=', 1000, 5000)]
+
+        aoa_predicates = []
+        join_graph = [['c_nationkey', 'n_nationkey'],
+                      ['c_custkey', 'o_custkey']]
+
+        global_attrib_types = {
+            ('orders', "o_orderkey", "integer"),
+            ('orders', "o_custkey", "integer"),
+            ('orders', "o_orderstatus", "character"),
+            ('orders', "o_totalprice", "numeric"),
+            ('orders', "o_orderdate", "date"),
+            ('orders', "o_orderpriority", "character"),
+            ('orders', "o_clerk", "character"),
+            ('orders', "o_shippriority", "integer"),
+            ('orders', "o_comment", "character varying"),
+            ('customer', 'c_custkey', 'integer'),
+            ('customer', 'c_name', 'character varying'),
+            ('customer', 'c_address', 'character varying'),
+            ('customer', 'c_nationkey', 'integer'),
+            ('customer', 'c_phone', 'character'),
+            ('customer', 'c_acctbal', 'numeric'),
+            ('customer', 'c_mktsegment', 'character'),
+            ('customer', 'c_comment', 'character varying'),
+            ('nation', "n_nationkey", "integer"),
+            ('nation', "n_name", "character"),
+            ('nation', "n_regionkey", "integer"),
+            ('nation', "n_comment", "character varying")
+        }
+
+        global_all_attribs = [
+            ["o_orderkey",
+             "o_custkey",
+             "o_orderstatus",
+             "o_totalprice",
+             "o_orderdate",
+             "o_orderpriority",
+             "o_clerk",
+             "o_shippriority",
+             "o_comment"], ['c_custkey', 'c_name', 'c_address', 'c_nationkey',
+                            'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
+            ["n_nationkey",
+             "n_name",
+             "n_regionkey",
+             "n_comment"]]
+
+        q_gen = QueryStringGenerator(self.conn)
+        q_gen.from_op = 'customer, orders, nation'
+        q_gen.group_by_op = ''
+        q_gen.limit_op = None
+        q_gen.method_call_count = 0
+        q_gen.order_by_op = ''
+        q_gen.select_op = 'c_mktsegment as segment'
+        q_gen.where_op = "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey"
+
+        global_min_instance_dict = {}
+
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
+                filters, q_gen,
+                global_min_instance_dict, aoa_predicates)
+        o.mock = True
+
+        check = o.doJob([query, Q_E])
+        self.assertTrue(check)
+        print(o.Q_E)
+        self.assertEqual("c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey "
+                         "and c_custkey = o_custkey and n_name not LIKE 'B%' ", q_gen.where_op)
+        q_e = f"Select {q_gen.select_op}\n From {q_gen.from_op} \n Where {q_gen.where_op} ;"
+        self.assertEqual(q_e, o.Q_E)
         self.conn.closeConnection()
 
     # @pytest.mark.skip
@@ -358,7 +437,8 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph, filters, q_gen,
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
+                filters, q_gen,
                 global_min_instance_dict, aoa_predicates)
 
         o.mock = True

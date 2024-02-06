@@ -46,17 +46,19 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 nep_exists = True
                 self.backup_relation(tabname)
                 core_sizes = self.getCoreSizes()
-                self.Q_E = self.get_nep(core_sizes, tabname, query, i, is_for_joined)
+                Q_E = self.get_nep(core_sizes, tabname, query, i, is_for_joined)
                 i += 1
                 self.restore_relation(tabname)
                 if self.Q_E is None:
+                if Q_E is None:
                     self.logger.error("Something is wrong")
                     self.wrong = True
-                    return False
+                    break
+                self.Q_E = Q_E
                 matched = self.nep_comparator.doJob(query, self.Q_E)
                 if matched:
                     break
-        return nep_exists
+        return nep_exists, matched
 
     def doActualJob(self, args):
         query, Q_E = self.extract_params_from_args(args)
@@ -69,15 +71,16 @@ class NEP(Minimizer, GenerationPipeLineBase):
             return False
 
         self.Q_E = Q_E
-        nep_exists = self.do_one_round_nep(query, nep_exists, matched, False)
+        nep_exists, matched = self.do_one_round_nep(query, nep_exists, matched, False)
         if matched:
             return nep_exists
         if self.wrong:
             return False
-        nep_exists = self.do_one_round_nep(query, nep_exists, matched, True)
-        if self.wrong:
-            return False
-        return nep_exists
+        nep_exists, matched = self.do_one_round_nep(query, nep_exists, matched, True)
+        # if self.wrong:
+        #    return False
+        if matched:
+            return nep_exists
 
     def restore_relation(self, table):
         self.connectionHelper.execute_sql([drop_table(table),
