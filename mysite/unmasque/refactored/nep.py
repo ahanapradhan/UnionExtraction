@@ -49,7 +49,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 Q_E = self.get_nep(core_sizes, tabname, query, i, is_for_joined)
                 i += 1
                 self.restore_relation(tabname)
-                if self.Q_E is None:
                 if Q_E is None:
                     self.logger.error("Something is wrong")
                     self.wrong = True
