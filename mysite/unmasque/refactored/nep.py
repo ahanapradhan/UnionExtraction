@@ -12,7 +12,7 @@ class NepComparator(ResultComparator):
 
 
 class NEP(Minimizer, GenerationPipeLineBase):
-    loop_count_cutoff = 10
+    loop_count_cutoff = 1
     '''
     NEP extractor do not terminate if input Q_E is not correct. This cutoff is to prevent infinite looping
     It imposes on the user the following restriction: hidden query cannot have more than 10 NEPs.
@@ -30,16 +30,38 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.Q_E = ""
         self.query_generator = query_generator
         self.nep_comparator = NepComparator(self.connectionHelper)
+        self.wrong = False
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
 
+    def do_one_round_nep(self, query, nep_exists, matched, is_for_joined):
+        loop_count = 0
+        while not matched and loop_count < self.loop_count_cutoff:
+            i = 0
+            loop_count += 1
+            for tabname in self.core_relations:
+                self.logger.debug(f"loop count {loop_count}")
+                self.logger.info("NEP may exists")
+                nep_exists = True
+                self.backup_relation(tabname)
+                core_sizes = self.getCoreSizes()
+                self.Q_E = self.get_nep(core_sizes, tabname, query, i, is_for_joined)
+                i += 1
+                self.restore_relation(tabname)
+                if self.Q_E is None:
+                    self.logger.error("Something is wrong")
+                    self.wrong = True
+                    return False
+                matched = self.nep_comparator.doJob(query, self.Q_E)
+                if matched:
+                    break
+        return nep_exists
+
     def doActualJob(self, args):
         query, Q_E = self.extract_params_from_args(args)
-
         super().do_init()
         nep_exists = False
-
         # Run the hidden query on the original database instance
         matched = self.nep_comparator.doJob(query, Q_E)
         if matched is None:
@@ -47,30 +69,14 @@ class NEP(Minimizer, GenerationPipeLineBase):
             return False
 
         self.Q_E = Q_E
-        loop_count = 0
-        while not matched and loop_count < self.loop_count_cutoff:
-            i = 0
-            for tabname in self.core_relations:
-                loop_count += 1
-                self.logger.debug(f"loop count {loop_count}")
-
-                # tabname = self.core_relations[i]
-                self.logger.info("NEP may exists")
-                nep_exists = True
-                self.backup_relation(tabname)
-
-                core_sizes = self.getCoreSizes()
-                self.Q_E = self.get_nep(core_sizes, tabname, query, i)
-
-                i += 1
-
-                if self.Q_E is None:
-                    self.logger.error("Something is wrong")
-                    return False
-                matched = self.nep_comparator.doJob(query, self.Q_E)
-                if matched:
-                    break
-
+        nep_exists = self.do_one_round_nep(query, nep_exists, matched, False)
+        if matched:
+            return nep_exists
+        if self.wrong:
+            return False
+        nep_exists = self.do_one_round_nep(query, nep_exists, matched, True)
+        if self.wrong:
+            return False
         return nep_exists
 
     def restore_relation(self, table):
@@ -82,7 +88,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                            create_table_as_select_star_from(
                                                get_restore_name(table), table)])
 
-    def get_nep(self, core_sizes, tabname, query, i):
+    def get_nep(self, core_sizes, tabname, query, i, is_for_joined):
         tabname1 = get_tabname_1(tabname)
         while core_sizes[tabname] > 1:
             self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
@@ -94,7 +100,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
         # self.see_d_min()
 
-        val = self.extract_NEP_value(query, tabname, i)
+        val = self.extract_NEP_value(query, tabname, i, is_for_joined)
         if val:
             self.logger.info("Extracting NEP value")
             return self.query_generator.updateExtractedQueryWithNEPVal(query, val)
@@ -162,7 +168,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         elif not q_e_result:
             return False
 
-    def extract_NEP_value(self, query, tabname, i):
+    def extract_NEP_value(self, query, tabname, i, is_for_joined):
         self.logger.debug("extract NEP val ", tabname, i)
         res = self.app.doJob(query)
         if len(res) > 1:
@@ -173,21 +179,21 @@ class NEP(Minimizer, GenerationPipeLineBase):
         filterAttribs = self.check_per_attrib(attrib_list,
                                               tabname,
                                               query,
-                                              filterAttribs)
+                                              filterAttribs, is_for_joined)
         if filterAttribs is not None and len(filterAttribs):
             return filterAttribs
         return False
 
-    def check_per_attrib(self, attrib_list, tabname, query, filterAttribs):
-        single_attribs = [attrib for attrib in attrib_list if attrib not in self.joined_attribs]
-        joined_attribs = [attrib for attrib in attrib_list if attrib in self.joined_attribs]
-
-        self.check_per_single_attrib(single_attribs, filterAttribs, query, tabname)
-        self.check_per_joined_attrib(joined_attribs, filterAttribs, query, tabname)
+    def check_per_attrib(self, attrib_list, tabname, query, filterAttribs, is_for_joined):
+        if is_for_joined:
+            self.check_per_joined_attrib(attrib_list, filterAttribs, query, tabname)
+        else:
+            self.check_per_single_attrib(attrib_list, filterAttribs, query, tabname)
         return filterAttribs
 
-    def check_per_joined_attrib(self, attriblist, filterAttribs, query, tabname):
-        for attrib in attriblist:
+    def check_per_joined_attrib(self, attrib_list, filterAttribs, query, tabname):
+        joined_attribs = [attrib for attrib in attrib_list if attrib in self.joined_attribs]
+        for attrib in joined_attribs:
             join_tabnames = []
             other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
             val, prev = self.update_attrib_to_see_impact(attrib, tabname)
@@ -198,7 +204,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
             self.update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
 
     def check_per_single_attrib(self, attrib_list, filterAttribs, query, tabname):
-        for attrib in attrib_list:
+        single_attribs = [attrib for attrib in attrib_list if attrib not in self.joined_attribs]
+        for attrib in single_attribs:
             self.logger.debug(tabname, attrib)
             prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
             val = self.get_different_val(attrib, tabname, prev)
