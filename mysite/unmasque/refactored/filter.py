@@ -7,6 +7,13 @@ from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
     get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff
 from .abstract.where_clause import WhereClause
 
+def round_ceil(num, places):
+    adder = 5/(10**(places+1))
+    return round(num + adder, places)
+
+def round_floor(num, places):
+    adder = 5/(10**(places+1))
+    return round(num - adder, places)
 
 class Filter(WhereClause):
 
@@ -99,20 +106,20 @@ class Filter(WhereClause):
                                         max_val_domain, '<=')
             val = float(val)
             val1 = self.get_filter_value(query, 'float', tabname, attrib, val, val + 0.99, '<=')
-            filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round(val1, 3))))
+            filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, 2))))
         elif not min_present and max_present:
             val = self.get_filter_value(query, 'float', tabname, attrib, min_val_domain,
                                         math.floor(float(d_plus_value[attrib]) + 5), '>=')
             val = float(val)
             val1 = self.get_filter_value(query, 'float', tabname, attrib, val - 1, val, '>=')
-            filterAttribs.append((tabname, attrib, '>=', float(round(val1, 3)), float(max_val_domain)))
+            filterAttribs.append((tabname, attrib, '>=', float(round_ceil(val1, 2)), float(max_val_domain)))
 
     def get_filter_value(self, query, datatype,
                          tabname, filter_attrib,
                          min_val, max_val, operator):
         query_front = update_sql_query_tab_attribs(tabname, filter_attrib)
         delta, while_cut_off = get_constants_for(datatype)
-
+        
         self.revert_filter_changes(tabname)
 
         low = min_val
