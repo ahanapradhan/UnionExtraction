@@ -22,7 +22,7 @@
         // Function to fetch progress updates using AJAX
         function fetchProgress() {
             $.ajax({
-                url: "{% url 'check_progress' %}", // Update with your view's URL
+                url: "{% url 'check_progress' token %}", // Update with your view's URL
                 type: "GET",
                 dataType: "json", // Change data type if necessary
                 success: function(data) {
@@ -31,6 +31,7 @@
                     $("#progress-updates").html(data.progress_message);
                     if(data.progress_message == "_DONE" || data.progress_message == "_WRONG"){
                         console.log("Done")
+                        setTimeout(() => window.location.href = "/unmasque/result/{{ token }}",1000)
                         return
                     }
                     // Set a timeout to fetch progress again after 1 second
