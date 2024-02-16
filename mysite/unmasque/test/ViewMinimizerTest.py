@@ -220,6 +220,45 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         self.conn.closeConnection()
 
+    def test_paper_subquery1(self):
+        self.conn.connectUsingParams()
+        query = "SELECT c_name as name, (c_acctbal - o_totalprice) as account_balance " \
+                "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
+                "and c_nationkey = n_nationkey " \
+                "and n_name = 'INDIA' " \
+                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
+                "and o_totalprice <= c_acctbal;"
+        self.assertTrue(self.conn.conn is not None)
+
+        from_rels = ['customer', 'orders', 'nation']
+
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
+        check = minimizer.doJob(query)
+        self.assertTrue(check)
+        print(minimizer.global_min_instance_dict)
+        self.conn.closeConnection()
+
+    def test_paper_subquery2(self):
+        self.conn.connectUsingParams()
+        query = "SELECT s_name as name, " \
+                "(s_acctbal + o_totalprice) as account_balance " \
+                "FROM supplier, lineitem, orders, nation " \
+                "WHERE l_suppkey = s_suppkey " \
+                "and l_orderkey = o_orderkey " \
+                "and s_nationkey = n_nationkey and n_name = 'ARGENTINA' " \
+                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
+                "and o_totalprice >= s_acctbal and o_totalprice >= 30000;"
+        self.assertTrue(self.conn.conn is not None)
+
+        from_rels = ['orders', 'lineitem', 'supplier', 'nation']
+
+        minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
+        check = minimizer.doJob(query)
+        print(minimizer.global_min_instance_dict)
+
+        self.assertTrue(check)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

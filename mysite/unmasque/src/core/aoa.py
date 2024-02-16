@@ -1,7 +1,5 @@
 import copy
 
-import numpy as np
-
 from mysite.unmasque.refactored.abstract.where_clause import WhereClause
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
 from mysite.unmasque.refactored.util.common_queries import update_tab_attrib_with_value
@@ -529,6 +527,7 @@ class AlgebraicPredicate(WhereClause):
         f_e = self.do_bound_check_again(c, key, query)
         self.revert_mutation_on_filter_global_min_instance_dict()
         _impact = False
+        # print(f"attrib {c} v_prev {v_prev} v_new {f_e[0][3]}")
         if len(f_e) > 0 and v_prev != f_e[0][3]:
             _impact = True
         elif not f_e and v_prev != i_min and v_prev != i_max:
@@ -641,6 +640,7 @@ class AlgebraicPredicate(WhereClause):
                     bound = get_UB(pred)
                 else:
                     bound = get_LB(pred)
+                # print(f"attrib {get_attrib(tab_attrib)} mutate with {bound}")
                 self.connectionHelper.execute_sql([update_tab_attrib_with_value(get_attrib(tab_attrib),
                                                                                 get_tab(tab_attrib),
                                                                                 get_format(datatype, bound))])
