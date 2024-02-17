@@ -19,12 +19,12 @@ class PipeLineFactory:
         return cls._instance
 
     def doJob(self, query):
-        # print("lock: ", query)
+        print("lock: ", query)
         self.q.put("locked", True)
         qe = self.pipeline.doJob(query)
         self.result = qe
         self.q.get_nowait()
-        # print("unlocked: ", query)
+        print("unlocked: ", query)
 
     def doJobAsync(self, query, connectionHelper):
         token = hash((query, time.time()))
@@ -32,7 +32,7 @@ class PipeLineFactory:
         self.pipeline.token = token
         job = threading.Thread(target=self.doJob, args=(query,))
         job.start()
-        # print("TOKEN", token)
+        print("TOKEN", token)
         return token
 
     def create_pipeline(self, connectionHelper):
