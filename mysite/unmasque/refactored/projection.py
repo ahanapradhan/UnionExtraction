@@ -1,4 +1,3 @@
-import copy
 import math
 import math
 import random
@@ -7,7 +6,7 @@ import numpy as np
 from sympy import symbols, expand, collect, nsimplify
 
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ..refactored.util.utils import isQ_result_empty, get_unused_dummy_val, get_val_plus_delta, find_diff_idx, \
+from ..refactored.util.utils import isQ_result_empty, find_diff_idx, \
     count_empty_lists_in
 from ..src.util import constants
 
@@ -37,6 +36,7 @@ class Projection(GenerationPipeLineBase):
         self.param_list = []
 
     def doExtractJob(self, query):
+        # return False # test
         s_values = []
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
         if not check:
@@ -51,6 +51,7 @@ class Projection(GenerationPipeLineBase):
             self.logger.error("Some problem while identifying the dependency list!")
             return False
 
+        self.logger.debug("Projection Deps: ", projection_dep)
         projection_sol = self.find_solution_on_multi(projected_attrib, projection_dep, query)
         self.projected_attribs = projected_attrib
         self.projection_names = projection_names
@@ -266,6 +267,7 @@ class Projection(GenerationPipeLineBase):
         curr_rank = 1
         outer_idx = 1
         while outer_idx < 2 ** n and curr_rank < 2 ** n:
+            prev_idx, prev_rank = outer_idx, curr_rank
             # Same algorithm as above with insertion of random values
             # Additionally checking if rank of the matrix has become 2^n
             for j in range(n):
@@ -283,6 +285,10 @@ class Projection(GenerationPipeLineBase):
             if m_rank > curr_rank:
                 curr_rank += 1
                 outer_idx += 1
+            self.logger.debug("outer_idx: ", outer_idx, "curr_rank: ", curr_rank)
+            if prev_idx == outer_idx and curr_rank == prev_rank:
+                self.logger.debug("It will go to infinite loop!! so breaking...")
+                break
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
         # print("Full list", self.param_list)

@@ -376,6 +376,7 @@ class AlgebraicPredicate(WhereClause):
 
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_predicates))
         a_LBs, a_UBs, aoa_LBs, aoa_UBs = maps[0], maps[1], maps[2], maps[3]
+        print(self.aoa_predicates)
         for path in directed_paths:
             self.find_dormant_CBs(a_LBs, aoa_LBs, path, query, False)
             self.find_dormant_CBs(a_UBs, aoa_UBs, path, query, True)

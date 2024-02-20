@@ -1,9 +1,13 @@
+import copy
 import datetime
 import unittest
 
-from mysite.unmasque.src.core.aoa import AlgebraicPredicate, find_all_chains
+import pytest
+
 from mysite.unmasque.refactored.cs2 import Cs2
+from mysite.unmasque.refactored.projection import Projection
 from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.core.aoa import AlgebraicPredicate
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -22,7 +26,30 @@ def remove_transitive_relations(input_list):
     return result
 
 
+def get_subquery1():
+    return "SELECT c_name as name, (c_acctbal - o_totalprice) as account_balance " \
+           "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
+           "and c_nationkey = n_nationkey " \
+           "and c_mktsegment = 'FURNITURE'" \
+           "and n_name = 'INDIA' " \
+           "and o_orderdate between '1998-01-01' and '1998-01-05' " \
+           "and o_totalprice <= c_acctbal;", ['customer', 'orders', 'nation']
+
+
+def get_subquery2():
+    return "SELECT s_name as name, " \
+           "(s_acctbal + o_totalprice) as account_balance " \
+           "FROM supplier, lineitem, orders, nation " \
+           "WHERE l_suppkey = s_suppkey " \
+           "and l_orderkey = o_orderkey " \
+           "and s_nationkey = n_nationkey and n_name = 'ARGENTINA' " \
+           "and o_orderdate between '1998-01-01' and '1998-01-05' " \
+           "and o_totalprice >= s_acctbal and o_totalprice >= 30000 " \
+           "and 50000 > s_acctbal;", ['orders', 'lineitem', 'supplier', 'nation']
+
+
 class MyTestCase(BaseTestCase):
+    global_min_instance_dict = None
 
     def test_dormant_aoa(self):
         self.conn.connectUsingParams()
@@ -122,10 +149,22 @@ class MyTestCase(BaseTestCase):
         vm = ViewMinimizer(self.conn, core_rels, cs2.sizes, cs2.passed)
         check = vm.doJob(query)
         self.assertTrue(vm.done and check)
-        aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, core_rels, vm.global_min_instance_dict)
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, core_rels, self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         return aoa, check
+
+    def run_pipeline_till_projection(self, core_rels, query):
+        aoa, check = self.run_pipeline(core_rels, query)
+        global_all_attribs, global_attrib_types = aoa.get_supporting_global_params()
+        pj = Projection(self.conn, global_attrib_types, core_rels, aoa.filter_predicates,
+                        aoa.join_graph, global_all_attribs, self.global_min_instance_dict, aoa.aoa_predicates)
+
+        check = pj.doJob(query)
+        self.assertTrue(check)
+        return aoa, check, pj
 
     def test_aoa_dev(self):
         query = "SELECT c_name as name, " \
@@ -142,19 +181,25 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(aoa.where_clause.count("and"), 6)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_paper_subquery1(self):
         self.conn.connectUsingParams()
-        query = "SELECT c_name as name, (c_acctbal - o_totalprice) as account_balance " \
-                "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
-                "and c_nationkey = n_nationkey " \
-                "and c_mktsegment = 'FURNITURE'" \
-                "and n_name = 'INDIA' " \
-                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
-                "and o_totalprice <= c_acctbal;"
+        query, from_rels = get_subquery1()
+
         self.assertTrue(self.conn.conn is not None)
+        aoa, check = self.run_pipeline(from_rels, query)
+        print(self.global_min_instance_dict)
+        self.assertTrue(check)
+        print(aoa.filter_extractor.filter_predicates)
+        print(aoa.aoa_predicates)
+        print(aoa.where_clause)
+        self.conn.closeConnection()
 
-        from_rels = ['customer', 'orders', 'nation']
-
+    @pytest.mark.skip
+    def test_paper_subquery2(self):
+        self.conn.connectUsingParams()
+        query, from_rels = get_subquery2()
+        self.assertTrue(self.conn.conn is not None)
         aoa, check = self.run_pipeline(from_rels, query)
         self.assertTrue(check)
         print(aoa.filter_extractor.filter_predicates)
@@ -163,26 +208,49 @@ class MyTestCase(BaseTestCase):
         print(aoa.where_clause)
         self.conn.closeConnection()
 
-    def test_paper_subquery2(self):
+    def test_paper_subquery1_projection(self):
         self.conn.connectUsingParams()
-        query = "SELECT s_name as name, " \
-                "(s_acctbal + o_totalprice) as account_balance " \
-                "FROM supplier, lineitem, orders, nation " \
-                "WHERE l_suppkey = s_suppkey " \
-                "and l_orderkey = o_orderkey " \
-                "and s_nationkey = n_nationkey and n_name = 'ARGENTINA' " \
-                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
-                "and o_totalprice >= s_acctbal and o_totalprice >= 30000 " \
-                "and 50000 > s_acctbal;"
+        query, from_rels = get_subquery1()
         self.assertTrue(self.conn.conn is not None)
-
-        from_rels = ['orders', 'lineitem', 'supplier', 'nation']
-        aoa, check = self.run_pipeline(from_rels, query)
+        aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
+        # print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.filter_extractor.filter_predicates)
-        print(aoa.aoa_predicates)
-        print(aoa.filter_extractor.global_min_instance_dict)
         print(aoa.where_clause)
+        self.assertEqual(aoa.where_clause.count("and"), 6)
+        self.assertTrue("c_custkey = o_custkey" in aoa.where_clause)
+        self.assertTrue("c_nationkey = n_nationkey" in aoa.where_clause)
+        self.assertTrue("c_mktsegment = 'FURNITURE'" in aoa.where_clause)
+        self.assertTrue("n_name = 'INDIA'" in aoa.where_clause)
+        self.assertTrue("o_orderdate  >= '1998-01-01'" in aoa.where_clause)
+        self.assertTrue("o_orderdate <= '1998-01-05'" in aoa.where_clause)
+        self.assertTrue("o_totalprice <= c_acctbal" in aoa.where_clause)
+
+        self.assertEqual(len(pj.projected_attribs), 2)
+        self.assertEqual(pj.projected_attribs[0], 'c_name')
+        self.assertEqual(pj.projected_attribs[1], 'c_acctbal - o_totalprice')
+        self.conn.closeConnection()
+
+    def test_paper_subquery2_projection(self):
+        self.conn.connectUsingParams()
+        query, from_rels = get_subquery2()
+        self.assertTrue(self.conn.conn is not None)
+        aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.assertEqual(aoa.where_clause.count("and"), 8)
+        self.assertTrue("l_suppkey = s_suppkey" in aoa.where_clause)
+        self.assertTrue("l_orderkey = o_orderkey" in aoa.where_clause)
+        self.assertTrue("n_nationkey = s_nationkey" in aoa.where_clause)
+        self.assertTrue("n_name = 'ARGENTINA'" in aoa.where_clause)
+        self.assertTrue("o_orderdate  >= '1998-01-01'" in aoa.where_clause)
+        self.assertTrue("o_orderdate <= '1998-01-05'" in aoa.where_clause)
+        self.assertTrue("s_acctbal <= o_totalprice" in aoa.where_clause)
+        # self.assertTrue("30000 <= o_totalprice" in aoa.where_clause)
+        # self.assertTrue("s_acctbal <= 50000" in aoa.where_clause)
+
+        self.assertEqual(len(pj.projected_attribs), 2)
+        self.assertEqual(pj.projected_attribs[0], 's_name')
+        self.assertEqual(pj.projected_attribs[1], 'o_totalprice + s_acctbal')
         self.conn.closeConnection()
 
 

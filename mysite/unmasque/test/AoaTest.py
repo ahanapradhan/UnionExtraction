@@ -2,8 +2,10 @@ import datetime
 
 import pytest
 
+from mysite.unmasque.refactored.projection import Projection
 from mysite.unmasque.src.core.aoa import merge_equivalent_paritions, AlgebraicPredicate
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from mysite.unmasque.test.AoaTestFullPipeline import get_subquery1, get_subquery2
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -17,6 +19,7 @@ class MyTestCase(BaseTestCase):
 
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
+        self.global_min_instance_dict = None
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def setUp(self):
@@ -368,3 +371,126 @@ class MyTestCase(BaseTestCase):
                 "where c_custkey = o_custkey  " \
                 "and o_orderkey = l_orderkey and l_suppkey = s_suppkey " \
                 "and s_nationkey = c_nationkey and c_nationkey = n_nationkey;"
+
+    def test_paper_subquery1_projection(self):
+        self.conn.connectUsingParams()
+        self.conn.execute_sql([
+            f"Insert into customer(c_custkey,c_name,c_address,c_nationkey,c_phone,c_acctbal,"
+            f"c_mktsegment,c_comment)"
+            f"VALUES (69124, \'Customer#000069124\', \'kMelt4PRpNzF\', 8, \'19-292-999-1038\', "
+            f"5988.86, \'FURNITURE\', \' ironic packages. pending, regular deposits cajole blithely. carefully even "
+            f"instructions engage stealthily carefull\');",
+
+            f"INSERT INTO nation (n_nationkey, n_name, n_regionkey, n_comment)"
+            f"VALUES (8, \'INDIA\', 2, \' slyly express asymptotes. regular deposits haggle slyly. carefully "
+            f"ironic hockey players sleep blithely. carefull\');",
+
+            f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+            f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+            f"VALUES (306560, 69124, \'O\', 5087.46, \'1998, 1, 1\', \'4-NOT SPECIFIED\', \'Clerk#000000311\', 0, "
+            f"\'usly. regular, regul\');"
+        ])
+
+        self.global_min_instance_dict = {'orders': [
+            ('o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority',
+             'o_clerk', 'o_shippriority', 'o_comment'),
+            (306560, 69124, 'O', 5087.46, datetime.date(1998, 1, 1), '4-NOT SPECIFIED', 'Clerk#000000311', 0,
+             'usly. regular, regul')], 'customer': [
+            ('c_custkey', 'c_name', 'c_address', 'c_nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment',
+             'c_comment'),
+            (69124, 'Customer#000069124', 'kMelt4PRpNzF', 8, '19-292-999-1038', 5988.86, 'FURNITURE',
+             ' ironic packages. pending, regular deposits cajole blithely. carefully even '
+             'instructions engage stealthily carefull')], 'nation': [
+            ('n_nationkey', 'n_name', 'n_regionkey', 'n_comment'),
+            (8, 'INDIA', 2, ' slyly express asymptotes. regular deposits haggle slyly. '
+                            'carefully ironic hockey players sleep blithely. carefull')]}
+
+        query, from_rels = get_subquery1()
+        self.assertTrue(self.conn.conn is not None)
+        aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, from_rels, self.global_min_instance_dict)
+        aoa.mock = True
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        global_all_attribs, global_attrib_types = aoa.get_supporting_global_params()
+        pj = Projection(self.conn, global_attrib_types, from_rels, aoa.filter_predicates,
+                        aoa.join_graph, global_all_attribs, self.global_min_instance_dict, aoa.aoa_predicates)
+        pj.mock = True
+        check = pj.doJob(query)
+        self.assertTrue(check)
+        print(self.global_min_instance_dict)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.conn.closeConnection()
+
+    def test_paper_subquery2_projection(self):
+        self.conn.connectUsingParams()
+        self.global_min_instance_dict = {
+            'orders': [('o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority',
+                        'o_clerk', 'o_shippriority', 'o_comment'), (
+                           2993927, 59983, 'O', 222137.09, datetime.date(1998, 1, 2), '1-URGENT       ',
+                           'Clerk#000000800',
+                           0,
+                           'ges? carefully regular sheaves haggle ')],
+            'lineitem': [('l_orderkey', 'l_partkey', 'l_suppkey',
+                          'l_linenumber', 'l_quantity',
+                          'l_extendedprice', 'l_discount', 'l_tax',
+                          'l_returnflag', 'l_linestatus',
+                          'l_shipdate', 'l_commitdate',
+                          'l_receiptdate', 'l_shipinstruct',
+                          'l_shipmode', 'l_comment'), (
+                             2993927, 45499, 4277, 2, 34.0, 49112.66,
+                             0.01, 0.06, 'N', 'O',
+                             datetime.date(1998, 4, 23),
+                             datetime.date(1998, 2, 15),
+                             datetime.date(1998, 5, 17),
+                             'DELIVER IN PERSON        ', 'TRUCK     ',
+                             'ithely final deposits u')],
+            'supplier': [('s_suppkey', 's_name', 's_address', 's_nationkey', 's_phone', 's_acctbal', 's_comment'), (
+                4277, 'Supplier#000004277       ', 'MPjnMRh5nwI', 1, '11-321-241-8114', 9768.1,
+                'final deposits. furiously express instructions boost fluffily around the silent, final packages. ')],
+            'nation': [('n_nationkey', 'n_name', 'n_regionkey', 'n_comment'), (1, 'ARGENTINA                ', 1,
+                                                                               'al foxes promise slyly according to '
+                                                                               'the regular accounts. bold requests '
+                                                                               'alon')]}
+
+        self.conn.execute_sql([
+            f"Insert into lineitem(l_orderkey, l_partkey,l_suppkey,l_linenumber,l_quantity,"
+            f"l_extendedprice,"
+            f"l_discount,l_tax,l_returnflag,l_linestatus,l_shipdate,l_commitdate,l_receiptdate,"
+            f"l_shipinstruct,l_shipmode,l_comment)"
+            f" VALUES (2993927, 45499, 4277, 2, 34.0, 49112.66, 0.01, 0.06, \'N\', \'O\', \'1998, "
+            f"4, 23\',"
+            f"\'1998, 2, 15\', \'1998, 5, 17\', \'DELIVER IN PERSON\', \'TRUCK\', \'ithely final deposits u\');"
+            ,
+
+            f"Insert into supplier(s_suppkey,s_name,s_address,s_nationkey,s_phone,s_acctbal,s_comment) "
+            f"VALUES (4277, \'Supplier#000004277       \', \'MPjnMRh5nwI\', 1, \'11-321-241-8114\', 9768.1, "
+            f"\'final deposits. furiously express instructions boost fluffily around the silent, final packages. \');",
+
+            f"INSERT INTO nation(n_nationkey, n_name, n_regionkey, n_comment)"
+            f"VALUES (1, \'ARGENTINA\', 1, \' al foxes promise slyly according to the "
+            f"regular accounts. bold requests alon\');",
+
+            f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+            f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+            f"VALUES (2993927, 59983, \'O\', 222137.09, \'1998, 1, 2\', "
+            f"\'1-URGENT       \', \'Clerk#000000800\', 0, "
+            f"\'ges? carefully regular sheaves haggle \');"
+        ])
+
+        query, from_rels = get_subquery2()
+        self.assertTrue(self.conn.conn is not None)
+        aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, from_rels, self.global_min_instance_dict)
+        aoa.mock = True
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        global_all_attribs, global_attrib_types = aoa.get_supporting_global_params()
+        pj = Projection(self.conn, global_attrib_types, from_rels, aoa.filter_predicates,
+                        aoa.join_graph, global_all_attribs, self.global_min_instance_dict, aoa.aoa_predicates)
+        pj.mock = True
+        check = pj.doJob(query)
+        self.assertTrue(check)
+        print(self.global_min_instance_dict)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.conn.closeConnection()

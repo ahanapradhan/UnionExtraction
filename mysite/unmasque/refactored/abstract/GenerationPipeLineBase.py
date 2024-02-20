@@ -3,7 +3,7 @@ import copy
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..util.common_queries import insert_into_tab_attribs_format, update_tab_attrib_with_value, \
-    update_tab_attrib_with_quoted_value
+    update_tab_attrib_with_quoted_value, truncate_table
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val, \
     get_min_and_max_val
 
@@ -30,6 +30,17 @@ def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):
             del UB_dict[attrib]
 
 
+def collect_attribs_from(_input):
+    if _input is None:
+        return []
+    C_E = set()
+    for edge in _input:
+        C_E.add(edge[0])
+        C_E.add(edge[1])
+    output = list(C_E)
+    return output
+
+
 class GenerationPipeLineBase(MutationPipeLineBase):
 
     def __init__(self, connectionHelper, name, core_relations, global_all_attribs, global_attrib_types, join_graph,
@@ -44,6 +55,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.global_key_attributes = global_key_attributes
         self.global_aoa_predicates = aoa_predicates
         self.joined_attribs = None
+        self.aoa_attribs = None
 
     def extract_params_from_args(self, args):
         return args[0]
@@ -119,17 +131,39 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         check = self.doExtractJob(query)
         return check
 
+    def update_filter_predicates(self):
+        filter_dict = []
+        for pred in self.global_filter_predicates:
+            key = (pred[0], pred[1])
+            filter_dict.append(key)
+
+        to_add = set()
+        for key in self.filter_attrib_dict.keys():
+            if key in filter_dict:
+                continue
+            bounds = self.filter_attrib_dict[key]
+            if not isinstance(bounds, tuple):  # single value
+                to_add.add((key[0], key[1], 'equal', bounds, bounds))
+            else:
+                to_add.add((key[0], key[1], 'range', bounds[0], bounds[1]))
+        self.global_filter_predicates.extend(list(to_add))
+
+    def restore_d_min_from_dict(self):
+        for tab in self.core_relations:
+            values = self.global_min_instance_dict[tab]
+            attribs, vals = values[0], values[1]
+            for i in range(len(attribs)):
+                attrib, val = attribs[i], vals[i]
+                self.update_with_val(attrib, tab, val)
+
     def do_init(self):
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
-        if self.global_join_graph is None:
-            self.joined_attribs = []
-            return
-        C_E = set()
-        for edge in self.global_join_graph:
-            C_E.add(edge[0])
-            C_E.add(edge[1])
-        self.joined_attribs = list(C_E)
+        self.joined_attribs = collect_attribs_from(self.global_join_graph)
+        self.aoa_attribs = collect_attribs_from(self.global_aoa_predicates)
+        self.restore_d_min_from_dict()
+        self.see_d_min()
+        self.update_filter_predicates()
 
     def get_datatype(self, tab_attrib):
         if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'integer']):
@@ -178,7 +212,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def update_attrib_to_see_impact(self, attrib, tabname):
         prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
-        val = self.get_different_val(attrib, tabname, prev)
+        val = self.get_different_s_val(attrib, tabname, prev)
         self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
         self.update_with_val(attrib, tabname, val)
         return val, prev
@@ -191,7 +225,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             update_q = update_tab_attrib_with_quoted_value(tabname, attrib, val)
         self.connectionHelper.execute_sql([update_q])
 
-    def get_val(self, attrib, tabname):
+    def get_s_val(self, attrib, tabname):
         datatype = self.get_datatype((tabname, attrib))
         if datatype == 'date':
             if (tabname, attrib) in self.filter_attrib_dict.keys():
@@ -227,7 +261,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                       self.filter_attrib_dict[(tabname, attrib)][1])
         return val
 
-    def get_different_val(self, attrib, tabname, prev):
+    def get_different_s_val(self, attrib, tabname, prev):
         datatype = self.get_datatype((tabname, attrib))
         if datatype == 'date':
             if (tabname, attrib) in self.filter_attrib_dict.keys():

@@ -1,7 +1,9 @@
+import copy
+
 from .ExtractorBase import Base
 from ..executable import Executable
 from ..util.common_queries import get_tabname_4, get_star, truncate_table, create_table_as_select_star_from, \
-    insert_into_tab_select_star_fromtab
+    insert_into_tab_select_star_fromtab, update_tab_attrib_with_value
 
 
 class MutationPipeLineBase(Base):
@@ -15,7 +17,7 @@ class MutationPipeLineBase(Base):
         # from from clause
         self.core_relations = core_relations
         # from view minimizer
-        self.global_min_instance_dict = global_min_instance_dict
+        self.global_min_instance_dict = copy.deepcopy(global_min_instance_dict)
         self.mock = False
 
     def doJob(self, args):

@@ -210,7 +210,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         for attrib in single_attribs:
             self.logger.debug(tabname, attrib)
             prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
-            val = self.get_different_val(attrib, tabname, prev)
+            val = self.get_different_s_val(attrib, tabname, prev)
             self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
             self.update_with_val(attrib, tabname, val)
             new_result = self.app.doJob(query)
