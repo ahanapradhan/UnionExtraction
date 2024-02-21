@@ -3,7 +3,8 @@ import copy
 from mysite.unmasque.refactored.abstract.where_clause import WhereClause
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
 from mysite.unmasque.refactored.util.common_queries import update_tab_attrib_with_value
-from mysite.unmasque.refactored.util.utils import get_format, get_datatype_of_val, get_min_and_max_val
+from mysite.unmasque.refactored.util.utils import get_format, get_datatype_of_val, get_min_and_max_val, \
+    get_val_plus_delta
 from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
 
 
@@ -310,21 +311,32 @@ def optimize_by_matrix(C_E, aoa_predicates, h, w):
     return m
 
 
+class PackageForGenPipeline:
+    def __init__(self):
+        self.dummy = 0
+
+
 class AlgebraicPredicate(WhereClause):
-    def __init__(self, connectionHelper, global_key_lists,
-                 core_relations, global_min_instance_dict):
-        super().__init__(connectionHelper, global_key_lists, core_relations, global_min_instance_dict,
-                         "AlgebraicPredicate")
-        self.filter_extractor = Filter(self.connectionHelper, global_key_lists,
-                                       core_relations, global_min_instance_dict)
+    def __init__(self, connectionHelper, core_relations, global_min_instance_dict):
+        super().__init__(connectionHelper, core_relations, global_min_instance_dict, "AlgebraicPredicate")
+        self.filter_extractor = Filter(self.connectionHelper, core_relations, global_min_instance_dict)
+
+        self.pipeline_delivery = None
+
         self.aoa_predicates = None
         self.arithmetic_eq_predicates = None
         self.algebraic_eq_predicates = None
         self.arithmetic_ineq_predicates = None
+        self.aoa_less_thans = []
+        self.global_min_instance_dict_bkp = copy.deepcopy(global_min_instance_dict)
+
         self.where_clause = ""
 
         self.join_graph = []
         self.filter_predicates = []
+
+    def post_process_for_generation_pipeline(self):
+        self.pipeline_delivery = PackageForGenPipeline()
 
     def get_supporting_global_params(self):
         return self.filter_extractor.global_all_attribs, self.filter_extractor.global_attrib_types
@@ -334,10 +346,10 @@ class AlgebraicPredicate(WhereClause):
         for eq_join in self.algebraic_eq_predicates:
             join_edge = list(item[1] for item in eq_join if len(item) == 2)
             join_edge.sort()
-            for i in range(0, len(join_edge)-1):
-                join_e = f"{join_edge[i]} = {join_edge[i+1]}"
+            for i in range(0, len(join_edge) - 1):
+                join_e = f"{join_edge[i]} = {join_edge[i + 1]}"
                 predicates.append(join_e)
-                self.join_graph.append([join_edge[i], join_edge[i+1]])
+                self.join_graph.append([join_edge[i], join_edge[i + 1]])
         for a_eq in self.arithmetic_eq_predicates:
             datatype = self.filter_extractor.get_datatype((a_eq[0], a_eq[1]))
             pred = f"{a_eq[1]} = {get_format(datatype, a_eq[3])}"
@@ -346,7 +358,10 @@ class AlgebraicPredicate(WhereClause):
         for a_ineq in self.arithmetic_ineq_predicates:
             datatype = self.filter_extractor.get_datatype((a_ineq[0], a_ineq[1]))
             pred_op = a_ineq[1] + " "
-            pred_op = handle_range_preds(datatype, a_ineq, pred_op)
+            if datatype == 'str':
+                pred_op += f"LIKE {get_format(datatype, a_ineq[3])}"
+            else:
+                pred_op = handle_range_preds(datatype, a_ineq, pred_op)
             predicates.append(pred_op)
             self.filter_predicates.append(a_ineq)
         for aoa in self.aoa_predicates:
@@ -354,6 +369,11 @@ class AlgebraicPredicate(WhereClause):
             add_pred_for(aoa[0], pred)
             add_pred_for(aoa[1], pred)
             predicates.append(" <= ".join(pred))
+        for aoa in self.aoa_less_thans:
+            pred = []
+            add_pred_for(aoa[0], pred)
+            add_pred_for(aoa[1], pred)
+            predicates.append(" < ".join(pred))
 
         self.where_clause = "\n and ".join(predicates)
 
@@ -381,11 +401,21 @@ class AlgebraicPredicate(WhereClause):
             self.find_dormant_CBs(a_LBs, aoa_LBs, path, query, False)
             self.find_dormant_CBs(a_UBs, aoa_UBs, path, query, True)
 
+        self.organize_less_thans()
         self.optimize_aoa()
-        self.logger.debug(self.aoa_predicates)
         self.revert_mutation_on_filter_global_min_instance_dict()
+
         self.generate_where_clause()
+        self.post_process_for_generation_pipeline()
         return True
+
+    def organize_less_thans(self):
+        for aoa in self.aoa_less_thans:
+            try:
+                self.aoa_predicates.remove(aoa)
+            except ValueError:
+                self.logger.debug("Weired!")
+                pass
 
     def optimize_aoa(self):
         nodes = set()
@@ -404,19 +434,29 @@ class AlgebraicPredicate(WhereClause):
 
     def add_CB_to_aoa(self, datatype, cb_b, is_UB):
         i_min, i_max = get_min_and_max_val(datatype)
+        delta, while_cut_off = get_constants_for(datatype)
         if is_UB:
+            l_val = get_val_plus_delta(datatype, get_UB(cb_b), 2 * delta)
+            if l_val == i_max:
+                return False
             if get_UB(cb_b) != i_max:
                 self.aoa_predicates.append([(get_tab(cb_b), get_attrib(cb_b)), get_UB(cb_b)])
         else:
+            l_val = get_val_plus_delta(datatype, get_LB(cb_b), -2 * delta)
+            if l_val == i_min:
+                return False
             if get_LB(cb_b) != i_min:
                 self.aoa_predicates.append([get_LB(cb_b), (get_tab(cb_b), get_attrib(cb_b))])
+        return True
 
     def find_dormant_CBs(self, a_CBs, aoa_CBs, path, query, is_UB):
         cb_Bs = self.check_for_dormant_CB(path, a_CBs, aoa_CBs, query, is_UB)
-        for cb_b in cb_Bs:
-            datatype = self.filter_extractor.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
-            self.add_CB_to_aoa(datatype, cb_b, is_UB)
-        # self.logger.debug("cb_Bs:", cb_Bs)
+        # for cb_b in cb_Bs:
+        #    datatype = self.filter_extractor.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
+        #    check = self.add_CB_to_aoa(datatype, cb_b, is_UB)
+        #    if not check:
+        # it is less then relationship. Not less than equl to. How to represent it?
+        #        self.logger.debug("<. Not <=. How to indicate it? ", cb_b)
 
     def get_equi_join_group(self, tab_attrib):
         for eq in self.algebraic_eq_predicates:
@@ -431,6 +471,29 @@ class AlgebraicPredicate(WhereClause):
         tab_attrib_eq_group = self.get_equi_join_group(tab_attrib)
         filter_attribs = []
         datatype = self.filter_extractor.get_datatype(tab_attrib)
+        self.mutate_with_boundary_value(a_Bs, aoa_Bs, datatype, filter_attribs, is_UB, query, tab_attrib,
+                                        tab_attrib_eq_group)
+
+        not_cb = set()
+        for cb_b in filter_attribs:
+            datatype = self.filter_extractor.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
+            check = self.add_CB_to_aoa(datatype, cb_b, is_UB)
+            if not check:
+                # it is less then relationship. Not less than equl to. How to represent it?
+                if len(pending_path) and not is_UB:
+                    other_tab_attrib = pending_path[0]
+                    self.logger.debug(f"{cb_b[1]} < {other_tab_attrib[1]}. Not <=. How to indicate it? ", cb_b)
+                    self.aoa_less_thans.append((tab_attrib, other_tab_attrib))
+                not_cb.add(cb_b)
+        for cb_b in not_cb:
+            filter_attribs.remove(cb_b)
+
+        remaining_path_filter_attribs = self.check_for_dormant_CB(pending_path, a_Bs, aoa_Bs, query, is_UB)
+        filter_attribs.extend(remaining_path_filter_attribs)
+        return filter_attribs
+
+    def mutate_with_boundary_value(self, a_Bs, aoa_Bs, datatype, filter_attribs, is_UB, query, tab_attrib,
+                                   tab_attrib_eq_group):
         val = None
         for key in tab_attrib_eq_group:
             if key in aoa_Bs.keys():
@@ -446,8 +509,6 @@ class AlgebraicPredicate(WhereClause):
             tab, attrib = key[0], key[1]
             self.mutate_filter_global_min_instance_dict(tab, attrib, val)
             self.connectionHelper.execute_sql([update_tab_attrib_with_value(attrib, tab, get_format(datatype, val))])
-        filter_attribs.extend(self.check_for_dormant_CB(pending_path, a_Bs, aoa_Bs, query, is_UB))
-        return filter_attribs
 
     def mutate_filter_global_min_instance_dict(self, tab, attrib, val):
         g_min_dict = self.filter_extractor.global_min_instance_dict

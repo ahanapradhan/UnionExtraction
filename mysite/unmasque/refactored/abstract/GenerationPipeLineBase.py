@@ -3,7 +3,7 @@ import copy
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..util.common_queries import insert_into_tab_attribs_format, update_tab_attrib_with_value, \
-    update_tab_attrib_with_quoted_value, truncate_table
+    update_tab_attrib_with_quoted_value
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val, \
     get_min_and_max_val
 
@@ -11,11 +11,14 @@ NUMBER_TYPES = ['int', 'integer', 'numeric', 'float']
 
 
 def update_aoa_LB_UB(LB_dict, UB_dict, filter_attrib_dict):
+    to_del = []
     for attrib in LB_dict.keys():
         if attrib in UB_dict.keys():
             filter_attrib_dict[attrib] = (LB_dict[attrib], UB_dict[attrib])
-            del LB_dict[attrib]
-            del UB_dict[attrib]
+            to_del.append(attrib)
+    for attrib in to_del:
+        del UB_dict[attrib]
+        del LB_dict[attrib]
 
 
 def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):

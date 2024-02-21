@@ -1,25 +1,80 @@
 import copy
 import math
 
+from .abstract.MutationPipeLineBase import MutationPipeLineBase
 from .util.common_queries import get_tabname_4, update_sql_query_tab_attribs, form_update_query_with_value, \
-    insert_into_tab_select_star_fromtab, truncate_table, update_tab_attrib_with_quoted_value
+    insert_into_tab_select_star_fromtab, truncate_table, update_tab_attrib_with_quoted_value, \
+    select_attribs_from_relation, get_column_details_for_table
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
-    get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff
-from .abstract.where_clause import WhereClause
+    get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff, is_int
+
+
+def parse_for_int(val):
+    try:
+        v_int = int(val)
+        v_int = str(val)
+    except ValueError:
+        v_int = f"\'{str(val)}\'"
+    except TypeError:
+        v_int = f"\'{str(val)}\'"
+    return v_int
+
 
 def round_ceil(num, places):
-    adder = 5/(10**(places+1))
+    adder = 5 / (10 ** (places + 1))
     return round(num + adder, places)
 
+
 def round_floor(num, places):
-    adder = 5/(10**(places+1))
+    adder = 5 / (10 ** (places + 1))
     return round(num - adder, places)
 
-class Filter(WhereClause):
 
-    def __init__(self, connectionHelper, global_key_lists, core_relations, global_min_instance_dict):
-        super().__init__(connectionHelper, global_key_lists, core_relations, global_min_instance_dict, "Filter")
+class Filter(MutationPipeLineBase):
+
+    def __init__(self, connectionHelper, core_relations, global_min_instance_dict):
+        super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Filter")
+        # init data
+        self.global_attrib_types = []
+        self.global_all_attribs = []
+        self.global_d_plus_value = {}  # this is the tuple from D_min
+        self.global_attrib_max_length = {}
+
+        self.global_attrib_types_dict = {}
+        self.global_attrib_dict = {}
+
         self.filter_predicates = None
+
+    def revert_filter_changes(self, tabname):
+        values = self.global_min_instance_dict[tabname]
+        headers = values[0]
+        comma_sep_h = ", ".join(headers)
+        tuple_ = [parse_for_int(e) for e in values[1]]
+        comma_sep_v = ", ".join(tuple_)
+        ddl_ql = f"insert into {tabname}({comma_sep_h}) values({comma_sep_v});"
+        self.connectionHelper.execute_sql([truncate_table(tabname),
+                                           ddl_ql])
+
+    def do_init(self):
+        for tabname in self.core_relations:
+
+            res, desc = self.connectionHelper.execute_sql_fetchall(
+                get_column_details_for_table(self.connectionHelper.config.schema, tabname))
+
+            tab_attribs = []
+            tab_attribs.extend(row[0] for row in res)
+            self.global_all_attribs.append(copy.deepcopy(tab_attribs))
+
+            self.global_attrib_types.extend((tabname, row[0], row[1]) for row in res)
+
+            self.global_attrib_max_length.update(
+                {(tabname, row[0]): int(str(row[2])) for row in res if is_int(str(row[2]))})
+
+            res, desc = self.connectionHelper.execute_sql_fetchall(
+                select_attribs_from_relation(tab_attribs, tabname))
+            for row in res:
+                for attrib, value in zip(tab_attribs, row):
+                    self.global_d_plus_value[attrib] = value
 
     def get_datatype(self, tab_attrib):
         if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer']):

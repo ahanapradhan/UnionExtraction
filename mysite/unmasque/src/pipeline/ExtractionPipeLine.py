@@ -4,7 +4,7 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, FILTER, \
-    NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION
+    NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, AOA
 from ...refactored.aggregation import Aggregation
 from mysite.unmasque.src.core.aoa import AlgebraicPredicate
 from ...refactored.cs2 import Cs2
@@ -22,6 +22,7 @@ class ExtractionPipeLine(GenericPipeLine):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Extraction PipeLine")
         self.global_pk_dict = {}
+        self.global_min_instance_dict = None
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
@@ -80,16 +81,18 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some problem while view minimization. Aborting extraction!")
             return None, time_profile
 
-        '''
-        Filters Extraction
-        '''
-        self.update_state(FILTER + START)
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
 
-        aoa = AlgebraicPredicate(self.connectionHelper, key_lists, core_relations, vm.global_min_instance_dict)
+        '''
+        AOA Extraction
+        '''
+        self.update_state(AOA + START)
+
+        aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
         global_all_attribs, global_attrib_types = aoa.get_supporting_global_params()
-        self.update_state(FILTER + RUNNING)
+        self.update_state(AOA + RUNNING)
         check = aoa.doJob(query)
-        self.update_state(FILTER + DONE)
+        self.update_state(AOA + DONE)
         time_profile.update_for_where_clause(aoa.local_elapsed_time)
         if not check:
             self.logger.info("Cannot find Filter Predicates.")
@@ -97,12 +100,14 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while Filter Predicate extraction. Aborting extraction!")
             return None, time_profile
 
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
+
         '''
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
         pj = Projection(self.connectionHelper, global_attrib_types, core_relations, aoa.filter_predicates,
-                        aoa.join_graph, global_all_attribs, vm.global_min_instance_dict, aoa.aoa_predicates)
+                        aoa.join_graph, global_all_attribs, self.global_min_instance_dict, aoa.aoa_predicates)
 
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
@@ -114,12 +119,11 @@ class ExtractionPipeLine(GenericPipeLine):
         if not pj.done:
             self.logger.error("Some error while projection extraction. Aborting extraction!")
             return None, time_profile
-        self.logger.debug("Projection", pj.projected_attribs, pj.param_list, pj.dependencies)
 
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         self.update_state(GROUP_BY + START)
-
         gb = GroupBy(self.connectionHelper, global_attrib_types, core_relations, aoa.filter_predicates,
-                     global_all_attribs, aoa.join_graph, pj.projected_attribs, vm.global_min_instance_dict,
+                     global_all_attribs, aoa.join_graph, pj.projected_attribs, self.global_min_instance_dict,
                      aoa.aoa_predicates)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
@@ -137,11 +141,12 @@ class ExtractionPipeLine(GenericPipeLine):
                     elt[2] == '=' or elt[2] == 'equal'):
                 gb.group_by_attrib.append(elt[1])
 
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         self.update_state(AGGREGATE + START)
         agg = Aggregation(self.connectionHelper, global_attrib_types, core_relations,
                           aoa.filter_predicates, global_all_attribs, aoa.join_graph, pj.projected_attribs,
                           gb.has_groupby, gb.group_by_attrib, pj.dependencies, pj.solution, pj.param_list,
-                          vm.global_min_instance_dict, aoa.aoa_predicates)
+                          self.global_min_instance_dict, aoa.aoa_predicates)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
         self.update_state(AGGREGATE + DONE)
@@ -152,11 +157,13 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
 
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
+
         self.update_state(ORDER_BY + START)
         ob = OrderBy(self.connectionHelper, global_attrib_types, core_relations,
                      aoa.filter_predicates, global_all_attribs, aoa.join_graph, pj.projected_attribs,
                      pj.projection_names, pj.dependencies, agg.global_aggregated_attributes,
-                     vm.global_min_instance_dict, aoa.aoa_predicates)
+                     self.global_min_instance_dict, aoa.aoa_predicates)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
         self.update_state(ORDER_BY + DONE)
@@ -167,10 +174,12 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while extracting order by. Aborting extraction!")
             return None, time_profile
 
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
+
         self.update_state(LIMIT + START)
         lm = Limit(self.connectionHelper, global_attrib_types, core_relations,
                    aoa.filter_predicates, aoa.join_graph, global_all_attribs, gb.group_by_attrib,
-                   vm.global_min_instance_dict, aoa.aoa_predicates)
+                   self.global_min_instance_dict, aoa.aoa_predicates)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
         self.update_state(LIMIT + DONE)
@@ -199,7 +208,8 @@ class ExtractionPipeLine(GenericPipeLine):
         if self.connectionHelper.config.detect_nep:
             self.update_state(NEP_ + START)
             nep = NEP(self.connectionHelper, core_relations, cs2.sizes, global_all_attribs, global_attrib_types,
-                      aoa.join_graph, aoa.filter_predicates, q_generator, vm.global_min_instance_dict, aoa.aoa_predicates)
+                      aoa.join_graph, aoa.filter_predicates, q_generator, vm.global_min_instance_dict,
+                      aoa.aoa_predicates)
             self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
             if nep.Q_E:

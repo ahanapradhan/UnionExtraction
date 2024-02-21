@@ -150,7 +150,7 @@ class MyTestCase(BaseTestCase):
         check = vm.doJob(query)
         self.assertTrue(vm.done and check)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
-        aoa = AlgebraicPredicate(self.conn, tpchSettings.key_lists, core_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
@@ -207,6 +207,43 @@ class MyTestCase(BaseTestCase):
         print(aoa.filter_extractor.global_min_instance_dict)
         print(aoa.where_clause)
         self.conn.closeConnection()
+
+    def test_UQ11(self):
+        self.conn.connectUsingParams()
+        query = "Select o_orderpriority, " \
+                "count(*) as order_count " \
+                "From orders, lineitem " \
+                "Where l_orderkey = o_orderkey and o_orderdate >= '1993-07-01' " \
+                "and o_orderdate < '1993-10-01' and l_commitdate < l_receiptdate " \
+                "Group By o_orderpriority " \
+                "Order By o_orderpriority;"
+        from_rels = ['orders', 'lineitem']
+        self.assertTrue(self.conn.conn is not None)
+        aoa, check = self.run_pipeline(from_rels, query)
+        print(self.global_min_instance_dict)
+        self.assertTrue(check)
+        print(aoa.filter_predicates)
+        print(aoa.aoa_predicates)
+        print(aoa.where_clause)
+        self.conn.closeConnection()
+
+    def test_UQ10(self):
+        self.conn.connectUsingParams()
+        query = "Select l_shipmode " \
+                "From orders, lineitem " \
+                "Where o_orderkey = l_orderkey " \
+                "and l_shipdate < l_commitdate ;"
+
+        from_rels = ['orders', 'lineitem']
+        self.assertTrue(self.conn.conn is not None)
+        aoa, check = self.run_pipeline(from_rels, query)
+        print(self.global_min_instance_dict)
+        self.assertTrue(check)
+        print(aoa.filter_predicates)
+        print(aoa.aoa_predicates)
+        print(aoa.where_clause)
+        self.conn.closeConnection()
+        #  and l_commitdate < l_receiptdate
 
     def test_paper_subquery1_projection(self):
         self.conn.connectUsingParams()

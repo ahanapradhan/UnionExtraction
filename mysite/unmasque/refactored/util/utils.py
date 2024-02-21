@@ -128,13 +128,16 @@ def get_dummy_val_for(datatype):
 
 def get_val_plus_delta(datatype, min_val, delta):
     plus_delta = min_val
-    if datatype == 'date':
-        plus_delta = min_val + datetime.timedelta(days=delta)
-    elif datatype == 'int' or datatype == 'numeric':  # INT, NUMERIC
-        plus_delta = min_val + delta
-    elif datatype == 'char':
-        plus_delta = get_int(min_val) + delta
-    return plus_delta
+    try:
+        if datatype == 'date':
+            plus_delta = min_val + datetime.timedelta(days=delta)
+        elif datatype == 'int' or datatype == 'numeric':  # INT, NUMERIC
+            plus_delta = min_val + delta
+        elif datatype == 'char':
+            plus_delta = get_int(min_val) + delta
+        return plus_delta
+    except OverflowError:
+        return min_val
 
 
 def get_min_and_max_val(datatype):

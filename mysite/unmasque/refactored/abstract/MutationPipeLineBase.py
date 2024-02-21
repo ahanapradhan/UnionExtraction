@@ -20,12 +20,12 @@ class MutationPipeLineBase(Base):
         self.global_min_instance_dict = copy.deepcopy(global_min_instance_dict)
         self.mock = False
 
-    def doJob(self, args):
-        super().doJob(args)
-        if not self.mock:
-            self.restore_d_min()
-            # self.see_d_min()
-        return self.result
+    # def doJob(self, args):
+    #    super().doJob(args)
+    #    if not self.mock:
+    #        self.restore_d_min()
+    # self.see_d_min()
+    #    return self.result
 
     def see_d_min(self):
         self.logger.debug("======================")
@@ -52,4 +52,3 @@ class MutationPipeLineBase(Base):
     def truncate_core_relations(self):
         for table in self.core_relations:
             self.connectionHelper.execute_sql([truncate_table(table)])
-

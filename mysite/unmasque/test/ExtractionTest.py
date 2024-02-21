@@ -661,6 +661,21 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.conn.closeConnection()
 
+    def test_UQ11(self):
+        self.conn.connectUsingParams()
+        query = "Select o_orderpriority, " \
+                "count(*) as order_count " \
+                "From orders, lineitem " \
+                "Where l_orderkey = o_orderkey and o_orderdate >= '1993-07-01' " \
+                "and o_orderdate < '1993-10-01' and l_commitdate < l_receiptdate " \
+                "Group By o_orderpriority " \
+                "Order By o_orderpriority;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()
