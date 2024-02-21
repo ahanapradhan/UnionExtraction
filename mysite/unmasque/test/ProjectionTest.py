@@ -6,6 +6,7 @@ import unittest
 import pytest
 
 from mysite.unmasque.refactored.util.utils import get_unused_dummy_val, get_format, get_char
+from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from mysite.unmasque.src.util import constants
 
 sys.path.append("../../../")
@@ -97,6 +98,35 @@ def construct_values_for_attribs(value_used, proj_ob):
 
 class MyTestCase(BaseTestCase):
 
+    def __init__(self):
+        super().__init__()
+        self.core_relations = None
+        self.global_all_attribs = None
+        self.global_attrib_types = None
+        self.filter_predicates = None
+        self.join_graph = None
+        self.global_min_instance_dict = None
+        self.global_attrib_types_dict = {}
+
+    def get_dmin_val(self, attrib, tab):
+        values = self.global_min_instance_dict[tab]
+        attribs, vals = values[0], values[1]
+        attrib_idx = attribs.index(attrib)
+        val = vals[attrib_idx]
+        return val
+
+    def get_datatype(self, tab_attrib):
+        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer']):
+            return 'int'
+        elif 'date' in self.global_attrib_types_dict[tab_attrib]:
+            return 'date'
+        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit']):
+            return 'str'
+        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
+            return 'numeric'
+        else:
+            raise ValueError
+
     def setUp(self):
         super().setUp()
         self.conn.connectUsingParams()
@@ -114,12 +144,25 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
         super().tearDown()
 
+    def post_process_for_generation_pipeline(self):
+        self.pipeline_delivery = PackageForGenPipeline(self.core_relations,
+                                                       self.global_all_attribs,
+                                                       self.global_attrib_types,
+                                                       self.filter_predicates,
+                                                       [],
+                                                       self.join_graph,
+                                                       [],
+                                                       self.global_min_instance_dict,
+                                                       self.get_dmin_val,
+                                                       self.get_datatype)
+        self.pipeline_delivery.doJob()
+
     def test_projection_Q1(self):
 
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels['Q1']
 
-        global_attrib_types = [('lineitem', 'l_orderkey', 'integer'),
+        self.global_attrib_types = [('lineitem', 'l_orderkey', 'integer'),
                                ('lineitem', 'l_partkey', 'integer'),
                                ('lineitem', 'l_suppkey', 'integer'),
                                ('lineitem', 'l_linenumber', 'integer'),
@@ -136,18 +179,17 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
 
-        global_all_attribs = [
+        self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
 
-        filter_predicates = [('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1), datetime.date(1998, 9, 21))]
+        self.filter_predicates = [('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1), datetime.date(1998, 9, 21))]
 
         global_key_attributes = ['l_orderkey', 'l_partkey', 'l_suppkey']
-        join_graph = []
+        self.join_graph = []
         global_min_instance_dict = {}
-        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict, aoa_predicates)
+        pj = Projection(self.conn, delivery)
         pj.mock = True
         pj.do_init()
         create_dmin_for_test(from_rels, pj)
@@ -239,8 +281,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
 
-        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict, aoa_predicates)
+        pj = Projection(self.conn, delivery)
         pj.mock = True
         pj.do_init()
 
@@ -319,8 +360,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
 
-        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict, aoa_predicates)
+        pj = Projection(self.conn, delivery)
         pj.mock = True
         pj.do_init()
 
@@ -362,8 +402,7 @@ class MyTestCase(BaseTestCase):
                                ('orders', 'o_shippriority', 'integer'),
                                ('orders', 'o_comment', 'character varying')]
 
-        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict, aoa_predicates)
+        pj = Projection(self.conn, delivery)
         pj.mock = True
         pj.do_init()
 
@@ -459,8 +498,7 @@ class MyTestCase(BaseTestCase):
                       ['c_nationkey', 's_nationkey', 'n_nationkey'],
                       ['n_regionkey', 'r_regionkey']]
 
-        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict, aoa_predicates)
+        pj = Projection(self.conn, delivery)
         pj.mock = True
         pj.do_init()
 

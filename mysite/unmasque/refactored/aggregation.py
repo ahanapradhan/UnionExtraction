@@ -112,11 +112,9 @@ def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner,
 
 
 class Aggregation(GenerationPipeLineBase):
-    def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates,
-                 global_all_attribs, join_graph, projected_attribs, has_groupby, groupby_attribs, dependencies,
-                 solution, param_list, global_min_instance_dict, aoa_predicates):
-        super().__init__(connectionHelper, "Aggregation", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict, None, aoa_predicates)
+    def __init__(self, connectionHelper, projected_attribs, has_groupby, groupby_attribs, dependencies, solution,
+                 param_list, delivery):
+        super().__init__(connectionHelper, "Aggregation", delivery)
         self.global_aggregated_attributes = None
         self.global_projected_attributes = projected_attribs
         self.has_groupby = has_groupby

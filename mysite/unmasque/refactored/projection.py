@@ -20,10 +20,8 @@ def if_dependencies_found_incomplete(projection_names, projection_dep):
 
 
 class Projection(GenerationPipeLineBase):
-    def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates, join_graph,
-                 global_all_attribs, global_min_instance_dict, aoa_predicates):
-        super().__init__(connectionHelper, "Projection", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict, None, aoa_predicates)
+    def __init__(self, connectionHelper, delivery):
+        super().__init__(connectionHelper, "Projection", delivery)
         self.projection_names = None
         self.projected_attribs = None
         self.dependencies = None

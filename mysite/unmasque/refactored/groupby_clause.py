@@ -12,10 +12,8 @@ def has_attrib_key_condition(attrib, attrib_inner, key_list):
 
 
 class GroupBy(GenerationPipeLineBase):
-    def __init__(self, connectionHelper, global_attrib_types, core_relations, filter_predicates, global_all_attribs,
-                 join_graph, projected_attribs, global_min_instance_dict, aoa_predicates):
-        super().__init__(connectionHelper, "Group By", core_relations, global_all_attribs, global_attrib_types,
-                         join_graph, filter_predicates, global_min_instance_dict, None, aoa_predicates)
+    def __init__(self, connectionHelper, delivery, projected_attribs):
+        super().__init__(connectionHelper, "Group By", delivery)
         self.projected_attribs = projected_attribs
         self.has_groupby = False
         self.group_by_attrib = []

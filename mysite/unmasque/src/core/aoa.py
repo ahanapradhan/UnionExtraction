@@ -1,11 +1,12 @@
 import copy
 
-from mysite.unmasque.refactored.abstract.where_clause import WhereClause
+from mysite.unmasque.refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
 from mysite.unmasque.refactored.util.common_queries import update_tab_attrib_with_value
 from mysite.unmasque.refactored.util.utils import get_format, get_datatype_of_val, get_min_and_max_val, \
     get_val_plus_delta
 from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
+from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
 
 def is_sublist(lst, sublist):
@@ -311,15 +312,12 @@ def optimize_by_matrix(C_E, aoa_predicates, h, w):
     return m
 
 
-class PackageForGenPipeline:
-    def __init__(self):
-        self.dummy = 0
-
-
-class AlgebraicPredicate(WhereClause):
+class AlgebraicPredicate(MutationPipeLineBase):
     def __init__(self, connectionHelper, core_relations, global_min_instance_dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "AlgebraicPredicate")
         self.filter_extractor = Filter(self.connectionHelper, core_relations, global_min_instance_dict)
+
+        self.get_datatype = self.filter_extractor.get_datatype  # method
 
         self.pipeline_delivery = None
 
@@ -336,7 +334,18 @@ class AlgebraicPredicate(WhereClause):
         self.filter_predicates = []
 
     def post_process_for_generation_pipeline(self):
-        self.pipeline_delivery = PackageForGenPipeline()
+        self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
+        self.pipeline_delivery = PackageForGenPipeline(self.core_relations,
+                                                       self.filter_extractor.global_all_attribs,
+                                                       self.filter_extractor.global_attrib_types,
+                                                       self.filter_predicates,
+                                                       self.aoa_predicates,
+                                                       self.join_graph,
+                                                       self.aoa_less_thans,
+                                                       self.global_min_instance_dict,
+                                                       self.get_dmin_val,
+                                                       self.get_datatype)
+        self.pipeline_delivery.doJob()
 
     def get_supporting_global_params(self):
         return self.filter_extractor.global_all_attribs, self.filter_extractor.global_attrib_types
@@ -351,12 +360,12 @@ class AlgebraicPredicate(WhereClause):
                 predicates.append(join_e)
                 self.join_graph.append([join_edge[i], join_edge[i + 1]])
         for a_eq in self.arithmetic_eq_predicates:
-            datatype = self.filter_extractor.get_datatype((a_eq[0], a_eq[1]))
+            datatype = self.get_datatype((a_eq[0], a_eq[1]))
             pred = f"{a_eq[1]} = {get_format(datatype, a_eq[3])}"
             predicates.append(pred)
             self.filter_predicates.append(a_eq)
         for a_ineq in self.arithmetic_ineq_predicates:
-            datatype = self.filter_extractor.get_datatype((a_ineq[0], a_ineq[1]))
+            datatype = self.get_datatype((a_ineq[0], a_ineq[1]))
             pred_op = a_ineq[1] + " "
             if datatype == 'str':
                 pred_op += f"LIKE {get_format(datatype, a_ineq[3])}"
@@ -452,7 +461,7 @@ class AlgebraicPredicate(WhereClause):
     def find_dormant_CBs(self, a_CBs, aoa_CBs, path, query, is_UB):
         cb_Bs = self.check_for_dormant_CB(path, a_CBs, aoa_CBs, query, is_UB)
         # for cb_b in cb_Bs:
-        #    datatype = self.filter_extractor.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
+        #    datatype = self.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
         #    check = self.add_CB_to_aoa(datatype, cb_b, is_UB)
         #    if not check:
         # it is less then relationship. Not less than equl to. How to represent it?
@@ -470,13 +479,13 @@ class AlgebraicPredicate(WhereClause):
         tab_attrib, pending_path = split_directed_path(directed_paths, is_UB)
         tab_attrib_eq_group = self.get_equi_join_group(tab_attrib)
         filter_attribs = []
-        datatype = self.filter_extractor.get_datatype(tab_attrib)
+        datatype = self.get_datatype(tab_attrib)
         self.mutate_with_boundary_value(a_Bs, aoa_Bs, datatype, filter_attribs, is_UB, query, tab_attrib,
                                         tab_attrib_eq_group)
 
         not_cb = set()
         for cb_b in filter_attribs:
-            datatype = self.filter_extractor.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
+            datatype = self.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
             check = self.add_CB_to_aoa(datatype, cb_b, is_UB)
             if not check:
                 # it is less then relationship. Not less than equl to. How to represent it?
@@ -542,7 +551,7 @@ class AlgebraicPredicate(WhereClause):
 
     def do_numeric_drama(self, _B, _oB, attrib, tab, val):
         # all the following DRAMA is to handle "numeric" datatype
-        datatype = self.filter_extractor.get_datatype((tab, attrib))
+        datatype = self.get_datatype((tab, attrib))
         satisfied = val <= _B <= _oB
         if datatype == 'numeric':
             delta, _ = get_constants_for(datatype)
@@ -583,7 +592,7 @@ class AlgebraicPredicate(WhereClause):
         return E, (absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs)
 
     def is_impacted_by_Bound(self, attrib, c, ineq_group, key, query, v_prev, is_UB):
-        datatype = self.filter_extractor.get_datatype(attrib)
+        datatype = self.get_datatype(attrib)
         i_min, i_max = get_min_and_max_val(datatype)
         self.mutate_attrib_with_Bound_val(attrib, key, ineq_group, is_UB)
         f_e = self.do_bound_check_again(c, key, query)
@@ -614,7 +623,7 @@ class AlgebraicPredicate(WhereClause):
         datatype_dict = {}
         for pred in ineqaoa_preds:
             tab_attrib = (pred[0], pred[1])
-            datatype = self.filter_extractor.get_datatype(tab_attrib)
+            datatype = self.get_datatype(tab_attrib)
             if datatype in datatype_dict.keys():
                 datatype_dict[datatype].append(pred)
             else:
@@ -644,7 +653,7 @@ class AlgebraicPredicate(WhereClause):
 
     def handle_unit_eq_group(self, equi_join_group, query):
         filter_attribs = []
-        datatype = self.filter_extractor.get_datatype(equi_join_group[0])
+        datatype = self.get_datatype(equi_join_group[0])
         prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
                                                            datatype)

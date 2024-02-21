@@ -22,9 +22,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
     def __init__(self, connectionHelper, core_relations, all_sizes, global_all_attribs, global_attrib_types,
                  join_graph, filter_predicates, query_generator, global_min_instance_dict, aoa_predicates):
         Minimizer.__init__(self, connectionHelper, core_relations, all_sizes, "NEP")
-        GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", core_relations, global_all_attribs,
-                                        global_attrib_types, join_graph, filter_predicates, global_min_instance_dict,
-                                        None, aoa_predicates)
+        GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", delivery)
         self.filter_attrib_dict = {}
         self.attrib_types_dict = {}
         self.Q_E = ""

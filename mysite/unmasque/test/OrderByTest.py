@@ -78,9 +78,7 @@ class MyTestCase(BaseTestCase):
                                         ('o_shippriority', '')]
         dep = [[('identical_expr_nc', 'o_orderkey')], [('identical_expr_nc', 'l_discount')],
                [('identical_expr_nc', 'o_totalprice')], [('identical_expr_nc', 'o_shippriority')]]
-        ob = OrderBy(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
-                     global_all_attribs, join_graph, projections, names, dep, global_aggregated_attributes,
-                     global_min_instance_dict)
+        ob = OrderBy(self.conn, join_graph, projections, names, dep, delivery)
         ob.mock = True
 
         check = ob.doJob(queries.Q3)
@@ -162,9 +160,7 @@ class MyTestCase(BaseTestCase):
                                         ('l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'Sum'),
                                         ('o_orderdate', ''),
                                         ('o_shippriority', '')]
-        ob = OrderBy(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
-                     global_all_attribs, join_graph, projections, names, dep, global_aggregated_attributes,
-                     global_min_instance_dict)
+        ob = OrderBy(self.conn, join_graph, projections, names, dep, delivery)
         ob.mock = True
         check = ob.doJob(queries.Q3_1)
         print("Order by ", ob.orderBy_string)
@@ -294,10 +290,8 @@ class MyTestCase(BaseTestCase):
                 'requests. carefully final asymptotes haggle furiousl')]}
         aoa_predicates = []
 
-        ob = OrderBy(self.conn, global_attrib_types, core_relations,
-                     filter_predicates, global_all_attribs, join_graph, projected_attribs,
-                     projection_names, dependencies, global_aggregated_attributes,
-                     global_min_instance_dict, aoa_predicates)
+        ob = OrderBy(self.conn, projected_attribs, projection_names, dependencies, global_aggregated_attributes,
+                     delivery)
         ob.mock = True
         check = ob.doJob(Q5)
         self.conn.closeConnection()

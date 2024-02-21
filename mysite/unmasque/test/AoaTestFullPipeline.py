@@ -158,9 +158,8 @@ class MyTestCase(BaseTestCase):
 
     def run_pipeline_till_projection(self, core_rels, query):
         aoa, check = self.run_pipeline(core_rels, query)
-        global_all_attribs, global_attrib_types = aoa.get_supporting_global_params()
-        pj = Projection(self.conn, global_attrib_types, core_rels, aoa.filter_predicates,
-                        aoa.join_graph, global_all_attribs, self.global_min_instance_dict, aoa.aoa_predicates)
+        delivery = aoa.pipeline_delivery
+        pj = Projection(self.conn, delivery)
 
         check = pj.doJob(query)
         self.assertTrue(check)

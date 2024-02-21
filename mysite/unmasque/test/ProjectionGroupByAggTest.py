@@ -77,8 +77,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_comment', 'character varying')]
         global_min_instance_dict = {}
 
-        pj = Projection(self.conn, global_attrib_types, from_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict, aoa_predicates)
+        pj = Projection(self.conn, delivery)
         pj.mock = True
 
         self.conn.execute_sql(["alter table customer rename to customer_copy;",
@@ -111,8 +110,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(frozenset({'o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount'
                                        , 'o_orderdate', 'o_shippriority'}), frozenset(set(pj.projected_attribs)))
 
-        gb = GroupBy(self.conn, global_attrib_types, from_rels, filter_predicates, global_all_attribs, join_graph,
-                     pj.projected_attribs, global_min_instance_dict, global_key_attribs)
+        gb = GroupBy(self.conn, delivery, projected_attribs)
         gb.mock = True
         check = gb.doJob(query)
         self.assertTrue(check)
@@ -167,9 +165,8 @@ class MyTestCase(BaseTestCase):
                                 or 'l_extendedprice*l_discount*l_quantity' in p)
         self.assertEqual(3, empty_p)
 
-        agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
-                          global_all_attribs, join_graph, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
-                          pj.dependencies, pj.solution, pj.param_list, global_min_instance_dict)
+        agg = Aggregation(self.conn, join_graph, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
+                          pj.dependencies, pj.solution, delivery)
         agg.mock = True
 
         check = agg.doJob(query)

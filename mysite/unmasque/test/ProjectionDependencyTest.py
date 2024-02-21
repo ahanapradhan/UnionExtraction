@@ -45,8 +45,7 @@ class MyTestCase(BaseTestCase):
                                "n_regionkey",
                                "n_comment"]]
         global_min_instance_dict = {}
-        pj = Projection(self.conn, global_attrib_types, core_rels, filters, join_graph, global_all_attribs,
-                        global_min_instance_dict, aoa_predicates)
+        pj = Projection(self.conn, delivery)
         pj.mock = True
 
         self.conn.execute_sql(["drop table if exists partsupp1;", "create table partsupp1 (like partsupp);",
@@ -155,8 +154,7 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        pj = Projection(self.conn, global_attrib_types, core_rels, filter_predicates, join_graph, global_all_attribs,
-                        global_min_instance_dict, aoa_predicates)
+        pj = Projection(self.conn, delivery)
         pj.mock = True
 
         self.conn.execute_sql(["drop table if exists customer1;", "create table customer1 (like customer);",

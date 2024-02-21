@@ -89,7 +89,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(AOA + START)
 
         aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
-        global_all_attribs, global_attrib_types = aoa.get_supporting_global_params()
+        delivery = aoa.pipeline_delivery
         self.update_state(AOA + RUNNING)
         check = aoa.doJob(query)
         self.update_state(AOA + DONE)
@@ -106,8 +106,7 @@ class ExtractionPipeLine(GenericPipeLine):
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
-        pj = Projection(self.connectionHelper, global_attrib_types, core_relations, aoa.filter_predicates,
-                        aoa.join_graph, global_all_attribs, self.global_min_instance_dict, aoa.aoa_predicates)
+        pj = Projection(self.connectionHelper, delivery)
 
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
@@ -122,9 +121,7 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         self.update_state(GROUP_BY + START)
-        gb = GroupBy(self.connectionHelper, global_attrib_types, core_relations, aoa.filter_predicates,
-                     global_all_attribs, aoa.join_graph, pj.projected_attribs, self.global_min_instance_dict,
-                     aoa.aoa_predicates)
+        gb = GroupBy(self.connectionHelper, delivery, pj.projected_attribs)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
         self.update_state(GROUP_BY + DONE)
@@ -143,10 +140,8 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         self.update_state(AGGREGATE + START)
-        agg = Aggregation(self.connectionHelper, global_attrib_types, core_relations,
-                          aoa.filter_predicates, global_all_attribs, aoa.join_graph, pj.projected_attribs,
-                          gb.has_groupby, gb.group_by_attrib, pj.dependencies, pj.solution, pj.param_list,
-                          self.global_min_instance_dict, aoa.aoa_predicates)
+        agg = Aggregation(self.connectionHelper, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
+                          pj.dependencies, pj.solution, pj.param_list, delivery)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
         self.update_state(AGGREGATE + DONE)
@@ -160,10 +155,8 @@ class ExtractionPipeLine(GenericPipeLine):
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
 
         self.update_state(ORDER_BY + START)
-        ob = OrderBy(self.connectionHelper, global_attrib_types, core_relations,
-                     aoa.filter_predicates, global_all_attribs, aoa.join_graph, pj.projected_attribs,
-                     pj.projection_names, pj.dependencies, agg.global_aggregated_attributes,
-                     self.global_min_instance_dict, aoa.aoa_predicates)
+        ob = OrderBy(self.connectionHelper, pj.projected_attribs, pj.projection_names, pj.dependencies,
+                     agg.global_aggregated_attributes, delivery)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
         self.update_state(ORDER_BY + DONE)
@@ -177,9 +170,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
 
         self.update_state(LIMIT + START)
-        lm = Limit(self.connectionHelper, global_attrib_types, core_relations,
-                   aoa.filter_predicates, aoa.join_graph, global_all_attribs, gb.group_by_attrib,
-                   self.global_min_instance_dict, aoa.aoa_predicates)
+        lm = Limit(self.connectionHelper, gb.group_by_attrib, delivery)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
         self.update_state(LIMIT + DONE)

@@ -268,7 +268,9 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(('orders', 'o_orderkey') in aoa.algebraic_eq_predicates[0])
 
         self.assertEqual(len(aoa.arithmetic_ineq_predicates), 0)
-
+        for aoa_ in aoa.aoa_predicates:
+            print(aoa_)
+        print(len(aoa.aoa_predicates))
         self.assertEqual(len(aoa.aoa_predicates), 3)
         self.assertTrue((('lineitem', 'l_commitdate'), ('lineitem', 'l_receiptdate')) in aoa.aoa_predicates)
         self.assertTrue([datetime.date(1993, 7, 1), ('orders', 'o_orderdate')] in aoa.aoa_predicates)
@@ -428,9 +430,8 @@ class MyTestCase(BaseTestCase):
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
-        global_all_attribs, global_attrib_types = aoa.get_supporting_global_params()
-        pj = Projection(self.conn, global_attrib_types, from_rels, aoa.filter_predicates,
-                        aoa.join_graph, global_all_attribs, self.global_min_instance_dict, aoa.aoa_predicates)
+        delivery = aoa.pipeline_delivery
+        pj = Projection(self.conn, delivery)
         pj.mock = True
         check = pj.doJob(query)
         self.assertTrue(check)
@@ -549,9 +550,8 @@ class MyTestCase(BaseTestCase):
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
-        global_all_attribs, global_attrib_types = aoa.get_supporting_global_params()
-        pj = Projection(self.conn, global_attrib_types, from_rels, aoa.filter_predicates,
-                        aoa.join_graph, global_all_attribs, self.global_min_instance_dict, aoa.aoa_predicates)
+        delivery = aoa.pipeline_delivery
+        pj = Projection(self.conn, delivery)
         pj.mock = True
         check = pj.doJob(query)
         self.assertTrue(check)

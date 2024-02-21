@@ -57,9 +57,7 @@ class MyTestCase(BaseTestCase):
         p_list = [[], [], [], []]
 
         global_key_attribs = []
-        agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
-                          global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
-                          global_min_instance_dict)
+        agg = Aggregation(self.conn, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
         agg.mock = True
 
         check = agg.doJob(queries.Q1)
@@ -149,9 +147,7 @@ class MyTestCase(BaseTestCase):
                [('identical_expr_nc', 'o_orderdate')], [('identical_expr_nc', 'o_shippriority')]]
         sol = [[], [[1.], [1.], [0.], [0.], [-1.], [-0.], [-0.], [0.]], [], []]
 
-        agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
-                          global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, [],
-                          global_min_instance_dict)
+        agg = Aggregation(self.conn, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
         agg.mock = True
 
         check = agg.doJob(queries.Q3)
@@ -243,9 +239,7 @@ class MyTestCase(BaseTestCase):
         p_list = [[], ['l_quantity', 'l_extendedprice', 'l_discount', 'l_quantity*l_extendedprice',
                        'l_extendedprice*l_discount', 'l_discount*l_quantity', 'l_quantity*l_extendedprice*l_discount'],
                   [], []]
-        agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
-                          global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
-                          global_min_instance_dict)
+        agg = Aggregation(self.conn, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
         agg.mock = True
 
         check = agg.doJob(queries.Q3_1)
@@ -338,9 +332,7 @@ class MyTestCase(BaseTestCase):
                        'l_extendedprice*l_discount', 'l_discount*o_totalprice',
                        'o_totalprice*l_extendedprice*l_discount'],
                   [], []]
-        agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
-                          global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
-                          global_min_instance_dict)
+        agg = Aggregation(self.conn, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
         agg.mock = True
 
         check = agg.doJob(queries.Q3_2)

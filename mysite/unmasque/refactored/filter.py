@@ -45,16 +45,6 @@ class Filter(MutationPipeLineBase):
 
         self.filter_predicates = None
 
-    def revert_filter_changes(self, tabname):
-        values = self.global_min_instance_dict[tabname]
-        headers = values[0]
-        comma_sep_h = ", ".join(headers)
-        tuple_ = [parse_for_int(e) for e in values[1]]
-        comma_sep_v = ", ".join(tuple_)
-        ddl_ql = f"insert into {tabname}({comma_sep_h}) values({comma_sep_v});"
-        self.connectionHelper.execute_sql([truncate_table(tabname),
-                                           ddl_ql])
-
     def do_init(self):
         for tabname in self.core_relations:
 
@@ -335,7 +325,14 @@ class Filter(MutationPipeLineBase):
             self.connectionHelper.execute_sql([truncate_table(tabname),
                                                insert_into_tab_select_star_fromtab(tabname, get_tabname_4(tabname))])
         else:
-            super().revert_filter_changes(tabname)
+            values = self.global_min_instance_dict[tabname]
+            headers = values[0]
+            comma_sep_h = ", ".join(headers)
+            tuple_ = [parse_for_int(e) for e in values[1]]
+            comma_sep_v = ", ".join(tuple_)
+            ddl_ql = f"insert into {tabname}({comma_sep_h}) values({comma_sep_v});"
+            self.connectionHelper.execute_sql([truncate_table(tabname),
+                                               ddl_ql])
 
     def checkStringPredicate(self, query, tabname, attrib):
         # updatequery
