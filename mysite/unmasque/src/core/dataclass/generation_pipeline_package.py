@@ -1,4 +1,6 @@
 import copy
+from datetime import date
+from typing import Callable, Union
 
 from mysite.unmasque.refactored.filter import get_constants_for
 from mysite.unmasque.refactored.util.utils import get_min_and_max_val, get_val_plus_delta
@@ -39,18 +41,19 @@ def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):
 
 
 class PackageForGenPipeline:
-    def __init__(self, core_relations,
+    def __init__(self, core_relations: list[str],
                  global_all_attribs,
                  global_attrib_types,
-                 global_filter_predicates,
-                 global_aoa_le_predicates,
+                 global_filter_predicates: list[tuple[str, str, str,
+                            Union[int, date, float],
+                            Union[int, date, float]]],
+                 global_aoa_le_predicates: list[tuple[str, str], tuple[str, str]],
                  global_join_graph,
-                 global_aoa_l_predicates,
-                 global_min_instance_dict,
+                 global_aoa_l_predicates: list[tuple[str, str], tuple[str, str]],
+                 global_min_instance_dict: dict,
 
-
-                 get_dmin_val,
-                 get_datatype):
+                 get_dmin_val: Callable[[str, str], any],
+                 get_datatype: Callable[[str], str]):
 
         self.core_relations = core_relations
         self.global_all_attribs = global_all_attribs
@@ -78,7 +81,7 @@ class PackageForGenPipeline:
         self.aoa_attribs = collect_attribs_from(self.global_aoa_le_predicates)
         self.update_filter_predicates()
 
-    def construct_filter_attribs_dict(self):
+    def construct_filter_attribs_dict(self) -> dict:
         # get filter values and their allowed minimum and maximum value
         filter_attrib_dict = {}
         self.add_arithmetic_filters(filter_attrib_dict)
@@ -89,7 +92,7 @@ class PackageForGenPipeline:
         self.update_aoa_single_bounds(LB_dict, UB_dict, filter_attrib_dict)
         return filter_attrib_dict
 
-    def update_aoa_single_bounds(self, LB_dict, UB_dict, filter_attrib_dict):
+    def update_aoa_single_bounds(self, LB_dict: dict, UB_dict: dict, filter_attrib_dict: dict):
         to_del_LB = []
         for attrib in LB_dict.keys():
             datatype = self.attrib_types_dict[attrib]
@@ -108,7 +111,7 @@ class PackageForGenPipeline:
         for attrib in to_del_UB:
             del UB_dict[attrib]
 
-    def add_arithmetic_filters(self, filter_attrib_dict):
+    def add_arithmetic_filters(self, filter_attrib_dict: dict):
         for entry in self.global_filter_predicates:
             if len(entry) > 4 and \
                     'like' not in entry[2].lower() and \
@@ -117,7 +120,7 @@ class PackageForGenPipeline:
             else:
                 filter_attrib_dict[(entry[0], entry[1])] = entry[3]
 
-    def make_dmin_dict_from_aoa_le(self):
+    def make_dmin_dict_from_aoa_le(self) -> tuple[dict, dict]:
         LB_dict, UB_dict = {}, {}
         for entry in self.global_aoa_le_predicates:
             l_attrib, r_attrib = entry[0], entry[1]
@@ -161,7 +164,7 @@ class PackageForGenPipeline:
                 to_add.add((key[0], key[1], 'range', bounds[0], bounds[1]))
         self.global_filter_predicates.extend(list(to_add))
 
-    def make_dmin_dict_from_aoa_l(self, LB_dict, UB_dict):
+    def make_dmin_dict_from_aoa_l(self, LB_dict: dict, UB_dict: dict) -> tuple[dict, dict]:
         for entry in self.global_aoa_l_predicates:
             datatype = self.get_datatype(entry[0])
             delta, _ = get_constants_for(datatype)

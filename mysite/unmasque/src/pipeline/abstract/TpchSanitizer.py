@@ -1,11 +1,12 @@
 import re
 from typing import Literal
 
+from ...util.ConnectionHelper import ConnectionHelper
 from ....refactored.util.common_queries import drop_view, get_restore_name, drop_table, alter_table_rename_to, \
     get_tabname_1, get_tabname_4, get_tabname_un, get_tabname_nep, drop_table_cascade
 
 
-def get_mutated_names(tab):
+def get_mutated_names(tab: str) -> list[str]:
     return [get_tabname_1(tab),
             get_tabname_4(tab),
             get_tabname_un(tab),
@@ -16,11 +17,11 @@ def get_mutated_names(tab):
 
 class TpchSanitizer:
 
-    def __init__(self, connectionHelper):
+    def __init__(self, connectionHelper: ConnectionHelper):
         self.all_relations = []
         self.connectionHelper = connectionHelper
 
-    def set_all_relations(self, relations):
+    def set_all_relations(self, relations: list[str]):
         self.all_relations.extend(relations)
 
     def select_query(self, projection_strs, predicate_strs):
@@ -73,10 +74,10 @@ class TpchSanitizer:
                                            drop_view("r_e"), drop_table("r_h")])
         self.commit_transaction()
 
-    def get_drop_fn(self, table):
+    def get_drop_fn(self, table: str):
         return drop_table_cascade if self.is_view_or_table(table) == 'table' else drop_view
 
-    def drop_derived_relations(self, table):
+    def drop_derived_relations(self, table: str):
         derived_objects = get_mutated_names(table)
         drop_fns = [self.get_drop_fn(tab) for tab in derived_objects]
         for n in range(len(derived_objects)):

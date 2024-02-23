@@ -5,13 +5,15 @@ from .MutationPipeLineBase import MutationPipeLineBase
 from ..util.common_queries import insert_into_tab_attribs_format, update_tab_attrib_with_value, \
     update_tab_attrib_with_quoted_value
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val
+from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from ...src.util.ConnectionHelper import ConnectionHelper
 
 NUMBER_TYPES = ['int', 'integer', 'numeric', 'float']
 
 
 class GenerationPipeLineBase(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper, name, delivery):
+    def __init__(self, connectionHelper: ConnectionHelper, name: str, delivery: PackageForGenPipeline):
         super().__init__(connectionHelper, delivery.core_relations, delivery.global_min_instance_dict, name)
         self.global_all_attribs = delivery.global_all_attribs
         self.global_attrib_types = delivery.global_attrib_types
@@ -42,7 +44,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.restore_d_min_from_dict()
         self.see_d_min()
 
-    def get_datatype(self, tab_attrib):
+    def get_datatype(self, tab_attrib: tuple) -> str:
         if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'integer']):
             return 'int'
         elif 'date' in self.attrib_types_dict[tab_attrib]:
@@ -69,10 +71,10 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         update_query = update_tab_attrib_with_value(attrib, tabname, value)
         self.connectionHelper.execute_sql([update_query])
 
-    def doExtractJob(self, query):
+    def doExtractJob(self, query: str) -> bool:
         return True
 
-    def get_other_attribs_in_eqJoin_grp(self, attrib):
+    def get_other_attribs_in_eqJoin_grp(self, attrib: str) -> list:
         other_attribs = []
         for join_edge in self.global_join_graph:
             if attrib in join_edge:
@@ -87,14 +89,14 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             join_tabnames.append(join_tabname)
             self.update_with_val(other_attrib, join_tabname, val)
 
-    def update_attrib_to_see_impact(self, attrib, tabname):
+    def update_attrib_to_see_impact(self, attrib: str, tabname: str):
         prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
         val = self.get_different_s_val(attrib, tabname, prev)
         self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
         self.update_with_val(attrib, tabname, val)
         return val, prev
 
-    def update_with_val(self, attrib, tabname, val):
+    def update_with_val(self, attrib: str, tabname: str, val):
         datatype = self.get_datatype((tabname, attrib))
         if datatype == 'date' or datatype in NUMBER_TYPES:
             update_q = update_tab_attrib_with_value(attrib, tabname, get_format(datatype, val))
@@ -102,7 +104,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             update_q = update_tab_attrib_with_quoted_value(tabname, attrib, val)
         self.connectionHelper.execute_sql([update_q])
 
-    def get_s_val(self, attrib, tabname):
+    def get_s_val(self, attrib: str, tabname: str):
         datatype = self.get_datatype((tabname, attrib))
         if datatype == 'date':
             if (tabname, attrib) in self.filter_attrib_dict.keys():
@@ -128,7 +130,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                 val = get_char(get_dummy_val_for('char'))
         return val
 
-    def get_different_val_for_dmin(self, attrib, tabname, prev):
+    def get_different_val_for_dmin(self, attrib: str, tabname: str, prev):
         if prev == self.filter_attrib_dict[(tabname, attrib)][0]:
             val = self.filter_attrib_dict[(tabname, attrib)][1]
         elif prev == self.filter_attrib_dict[(tabname, attrib)][1]:
@@ -138,7 +140,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                       self.filter_attrib_dict[(tabname, attrib)][1])
         return val
 
-    def get_different_s_val(self, attrib, tabname, prev):
+    def get_different_s_val(self, attrib: str, tabname: str, prev):
         datatype = self.get_datatype((tabname, attrib))
         if datatype == 'date':
             if (tabname, attrib) in self.filter_attrib_dict.keys():

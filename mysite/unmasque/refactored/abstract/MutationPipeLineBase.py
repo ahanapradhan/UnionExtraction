@@ -3,14 +3,15 @@ import copy
 from .ExtractorBase import Base
 from ..executable import Executable
 from ..util.common_queries import get_tabname_4, get_star, truncate_table, insert_into_tab_select_star_fromtab
+from ...src.util.ConnectionHelper import ConnectionHelper
 
 
 class MutationPipeLineBase(Base):
 
-    def __init__(self, connectionHelper,
-                 core_relations,
-                 global_min_instance_dict,
-                 name):
+    def __init__(self, connectionHelper: ConnectionHelper,
+                 core_relations: list[str],
+                 global_min_instance_dict: dict,
+                 name: str):
         super().__init__(connectionHelper, name)
         self.app = Executable(connectionHelper)
         # from from clause
@@ -41,7 +42,7 @@ class MutationPipeLineBase(Base):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def get_dmin_val(self, attrib, tab):
+    def get_dmin_val(self, attrib: str, tab: str):
         values = self.global_min_instance_dict[tab]
         attribs, vals = values[0], values[1]
         attrib_idx = attribs.index(attrib)

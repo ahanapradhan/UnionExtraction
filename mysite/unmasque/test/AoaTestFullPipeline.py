@@ -231,7 +231,7 @@ class MyTestCase(BaseTestCase):
         query = "Select l_shipmode " \
                 "From orders, lineitem " \
                 "Where o_orderkey = l_orderkey " \
-                "and l_shipdate < l_commitdate ;"
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate;"
 
         from_rels = ['orders', 'lineitem']
         self.assertTrue(self.conn.conn is not None)
@@ -241,6 +241,8 @@ class MyTestCase(BaseTestCase):
         print(aoa.filter_predicates)
         print(aoa.aoa_predicates)
         print(aoa.where_clause)
+        self.assertTrue("l_shipdate < l_commitdate" in aoa.where_clause)
+        self.assertTrue("l_commitdate < l_receiptdate" in aoa.where_clause)
         self.conn.closeConnection()
         #  and l_commitdate < l_receiptdate
 

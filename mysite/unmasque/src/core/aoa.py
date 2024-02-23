@@ -1,4 +1,6 @@
 import copy
+from datetime import date
+from typing import Union
 
 from mysite.unmasque.refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
@@ -7,6 +9,7 @@ from mysite.unmasque.refactored.util.utils import get_format, get_datatype_of_va
     get_val_plus_delta
 from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
 from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
 
 
 def is_sublist(lst, sublist):
@@ -313,7 +316,7 @@ def optimize_by_matrix(C_E, aoa_predicates, h, w):
 
 
 class AlgebraicPredicate(MutationPipeLineBase):
-    def __init__(self, connectionHelper, core_relations, global_min_instance_dict):
+    def __init__(self, connectionHelper: ConnectionHelper, core_relations: list[str], global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "AlgebraicPredicate")
         self.filter_extractor = Filter(self.connectionHelper, core_relations, global_min_instance_dict)
 
@@ -322,9 +325,9 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.pipeline_delivery = None
 
         self.aoa_predicates = None
-        self.arithmetic_eq_predicates = None
-        self.algebraic_eq_predicates = None
-        self.arithmetic_ineq_predicates = None
+        self.arithmetic_eq_predicates = []
+        self.algebraic_eq_predicates = []
+        self.arithmetic_ineq_predicates = []
         self.aoa_less_thans = []
         self.global_min_instance_dict_bkp = copy.deepcopy(global_min_instance_dict)
 
@@ -346,9 +349,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
                                                        self.get_dmin_val,
                                                        self.get_datatype)
         self.pipeline_delivery.doJob()
-
-    def get_supporting_global_params(self):
-        return self.filter_extractor.global_all_attribs, self.filter_extractor.global_attrib_types
 
     def generate_where_clause(self):
         predicates = []
@@ -392,6 +392,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         check = self.filter_extractor.doJob(query)
         if not check:
             return False
+        self.filter_extractor.logger.debug("Filters: ", self.filter_extractor.filter_predicates)
         partition_eq_dict, ineqaoa_preds = self.make_equiJoin_groups()
         self.find_eq_join_graph(query, partition_eq_dict)
 
@@ -407,8 +408,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
         a_LBs, a_UBs, aoa_LBs, aoa_UBs = maps[0], maps[1], maps[2], maps[3]
         print(self.aoa_predicates)
         for path in directed_paths:
-            self.find_dormant_CBs(a_LBs, aoa_LBs, path, query, False)
-            self.find_dormant_CBs(a_UBs, aoa_UBs, path, query, True)
+            self.check_for_dormant_CB(path, a_LBs, aoa_LBs, query, False)
+            self.check_for_dormant_CB(path, a_UBs, aoa_UBs, query, True)
 
         self.organize_less_thans()
         self.optimize_aoa()
@@ -441,7 +442,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
                         if aoa[0] == C_E[x] and aoa[1] == C_E[c]:
                             self.aoa_predicates.remove(aoa)
 
-    def add_CB_to_aoa(self, datatype, cb_b, is_UB):
+    def add_CB_to_aoa(self, datatype: str, cb_b, is_UB: bool):
         i_min, i_max = get_min_and_max_val(datatype)
         delta, while_cut_off = get_constants_for(datatype)
         if is_UB:
@@ -458,22 +459,13 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 self.aoa_predicates.append([get_LB(cb_b), (get_tab(cb_b), get_attrib(cb_b))])
         return True
 
-    def find_dormant_CBs(self, a_CBs, aoa_CBs, path, query, is_UB):
-        cb_Bs = self.check_for_dormant_CB(path, a_CBs, aoa_CBs, query, is_UB)
-        # for cb_b in cb_Bs:
-        #    datatype = self.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
-        #    check = self.add_CB_to_aoa(datatype, cb_b, is_UB)
-        #    if not check:
-        # it is less then relationship. Not less than equl to. How to represent it?
-        #        self.logger.debug("<. Not <=. How to indicate it? ", cb_b)
-
-    def get_equi_join_group(self, tab_attrib):
+    def get_equi_join_group(self, tab_attrib: tuple[str, str]) -> list[tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:
             if tab_attrib in eq:
                 return eq
         return [tab_attrib]
 
-    def check_for_dormant_CB(self, directed_paths, a_Bs, aoa_Bs, query, is_UB):
+    def check_for_dormant_CB(self, directed_paths: list[tuple[str, str]], a_Bs, aoa_Bs, query: str, is_UB: bool):
         if not len(directed_paths):
             return []
         tab_attrib, pending_path = split_directed_path(directed_paths, is_UB)
@@ -519,7 +511,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
             self.mutate_filter_global_min_instance_dict(tab, attrib, val)
             self.connectionHelper.execute_sql([update_tab_attrib_with_value(attrib, tab, get_format(datatype, val))])
 
-    def mutate_filter_global_min_instance_dict(self, tab, attrib, val):
+    def mutate_filter_global_min_instance_dict(self, tab: str, attrib: str, val):
         g_min_dict = self.filter_extractor.global_min_instance_dict
         data = g_min_dict[tab]
         idx = data[0].index(attrib)
@@ -534,7 +526,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
     def revert_mutation_on_filter_global_min_instance_dict(self):
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
 
-    def do_bound_check_again(self, tab_attrib, datatype, query):
+    def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str):
         filter_attribs = []
         d_plus_value = copy.deepcopy(self.filter_extractor.global_d_plus_value)
         attrib_max_length = copy.deepcopy(self.filter_extractor.global_attrib_max_length)
@@ -546,27 +538,34 @@ class AlgebraicPredicate(MutationPipeLineBase):
         tab, attrib, _oB = myself[0], myself[1], myself[4]
         _B = other[3]
         val = self.get_dmin_val(attrib, tab)
+        self.logger.debug(f"dmin.{attrib} = {val}, {other[1]}.LB = {_B}")
         satisfied = self.do_numeric_drama(_B, _oB, attrib, tab, val)
         return satisfied
 
     def do_numeric_drama(self, _B, _oB, attrib, tab, val):
-        # all the following DRAMA is to handle "numeric" datatype
         datatype = self.get_datatype((tab, attrib))
-        satisfied = val <= _B <= _oB
+        satisfied = val <= _B  # <= _oB
+        # all the following DRAMA is to handle "numeric" datatype
         if datatype == 'numeric':
             delta, _ = get_constants_for(datatype)
             bck_diff_1 = val - _B
-            bck_diff_2 = _B - _oB
+            # bck_diff_2 = _B - _oB
             alt_sat = True
             if not satisfied:
                 if bck_diff_1 > 0:
                     alt_sat = alt_sat & (abs(bck_diff_1) <= delta)
-                if bck_diff_2 > 0:
-                    alt_sat = alt_sat & (abs(bck_diff_2) <= delta)
+                # if bck_diff_2 > 0:
+                #    alt_sat = alt_sat & (abs(bck_diff_2) <= delta)
             return alt_sat or satisfied
         return satisfied
 
-    def find_ineq_aoa_algo3(self, query, ineqaoa_preds):
+    def find_ineq_aoa_algo3(self,
+                            query: str,
+                            ineqaoa_preds: list[tuple[str, str, str,
+                            Union[int, date, float],
+                            Union[int, date, float]]]) -> tuple[
+        list[tuple[tuple[str, str], tuple[str, str]]], tuple[dict, dict, dict, dict]]:
+
         absorbed_UBs, absorbed_LBs, aoa_CB_UBs, aoa_CB_LBs = {}, {}, {}, {}
         filtered_dict = self.isolate_ineq_aoa_preds_per_datatype(ineqaoa_preds)
         E = []
@@ -619,8 +618,12 @@ class AlgebraicPredicate(MutationPipeLineBase):
         if check:
             edge_set.append(tuple([peer_tab_attrib, tab_attrib]))
 
-    def isolate_ineq_aoa_preds_per_datatype(self, ineqaoa_preds):
+    def isolate_ineq_aoa_preds_per_datatype(self,
+                                            ineqaoa_preds: list[tuple[str, str, str,
+                                            Union[int, date, float],
+                                            Union[int, date, float]]]) -> dict:
         datatype_dict = {}
+        ineqaoa_preds.extend(self.arithmetic_eq_predicates)
         for pred in ineqaoa_preds:
             tab_attrib = (pred[0], pred[1])
             datatype = self.get_datatype(tab_attrib)
@@ -629,14 +632,12 @@ class AlgebraicPredicate(MutationPipeLineBase):
             else:
                 datatype_dict[datatype] = [pred]
         filtered_dict = {key: value for key, value in datatype_dict.items() if len(value) > 1}
-        self.arithmetic_ineq_predicates = []
         for key in datatype_dict:
             if len(datatype_dict[key]) == 1:
                 self.arithmetic_ineq_predicates.extend(datatype_dict[key])
         return filtered_dict
 
-    def find_eq_join_graph(self, query, partition_eq_dict):
-        self.algebraic_eq_predicates = []
+    def find_eq_join_graph(self, query: str, partition_eq_dict: dict):
         # self.logger.debug(partition_eq_dict)
         while partition_eq_dict:
             check_again_dict = {}
@@ -677,7 +678,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
             else:
                 ineq_filter_predicates.append(pred)
 
-        self.arithmetic_eq_predicates = []
         for key in eq_groups_dict.keys():
             if len(eq_groups_dict[key]) == 1:
                 if isinstance(key, str):
@@ -704,13 +704,19 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 break
         return done
 
-    def mutate_attrib_with_Bound_val(self, tab_attrib, datatype, ineq_group, with_UB):
+    def mutate_attrib_with_Bound_val(self, tab_attrib: tuple, datatype: str, ineq_group: list, with_UB: bool):
         for pred in ineq_group:
             if get_tab(tab_attrib) == get_tab(pred) and get_attrib(tab_attrib) == get_attrib(pred):
+                dmin_val = self.get_dmin_val(get_attrib(tab_attrib), get_tab(tab_attrib))
+                delta, _ = get_constants_for(datatype)
                 if with_UB:
                     bound = get_UB(pred)
+                    if dmin_val == bound:
+                        bound = get_val_plus_delta(datatype, bound, -1 * delta)
                 else:
                     bound = get_LB(pred)
+                    if dmin_val == bound:
+                        bound = get_val_plus_delta(datatype, bound, delta)
                 # print(f"attrib {get_attrib(tab_attrib)} mutate with {bound}")
                 self.connectionHelper.execute_sql([update_tab_attrib_with_value(get_attrib(tab_attrib),
                                                                                 get_tab(tab_attrib),

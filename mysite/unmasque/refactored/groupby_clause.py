@@ -3,6 +3,8 @@ import ast
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import isQ_result_empty, get_val_plus_delta, get_format, get_dummy_val_for, \
     get_char
+from ..src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from ..src.util.ConnectionHelper import ConnectionHelper
 
 NON_TEXT_TYPES = ['date', 'int', 'integer', 'numeric', 'float']
 
@@ -12,7 +14,7 @@ def has_attrib_key_condition(attrib, attrib_inner, key_list):
 
 
 class GroupBy(GenerationPipeLineBase):
-    def __init__(self, connectionHelper, delivery, projected_attribs):
+    def __init__(self, connectionHelper: ConnectionHelper, delivery: PackageForGenPipeline, projected_attribs: list):
         super().__init__(connectionHelper, "Group By", delivery)
         self.projected_attribs = projected_attribs
         self.has_groupby = False
