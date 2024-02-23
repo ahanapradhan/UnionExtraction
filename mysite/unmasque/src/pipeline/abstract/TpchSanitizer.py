@@ -37,7 +37,6 @@ class TpchSanitizer:
     def is_view_or_table(self, table_or_view_name: str) -> Literal['view', 'table']:
         # Reference: https://www.postgresql.org/docs/current/infoschema-tables.html
         check_query = self.select_query(["table_type"], [f" table_name = '{table_or_view_name}'"])
-        # check_query = "select table_type " + self.from_where_catalog() + f" and table_name = '{table_or_view_name}'"
         res, _ = self.connectionHelper.execute_sql_fetchall(check_query)
 
         if len(res) > 0:

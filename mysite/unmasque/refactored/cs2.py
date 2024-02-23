@@ -47,21 +47,27 @@ class Cs2(Base):
 
     def doActualJob(self, args):
         sizes = self.getSizes_cs()
+
+        if not self.connectionHelper.config.use_cs2:
+            self.logger.info("Sampling is disabled from config.")
+            return False
+
         self.take_backup()
         query = self.extract_params_from_args(args)
 
         while self.iteration_count > 0:
             done = self.correlated_sampling(query, sizes)
             if not done:
-                self.logger.info('sampling failed ...on attempt no: ', self.iteration_count)
+                self.logger.info(f"sampling failed on attempt no: {self.iteration_count}")
                 self.seed_sample_size_per *= self.sample_per_multiplier
                 self.iteration_count -= 1
             else:
                 self.passed = True
+                self.logger.info("Sampling is successful!")
                 return True
 
         self.restore()
-        self.logger.info("correlated sampling failed!.. starting with halving based minimization..")
+        self.logger.info("Starting with halving based minimization..")
         return False
 
     def take_backup(self):
@@ -93,7 +99,6 @@ class Cs2(Base):
         # check for null free rows and not just nonempty results
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
-            self.logger.debug('sampling failed in iteraation')
             for table in self.core_relations:
                 self.connectionHelper.execute_sqls_with_DictCursor([drop_table(table)])
                 self.sample[table] = sizes[table]
@@ -129,7 +134,7 @@ class Cs2(Base):
                 res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(base_table))
                 self.logger.debug(base_table, res)
 
-                # sample remaining tables from key_list using the sampled base table
+            # sample remaining tables from key_list using the sampled base table
             for i in range(0, len(key_list)):
                 tabname2 = key_list[i][0]
                 key2 = key_list[i][1]
@@ -138,13 +143,8 @@ class Cs2(Base):
                 if tabname2 != base_table and tabname2 in self.core_relations:
                     limit_row = sizes[tabname2]
                     self.connectionHelper.execute_sqls_with_DictCursor([
-                        "insert into " + tabname2 +
-                        " select * from " + tabname2 + "_restore "
-                                                       "where " + key2 + " in (select distinct("
-                        + base_key + ") from "
-                        + base_table + ") and "
-                        + key2 + " not in (select distinct("
-                        + key2 + ") from "
-                        + tabname2 + " ) Limit " + str(limit_row) + " ;"])
+                        f"insert into {tabname2} select * from {tabname2}_restore "
+                        f"where {key2} in (select distinct({base_key}) from {base_table}) "
+                        f"and {key2} not in (select distinct({key2}) from {tabname2}) Limit {str(limit_row)} ;"])
                     res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname2))
                     self.logger.debug(tabname2, res)

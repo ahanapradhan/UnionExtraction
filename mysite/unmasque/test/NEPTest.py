@@ -62,8 +62,7 @@ class MyTestCase(BaseTestCase):
         join_graph = []
 
         global_min_instance_dict = {}
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
-                filters, q_gen, global_min_instance_dict, aoa_predicates)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -143,9 +142,7 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
-                filters, q_gen,
-                global_min_instance_dict, aoa_predicates)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -200,9 +197,7 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         join_graph = []
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
-                filters, q_gen,
-                global_min_instance_dict, aoa_predicates)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -265,9 +260,7 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         join_graph = []
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
-                filters, q_gen,
-                global_min_instance_dict, aoa_predicates)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -334,9 +327,7 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         join_graph = []
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
-                filters, q_gen,
-                global_min_instance_dict, aoa_predicates)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -437,9 +428,7 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
-                filters, q_gen,
-                global_min_instance_dict, aoa_predicates)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -531,8 +520,7 @@ class MyTestCase(BaseTestCase):
         join_graph = [['c_custkey', 'o_custkey'],
                       ['o_orderkey', 'l_orderkey']]
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
-                filters, q_gen, global_min_instance_dict, aoa_predicates)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -625,8 +613,7 @@ class MyTestCase(BaseTestCase):
         join_graph = [['c_custkey', 'o_custkey'],
                       ['o_orderkey', 'l_orderkey']]
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
-                filters, q_gen, global_min_instance_dict, aoa_predicates)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -728,8 +715,7 @@ class MyTestCase(BaseTestCase):
         join_graph = [['ps_suppkey', 's_suppkey'],
                       ['s_nationkey', 'n_nationkey']]
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, global_all_attribs, global_attrib_types, join_graph,
-                filters, q_gen, global_min_instance_dict, aoa_predicates)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 

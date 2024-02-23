@@ -47,6 +47,7 @@ SCHEMA = "schema"
 LEVEL = "level"
 DETECT_UNION = "union"
 DETECT_NEP = "nep"
+USE_CS2 = "cs2"
 
 WAITING = "_WAITING"
 DONE = "_DONE"

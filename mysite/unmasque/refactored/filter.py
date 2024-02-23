@@ -82,7 +82,7 @@ class Filter(MutationPipeLineBase):
         query = self.extract_params_from_args(args)
         self.do_init()
         self.filter_predicates = self.get_filter_predicates(query)
-        self.logger.debug(self.filter_predicates)
+        # self.logger.debug(self.filter_predicates)
         return self.filter_predicates
 
     def prepare_attrib_set_for_bulk_mutation(self, attrib_list):
@@ -115,7 +115,7 @@ class Filter(MutationPipeLineBase):
                 # if attrib not in self.global_key_attributes:  # filter is allowed only on non-key attribs
                 self.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
 
-                self.logger.debug("filter_attribs", filter_attribs)
+                # self.logger.debug("filter_attribs", filter_attribs)
         return filter_attribs
 
     def extract_filter_on_attrib_set(self, filter_attribs, query, attrib_list, datatype):
@@ -248,7 +248,6 @@ class Filter(MutationPipeLineBase):
 
     def run_app_with_mid_val(self, datatype, high, low, query, query_front_set):
         mid_val = get_mid_val(datatype, high, low)
-        # self.logger.debug(f"low: {low}, high: {high}, mid: {mid_val}")
         for q_front in query_front_set:
             update_query = form_update_query_with_value(q_front, datatype, mid_val)
             self.connectionHelper.execute_sql([update_query])

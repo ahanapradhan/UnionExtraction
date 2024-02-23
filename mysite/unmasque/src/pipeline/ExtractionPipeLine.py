@@ -152,8 +152,6 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
 
-        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
-
         self.update_state(ORDER_BY + START)
         ob = OrderBy(self.connectionHelper, pj.projected_attribs, pj.projection_names, pj.dependencies,
                      agg.global_aggregated_attributes, delivery)
@@ -166,8 +164,6 @@ class ExtractionPipeLine(GenericPipeLine):
         if not ob.done:
             self.logger.error("Some error while extracting order by. Aborting extraction!")
             return None, time_profile
-
-        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
 
         self.update_state(LIMIT + START)
         lm = Limit(self.connectionHelper, gb.group_by_attrib, delivery)
@@ -185,8 +181,7 @@ class ExtractionPipeLine(GenericPipeLine):
         eq = q_generator.generate_query_string(core_relations, pj, gb, agg, ob, lm, aoa)
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self.extract_NEP(core_relations, cs2, eq, q_generator, query, time_profile, vm, global_all_attribs,
-                              global_attrib_types, aoa)
+        eq = self.extract_NEP(core_relations, cs2.sizes, eq, q_generator, query, time_profile, delivery)
 
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
@@ -194,13 +189,10 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(DONE)
         return eq, time_profile
 
-    def extract_NEP(self, core_relations, cs2, eq, q_generator, query, time_profile, vm, global_all_attribs,
-                    global_attrib_types, aoa):
+    def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
         if self.connectionHelper.config.detect_nep:
             self.update_state(NEP_ + START)
-            nep = NEP(self.connectionHelper, core_relations, cs2.sizes, global_all_attribs, global_attrib_types,
-                      aoa.join_graph, aoa.filter_predicates, q_generator, vm.global_min_instance_dict,
-                      aoa.aoa_predicates)
+            nep = NEP(self.connectionHelper, core_relations, sizes, q_generator, delivery)
             self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
             if nep.Q_E:

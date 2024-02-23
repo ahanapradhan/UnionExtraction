@@ -532,7 +532,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         data[1] = tuple(new_data)
 
     def revert_mutation_on_filter_global_min_instance_dict(self):
-        self.filter_extractor.global_min_instance_dict = self.global_min_instance_dict
+        self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
 
     def do_bound_check_again(self, tab_attrib, datatype, query):
         filter_attribs = []

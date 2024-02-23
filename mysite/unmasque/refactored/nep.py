@@ -19,8 +19,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
     Of course we can set this cutoff to much higher value if needed.
     '''
 
-    def __init__(self, connectionHelper, core_relations, all_sizes, global_all_attribs, global_attrib_types,
-                 join_graph, filter_predicates, query_generator, global_min_instance_dict, aoa_predicates):
+    def __init__(self, connectionHelper, core_relations, all_sizes, query_generator, delivery):
         Minimizer.__init__(self, connectionHelper, core_relations, all_sizes, "NEP")
         GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", delivery)
         self.filter_attrib_dict = {}
@@ -110,8 +109,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
     def get_mid_ctids(self, core_sizes, tabname, tabname1):
         start_page, start_row = self.get_boundary("min", tabname1)
         end_page, end_row = self.get_boundary("max", tabname1)
-        start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
-        end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
+        start_ctid = f"({str(start_page)},{str(start_row)})"
+        end_ctid = f"({str(end_page)},{str(end_row)})"
         mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid
 
