@@ -33,7 +33,7 @@ def login_view(request):
             error_message = 'Invalid credentials. Please try again.'
             return render(request, 'unmasque/login.html', {'error_message': error_message})
 
-        connHelper = ConnectionHelper(dbname=database, user=username, password=password, port=port, host=host)
+        connHelper = ConnectionHelper()
         token = start_extraction_pipeline_async(connHelper, query, request)
         return redirect(f'progress/{token}')
 

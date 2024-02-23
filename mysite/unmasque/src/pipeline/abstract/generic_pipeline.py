@@ -32,7 +32,7 @@ def synchronized(wrapped):
 
 class PipeLineState(object):
     state = None
-
+    info = {}
     def set(self, state):
         self.state = state
 
@@ -48,6 +48,7 @@ class GenericPipeLine:
 
     def __init__(self, connectionHelper, name):
         self.update_state(WAITING)
+        self.info = {}
         self.connectionHelper = connectionHelper
         self.pipeline_name = name
         self.time_profile = create_zero_time_profile()
