@@ -238,13 +238,10 @@ class MyTestCase(BaseTestCase):
         aoa, check = self.run_pipeline(from_rels, query)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.filter_predicates)
-        print(aoa.aoa_predicates)
         print(aoa.where_clause)
         self.assertTrue("l_shipdate < l_commitdate" in aoa.where_clause)
         self.assertTrue("l_commitdate < l_receiptdate" in aoa.where_clause)
         self.conn.closeConnection()
-        #  and l_commitdate < l_receiptdate
 
     def test_paper_subquery1_projection(self):
         self.conn.connectUsingParams()

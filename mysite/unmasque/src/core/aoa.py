@@ -5,314 +5,16 @@ from typing import Union
 from mysite.unmasque.refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
 from mysite.unmasque.refactored.util.common_queries import update_tab_attrib_with_value
-from mysite.unmasque.refactored.util.utils import get_format, get_datatype_of_val, get_min_and_max_val, \
+from mysite.unmasque.refactored.util.utils import get_format, get_min_and_max_val, \
     get_val_plus_delta
 from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
 from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
-
-
-def is_sublist(lst, sublist):
-    lst_hash = [hash(el) for el in lst]
-    sublist_hash = [hash(el) for el in sublist]
-
-    seq = []
-    for s in sublist_hash:
-        if s in lst_hash:
-            s_idx = lst_hash.index(s)
-            seq.append(s_idx)
-    if not len(seq):
-        return False
-    start = seq[0]
-    for i in range(1, len(seq)):
-        if start + 1 != seq[i]:
-            return False
-        start = start + 1
-    return True
-
-
-def remove_subchians(chains):
-    to_remove = []
-    seq = get_all_two_combs(chains)
-    for s in seq:
-        if is_sublist(s[0], s[1]):
-            to_remove.append(s[1])
-    for r in to_remove:
-        chains.remove(r)
-    return chains
-
-
-def find_chains(graph, start, path=[]):
-    path = path + [start]
-    if start not in graph:
-        return [path]
-    chains = []
-    for node in graph[start]:
-        if node not in path:
-            new_chains = find_chains(graph, node, path)
-            for new_chain in new_chains:
-                chains.append(new_chain)
-    return chains
-
-
-def find_all_chains(input_map):
-    # Find all possible chains
-    all_chains = []
-    for key in input_map:
-        chains = find_chains(input_map, key)
-        all_chains.extend(chains)
-    _all_chains = remove_subchians(all_chains)
-    return _all_chains
-
-
-def get_all_two_combs(items):
-    seq = []
-    for i in range(0, len(items)):
-        for j in range(i + 1, len(items)):
-            seq.append([items[i], items[j]])
-    return seq
-
-
-def get_LB(pred):
-    return pred[3]
-
-
-def get_UB(pred):
-    return pred[4]
-
-
-def get_attrib(pred):
-    return pred[1]
-
-
-def get_tab(pred):
-    return pred[0]
-
-
-def create_attrib_set_from_filter_predicates(ineq_group):
-    C_E = set()
-    for pred in ineq_group:
-        C_E.add((get_tab(pred), get_attrib(pred)))
-    return list(C_E)
-
-
-def create_adjacency_map_from_aoa_predicates(aoa_preds, skip_tuples=True):
-    C_E = {}
-    for pred in aoa_preds:
-        if skip_tuples and (not isinstance(pred[0], tuple) or not isinstance(pred[1], tuple)):
-            continue
-        if pred[0] in C_E.keys():
-            C_E[pred[0]].append(pred[1])
-        else:
-            C_E[pred[0]] = [pred[1]]
-    return C_E
-
-
-def get_out_edges(edge_set, tab_attrib):
-    next_attribs = []
-    for edge in edge_set:
-        if edge[0] == tab_attrib and isinstance(edge[1], tuple) and len(edge[1]) == 2:
-            next_attribs.append(edge[1])
-    return next_attribs
-
-
-def get_concrete_LB_in_edge(edge_set, tab_attrib):
-    for edge in edge_set:
-        if edge[1] == tab_attrib and not isinstance(edge[0], tuple):
-            return edge
-
-
-def get_concrete_UB_out_edge(edge_set, tab_attrib):
-    for edge in edge_set:
-        if edge[0] == tab_attrib and not isinstance(edge[1], tuple):
-            return edge
-
-
-def left_over_aoa_CBs(absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, edge_set):
-    for edge in edge_set:
-        if not isinstance(edge[0], tuple):
-            if edge[1] not in aoa_CB_LBs or edge[1] not in absorbed_LBs:
-                aoa_CB_LBs[edge[1]] = edge[0]
-        if not isinstance(edge[1], tuple):
-            if edge[0] not in aoa_CB_UBs or edge[0] not in absorbed_UBs:
-                aoa_CB_UBs[edge[0]] = edge[1]
-
-
-def partitions_with_min_elements(arr, min_elements=2):
-    n = len(arr)
-
-    # Memoization dictionary to store already computed partitions
-    memo = {}
-
-    def dp(index, subsets, min_elements):
-        if index == n:
-            key = tuple(tuple(sorted(subset)) for subset in subsets)
-            if all(len(subset) >= min_elements for subset in subsets):
-                return [subsets] if key not in memo else []
-            else:
-                return []
-
-        key = (index, tuple(tuple(sorted(subset)) for subset in subsets))
-        if key in memo:
-            return memo[key]
-
-        result = []
-
-        for i, subset in enumerate(subsets):
-            new_subsets = subsets[:i] + [subset + [arr[index]]] + subsets[i + 1:]
-            result += dp(index + 1, new_subsets, min_elements)
-
-        if len(subsets) < min_elements:
-            result += dp(index + 1, subsets + [[arr[index]]], min_elements)
-
-        memo[key] = result
-        return result
-
-    partitions = dp(0, [[]] * min_elements, min_elements)
-    return partitions
-
-
-def process_entry(l):
-    _l = []
-    for em in l:
-        em_set = frozenset(em)
-        _l.append(em_set)
-    return frozenset(_l)
-
-
-def merge_equivalent_paritions(arr):
-    paritions = partitions_with_min_elements(arr)
-    em_dict = {}
-    for p in paritions:
-        s = process_entry(p)
-        key = hash(s)
-        if key not in em_dict:
-            em_dict[key] = s
-    my_list = list(em_dict.values())
-    return my_list
-
-
-def add_concrete_bounds_as_edge(pred_list, edge_set):
-    for pred in pred_list:
-        if pred[2] == '<=':
-            edge_set.append([(get_tab(pred), get_attrib(pred)), get_UB(pred)])
-        elif pred[2] == '>=':
-            edge_set.append([get_LB(pred), (get_tab(pred), get_attrib(pred))])
-        elif pred[2] == 'range':
-            edge_set.append([get_LB(pred), (get_tab(pred), get_attrib(pred))])
-            edge_set.append([(get_tab(pred), get_attrib(pred)), get_UB(pred)])
-
-
-def create_v_lj_2(ineq_group, c):
-    tab, attrib = c[0], c[1]
-    for pred in ineq_group:
-        if pred[0] == tab and pred[1] == attrib and (pred[2] == '>='):
-            return pred[3]
-
-
-def add_pred_for(aoa_l, pred):
-    if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
-        pred.append(aoa_l[1])
-    else:
-        pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
-    return aoa_l
-
-
-def adjust_Bounds(LB_impact, UB_impact, absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, attrib, c, edge_set):
-    _LB = get_concrete_LB_in_edge(edge_set, c)
-    _UB = get_concrete_UB_out_edge(edge_set, attrib)
-    absorbed = False
-    if UB_impact and LB_impact:
-        if _LB:
-            absorbed_LBs[_LB[1]] = _LB[0]
-            edge_set.remove(_LB)
-        if _UB:
-            absorbed_UBs[_UB[0]] = _UB[1]
-            edge_set.remove(_UB)
-        absorbed = True
-    elif not UB_impact and not LB_impact:
-        edge_set.remove((attrib, c))
-    if not absorbed:
-        if _LB:
-            aoa_CB_LBs[_LB[1]] = _LB[0]
-        if _UB:
-            aoa_CB_UBs[_UB[0]] = _UB[1]
-
-
-def adjust_Bounds2(LB_impact, UB_impact, absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, attrib, c, edge_set):
-    _LB = get_concrete_LB_in_edge(edge_set, c)
-    _UB = get_concrete_UB_out_edge(edge_set, attrib)
-    if _UB:
-        if UB_impact:
-            absorbed_UBs[_UB[0]] = _UB[1]
-            edge_set.remove(_UB)
-        else:
-            aoa_CB_UBs[_UB[0]] = _UB[1]
-    if _LB:
-        if LB_impact:
-            absorbed_LBs[_LB[1]] = _LB[0]
-            edge_set.remove(_LB)
-        else:
-            aoa_CB_LBs[_LB[1]] = _LB[0]
-
-    if not UB_impact and not LB_impact:
-        edge_set.remove((attrib, c))
-
-
-def get_val_bound_for_chain(i_min, i_max, filter_attrib, is_UB):
-    if not len(filter_attrib):
-        if is_UB:
-            val = i_max
-        else:
-            val = i_min
-    else:
-        if is_UB:
-            val = filter_attrib[0][4]
-        else:
-            val = filter_attrib[0][3]
-    return val
-
-
-def get_min_max_for_chain_bounds(i_min, i_max, tab_attrib, a_b, is_UB):
-    if is_UB:
-        if tab_attrib in a_b.keys():
-            min_val = a_b[tab_attrib]
-        else:
-            min_val = i_min
-        max_val = i_max
-    else:
-        if tab_attrib in a_b.keys():
-            max_val = a_b[tab_attrib]
-        else:
-            max_val = i_max
-        min_val = i_min
-    return min_val, max_val
-
-
-def split_directed_path(directed_path, is_UB):
-    if is_UB:
-        return directed_path[-1], directed_path[:-1]
-    else:
-        return directed_path[0], directed_path[1:]
-
-
-def optimize_by_matrix(C_E, aoa_predicates, h, w):
-    m = [[0 for x in range(w)] for y in range(h)]
-    for pred in aoa_predicates:
-        src_idx = C_E.index(pred[0])
-        snk_idx = C_E.index(pred[1])
-        m[src_idx][snk_idx] = 1
-    to_remove = []
-    for x in range(h):
-        for y in range(h):
-            if x != y:
-                for c in range(w):
-                    if m[x][c] and m[y][c] and m[x][y]:
-                        to_remove.append((x, c))
-    for r in to_remove:
-        x, c = r[0], r[1]
-        m[x][c] = 0
-    return m
+from mysite.unmasque.src.util.aoa_utils import get_UB, get_attrib, get_max, get_delta, get_min, get_tab, get_LB, \
+    get_min_max_for_chain_bounds, split_directed_path, add_pred_for, get_val_bound_for_chain, \
+    add_concrete_bounds_as_edge, optimize_edge_set, create_adjacency_map_from_aoa_predicates, find_all_chains, \
+    get_LB_of_next_attrib, adjust_Bounds2, left_over_aoa_CBs, get_all_two_combs, merge_equivalent_paritions, \
+    get_out_edges, create_attrib_set_from_filter_predicates
 
 
 class AlgebraicPredicate(MutationPipeLineBase):
@@ -324,7 +26,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
         self.pipeline_delivery = None
 
-        self.aoa_predicates = None
+        self.aoa_predicates = []
         self.arithmetic_eq_predicates = []
         self.algebraic_eq_predicates = []
         self.arithmetic_ineq_predicates = []
@@ -335,6 +37,14 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
         self.join_graph = []
         self.filter_predicates = []
+
+        self.constants_dict = {}
+
+    def init_constants(self):
+        for datatype in ['date', 'int', 'numeric']:
+            i_min, i_max = get_min_and_max_val(datatype)
+            delta, _ = get_constants_for(datatype)
+            self.constants_dict[datatype] = (i_min, i_max, delta)
 
     def post_process_for_generation_pipeline(self):
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
@@ -389,6 +99,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
     def doActualJob(self, args):
         self.filter_extractor.mock = self.mock
         query = self.extract_params_from_args(args)
+        self.init_constants()
         check = self.filter_extractor.doJob(query)
         if not check:
             return False
@@ -401,18 +112,25 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 if len(pred) == 5:
                     ineqaoa_preds.append(pred)
 
-        self.aoa_predicates, maps = self.find_ineq_aoa_algo3(query, ineqaoa_preds)
-        self.optimize_aoa()
+        # self.aoa_predicates, maps = self.find_ineq_aoa_algo3(query, ineqaoa_preds)
+        self.find_ineq_aoa_algo3_1(query, ineqaoa_preds)
 
-        directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_predicates))
-        a_LBs, a_UBs, aoa_LBs, aoa_UBs = maps[0], maps[1], maps[2], maps[3]
-        print(self.aoa_predicates)
-        for path in directed_paths:
-            self.check_for_dormant_CB(path, a_LBs, aoa_LBs, query, False)
-            self.check_for_dormant_CB(path, a_UBs, aoa_UBs, query, True)
+        # optimize_edge_set(self.aoa_predicates)
 
-        self.organize_less_thans()
-        self.optimize_aoa()
+        # self.revert_mutation_on_filter_global_min_instance_dict()
+        # self.generate_where_clause()
+        # self.post_process_for_generation_pipeline()
+        # return True
+
+        # directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_predicates))
+        # a_LBs, a_UBs, aoa_LBs, aoa_UBs = maps[0], maps[1], maps[2], maps[3]
+        # print(self.aoa_predicates)
+        # for path in directed_paths:
+        # self.check_for_dormant_CB(path, a_LBs, aoa_LBs, query, False)
+        #    self.check_for_dormant_CB(path, a_UBs, aoa_UBs, query, True)
+
+        # self.organize_less_thans()
+        # optimize_edge_set(self.aoa_predicates)
         self.revert_mutation_on_filter_global_min_instance_dict()
 
         self.generate_where_clause()
@@ -427,35 +145,18 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 self.logger.debug("Weired!")
                 pass
 
-    def optimize_aoa(self):
-        nodes = set()
-        for pred in self.aoa_predicates:
-            nodes.add(pred[0])
-            nodes.add(pred[1])
-        C_E = list(nodes)
-        w, h = len(C_E), len(C_E)
-        m = optimize_by_matrix(C_E, self.aoa_predicates, h, w)
-        for x in range(h):
-            for c in range(w):
-                if not m[x][c]:
-                    for aoa in self.aoa_predicates:
-                        if aoa[0] == C_E[x] and aoa[1] == C_E[c]:
-                            self.aoa_predicates.remove(aoa)
-
     def add_CB_to_aoa(self, datatype: str, cb_b, is_UB: bool):
-        i_min, i_max = get_min_and_max_val(datatype)
-        delta, while_cut_off = get_constants_for(datatype)
         if is_UB:
-            l_val = get_val_plus_delta(datatype, get_UB(cb_b), 2 * delta)
-            if l_val == i_max:
+            l_val = get_val_plus_delta(datatype, get_UB(cb_b), 2 * get_delta(self.constants_dict[datatype]))
+            if l_val == get_max(self.constants_dict[datatype]):
                 return False
-            if get_UB(cb_b) != i_max:
+            if get_UB(cb_b) != get_max(self.constants_dict[datatype]):
                 self.aoa_predicates.append([(get_tab(cb_b), get_attrib(cb_b)), get_UB(cb_b)])
         else:
-            l_val = get_val_plus_delta(datatype, get_LB(cb_b), -2 * delta)
-            if l_val == i_min:
+            l_val = get_val_plus_delta(datatype, get_LB(cb_b), -2 * get_delta(self.constants_dict[datatype]))
+            if l_val == get_min(self.constants_dict[datatype]):
                 return False
-            if get_LB(cb_b) != i_min:
+            if get_LB(cb_b) != get_min(self.constants_dict[datatype]):
                 self.aoa_predicates.append([get_LB(cb_b), (get_tab(cb_b), get_attrib(cb_b))])
         return True
 
@@ -480,11 +181,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
             datatype = self.get_datatype((get_tab(cb_b), get_attrib(cb_b)))
             check = self.add_CB_to_aoa(datatype, cb_b, is_UB)
             if not check:
-                # it is less then relationship. Not less than equl to. How to represent it?
-                if len(pending_path) and not is_UB:
-                    other_tab_attrib = pending_path[0]
-                    self.logger.debug(f"{cb_b[1]} < {other_tab_attrib[1]}. Not <=. How to indicate it? ", cb_b)
-                    self.aoa_less_thans.append((tab_attrib, other_tab_attrib))
                 not_cb.add(cb_b)
         for cb_b in not_cb:
             filter_attribs.remove(cb_b)
@@ -500,16 +196,20 @@ class AlgebraicPredicate(MutationPipeLineBase):
             if key in aoa_Bs.keys():
                 val = aoa_Bs[key]
         if val is None:
-            i_min, i_max = get_min_and_max_val(datatype)
-            min_val, max_val = get_min_max_for_chain_bounds(i_min, i_max, tab_attrib, a_Bs, is_UB)
+            min_val, max_val = get_min_max_for_chain_bounds(get_min(self.constants_dict[datatype]),
+                                                            get_max(self.constants_dict[datatype]),
+                                                            tab_attrib, a_Bs, is_UB)
             prep = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(tab_attrib_eq_group)
             self.filter_extractor.handle_filter_for_nonTextTypes(prep, datatype, filter_attribs, max_val, min_val,
                                                                  query)
-            val = get_val_bound_for_chain(i_min, i_max, filter_attribs, is_UB)
+            val = get_val_bound_for_chain(get_min(self.constants_dict[datatype]),
+                                          get_max(self.constants_dict[datatype]),
+                                          filter_attribs, is_UB)
         for key in tab_attrib_eq_group:
             tab, attrib = key[0], key[1]
             self.mutate_filter_global_min_instance_dict(tab, attrib, val)
             self.connectionHelper.execute_sql([update_tab_attrib_with_value(attrib, tab, get_format(datatype, val))])
+            self.logger.debug(update_tab_attrib_with_value(attrib, tab, get_format(datatype, val)))
 
     def mutate_filter_global_min_instance_dict(self, tab: str, attrib: str, val):
         g_min_dict = self.filter_extractor.global_min_instance_dict
@@ -526,7 +226,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
     def revert_mutation_on_filter_global_min_instance_dict(self):
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
 
-    def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str):
+    def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str) -> list:
         filter_attribs = []
         d_plus_value = copy.deepcopy(self.filter_extractor.global_d_plus_value)
         attrib_max_length = copy.deepcopy(self.filter_extractor.global_attrib_max_length)
@@ -534,26 +234,22 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
         return filter_attribs
 
-    def is_dmin_val_leq_LB(self, other, myself):
-        tab, attrib, _oB = myself[0], myself[1], myself[4]
-        _B = other[3]
-        val = self.get_dmin_val(attrib, tab)
-        self.logger.debug(f"dmin.{attrib} = {val}, {other[1]}.LB = {_B}")
-        satisfied = self.do_numeric_drama(_B, _oB, attrib, tab, val)
+    def is_dmin_val_leq_LB(self, myself, other) -> bool:
+        val = self.get_dmin_val(get_attrib(myself), get_tab(myself))
+        satisfied = self.do_numeric_drama(get_LB(other), get_UB(myself), get_attrib(myself), get_tab(myself), val)
         return satisfied
 
-    def do_numeric_drama(self, _B, _oB, attrib, tab, val):
+    def do_numeric_drama(self, other_LB, my_UB, attrib, tab, my_val):
         datatype = self.get_datatype((tab, attrib))
-        satisfied = val <= _B  # <= _oB
+        satisfied = my_val <= other_LB  # <= _oB
         # all the following DRAMA is to handle "numeric" datatype
         if datatype == 'numeric':
-            delta, _ = get_constants_for(datatype)
-            bck_diff_1 = val - _B
+            bck_diff_1 = my_val - other_LB
             # bck_diff_2 = _B - _oB
             alt_sat = True
             if not satisfied:
                 if bck_diff_1 > 0:
-                    alt_sat = alt_sat & (abs(bck_diff_1) <= delta)
+                    alt_sat = alt_sat & (abs(bck_diff_1) <= get_delta(self.constants_dict[datatype]))
                 # if bck_diff_2 > 0:
                 #    alt_sat = alt_sat & (abs(bck_diff_2) <= delta)
             return alt_sat or satisfied
@@ -579,9 +275,10 @@ class AlgebraicPredicate(MutationPipeLineBase):
             for attrib in unvisited:
                 C_next = get_out_edges(edge_set, attrib)
                 for c_attrib in C_next:
-                    v_prev = create_v_lj_2(ineq_group, c_attrib)
-                    UB_impact = self.is_impacted_by_Bound(attrib, c_attrib, ineq_group, key, query, v_prev, True)
-                    LB_impact = self.is_impacted_by_Bound(attrib, c_attrib, ineq_group, key, query, v_prev, False)
+                    v_prev = get_LB_of_next_attrib(ineq_group, c_attrib)
+                    UB_impact = self.is_nextLB_impacted_by_Bound(attrib, c_attrib, ineq_group, key, query, v_prev, True)
+                    LB_impact = self.is_nextLB_impacted_by_Bound(attrib, c_attrib, ineq_group, key, query, v_prev,
+                                                                 False)
                     adjust_Bounds2(LB_impact, UB_impact,
                                    absorbed_LBs, absorbed_UBs,
                                    aoa_CB_LBs, aoa_CB_UBs,
@@ -590,17 +287,114 @@ class AlgebraicPredicate(MutationPipeLineBase):
             E.extend(edge_set)
         return E, (absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs)
 
-    def is_impacted_by_Bound(self, attrib, c, ineq_group, key, query, v_prev, is_UB):
-        datatype = self.get_datatype(attrib)
-        i_min, i_max = get_min_and_max_val(datatype)
-        self.mutate_attrib_with_Bound_val(attrib, key, ineq_group, is_UB)
-        f_e = self.do_bound_check_again(c, key, query)
-        self.revert_mutation_on_filter_global_min_instance_dict()
+    def find_ineq_aoa_algo3_1(self,
+                              query: str,
+                              ineqaoa_preds: list[tuple[str, str, str,
+                              Union[int, date, float],
+                              Union[int, date, float]]]) -> None:
+
+        absorbed_UBs, absorbed_LBs, aoa_CB_UBs, aoa_CB_LBs = {}, {}, {}, {}
+        filtered_dict = self.isolate_ineq_aoa_preds_per_datatype(ineqaoa_preds)
+        for key in filtered_dict:
+            edge_set = []
+            ineq_group = filtered_dict[key]
+            self.create_dashed_edges(ineq_group, edge_set)
+            optimize_edge_set(edge_set)
+            add_concrete_bounds_as_edge(ineq_group, edge_set)
+            c_e_dict = create_adjacency_map_from_aoa_predicates(edge_set)
+            directed_paths = find_all_chains(c_e_dict)
+            for path in directed_paths:
+                while len(path) > 1:
+                    path = self.extract_ineq_for_an_edge(absorbed_LBs, absorbed_UBs,
+                                                         aoa_CB_LBs, aoa_CB_UBs,
+                                                         edge_set,
+                                                         ineq_group,
+                                                         key, path, query)
+
+            self.aoa_predicates.extend(edge_set)
+
+    def extract_ineq_for_an_edge(self, absorbed_LBs, absorbed_UBs,
+                                 aoa_CB_LBs, aoa_CB_UBs,
+                                 edge_set,
+                                 ineq_group,
+                                 datatype,
+                                 path,
+                                 query):
+        tab_attrib, pending_path = split_directed_path(path, False)
+        next_attrib = pending_path[0]
+        prev_lb = get_LB_of_next_attrib(ineq_group, next_attrib)
+        UB_impact = self.is_nextLB_impacted_by_Bound(tab_attrib, next_attrib, ineq_group, datatype, query, prev_lb,
+                                                     True)
+        LB_impact = self.is_nextLB_impacted_by_Bound(tab_attrib, next_attrib, ineq_group, datatype, query, prev_lb,
+                                                     False)
+        solid_edge = adjust_Bounds2(LB_impact, UB_impact,
+                                    absorbed_LBs, absorbed_UBs,
+                                    aoa_CB_LBs, aoa_CB_UBs,
+                                    tab_attrib, next_attrib, edge_set)
+        left_over_aoa_CBs(absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, edge_set)
+        if solid_edge:
+            tab_attrib_eq_group = self.get_equi_join_group(tab_attrib)
+            filter_attribs = []
+            self.mutate_with_boundary_value(absorbed_LBs, aoa_CB_LBs, datatype, filter_attribs, False, query,
+                                            tab_attrib,
+                                            tab_attrib_eq_group)
+            self.update_ineq_group(datatype, ineq_group, [tab_attrib, next_attrib], query)
+            not_cb = set()
+            for cb_b in filter_attribs:
+                check = self.add_CB_to_aoa(datatype, cb_b, False)  # or self.add_CB_to_aoa(key, cb_b, True)
+                if not check:
+                    self.aoa_less_thans.append((tab_attrib, next_attrib))
+                    edge_set.remove((tab_attrib, next_attrib))
+                    not_cb.add(cb_b)
+            for cb_b in not_cb:
+                filter_attribs.remove(cb_b)
+        path = pending_path
+        return path
+
+    def update_ineq_group(self, datatype: str,
+                          ineq_group: list,
+                          tab_attrib_list: list[tuple[str, str]],
+                          query: str):
+        to_remove = []
+        to_add = []
+        for tab_attrib in tab_attrib_list:
+            f_e = self.do_bound_check_again(tab_attrib, datatype, query)
+            if not f_e:
+                to_add.append((get_tab(tab_attrib), get_attrib(tab_attrib), 'range',
+                               get_min(self.constants_dict[datatype]),
+                               get_max(self.constants_dict[datatype])))
+            else:
+                to_add.append(f_e[0])
+            for i in range(len(ineq_group)):
+                pred = ineq_group[i]
+                if get_tab(pred) == get_tab(tab_attrib) and get_attrib(pred) == get_attrib(tab_attrib):
+                    to_remove.append(i)
+        to_remove.sort(reverse=True)
+        for idx in to_remove:
+            if ineq_group[idx][2] == '=' or ineq_group[idx][2] == 'equal':
+                try:
+                    self.arithmetic_eq_predicates.remove(ineq_group[idx])
+                except ValueError:
+                    pass
+            del ineq_group[idx]
+        ineq_group.extend(to_add)
+
+    def is_nextLB_impacted_by_Bound(self, attrib: tuple[str, str], next_attrib: tuple[str, str],
+                                    ineq_group: list[tuple[str, str, str, any, any]],
+                                    datatype: str,
+                                    query: str,
+                                    prev_lb: Union[int, float, date],
+                                    is_UB: bool) -> bool:
+        old_dmin_dict = copy.deepcopy(self.global_min_instance_dict)
+        self.mutate_attrib_with_Bound_val(attrib, datatype, ineq_group, is_UB)
+        next_lb = self.do_bound_check_again(next_attrib, datatype, query)
+        self.global_min_instance_dict = old_dmin_dict
         _impact = False
-        # print(f"attrib {c} v_prev {v_prev} v_new {f_e[0][3]}")
-        if len(f_e) > 0 and v_prev != f_e[0][3]:
+        if len(next_lb) > 0 and prev_lb != get_LB(next_lb[0]):
             _impact = True
-        elif not f_e and v_prev != i_min and v_prev != i_max:
+        elif not next_lb \
+                and prev_lb != get_min(self.constants_dict[datatype]) \
+                and prev_lb != get_max(self.constants_dict[datatype]):
             _impact = True
         return _impact
 
@@ -612,11 +406,11 @@ class AlgebraicPredicate(MutationPipeLineBase):
             self.create_dashed_edge_from_oneTotwo(edge_set, two, one)
 
     def create_dashed_edge_from_oneTotwo(self, edge_set, one, two):
-        tab_attrib = (one[0], one[1])
-        peer_tab_attrib = (two[0], two[1])
-        check = self.is_dmin_val_leq_LB(one, two)
+        tab_attrib = (get_tab(one), get_attrib(one))
+        next_tab_attrib = (get_tab(two), get_attrib(two))
+        check = self.is_dmin_val_leq_LB(two, one)
         if check:
-            edge_set.append(tuple([peer_tab_attrib, tab_attrib]))
+            edge_set.append(tuple([next_tab_attrib, tab_attrib]))
 
     def isolate_ineq_aoa_preds_per_datatype(self,
                                             ineqaoa_preds: list[tuple[str, str, str,
@@ -631,7 +425,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 datatype_dict[datatype].append(pred)
             else:
                 datatype_dict[datatype] = [pred]
-        filtered_dict = {key: value for key, value in datatype_dict.items() if len(value) > 1}
+        filtered_dict = {key: value for key, value in datatype_dict.items() if key != 'str' and len(value) > 1}
         for key in datatype_dict:
             if len(datatype_dict[key]) == 1:
                 self.arithmetic_ineq_predicates.extend(datatype_dict[key])
@@ -704,19 +498,20 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 break
         return done
 
-    def mutate_attrib_with_Bound_val(self, tab_attrib: tuple, datatype: str, ineq_group: list, with_UB: bool):
+    def mutate_attrib_with_Bound_val(self, tab_attrib: tuple[str, str],
+                                     datatype: str,
+                                     ineq_group: list, with_UB: bool) -> None:
         for pred in ineq_group:
             if get_tab(tab_attrib) == get_tab(pred) and get_attrib(tab_attrib) == get_attrib(pred):
                 dmin_val = self.get_dmin_val(get_attrib(tab_attrib), get_tab(tab_attrib))
-                delta, _ = get_constants_for(datatype)
                 if with_UB:
                     bound = get_UB(pred)
                     if dmin_val == bound:
-                        bound = get_val_plus_delta(datatype, bound, -1 * delta)
+                        bound = get_val_plus_delta(datatype, bound, -1 * get_delta(self.constants_dict[datatype]))
                 else:
                     bound = get_LB(pred)
                     if dmin_val == bound:
-                        bound = get_val_plus_delta(datatype, bound, delta)
+                        bound = get_val_plus_delta(datatype, bound, get_delta(self.constants_dict[datatype]))
                 # print(f"attrib {get_attrib(tab_attrib)} mutate with {bound}")
                 self.connectionHelper.execute_sql([update_tab_attrib_with_value(get_attrib(tab_attrib),
                                                                                 get_tab(tab_attrib),
@@ -724,13 +519,3 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 self.mutate_filter_global_min_instance_dict(get_tab(tab_attrib),
                                                             get_attrib(tab_attrib), bound)
                 break
-
-    def remove_transitive_aoa_chains(self):
-        seqs = get_all_two_combs(self.aoa_predicates)
-        to_remove = []
-        for seq in seqs:
-            # if isinstance(seq[0], tuple) and isinstance(seq[1], tuple):
-            if seq[0][1] == seq[1][0] and (seq[0][0], seq[1][1]) in self.aoa_predicates:
-                to_remove.append((seq[0][0], seq[1][1]))
-        for t_r in to_remove:
-            self.aoa_predicates.remove(t_r)

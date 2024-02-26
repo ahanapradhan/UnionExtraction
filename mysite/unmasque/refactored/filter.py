@@ -33,7 +33,9 @@ def round_floor(num, places):
 
 class Filter(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: ConnectionHelper, core_relations: list[str], global_min_instance_dict: dict):
+    def __init__(self, connectionHelper: ConnectionHelper,
+                 core_relations: list[str],
+                 global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Filter")
         # init data
         self.global_attrib_types = []
@@ -45,6 +47,8 @@ class Filter(MutationPipeLineBase):
         self.global_attrib_dict = {}
 
         self.filter_predicates = None
+
+        self.mutate_dmin_with_val = None # method to be passed by aoa
 
     def do_init(self):
         for tabname in self.core_relations:
@@ -67,7 +71,7 @@ class Filter(MutationPipeLineBase):
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
 
-    def get_datatype(self, tab_attrib):
+    def get_datatype(self, tab_attrib: tuple[str, str]) -> str:
         if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer']):
             return 'int'
         elif 'date' in self.global_attrib_types_dict[tab_attrib]:
@@ -96,7 +100,7 @@ class Filter(MutationPipeLineBase):
             prepared_attrib_list.append(one_attrib)
         return prepared_attrib_list
 
-    def get_filter_predicates(self, query):
+    def get_filter_predicates(self, query: str) -> list:
         filter_attribs = []
         total_attribs = 0
         d_plus_value = copy.deepcopy(self.global_d_plus_value)
@@ -141,18 +145,22 @@ class Filter(MutationPipeLineBase):
             raise ValueError(" Not Handled! ")
 
     def checkAttribValueEffect(self, query, val, attrib_list):
-        tab_set = set()
+        prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
         for tab_attrib in attrib_list:
             tabname, attrib = tab_attrib[0], tab_attrib[1]
-            tab_set.add(tabname)
             self.connectionHelper.execute_sql([f"update {tabname} set {attrib} = {str(val)};"])
         new_result = self.app.doJob(query)
-        self.revert_filter_changes_in_tabset(tab_set)
+        self.revert_filter_changes_in_tabset(attrib_list, prev_values)
         return not isQ_result_empty(new_result)
 
-    def revert_filter_changes_in_tabset(self, tabset):
-        for tabname in tabset:
-            self.revert_filter_changes(tabname)
+    def revert_filter_changes_in_tabset(self, attrib_list, prev_val_list):
+        tab_attrib_set = set()
+        for i in range(len(attrib_list)):
+            tab_attrib = (attrib_list[i][0],attrib_list[i][1])
+            tab_attrib_set.add(tab_attrib)
+            val = prev_val_list[i]
+            datatype = self.get_datatype(tab_attrib)
+            self.mutate_dmin_with_val(datatype, tab_attrib, val)
 
     def handle_precision_filter(self, filterAttribs, query, attrib_list, min_val_domain, max_val_domain):
         # min_val_domain, max_val_domain = get_min_and_max_val(datatype)
@@ -192,52 +200,57 @@ class Filter(MutationPipeLineBase):
             val1 = self.get_filter_value(query, 'float', val - 1, val, '>=', attrib_list)
             filterAttribs.append((tabname, attrib, '>=', float(round_ceil(val1, 2)), float(max_val_domain)))
 
-    def get_filter_value(self, query, datatype, min_val, max_val, operator, attrib_list):
-        query_front_set = set()
-        tab_set = set()
+    def get_dmin_val_of_attrib_list(self, attrib_list: list) -> list:
+        val_list = []
         for tab_attrib in attrib_list:
             tabname, attrib = tab_attrib[0], tab_attrib[1]
-            tab_set.add(tabname)
+            val = self.get_dmin_val(attrib, tabname)
+            val_list.append(val)
+        return val_list
+
+    def get_filter_value(self, query, datatype, min_val, max_val, operator, attrib_list):
+        query_front_set = set()
+        for tab_attrib in attrib_list:
+            tabname, attrib = tab_attrib[0], tab_attrib[1]
             query_front = update_sql_query_tab_attribs(tabname, attrib)
             query_front_set.add(query_front)
         delta, while_cut_off = get_constants_for(datatype)
-
-        self.revert_filter_changes_in_tabset(tab_set)
 
         low = min_val
         high = max_val
 
         if operator == '<=':
+            prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front_set)
                 if mid_val == low or high == mid_val:
-                    self.revert_filter_changes_in_tabset(tab_set)
                     break
                 if isQ_result_empty(new_result):
                     high = mid_val
                 else:
                     low = mid_val
-                self.revert_filter_changes_in_tabset(tab_set)
+            self.revert_filter_changes_in_tabset(attrib_list, prev_values)
             return low
 
         if operator == '>=':
+            prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front_set)
                 if mid_val == high or low == mid_val:
-                    self.revert_filter_changes_in_tabset(tab_set)
                     break
                 if isQ_result_empty(new_result):
                     low = mid_val
                 else:
                     high = mid_val
-                self.revert_filter_changes_in_tabset(tab_set)
+            self.revert_filter_changes_in_tabset(attrib_list, prev_values)
             return high
 
         else:  # =, i.e. datatype == 'int', date
+            prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
             is_low = self.run_app_for_a_val(datatype, low, query, query_front_set)
-            self.revert_filter_changes_in_tabset(tab_set)
+            self.revert_filter_changes_in_tabset(attrib_list, prev_values)
             is_high = self.run_app_for_a_val(datatype, high, query, query_front_set)
-            self.revert_filter_changes_in_tabset(tab_set)
+            self.revert_filter_changes_in_tabset(attrib_list, prev_values)
             return not is_low and not is_high
 
     def run_app_for_a_val(self, datatype, low, query, query_front_set):

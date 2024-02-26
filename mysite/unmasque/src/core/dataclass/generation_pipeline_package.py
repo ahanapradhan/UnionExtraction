@@ -53,7 +53,7 @@ class PackageForGenPipeline:
                  global_min_instance_dict: dict,
 
                  get_dmin_val: Callable[[str, str], any],
-                 get_datatype: Callable[[str], str]):
+                 get_datatype: Callable[[tuple[str, str]], str]):
 
         self.core_relations = core_relations
         self.global_all_attribs = global_all_attribs

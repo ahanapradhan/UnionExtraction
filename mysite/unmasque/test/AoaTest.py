@@ -3,8 +3,10 @@ import datetime
 import pytest
 
 from mysite.unmasque.refactored.projection import Projection
-from mysite.unmasque.src.core.aoa import merge_equivalent_paritions, AlgebraicPredicate
+from mysite.unmasque.src.core.aoa import merge_equivalent_paritions
+from mysite.unmasque.src.core.aoa_merged import AlgebraicPredicate1
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from mysite.unmasque.src.util.aoa_utils import find_all_chains, create_adjacency_map_from_aoa_predicates
 from mysite.unmasque.test.AoaTestFullPipeline import get_subquery1, get_subquery2
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -39,6 +41,17 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
         super().tearDown()
 
+    def test_directed_paths(self):
+        edge_set = [
+            (('partsupp', 'ps_availqty'), ('orders', 'o_orderkey')),
+            (('lineitem', 'l_linenumber'), ('orders', 'o_orderkey')),
+            (('partsupp', 'ps_availqty'), 2999749),
+            (8444, ('orders', 'o_orderkey'))]
+        E, L, absorbed_UBs, absorbed_LBs = edge_set, [], {}, {}
+        directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(E))
+        print(directed_paths)
+        self.assertEqual(len(directed_paths), 2)
+
     def test_dormant_aoa(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count From orders, lineitem " \
@@ -53,6 +66,17 @@ class MyTestCase(BaseTestCase):
                 "and o_totalprice >= 60000 " \
                 "Group By l_shipmode " \
                 "Order By l_shipmode;"
+        '''
+        query = "Select l_shipmode, count(*) as count From orders, lineitem " \
+                "Where " \
+                "o_orderkey = l_orderkey " \
+                "and l_commitdate <= l_receiptdate " \
+                "and l_shipdate <= l_commitdate " \
+                "and l_receiptdate >= '1994-01-01' " \
+                "and l_receiptdate <= '1995-01-01' " \
+                "Group By l_shipmode " \
+                "Order By l_shipmode;"
+        '''
         core_rels = ['orders', 'lineitem']
 
         self.conn.execute_sql([
@@ -82,11 +106,18 @@ class MyTestCase(BaseTestCase):
                           'NONE                     ', 'AIR       ',
                           're. unusual frets after the sl')]}
 
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate1(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
         print(aoa.where_clause)
+        self.assertTrue("l_orderkey = o_orderkey" in aoa.where_clause)
+        self.assertTrue("l_extendedprice <= o_totalprice" in aoa.where_clause)
+        self.assertTrue("l_shipdate <= l_commitdate" in aoa.where_clause)
+        self.assertTrue("l_commitdate <= l_receiptdate" in aoa.where_clause)
+        self.assertTrue("l_receiptdate <= '1995-01-01'" in aoa.where_clause)
+        self.assertTrue("'1994-01-01' <= l_receiptdate" in aoa.where_clause)
+
         self.assertEqual(aoa.where_clause.count("and"), 7)
         self.conn.closeConnection()
 
@@ -142,7 +173,7 @@ class MyTestCase(BaseTestCase):
                           'riously final instructions. pinto beans cajole. idly even packages haggle doggedly '
                           'furiously regular ')]}
 
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate1(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -198,10 +229,13 @@ class MyTestCase(BaseTestCase):
                 f"and o_orderdate between '1998-01-01' and '1998-01-15' " \
                 f"and o_totalprice <= c_acctbal;"
 
-        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate1(self.conn, relations, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
+        print("=======================")
+        print(aoa.where_clause)
+        print("=======================")
         self.assertEqual(len(aoa.algebraic_eq_predicates), 2)
         for eq in aoa.algebraic_eq_predicates:
             if len(eq) == 2:
@@ -216,9 +250,7 @@ class MyTestCase(BaseTestCase):
                 self.assertEqual(high, high_val)
         self.assertEqual(len(aoa.aoa_predicates), 1)
         self.assertTrue((('orders', 'o_totalprice'), ('customer', 'c_acctbal')) in aoa.aoa_predicates)
-        print("=======================")
-        print(aoa.where_clause)
-        print("=======================")
+
         self.conn.closeConnection()
 
     def test_aoa_dev_date_pred(self):
@@ -259,10 +291,13 @@ class MyTestCase(BaseTestCase):
                 "and o_orderdate >= '1993-07-01' and o_orderdate < '1993-10-01'" \
                 " and l_commitdate <= l_receiptdate Group By o_orderpriority Order By o_orderpriority;"
 
-        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate1(self.conn, relations, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
+        print("=======================")
+        print(aoa.where_clause)
+        print("=======================")
         self.assertEqual(len(aoa.algebraic_eq_predicates), 1)
         self.assertTrue(('lineitem', 'l_orderkey') in aoa.algebraic_eq_predicates[0])
         self.assertTrue(('orders', 'o_orderkey') in aoa.algebraic_eq_predicates[0])
@@ -273,11 +308,8 @@ class MyTestCase(BaseTestCase):
         print(len(aoa.aoa_predicates))
         self.assertEqual(len(aoa.aoa_predicates), 3)
         self.assertTrue((('lineitem', 'l_commitdate'), ('lineitem', 'l_receiptdate')) in aoa.aoa_predicates)
-        self.assertTrue([datetime.date(1993, 7, 1), ('orders', 'o_orderdate')] in aoa.aoa_predicates)
-        self.assertTrue([('orders', 'o_orderdate'), datetime.date(1993, 9, 30)] in aoa.aoa_predicates)
-        print("=======================")
-        print(aoa.where_clause)
-        print("=======================")
+        self.assertTrue((datetime.date(1993, 7, 1), ('orders', 'o_orderdate')) in aoa.aoa_predicates)
+        self.assertTrue((('orders', 'o_orderdate'), datetime.date(1993, 9, 30)) in aoa.aoa_predicates)
 
         self.conn.closeConnection()
 
@@ -327,7 +359,7 @@ class MyTestCase(BaseTestCase):
                 f"and o_orderdate between '1998-01-01' and '1998-01-15' " \
                 f"and o_totalprice <= c_acctbal;"
 
-        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate1(self.conn, relations, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -426,10 +458,12 @@ class MyTestCase(BaseTestCase):
 
         query, from_rels = get_subquery1()
         self.assertTrue(self.conn.conn is not None)
-        aoa = AlgebraicPredicate(self.conn, from_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate1(self.conn, from_rels, self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
+        print(aoa.where_clause)
+
         delivery = aoa.pipeline_delivery
         pj = Projection(self.conn, delivery)
         pj.mock = True
@@ -437,7 +471,6 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.where_clause)
         self.assertEqual(len(pj.projected_attribs), 2)
         self.assertEqual(pj.projected_attribs[0], 'c_name')
         self.assertEqual(pj.projected_attribs[1], 'c_acctbal - o_totalprice')
@@ -481,7 +514,7 @@ class MyTestCase(BaseTestCase):
         from_rels = list(self.global_min_instance_dict.keys())
         print("from_rels: ", from_rels)
         self.assertTrue(self.conn.conn is not None)
-        aoa = AlgebraicPredicate(self.conn, from_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate1(self.conn, from_rels, self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -546,10 +579,11 @@ class MyTestCase(BaseTestCase):
 
         query, from_rels = get_subquery2()
         self.assertTrue(self.conn.conn is not None)
-        aoa = AlgebraicPredicate(self.conn, from_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate1(self.conn, from_rels, self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
+        print(aoa.where_clause)
         delivery = aoa.pipeline_delivery
         pj = Projection(self.conn, delivery)
         pj.mock = True
@@ -557,7 +591,6 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.where_clause)
         self.conn.closeConnection()
 
     def test_UQ10(self):
@@ -597,7 +630,7 @@ class MyTestCase(BaseTestCase):
                            datetime.date(1995, 7, 25), datetime.date(1995, 7, 26),
                            datetime.date(1995, 7, 27), 'NONE                     ', 'TRUCK     ',
                            'ecial packages haggle furious')]}
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate1(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -608,3 +641,51 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(aoa.aoa_less_thans), 1)
         self.conn.closeConnection()
 
+    def test_UQ10_1(self):
+        self.conn.connectUsingParams()
+        core_rels = ['orders', 'lineitem']
+        query = "Select l_shipmode " \
+                "From orders, lineitem " \
+                "Where o_orderkey = l_orderkey " \
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate;"
+
+        self.conn.execute_sql([
+            f"Insert into lineitem(l_orderkey,l_partkey,l_suppkey,l_linenumber,l_quantity,"
+            f"l_extendedprice,"
+            f"l_discount,l_tax,l_returnflag,l_linestatus,l_shipdate,l_commitdate,l_receiptdate,"
+            f"l_shipinstruct,l_shipmode,l_comment)"
+            f" VALUES (3000000,83848, 1381, 5, 5.0, 9159.2, 0.09, 0.07, \'N\', \'O\', \'1995, 7, 25\',"
+            f"\'1995, 7, 26\', \'1995, 7, 27\',\'NONE              \', \'TRUCK       \',"
+            f"\'ecial packages haggle furious\');",
+
+            f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+            f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+            f"VALUES (3000000, 47480, \'O\', 189194.91, \'1995, 6, 20\', \'1-URGENT\', \'Clerk#000000149\', 0, "
+            f"\'lly special ideas maintain furiously special requests. furio\');"
+        ])
+
+        global_min_instance_dict = {
+            'orders': [('o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice',
+                        'o_orderdate', 'o_orderpriority', 'o_clerk', 'o_shippriority', 'o_comment'),
+                       (3000000, 47480, 'O', 189194.91, datetime.date(1995, 6, 20),
+                        '1-URGENT       ', 'Clerk#000000149', 0,
+                        'lly special ideas maintain furiously special requests. furio')],
+            'lineitem': [('l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity',
+                          'l_extendedprice', 'l_discount', 'l_tax', 'l_returnflag', 'l_linestatus',
+                          'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
+                          'l_shipmode', 'l_comment'), (3000000, 83848, 1381, 5, 5.0, 9159.2, 0.09, 0.07,
+                                                       'N', 'O', datetime.date(1995, 7, 25),
+                                                       datetime.date(1995, 7, 26), datetime.date(1995, 7, 27),
+                                                       'NONE                     ', 'TRUCK     ',
+                                                       'ecial packages haggle furious')]}
+
+        aoa = AlgebraicPredicate1(self.conn, core_rels, global_min_instance_dict)
+        aoa.mock = True
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.assertEqual(len(aoa.algebraic_eq_predicates), 1)
+        self.assertEqual(len(aoa.arithmetic_eq_predicates), 0)
+        self.assertEqual(len(aoa.aoa_predicates), 0)
+        self.assertEqual(len(aoa.aoa_less_thans), 2)
+        self.conn.closeConnection()
