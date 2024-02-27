@@ -158,10 +158,17 @@ class PackageForGenPipeline:
             if key in filter_dict:
                 continue
             bounds = self.filter_attrib_dict[key]
-            if not isinstance(bounds, tuple):  # single value
-                to_add.add((key[0], key[1], 'equal', bounds, bounds))
+            datatype = self.get_datatype((key[0], key[1]))
+            if datatype == 'numeric':
+                if not isinstance(bounds, tuple):  # single value
+                    to_add.add((key[0], key[1], 'equal', float(bounds), float(bounds)))
+                else:
+                    to_add.add((key[0], key[1], 'range', float(bounds[0]), float(bounds[1])))
             else:
-                to_add.add((key[0], key[1], 'range', bounds[0], bounds[1]))
+                if not isinstance(bounds, tuple):  # single value
+                    to_add.add((key[0], key[1], 'equal', bounds, bounds))
+                else:
+                    to_add.add((key[0], key[1], 'range', bounds[0], bounds[1]))
         self.global_filter_predicates.extend(list(to_add))
 
     def make_dmin_dict_from_aoa_l(self, LB_dict: dict, UB_dict: dict) -> tuple[dict, dict]:

@@ -115,7 +115,6 @@ def find_transitive_concrete_lowerBs(E, to_remove):
 
 
 class AlgebraicPredicate1(MutationPipeLineBase):
-
     SUPPORTED_DATATYPES = ['int', 'date', 'numeric']
 
     def __init__(self, connectionHelper: ConnectionHelper, core_relations: list[str], global_min_instance_dict: dict):
@@ -140,7 +139,6 @@ class AlgebraicPredicate1(MutationPipeLineBase):
 
         self.constants_dict = {}
         self.new_tups = []
-
 
     def doActualJob(self, args):
         self.filter_extractor.mock = self.mock
@@ -385,6 +383,7 @@ class AlgebraicPredicate1(MutationPipeLineBase):
 
     def post_process_for_generation_pipeline(self) -> None:
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
+        self.restore_d_min_from_dict()
         self.pipeline_delivery = PackageForGenPipeline(self.core_relations,
                                                        self.filter_extractor.global_all_attribs,
                                                        self.filter_extractor.global_attrib_types,
@@ -480,6 +479,14 @@ class AlgebraicPredicate1(MutationPipeLineBase):
 
     def revert_mutation_on_filter_global_min_instance_dict(self) -> None:
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
+
+    def restore_d_min_from_dict(self) -> None:
+        for tab in self.core_relations:
+            values = self.global_min_instance_dict[tab]
+            attribs, vals = values[0], values[1]
+            for i in range(len(attribs)):
+                attrib, val = attribs[i], vals[i]
+                self.mutate_dmin_with_val(self.get_datatype((tab, attrib)), (tab, attrib), val)
 
     def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str) -> list:
         filter_attribs = []
@@ -659,4 +666,3 @@ class AlgebraicPredicate1(MutationPipeLineBase):
                     to_remove.append(aoa)
         for t_r in to_remove:
             self.aoa_predicates.remove(t_r)
-

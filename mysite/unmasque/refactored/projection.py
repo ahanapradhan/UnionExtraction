@@ -160,6 +160,7 @@ class Projection(GenerationPipeLineBase):
     """
 
     def get_solution(self, projected_attrib, projection_dep, idx, value_used, query):
+        self.logger.debug("filters: ", self.global_filter_predicates)
         dep = projection_dep[idx]
         n = len(dep)
         fil_check = []

@@ -61,3 +61,4 @@ class MutationPipeLineBase(Base):
     def truncate_core_relations(self):
         for table in self.core_relations:
             self.connectionHelper.execute_sql([truncate_table(table)])
+
