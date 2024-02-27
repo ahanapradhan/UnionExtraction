@@ -84,6 +84,15 @@ def get_all_two_combs(items):
     return seq
 
 
+def get_all_two_combs2(items):
+    seq = []
+    for i in range(0, len(items)):
+        for j in range(i + 1, len(items)):
+            seq.append([items[i], items[j]])
+            seq.append([items[j], items[i]])
+    return seq
+
+
 def get_LB(pred: tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
     return pred[3]
 

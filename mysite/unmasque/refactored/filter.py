@@ -48,7 +48,7 @@ class Filter(MutationPipeLineBase):
 
         self.filter_predicates = None
 
-        self.mutate_dmin_with_val = None # method to be passed by aoa
+        self.mutate_dmin_with_val = None  # method to be passed by aoa
 
     def do_init(self):
         for tabname in self.core_relations:
@@ -156,7 +156,7 @@ class Filter(MutationPipeLineBase):
     def revert_filter_changes_in_tabset(self, attrib_list, prev_val_list):
         tab_attrib_set = set()
         for i in range(len(attrib_list)):
-            tab_attrib = (attrib_list[i][0],attrib_list[i][1])
+            tab_attrib = (attrib_list[i][0], attrib_list[i][1])
             tab_attrib_set.add(tab_attrib)
             val = prev_val_list[i]
             datatype = self.get_datatype(tab_attrib)
@@ -218,9 +218,9 @@ class Filter(MutationPipeLineBase):
 
         low = min_val
         high = max_val
+        prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
 
         if operator == '<=':
-            prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front_set)
                 if mid_val == low or high == mid_val:
@@ -233,7 +233,6 @@ class Filter(MutationPipeLineBase):
             return low
 
         if operator == '>=':
-            prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
             while is_left_less_than_right_by_cutoff(datatype, low, high, while_cut_off):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front_set)
                 if mid_val == high or low == mid_val:
@@ -246,12 +245,16 @@ class Filter(MutationPipeLineBase):
             return high
 
         else:  # =, i.e. datatype == 'int', date
-            prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
             is_low = self.run_app_for_a_val(datatype, low, query, query_front_set)
             self.revert_filter_changes_in_tabset(attrib_list, prev_values)
             is_high = self.run_app_for_a_val(datatype, high, query, query_front_set)
             self.revert_filter_changes_in_tabset(attrib_list, prev_values)
             return not is_low and not is_high
+
+    def old_code(self):
+        """
+
+        """
 
     def run_app_for_a_val(self, datatype, low, query, query_front_set):
         for query_front in query_front_set:
@@ -274,6 +277,7 @@ class Filter(MutationPipeLineBase):
         # min and max domain values (initialize based on data type)
         # PLEASE CONFIRM THAT DATE FORMAT IN DATABASE IS YYYY-MM-DD
         # min_val_domain, max_val_domain = get_min_and_max_val(datatype)
+        self.see_d_min()
         min_present = self.checkAttribValueEffect(query, get_format(datatype, min_val_domain),
                                                   attrib_list)  # True implies row
         # was still present
