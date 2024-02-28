@@ -135,6 +135,42 @@ class Filter(MutationPipeLineBase):
             self.handle_filter_for_nonTextTypes(attrib_list, datatype, filter_attribs, max_val_domain, min_val_domain,
                                                 query)
 
+    def handle_filter_for_subrange(self, attrib_list, datatype, filter_attribs,
+                                   max_val_domain, min_val_domain, query):
+        self.see_d_min()
+        delta, _ = get_constants_for(datatype)
+        min_present = self.checkAttribValueEffect(query, get_format(datatype, min_val_domain),
+                                                  attrib_list)  # True implies row
+        # was still present
+        max_present = self.checkAttribValueEffect(query, get_format(datatype, max_val_domain),
+                                                  attrib_list)  # True implies row
+        mandatory_attrib = attrib_list[0]
+        tabname, attrib = mandatory_attrib[0], mandatory_attrib[1]
+        if min_present and not max_present:
+            val = self.get_filter_value(query, datatype,
+                                        get_cast_value(datatype, min_val_domain),
+                                        get_cast_value(datatype, max_val_domain), '<=', attrib_list)
+            filter_attribs.append((tabname, attrib, '<=', min_val_domain, val))
+        elif not min_present and max_present:
+            val = self.get_filter_value(query, datatype,
+                                        get_cast_value(datatype, min_val_domain),
+                                        get_cast_value(datatype, max_val_domain), '>=', attrib_list)
+            filter_attribs.append((tabname, attrib, '>=', val, max_val_domain))
+        elif min_present and max_present:
+            filter_attribs.append((tabname, attrib, 'range', min_val_domain, max_val_domain))
+        else:
+            if min_val_domain >= max_val_domain:
+                return
+            i_min, i_max = get_min_and_max_val(datatype)
+            if max_val_domain == i_max and min_val_domain == i_min:
+                self.handle_filter_for_nonTextTypes(attrib_list, datatype, filter_attribs,
+                                                    max_val_domain, min_val_domain, query)
+                return
+            self.handle_filter_for_subrange(attrib_list, datatype, filter_attribs,
+                                            get_val_plus_delta(datatype, max_val_domain, -1 * delta),
+                                            get_val_plus_delta(datatype, min_val_domain, 1 * delta),
+                                            query)
+
     def handle_filter_for_nonTextTypes(self, attrib_list, datatype, filter_attribs,
                                        max_val_domain, min_val_domain, query):
         if datatype == 'int' or datatype == 'date':
