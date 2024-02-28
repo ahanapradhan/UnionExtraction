@@ -7,7 +7,7 @@ from psycopg2._psycopg import Decimal
 from mysite.unmasque.refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
 from mysite.unmasque.refactored.filter import Filter, get_constants_for
 from mysite.unmasque.refactored.util.common_queries import update_tab_attrib_with_value
-from mysite.unmasque.refactored.util.utils import get_min_and_max_val, get_format, get_val_plus_delta
+from mysite.unmasque.refactored.util.utils import get_min_and_max_val, get_format, get_val_plus_delta, isQ_result_empty
 from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
 from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
@@ -285,53 +285,65 @@ class AlgebraicPredicate1(MutationPipeLineBase):
     def absorb_variable_UBs(self, E, L, absorbed_UBs, col_sink, col_src, datatype, query):
         prev_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
         col_sink_lb = self.find_concrete_lb_from_edge_set(col_sink, E, datatype)
-        val, dmin_val = self.mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, False)
-        # self.global_min_instance_dict = copy.deepcopy(self.filter_extractor.global_min_instance_dict)
-        new_ub_fe = self.do_bound_check_again(col_src, datatype, query)
-        new_ub = get_UB(new_ub_fe[0]) if len(new_ub_fe) else get_max(self.constants_dict[datatype])
-        if prev_ub != new_ub:
-            absorbed_UBs[col_src] = prev_ub
-            if new_ub < val:
+        val, dmin_val = self.mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, False, query)
+        if val != dmin_val:
+            new_ub_fe = self.do_bound_check_again(col_src, datatype, query)
+            new_ub = get_UB(new_ub_fe[0]) if len(new_ub_fe) else get_max(self.constants_dict[datatype])
+            if prev_ub != new_ub:
+                joined_src = self.get_equi_join_group(col_src)
+                for _src in joined_src:
+                    absorbed_UBs[_src] = prev_ub
+                if new_ub < val:
+                    remove_item_from_list((col_src, col_sink), E)
+                    add_item_to_list((col_src, col_sink), L)
+            else:
                 remove_item_from_list((col_src, col_sink), E)
-                add_item_to_list((col_src, col_sink), L)
+                joined_sink = self.get_equi_join_group(col_sink)
+                for col in joined_sink:
+                    self.mutate_dmin_with_val(datatype, col, dmin_val)
         else:
             remove_item_from_list((col_src, col_sink), E)
-        self.mutate_dmin_with_val(datatype, col_sink, dmin_val)
 
     def absorb_variable_LBs(self, E, L, absorbed_LBs, datatype, col_src, col_sink, query) -> None:
         prev_lb = self.find_concrete_lb_from_edge_set(col_sink, E, datatype)
         col_src_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
-        val, dmin_val = self.mutate_attrib_with_Bound_val(col_src, datatype, col_src_ub, True)
-        # self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
-        new_lb_fe = self.do_bound_check_again(col_sink, datatype, query)
-        new_lb = get_LB(new_lb_fe[0]) if len(new_lb_fe) else get_min(self.constants_dict[datatype])
-        if prev_lb != new_lb:
-            absorbed_LBs[col_sink] = prev_lb
-            if new_lb > val:
+        val, dmin_val = self.mutate_attrib_with_Bound_val(col_src, datatype, col_src_ub, True, query)
+        if val != dmin_val:
+            new_lb_fe = self.do_bound_check_again(col_sink, datatype, query)
+            new_lb = get_LB(new_lb_fe[0]) if len(new_lb_fe) else get_min(self.constants_dict[datatype])
+            if prev_lb != new_lb:
+                joined_sink = self.get_equi_join_group(col_sink)
+                for _sink in joined_sink:
+                    absorbed_LBs[_sink] = prev_lb
+                if new_lb > val:
+                    remove_item_from_list((col_src, col_sink), E)
+                    add_item_to_list((col_src, col_sink), L)
+            else:
                 remove_item_from_list((col_src, col_sink), E)
-                add_item_to_list((col_src, col_sink), L)
+            mutation_lb_fe = self.do_bound_check_again(col_src, datatype, query)
+            mutation_lb = get_LB(mutation_lb_fe[0]) if len(mutation_lb_fe) else get_min(self.constants_dict[datatype])
+            joined_src = self.get_equi_join_group(col_src)
+            for col in joined_src:
+                self.mutate_dmin_with_val(datatype, col, mutation_lb)
+
+            new_edges = [(col_src, get_UB(mutation_lb_fe[0]))]
+            col_sink_fe = self.do_bound_check_again(col_sink, datatype, query)
+            col_sink_lb = get_LB(col_sink_fe[0]) if len(col_sink_fe) else get_min(self.constants_dict[datatype])
+            col_sink_ub = get_UB(col_sink_fe[0]) if len(col_sink_fe) else get_max(self.constants_dict[datatype])
+            new_edges.extend([(col_sink_lb, col_sink), (col_sink, col_sink_ub)])
+            to_remove = []
+            for edge in E:
+                if isinstance(edge[0], tuple) and not isinstance(edge[1], tuple):
+                    if edge[0] in [col_src, col_sink]:
+                        to_remove.append(edge)
+                if not isinstance(edge[0], tuple) and isinstance(edge[1], tuple):
+                    if edge[1] == col_sink:
+                        to_remove.append(edge)
+            for t_r in to_remove:
+                remove_item_from_list(t_r, E)
+            E.extend(new_edges)
         else:
             remove_item_from_list((col_src, col_sink), E)
-        mutation_lb_fe = self.do_bound_check_again(col_src, datatype, query)
-        mutation_lb = get_LB(mutation_lb_fe[0]) if len(mutation_lb_fe) else get_min(self.constants_dict[datatype])
-        self.mutate_dmin_with_val(datatype, col_src, mutation_lb)
-
-        new_edges = [(col_src, get_UB(mutation_lb_fe[0]))]
-        col_sink_fe = self.do_bound_check_again(col_sink, datatype, query)
-        col_sink_lb = get_LB(col_sink_fe[0]) if len(col_sink_fe) else get_min(self.constants_dict[datatype])
-        col_sink_ub = get_UB(col_sink_fe[0]) if len(col_sink_fe) else get_max(self.constants_dict[datatype])
-        new_edges.extend([(col_sink_lb, col_sink), (col_sink, col_sink_ub)])
-        to_remove = []
-        for edge in E:
-            if isinstance(edge[0], tuple) and not isinstance(edge[1], tuple):
-                if edge[0] in [col_src, col_sink]:
-                    to_remove.append(edge)
-            if not isinstance(edge[0], tuple) and isinstance(edge[1], tuple):
-                if edge[1] == col_sink:
-                    to_remove.append(edge)
-        for t_r in to_remove:
-            remove_item_from_list(t_r, E)
-        E.extend(new_edges)
 
     def extract_dormant_LBs(self, E, absorbed_LBs, col_src, datatype, query, L):
         lb_dot = self.mutate_with_boundary_value(absorbed_LBs, E, datatype, query, col_src, False)
@@ -456,7 +468,8 @@ class AlgebraicPredicate1(MutationPipeLineBase):
     def get_equi_join_group(self, tab_attrib: tuple[str, str]) -> list[tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:
             if tab_attrib in eq:
-                return eq
+                var_eq = [e for e in eq if len(e) == 2]
+                return var_eq
         return [tab_attrib]
 
     def mutate_with_boundary_value(self, a_Bs, edge_set, datatype, query, tab_attrib, is_UB) -> Union[
@@ -514,8 +527,6 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         joined_attribs = self.get_equi_join_group(tab_attrib)
         candidates = []
         for attrib in joined_attribs:
-            if len(attrib) == 5:
-                continue
             one_attrib = (get_tab(attrib), get_attrib(attrib), attrib_max_length, d_plus_value)
             candidates.append(one_attrib)
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, candidates, datatype)
@@ -651,9 +662,8 @@ class AlgebraicPredicate1(MutationPipeLineBase):
                 break
         return done
 
-    def mutate_attrib_with_Bound_val(self, tab_attrib: tuple[str, str],
-                                     datatype: str,
-                                     val: any, with_UB: bool) \
+    def mutate_attrib_with_Bound_val(self, tab_attrib: tuple[str, str], datatype: str, val: any,
+                                     with_UB: bool, query: str) \
             -> tuple[Union[int, Decimal, date], Union[int, Decimal, date]]:
         dmin_val = self.get_dmin_val(get_attrib(tab_attrib), get_tab(tab_attrib))
         factor = -1 if with_UB else 1
@@ -662,6 +672,11 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         joined_tab_attribs = self.get_equi_join_group(tab_attrib)
         for t_a in joined_tab_attribs:
             self.mutate_dmin_with_val(datatype, t_a, val)
+        new_res = self.app.doJob(query)
+        if isQ_result_empty(new_res):
+            for t_a in joined_tab_attribs:
+                self.mutate_dmin_with_val(datatype, t_a, dmin_val)
+                val = dmin_val
         return val, dmin_val
 
     def mutate_dmin_with_val(self, datatype, t_a, val):
