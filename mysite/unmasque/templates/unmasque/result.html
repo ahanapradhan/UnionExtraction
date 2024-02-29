@@ -1,7 +1,9 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Result</title>
+    <link rel="stylesheet" href="{% static 'result.css' %}">
 </head>
 <body>
     <h1>Hidden Query</h1>
@@ -15,9 +17,9 @@
     <!-- Use innerHTML to render HTML content -->
     <pre>{{ profiling | safe }}</pre>
     <hr>
-    <a href="{% url 'login' %}"><button>Give Another Query</button></a>
+    <a href="{% url 'login' %}" class="submit"><button>Give Another Query</button></a>
 
-    <a href="{% url 'bye' %}"><button>Logout</button></a>
+    <a href="{% url 'bye' %}" class="submit"><button>Logout</button></a>
 
 </body>
 </html>

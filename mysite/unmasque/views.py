@@ -5,6 +5,7 @@ from psycopg2 import OperationalError
 
 from .src.pipeline.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionHelper import ConnectionHelper
+from .src.util.configParser import Config
 from .src.util.constants import DONE
 
 
@@ -19,10 +20,12 @@ def login_view(request):
         database = request.POST.get('database')
         query = request.POST.get('query')
         try:
-            conn = connect_to_db(database, host, password, port, username)
+            c = Config()
+            c.parse_config()
+            conn = connect_to_db(c.dbname, c.host, c.password, c.port, c.user)
             print(conn)
             cur = conn.cursor()
-            try:
+            try:    
                 cur.execute("EXPLAIN " + query)
             except:
                 error_message = "Invalid query. Please Try again!"
