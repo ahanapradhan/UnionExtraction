@@ -296,18 +296,17 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         return prev_ub
 
     def absorb_variable_UBs(self, E, L, absorbed_UBs, datatype, col_src, col_sink, query):
-        self.absorb_variable_UB2(E, L, absorbed_UBs, col_sink, col_src, datatype)
-        self.see_d_min()
+        joined_src = self.get_equi_join_group(col_src)
         prev_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
+        if (col_src, col_sink) in E or (col_src, col_sink) in L:
+            for _src in joined_src:
+                absorbed_UBs[_src] = prev_ub
         col_sink_lb = self.find_concrete_lb_from_edge_set(col_sink, E, datatype)
         val, dmin_val = self.mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, False, query)
         if val != dmin_val:
             new_ub_fe = self.do_bound_check_again(col_src, datatype, query)
             new_ub = get_UB(new_ub_fe[0]) if len(new_ub_fe) else get_max(self.constants_dict[datatype])
             if prev_ub != new_ub:
-                joined_src = self.get_equi_join_group(col_src)
-                for _src in joined_src:
-                    absorbed_UBs[_src] = prev_ub
                 if new_ub < val:
                     remove_item_from_list((col_src, col_sink), E)
                     add_item_to_list((col_src, col_sink), L)
@@ -320,7 +319,6 @@ class AlgebraicPredicate1(MutationPipeLineBase):
             remove_item_from_list((col_src, col_sink), E)
 
     def absorb_variable_LBs(self, E, L, absorbed_LBs, datatype, col_src, col_sink, query) -> None:
-        self.see_d_min()
         """
         lb is lesser than current d_min value
         if any mutation happens in d_min, make sure the lb is updated accordingly
