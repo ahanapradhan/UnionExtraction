@@ -1,7 +1,7 @@
 from .ExtractionPipeLine import ExtractionPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.union import Union
-from ..util.constants import UNION, START, DONE, RUNNING
+from ..util.constants import UNION, START, DONE, RUNNING, WRONG
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
 
@@ -11,6 +11,8 @@ class UnionPipeLine(GenericPipeLine):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Union PipeLine")
         self.old_pipeline = ExtractionPipeLine(self.connectionHelper)
+        self.pipeLineError = False
+        self.errorState = ""
 
     def extract(self, query):
         # opening and closing connection actions are vital.
@@ -26,9 +28,7 @@ class UnionPipeLine(GenericPipeLine):
         key_lists = union.key_lists
 
         self.connectionHelper.closeConnection()
-
         u_eq = []
-        pipeLineError = False
 
         for rels in p:
             core_relations = []
@@ -51,7 +51,8 @@ class UnionPipeLine(GenericPipeLine):
                 eq = eq.replace(';', ')')
                 u_eq.append(eq)
             else:
-                pipeLineError = True
+                self.pipeLineError = True
+                self.errorState = self.old_pipeline.state
                 break
 
             if time_profile is not None:
@@ -60,15 +61,19 @@ class UnionPipeLine(GenericPipeLine):
         u_Q = "\n UNION ALL \n".join(u_eq)
         u_Q += ";"
 
+        result = self.post_process(pstr, u_Q)
+        return result
+
+    def post_process(self, pstr, u_Q):
         if "UNION ALL" not in u_Q:
             if u_Q.startswith('(') and u_Q.endswith(');'):
                 u_Q = u_Q[1:-2] + ';'
-
         result = ""
-        if pipeLineError:
-            result = "Could not extract the query due to errors.\nHere's what I have as a half-baked answer:\n" + pstr + "\n"
+        if self.pipeLineError:
+            result = f"Could not extract the query due to errors {self.errorState}." \
+                     f"\nHere's what I have as a half-baked answer:\n{pstr}\n"
+            self.update_state(WRONG)
         result += u_Q
-
         self.update_state(DONE)
         return result
 

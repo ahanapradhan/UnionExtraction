@@ -101,6 +101,8 @@ class MyTestCase(BaseTestCase):
             t_result_com = 0
             t_union = 0
 
+            print(sql)
+
             for i in range(ITERATIONS):
                 t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_view_min, \
                     t_where_clause = self.extract_query_once(
@@ -131,7 +133,7 @@ class MyTestCase(BaseTestCase):
         # Iterate directory
         for path in os.listdir(self.query_dir_path):
             # check if current path is a file
-            if os.path.isfile(os.path.join(self.query_dir_path, path)) and path != 'UQ11.sql':
+            if os.path.isfile(os.path.join(self.query_dir_path, path)):
                 res.append(path)
         print(res)
         return res
@@ -234,7 +236,6 @@ class MyTestCase(BaseTestCase):
             os.remove(self.plot_filename)
 
     def test_plot(self):
-        self.do_experiment()
         self.create_gnuplot()
         self.create_latex_table_of_queries()
 

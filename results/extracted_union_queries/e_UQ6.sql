@@ -1,7 +1,7 @@
 (Select n_name as name, Sum(s_acctbal) as total_price
  From nation, supplier 
  Where n_nationkey = s_nationkey
- and n_name like '%UNITED%' 
+ and n_name LIKE '%UNITED%' 
  Group By n_name 
  Order By name desc)
  UNION ALL 

@@ -2,11 +2,11 @@ import copy
 
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
+from ..core.aoa import AlgebraicPredicate
 from ..core.elapsed_time import create_zero_time_profile
-from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, FILTER, \
-    NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, AOA
+from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, LIMIT, ORDER_BY, \
+    AGGREGATE, GROUP_BY, PROJECTION, AOA
 from ...refactored.aggregation import Aggregation
-from mysite.unmasque.src.core.aoa import AlgebraicPredicate
 from ...refactored.cs2 import Cs2
 from ...refactored.from_clause import FromClause
 from ...refactored.groupby_clause import GroupBy
@@ -81,15 +81,12 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some problem while view minimization. Aborting extraction!")
             return None, time_profile
 
-        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
-
         '''
         AOA Extraction
         '''
         self.update_state(AOA + START)
-
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
-        delivery = aoa.pipeline_delivery
         self.update_state(AOA + RUNNING)
         check = aoa.doJob(query)
         self.update_state(AOA + DONE)
@@ -100,7 +97,7 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while Filter Predicate extraction. Aborting extraction!")
             return None, time_profile
 
-        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
+        delivery = aoa.pipeline_delivery
 
         '''
         Projection Extraction
@@ -119,7 +116,6 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while projection extraction. Aborting extraction!")
             return None, time_profile
 
-        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         self.update_state(GROUP_BY + START)
         gb = GroupBy(self.connectionHelper, delivery, pj.projected_attribs)
         self.update_state(GROUP_BY + RUNNING)
@@ -138,7 +134,6 @@ class ExtractionPipeLine(GenericPipeLine):
                     elt[2] == '=' or elt[2] == 'equal'):
                 gb.group_by_attrib.append(elt[1])
 
-        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         self.update_state(AGGREGATE + START)
         agg = Aggregation(self.connectionHelper, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
                           pj.dependencies, pj.solution, pj.param_list, delivery)

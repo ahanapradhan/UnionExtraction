@@ -112,6 +112,38 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    def test_UQ11(self):
+        self.conn.connectUsingParams()
+        query = "Select o_orderpriority, " \
+                "count(*) as order_count " \
+                "From orders, lineitem " \
+                "Where l_orderkey = o_orderkey and o_orderdate >= '1993-07-01' " \
+                "and o_orderdate < '1993-10-01' and l_commitdate < l_receiptdate " \
+                "Group By o_orderpriority " \
+                "Order By o_orderpriority;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_UQ10(self):
+        self.conn.connectUsingParams()
+        query = "Select l_shipmode, count(*) as count " \
+                "From orders, lineitem " \
+                "Where o_orderkey = l_orderkey and l_commitdate < l_receiptdate and l_shipdate < l_commitdate " \
+                "and l_receiptdate >= '1994-01-01' and l_receiptdate < '1995-01-01' " \
+                "and l_extendedprice <= o_totalprice " \
+                "and l_extendedprice <= 70000 " \
+                "and o_totalprice > 60000 " \
+                "Group By l_shipmode " \
+                "Order By l_shipmode;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()
