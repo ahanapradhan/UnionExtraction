@@ -229,6 +229,11 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         self.optimize_arithmetic_eqs(absorbed_LBs, absorbed_UBs)
         return E, L
 
+    def absorb_variable_UB2(self, E, L, absorbed_UBs, col_sink, col_src, datatype):
+        src_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
+        if (col_src, col_sink) in E or (col_src, col_sink) in L:
+            absorbed_UBs[col_src] = src_ub
+
     def optimize_arithmetic_eqs(self, absorbed_LBs, absorbed_UBs):
         to_remove = []
         for eq in self.arithmetic_eq_predicates:
@@ -291,6 +296,8 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         return prev_ub
 
     def absorb_variable_UBs(self, E, L, absorbed_UBs, datatype, col_src, col_sink, query):
+        self.absorb_variable_UB2(E, L, absorbed_UBs, col_sink, col_src, datatype)
+        self.see_d_min()
         prev_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
         col_sink_lb = self.find_concrete_lb_from_edge_set(col_sink, E, datatype)
         val, dmin_val = self.mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, False, query)
@@ -313,6 +320,11 @@ class AlgebraicPredicate1(MutationPipeLineBase):
             remove_item_from_list((col_src, col_sink), E)
 
     def absorb_variable_LBs(self, E, L, absorbed_LBs, datatype, col_src, col_sink, query) -> None:
+        self.see_d_min()
+        """
+        lb is lesser than current d_min value
+        if any mutation happens in d_min, make sure the lb is updated accordingly
+        """
         prev_lb = self.find_concrete_lb_from_edge_set(col_sink, E, datatype)
         col_src_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
         val, dmin_val = self.mutate_attrib_with_Bound_val(col_src, datatype, col_src_ub, True, query)
@@ -326,6 +338,11 @@ class AlgebraicPredicate1(MutationPipeLineBase):
                 if new_lb > val:
                     remove_item_from_list((col_src, col_sink), E)
                     add_item_to_list((col_src, col_sink), L)
+                """
+                col_src now needs to be mutated with its LB. for extract_dormant_LBs next.
+                so, the bounds need to be adjusted accordingly.
+                Set E needs to have that updated bounds.
+                """
                 self.update_E(E, L, col_sink, col_src, datatype, query)
             else:
                 remove_item_from_list((col_src, col_sink), E)
@@ -338,6 +355,7 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         joined_src = self.get_equi_join_group(col_src)
         for col in joined_src:
             self.mutate_dmin_with_val(datatype, col, mutation_lb)
+        '''
         factor = 1 if (col_src, col_sink) in L else 0
         mut_ub = get_val_plus_delta(datatype, get_UB(mutation_lb_fe[0]),
                                     factor * get_delta(self.constants_dict[datatype]))
@@ -360,9 +378,10 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         for t_r in to_remove:
             remove_item_from_list(t_r, E)
         E.extend(new_edges)
+        '''
 
     def extract_dormant_LBs(self, E, absorbed_LBs, col_src, datatype, query, L):
-        lb_dot = self.mutate_with_boundary_value(absorbed_LBs, E, datatype, query, col_src, False, L)
+        lb_dot = self.mutate_with_boundary_value(absorbed_LBs, E, datatype, query, col_src, False)
         min_val = self.what_is_possible_min_val(E, L, col_src, datatype)
         if lb_dot != min_val:
             add_item_to_list((lb_dot, col_src), E)
@@ -372,13 +391,11 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         col_prev_list = find_le_attribs_from_edge_set(col_src, E)
         if len(col_prev_list):
             col_prev = col_prev_list[0]
-            # min_val = self.get_dmin_val(get_attrib(col_prev), get_tab(col_prev))
             min_val = self.what_is_possible_min_val(E, L, col_prev, datatype)
         else:
             col_prev_list = find_le_attribs_from_edge_set(col_src, L)
             if len(col_prev_list):
                 col_prev = col_prev_list[0]
-                # dmin_col_prev = self.get_dmin_val(get_attrib(col_prev), get_tab(col_prev))
                 dmin_col_prev = self.what_is_possible_min_val(E, L, col_prev, datatype)
                 min_val = get_val_plus_delta(datatype, dmin_col_prev, 1 * get_delta(self.constants_dict[datatype]))
         if min_val is None:
@@ -390,14 +407,12 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         col_next_list = find_ge_attribs_from_edge_set(col_src, E)
         if len(col_next_list):
             col_next = col_next_list[0]
-            # max_val = self.get_dmin_val(get_attrib(col_next), get_tab(col_next))
             max_val = self.what_is_possible_max_val(E, L, col_next, datatype)
         else:
             col_next_list = find_ge_attribs_from_edge_set(col_src, L)
             if len(col_next_list):
                 col_next = col_next_list[0]
                 dmin_col_next = self.what_is_possible_max_val(E, L, col_next, datatype)  # self.get_dmin_val(
-                # get_attrib(col_next), get_tab(col_next))
                 max_val = get_val_plus_delta(datatype, dmin_col_next, -1 * get_delta(self.constants_dict[datatype]))
         if max_val is None:
             max_val = get_max(self.constants_dict[datatype])
@@ -407,17 +422,10 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         for path in directed_paths:
             for i in reversed(range(len(path))):
                 col_i = path[i]
-                ub_dot = self.mutate_with_boundary_value(absorbed_UBs, E, datatype, query, col_i, True, L)
+                ub_dot = self.mutate_with_boundary_value(absorbed_UBs, E, datatype, query, col_i, True)
                 max_val = self.what_is_possible_max_val(E, L, col_i, datatype)
                 if ub_dot != max_val:
                     add_item_to_list((col_i, ub_dot), E)
-        # _directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(L))
-        # for path in _directed_paths:
-        #    for i in range(len(path)):
-        #        col_src = path[i]
-        #        col_sink = path[i + 1] if i + 1 < len(path) else None
-        #        if col_sink is not None:
-        #            self.absorb_variable_UBs_2(E, L, absorbed_UBs, datatype, col_src, col_sink, query)
 
     def algo4_create_edgeSet_E(self, ineqaoa_preds: list) -> dict:
         filtered_dict = self.isolate_ineq_aoa_preds_per_datatype(ineqaoa_preds)
@@ -495,7 +503,7 @@ class AlgebraicPredicate1(MutationPipeLineBase):
                 return var_eq
         return [tab_attrib]
 
-    def mutate_with_boundary_value(self, a_Bs, edge_set, datatype, query, tab_attrib, is_UB, L) -> Union[
+    def mutate_with_boundary_value(self, a_Bs, edge_set, datatype, query, tab_attrib, is_UB) -> Union[
         int, Decimal, date]:
         filter_attribs = []
         joined_tab_attrib = self.get_equi_join_group(tab_attrib)
@@ -503,8 +511,6 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         min_val, max_val = get_min_max_for_chain_bounds(get_min(self.constants_dict[datatype]),
                                                         get_max(self.constants_dict[datatype]),
                                                         tab_attrib, a_Bs, is_UB)
-        # max_val = self.what_is_possible_max_val(edge_set, L, tab_attrib, datatype)
-        # min_val = self.what_is_possible_min_val(edge_set, L, tab_attrib, datatype)
 
         prep = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(joined_tab_attrib)
         self.filter_extractor.handle_filter_for_subrange(prep, datatype, filter_attribs, max_val, min_val,
@@ -712,31 +718,3 @@ class AlgebraicPredicate1(MutationPipeLineBase):
         self.mutate_filter_global_min_instance_dict(get_tab(t_a),
                                                     get_attrib(t_a), val)
         self.filter_extractor.global_d_plus_value[get_attrib(t_a)] = val
-
-    def remove_absorbed_arithmetic_eqs(self):
-        to_remove = []
-        for eq in self.arithmetic_eq_predicates:
-            tab, attrib = eq[0], eq[1]
-            val = eq[-1]
-            for aoa in self.aoa_predicates:
-                if aoa[0] == tab and aoa[1] == attrib and aoa[-1] == val:
-                    to_remove.append(aoa)
-        for t_r in to_remove:
-            self.aoa_predicates.remove(t_r)
-
-    def absorb_variable_UBs_2(self, E, L, absorbed_UBs, datatype, col_src, col_sink, query):
-        # col_src has one concrete upper bound that we are trying to absorb
-        prev_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
-        col_sink_lb_ = self.find_concrete_lb_from_edge_set(col_sink, L, datatype)
-        col_sink_lb = get_val_plus_delta(datatype, col_sink_lb_, 1 * get_delta(self.constants_dict[datatype]))
-        val, dmin_val = self.mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, False, query)
-        if val != dmin_val:
-            new_ub_fe = self.do_bound_check_again(col_src, datatype, query)
-            new_ub = get_UB(new_ub_fe[0]) if len(new_ub_fe) else get_max(self.constants_dict[datatype])
-            if prev_ub != new_ub:
-                joined_src = self.get_equi_join_group(col_src)
-                for _src in joined_src:
-                    absorbed_UBs[_src] = prev_ub
-        joined_sink = self.get_equi_join_group(col_sink)
-        for attrib in joined_sink:
-            self.mutate_dmin_with_val(datatype, attrib, dmin_val)
