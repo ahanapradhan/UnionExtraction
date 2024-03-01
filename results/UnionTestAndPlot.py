@@ -44,7 +44,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(hqs), len(eqs))
 
         with open(self.latex_filename, 'a') as expt:
-            expt.write("{\\tiny\n\\begin{longtable}{|p{0.5cm}|p{7cm}|p{7cm}|}\n"
+            expt.write("{\\tiny\n\\begin{supertabular}{|p{0.5cm}|p{7cm}|p{7cm}|}\n"
                        "\\hline\n"
                        "{\\bf Q. No.} & {\\bf Hidden Query} & {\\bf Extracted Query} \\\\\\hline\\hline\n")
 

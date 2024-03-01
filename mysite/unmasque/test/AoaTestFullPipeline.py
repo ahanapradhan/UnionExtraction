@@ -235,13 +235,15 @@ class MyTestCase(BaseTestCase):
 
         from_rels = ['orders', 'lineitem']
         self.assertTrue(self.conn.conn is not None)
-        aoa, check = self.run_pipeline(from_rels, query)
+        aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
         print(aoa.where_clause)
         self.assertTrue("l_shipdate < l_commitdate" in aoa.where_clause)
         self.assertTrue("l_commitdate < l_receiptdate" in aoa.where_clause)
         self.conn.closeConnection()
+        print(pj.projected_attribs)
+        print(pj.projection_names)
 
     def test_paper_subquery1_projection(self):
         self.conn.connectUsingParams()

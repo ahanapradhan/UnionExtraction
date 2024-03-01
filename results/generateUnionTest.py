@@ -39,18 +39,28 @@ class MyTestCase(BaseTestCase):
                 eqs.append(path)
         print(eqs)
 
+        hqs.sort()
+        eqs.sort()
+
         self.assertEqual(len(hqs), len(eqs))
 
         with open(self.latex_filename, 'a') as expt:
-            expt.write("{\\tiny\n\\begin{longtable}{|p{0.5cm}|p{7cm}|p{7cm}|}\n"
-                       "\\hline\n"
-                       "{\\bf Q. No.} & {\\bf Hidden Query} & {\\bf Extracted Query} \\\\\\hline\\hline\n")
+            expt.write("\\onecolumn\n"
+                       "\\begin{center}\n"
+                       "\\tablefirsthead{\\hline\\footnotesize {Q. No.} &	"
+                       "\\footnotesize{Hidden Query \\Q}&\\footnotesize {Extracted Query $Q_E$} \\\\"
+                       "\\hline}\n"
+                       "\\tablehead{\\hline}\n"
+                       "\\tabletail{\\hline}\n"
+                       "\\tablelasttail{\\hline}\n"
+                       "\\tablecaption{Evaluated Queries}\n"
+                       "\\begin{supertabular}{|c|p{7cm}|p{7cm}|}\\hline")
 
             i = 0
             for hq in hqs:
                 q_name = copy.deepcopy(hq)
                 q_name = q_name.replace(".sql", "")
-                expt.write(q_name + "&\n")
+                expt.write(f"\\footnotesize{{{q_name}}} &\n")
                 with open(os.path.join(self.query_dir_path, hq), 'r') as file:
                     content = file.read()
                     splited_data = content.splitlines()
@@ -58,7 +68,7 @@ class MyTestCase(BaseTestCase):
                     hidden_query = hidden_query.replace("_", "\_")
                     hidden_query = hidden_query.replace("%", "\%")
                 print(hidden_query)
-                expt.write(hidden_query + "&\n")
+                expt.write(f"\\footnotesize{{{hidden_query}}} &\n")
 
                 with open(os.path.join(self.extracted_U, "e_" + hq), 'r') as file:
                     content = file.read()
@@ -67,9 +77,9 @@ class MyTestCase(BaseTestCase):
                     extracted_query = extracted_query.replace("_", "\_")
                     extracted_query = extracted_query.replace("%", "\%")
                 print(extracted_query)
-                expt.write(extracted_query + "\\\\\hline\n")
+                expt.write(f"\\footnotesize{{{extracted_query}}} \\\\\\hline")
 
-            expt.write("\\end{longtable}}")
+            expt.write("\\end{supertabular}\n\\end{center}\n\\twocolumn")
 
     def get_all_query_files(self):
         # list to store files
@@ -111,7 +121,7 @@ class MyTestCase(BaseTestCase):
 
                 testcase_text = \
                     f"    def test_{sql}(self):\n" \
-                    f"        test_key = \"e_{e_sql}\"\n"\
+                    f"        test_key = \"e_{e_sql}\"\n" \
                     f"        self.conn.connectUsingParams()\n" \
                     f"        query = \"{clean_content}\"\n" \
                     f"        self.pipeline = UnionPipeLine(self.conn)\n" \
@@ -127,3 +137,6 @@ class MyTestCase(BaseTestCase):
 
     def test_create_testcases(self):
         self.do_generation()
+
+    def test_do_latex(self):
+        self.create_latex_table_of_queries()

@@ -1,5 +1,4 @@
 import math
-import math
 import random
 
 import numpy as np
@@ -135,6 +134,8 @@ class Projection(GenerationPipeLineBase):
                 for d in diff:
                     projection_dep[d].append((tabname, attrib))
             self.update_with_val(attrib, tabname, prev)
+        else:
+            self.logger.debug("Got empty result!!!!")
         return val
 
     def find_solution_on_multi(self, projected_attrib, projection_dep, query):

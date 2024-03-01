@@ -3,10 +3,10 @@ import datetime
 import pytest
 
 from mysite.unmasque.refactored.projection import Projection
-from mysite.unmasque.src.core.aoa import merge_equivalent_paritions
-from mysite.unmasque.src.core.aoa_merged import AlgebraicPredicate1
+from mysite.unmasque.src.core.aoa import AlgebraicPredicate
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
-from mysite.unmasque.src.util.aoa_utils import find_all_chains, create_adjacency_map_from_aoa_predicates
+from mysite.unmasque.src.util.aoa_utils import find_all_chains, create_adjacency_map_from_aoa_predicates, \
+    merge_equivalent_paritions
 from mysite.unmasque.test.AoaTestFullPipeline import get_subquery1, get_subquery2
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -106,7 +106,7 @@ class MyTestCase(BaseTestCase):
                           'NONE                     ', 'AIR       ',
                           're. unusual frets after the sl')]}
 
-        aoa = AlgebraicPredicate1(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -173,7 +173,7 @@ class MyTestCase(BaseTestCase):
                           'riously final instructions. pinto beans cajole. idly even packages haggle doggedly '
                           'furiously regular ')]}
 
-        aoa = AlgebraicPredicate1(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -229,7 +229,7 @@ class MyTestCase(BaseTestCase):
                 f"and o_orderdate between '1998-01-01' and '1998-01-15' " \
                 f"and o_totalprice <= c_acctbal;"
 
-        aoa = AlgebraicPredicate1(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -291,7 +291,7 @@ class MyTestCase(BaseTestCase):
                 "and o_orderdate >= '1993-07-01' and o_orderdate < '1993-10-01'" \
                 " and l_commitdate <= l_receiptdate Group By o_orderpriority Order By o_orderpriority;"
 
-        aoa = AlgebraicPredicate1(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -359,7 +359,7 @@ class MyTestCase(BaseTestCase):
                 f"and o_orderdate between '1998-01-01' and '1998-01-15' " \
                 f"and o_totalprice <= c_acctbal;"
 
-        aoa = AlgebraicPredicate1(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -458,7 +458,7 @@ class MyTestCase(BaseTestCase):
 
         query, from_rels = get_subquery1()
         self.assertTrue(self.conn.conn is not None)
-        aoa = AlgebraicPredicate1(self.conn, from_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, from_rels, self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -514,7 +514,7 @@ class MyTestCase(BaseTestCase):
         from_rels = list(self.global_min_instance_dict.keys())
         print("from_rels: ", from_rels)
         self.assertTrue(self.conn.conn is not None)
-        aoa = AlgebraicPredicate1(self.conn, from_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, from_rels, self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -579,7 +579,7 @@ class MyTestCase(BaseTestCase):
 
         query, from_rels = get_subquery2()
         self.assertTrue(self.conn.conn is not None)
-        aoa = AlgebraicPredicate1(self.conn, from_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, from_rels, self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -630,7 +630,7 @@ class MyTestCase(BaseTestCase):
                            datetime.date(1995, 7, 25), datetime.date(1995, 7, 26),
                            datetime.date(1995, 7, 27), 'NONE                     ', 'TRUCK     ',
                            'ecial packages haggle furious')]}
-        aoa = AlgebraicPredicate1(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -639,6 +639,16 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(aoa.arithmetic_eq_predicates), 0)
         self.assertEqual(len(aoa.aoa_predicates), 0)
         self.assertEqual(len(aoa.aoa_less_thans), 1)
+
+        delivery = aoa.pipeline_delivery
+        pj = Projection(self.conn, delivery)
+        pj.mock = True
+        check = pj.doJob(query)
+        self.assertTrue(check)
+        print(self.global_min_instance_dict)
+        self.assertTrue(check)
+        self.assertEqual(len(pj.projected_attribs), 1)
+        self.assertEqual(pj.projected_attribs[0], 'l_shipmode')
         self.conn.closeConnection()
 
     def test_UQ10_1(self):
@@ -679,7 +689,7 @@ class MyTestCase(BaseTestCase):
                                                        'NONE                     ', 'TRUCK     ',
                                                        'ecial packages haggle furious')]}
 
-        aoa = AlgebraicPredicate1(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)

@@ -360,3 +360,106 @@ def optimize_by_matrix(C_E, aoa_predicates, h, w):
         x, c = r[0], r[1]
         m[x][c] = 0
     return m
+
+
+def remove_item_from_list(item, item_list):
+    try:
+        item_list.remove(item)
+    except ValueError:
+        pass
+
+
+def find_le_attribs_from_edge_set(attrib: tuple[str, str], edge_set: list) -> list:
+    prev_lb_attrib = map(lambda x: x[0]
+    if is_same_tab_attrib(x[1], attrib) and isinstance(x[0], tuple)
+    else None, edge_set)
+    prev_lb_list = list(filter(lambda lb: lb is not None, prev_lb_attrib))
+    return prev_lb_list
+
+
+def find_ge_attribs_from_edge_set(attrib: tuple[str, str], edge_set: list) -> list:
+    prev_ub_attrib = map(lambda x: x[1]
+    if is_same_tab_attrib(x[0], attrib) and isinstance(x[1], tuple)
+    else None, edge_set)
+    prev_ub_list = list(filter(lambda ub: ub is not None, prev_ub_attrib))
+    return prev_ub_list
+
+
+def add_item_to_list(item, item_list):
+    if item not in item_list:
+        item_list.append(item)
+
+
+def remove_absorbed_Bs(E, absorbed_LBs, absorbed_UBs, col_sink, col_src):
+    if col_src in absorbed_UBs.keys():
+        remove_item_from_list((col_src, absorbed_UBs[col_src]), E)
+    if col_sink in absorbed_LBs:
+        remove_item_from_list((absorbed_LBs[col_sink], col_sink), E)
+
+
+def remove_all_absorbed_Bs(E, absorbed_LBs, absorbed_UBs):
+    for col_src in absorbed_UBs.keys():
+        remove_item_from_list((col_src, absorbed_UBs[col_src]), E)
+    for col_sink in absorbed_LBs:
+        remove_item_from_list((absorbed_LBs[col_sink], col_sink), E)
+
+
+def get_all_indices(item, item_list):
+    idx = []
+    for i in range(len(item_list)):
+        if item_list[i] == item:
+            idx.append(i)
+    return idx
+
+
+def get_all_elements(item_list, idx_list):
+    items = []
+    for idx in idx_list:
+        items.append(item_list[idx])
+    return items
+
+
+def find_transitive_concrete_upperBs(E, to_remove):
+    if not len(E):
+        return
+    ls, us = zip(*E)
+    us_dict = {}
+    for u in us:
+        if isinstance(u, tuple):
+            continue
+        if u not in us_dict.keys():
+            us_dict[u] = 1
+        else:
+            us_dict[u] += 1
+    for u in us_dict.keys():
+        if us_dict[u] > 1:
+            idx = get_all_indices(u, us)
+            ls_elms = get_all_elements(ls, idx)
+            pairs = get_all_two_combs2(ls_elms)
+            for pair in pairs:
+                lesser, greater = pair[0], pair[1]
+                if (lesser, greater) in E:
+                    to_remove.append((lesser, u))
+
+
+def find_transitive_concrete_lowerBs(E, to_remove):
+    if not len(E):
+        return
+    ls, us = zip(*E)
+    ls_dict = {}
+    for lm in ls:
+        if isinstance(lm, tuple):
+            continue
+        if lm not in ls_dict.keys():
+            ls_dict[lm] = 1
+        else:
+            ls_dict[lm] += 1
+    for lm in ls_dict.keys():
+        if ls_dict[lm] > 1:
+            idx = get_all_indices(ls_dict[lm], ls)
+            us_elms = get_all_elements(us, idx)
+            pairs = get_all_two_combs2(us_elms)
+            for pair in pairs:
+                lesser, greater = pair[0], pair[1]
+                if (lesser, greater) in E:
+                    to_remove.append((ls_dict[lm], greater))

@@ -52,7 +52,10 @@ class MyTestCase(BaseTestCase):
     def test_UQ10_sql(self):
         test_key = "e_UQ10.sql"
         self.conn.connectUsingParams()
-        query = "Select l_shipmode, count(*) as count From orders, lineitem Where o_orderkey = l_orderkey and l_commitdate < l_receiptdate and l_shipdate < l_commitdate and l_receiptdate >= '1994-01-01' and l_receiptdate < '1995-01-01' and l_extendedprice <= o_totalprice and l_extendedprice <= 70000 and o_totalprice > 60000 Group By l_shipmode Order By l_shipmode;"
+        query = "Select l_shipmode, count(*) as count From orders, lineitem Where o_orderkey = l_orderkey and " \
+                "l_commitdate < l_receiptdate and l_shipdate < l_commitdate and l_receiptdate >= '1994-01-01' and " \
+                "l_receiptdate < '1995-01-01' and l_extendedprice <= o_totalprice and l_extendedprice <= 70000 and " \
+                "o_totalprice > 60000 Group By l_shipmode Order By l_shipmode;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -104,7 +107,10 @@ class MyTestCase(BaseTestCase):
     def test_UQ13_sql(self):
         test_key = "e_UQ13.sql"
         self.conn.connectUsingParams()
-        query = "Select l_orderkey, l_linenumber From orders, lineitem, partsupp Where o_orderkey = l_orderkey and ps_partkey = l_partkey and ps_suppkey = l_suppkey and ps_availqty = l_linenumber and l_shipdate >= o_orderdate and o_orderdate >= '1990-01-01' and l_commitdate <= l_receiptdate and l_shipdate <= l_commitdate and l_receiptdate > '1994-01-01' Order By l_orderkey Limit 7;"
+        query = "Select l_orderkey, l_linenumber From orders, lineitem, partsupp Where o_orderkey = l_orderkey and " \
+                "ps_partkey = l_partkey and ps_suppkey = l_suppkey and ps_availqty = l_linenumber and l_shipdate >= " \
+                "o_orderdate and o_orderdate >= '1990-01-01' and l_commitdate <= l_receiptdate and l_shipdate <= " \
+                "l_commitdate and l_receiptdate > '1994-01-01' Order By l_orderkey Limit 7;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -195,7 +201,12 @@ class MyTestCase(BaseTestCase):
     def test_UQ8_sql(self):
         test_key = "e_UQ8.sql"
         self.conn.connectUsingParams()
-        query = "(SELECT     c_custkey as order_id,     COUNT(*) AS total FROM     customer, orders where c_custkey = o_custkey and     o_orderdate >= '1995-01-01' GROUP BY     c_custkey ORDER BY     total ASC LIMIT 10) UNION ALL (SELECT     l_orderkey as order_id,     AVG(l_quantity) AS total FROM     orders, lineitem where l_orderkey = o_orderkey     AND o_orderdate < DATE '1996-07-01' GROUP BY     l_orderkey ORDER BY     total DESC LIMIT 10);"
+        query = "(SELECT     c_custkey as order_id,     COUNT(*) AS total FROM" \
+                "     customer, orders where c_custkey = " \
+                "o_custkey and     o_orderdate >= '1995-01-01' GROUP BY     c_custkey ORDER BY     total ASC LIMIT " \
+                "10) UNION ALL (SELECT     l_orderkey as order_id,     AVG(l_quantity) AS total FROM     orders, " \
+                "lineitem where l_orderkey = o_orderkey     AND o_orderdate < DATE '1996-07-01' GROUP BY     " \
+                "l_orderkey ORDER BY     total DESC LIMIT 10);"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
