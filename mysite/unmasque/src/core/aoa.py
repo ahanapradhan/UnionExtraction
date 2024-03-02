@@ -1,4 +1,5 @@
 import copy
+import decimal
 from datetime import date
 from typing import Union
 
@@ -121,17 +122,11 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
         self.revert_mutation_on_filter_global_min_instance_dict()
         self.extract_dormant_UBs(E, absorbed_UBs, datatype, directed_paths, query, L)
-        # remove_all_absorbed_Bs(E, absorbed_LBs, absorbed_UBs)
         self.remove_redundant_concrete_bounds(E, L)
         self.revert_mutation_on_filter_global_min_instance_dict()
 
         self.optimize_arithmetic_eqs(absorbed_LBs, absorbed_UBs)
         return E, L
-
-    def absorb_variable_UB2(self, E, L, absorbed_UBs, col_sink, col_src, datatype):
-        src_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
-        if (col_src, col_sink) in E or (col_src, col_sink) in L:
-            absorbed_UBs[col_src] = src_ub
 
     def optimize_arithmetic_eqs(self, absorbed_LBs, absorbed_UBs):
         to_remove = []
@@ -145,7 +140,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
     def remove_redundant_concrete_bounds(self, E, L):
         to_remove = []
-        find_transitive_concrete_upperBs(E, to_remove)
+        find_transitive_concrete_upperBs(E, to_remove, L)
         find_transitive_concrete_lowerBs(E, to_remove)
 
         for aoa in E:

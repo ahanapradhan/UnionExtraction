@@ -30,6 +30,8 @@ def update_aoa_LB_UB(LB_dict, UB_dict, filter_attrib_dict):
 
 def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):
     for attrib in filter_attrib_dict:
+        if not isinstance(filter_attrib_dict[attrib], tuple):
+            continue
         if attrib in LB_dict.keys() and filter_attrib_dict[attrib][0] < LB_dict[attrib]:
             filter_attrib_dict[attrib] = (LB_dict[attrib], filter_attrib_dict[attrib][1])
             del LB_dict[attrib]
@@ -180,17 +182,18 @@ class PackageForGenPipeline:
             l_dmin_val = self.get_dmin_val(l_attrib[1], l_attrib[0])
             r_dmin_val = self.get_dmin_val(r_attrib[1], r_attrib[0])
 
-            l_val = get_val_plus_delta(datatype, l_dmin_val, -1 * delta)
-            if r_attrib not in LB_dict.keys():
-                LB_dict[r_attrib] = l_val
-            else:
-                if l_val > LB_dict[r_attrib]:
-                    LB_dict[r_attrib] = l_val
-
-            r_val = get_val_plus_delta(datatype, r_dmin_val, delta)
+            r_lb = get_val_plus_delta(datatype, r_dmin_val, -1 * delta)
             if l_attrib not in UB_dict.keys():
-                UB_dict[l_attrib] = r_val
+                UB_dict[l_attrib] = r_lb
             else:
-                if r_val < UB_dict[l_attrib]:
-                    UB_dict[l_attrib] = r_val
+                if r_lb < UB_dict[l_attrib]:
+                    UB_dict[l_attrib] = r_lb
+
+            l_ub = get_val_plus_delta(datatype, l_dmin_val, 1 * delta)
+            if r_attrib not in LB_dict.keys():
+                LB_dict[r_attrib] = l_ub
+            else:
+                if l_ub > LB_dict[r_attrib]:
+                    LB_dict[r_attrib] = l_ub
+
         return LB_dict, UB_dict

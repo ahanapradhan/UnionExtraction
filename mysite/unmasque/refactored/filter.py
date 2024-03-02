@@ -137,7 +137,7 @@ class Filter(MutationPipeLineBase):
 
     def handle_filter_for_subrange(self, attrib_list, datatype, filter_attribs,
                                    max_val_domain, min_val_domain, query):
-        self.see_d_min()
+        # self.see_d_min()
         delta, _ = get_constants_for(datatype)
         min_present = self.checkAttribValueEffect(query, get_format(datatype, min_val_domain),
                                                   attrib_list)  # True implies row
@@ -162,7 +162,7 @@ class Filter(MutationPipeLineBase):
             if min_val_domain >= max_val_domain:
                 return
             i_min, i_max = get_min_and_max_val(datatype)
-            if max_val_domain == i_max and min_val_domain == i_min:
+            if max_val_domain == i_max or min_val_domain == i_min:
                 self.handle_filter_for_nonTextTypes(attrib_list, datatype, filter_attribs,
                                                     max_val_domain, min_val_domain, query)
                 return
@@ -313,7 +313,7 @@ class Filter(MutationPipeLineBase):
         # min and max domain values (initialize based on data type)
         # PLEASE CONFIRM THAT DATE FORMAT IN DATABASE IS YYYY-MM-DD
         # min_val_domain, max_val_domain = get_min_and_max_val(datatype)
-        self.see_d_min()
+        # self.see_d_min()
         min_present = self.checkAttribValueEffect(query, get_format(datatype, min_val_domain),
                                                   attrib_list)  # True implies row
         # was still present

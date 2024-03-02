@@ -1,6 +1,7 @@
 import copy
 
 import psycopg2
+from psycopg2._psycopg import Decimal
 
 from .ExtractorBase import Base
 from ..executable import Executable
@@ -45,9 +46,10 @@ class MutationPipeLineBase(Base):
         return args[0]
 
     def get_dmin_val(self, attrib: str, tab: str):
-        res, des = None, None
+        res, des, val = None, None, None
         try:
             res, des = self.connectionHelper.execute_sql_fetchall(f"select {attrib} from {tab};")
+            val = res[0][0]
         except psycopg2.Error:
             pass
         if des is not None and f"relation \"{tab}\" does not exist" in des:
@@ -55,8 +57,8 @@ class MutationPipeLineBase(Base):
             attribs, vals = values[0], values[1]
             attrib_idx = attribs.index(attrib)
             val = vals[attrib_idx]
-            return val
-        return res[0][0]
+        ret_val = float(val) if isinstance(val, Decimal) else val
+        return ret_val
 
     def truncate_core_relations(self):
         for table in self.core_relations:

@@ -419,7 +419,16 @@ def get_all_elements(item_list, idx_list):
     return items
 
 
-def find_transitive_concrete_upperBs(E, to_remove):
+def find_transitive_concrete_LupperBs(L, to_remove):
+    if not len(L):
+        return
+    ls, us = zip(*L)
+    for lm in ls:
+        idx = get_all_indices(lm, ls)
+
+
+def find_transitive_concrete_upperBs(E, to_remove, L):
+    find_transitive_concrete_LupperBs(L, to_remove)
     if not len(E):
         return
     ls, us = zip(*E)
@@ -456,10 +465,10 @@ def find_transitive_concrete_lowerBs(E, to_remove):
             ls_dict[lm] += 1
     for lm in ls_dict.keys():
         if ls_dict[lm] > 1:
-            idx = get_all_indices(ls_dict[lm], ls)
+            idx = get_all_indices(lm, ls)
             us_elms = get_all_elements(us, idx)
             pairs = get_all_two_combs2(us_elms)
             for pair in pairs:
                 lesser, greater = pair[0], pair[1]
                 if (lesser, greater) in E:
-                    to_remove.append((ls_dict[lm], greater))
+                    to_remove.append((lm, greater))

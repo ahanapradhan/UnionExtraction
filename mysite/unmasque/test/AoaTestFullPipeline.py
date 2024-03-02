@@ -245,6 +245,63 @@ class MyTestCase(BaseTestCase):
         print(pj.projected_attribs)
         print(pj.projection_names)
 
+    def test_UQ13(self):
+        self.conn.connectUsingParams()
+        query = "Select l_orderkey, l_linenumber " \
+                "From orders, lineitem, partsupp " \
+                "Where o_orderkey = l_orderkey " \
+                "and ps_partkey = l_partkey " \
+                "and ps_suppkey = l_suppkey " \
+                "and ps_availqty = l_linenumber " \
+                "and l_shipdate >= o_orderdate " \
+                "and o_orderdate >= '1990-01-01' " \
+                "and l_commitdate <= l_receiptdate " \
+                "and l_shipdate <= l_commitdate " \
+                "and l_receiptdate > '1994-01-01' " \
+                "Order By l_orderkey Limit 7;"
+
+        from_rels = ['orders', 'lineitem', 'partsupp']
+        self.assertTrue(self.conn.conn is not None)
+        aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
+        print(self.global_min_instance_dict)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        print(pj.projected_attribs)
+        print(pj.projection_names)
+        self.assertTrue("o_orderdate <= l_shipdate" in aoa.where_clause)
+        self.assertTrue("l_commitdate <= l_receiptdate" in aoa.where_clause)
+        self.assertTrue("l_shipdate <= l_commitdat" in aoa.where_clause)
+        self.assertTrue("'1990-01-01' <= o_orderdate" in aoa.where_clause)
+        # self.assertEqual(8, aoa.where_clause.count("and"))
+        self.conn.closeConnection()
+
+    def test_UQ12(self):
+        self.conn.connectUsingParams()
+        query = "Select p_brand, o_clerk, l_shipmode " \
+                "From orders, lineitem, part " \
+                "Where l_partkey = p_partkey " \
+                "and o_orderkey = l_orderkey " \
+                "and l_shipdate >= o_orderdate " \
+                "and o_orderdate > '1994-01-01' " \
+                "and l_shipdate > '1995-01-01' " \
+                "and p_retailprice >= l_extendedprice " \
+                "and p_partkey < 10000 " \
+                "and l_suppkey < 10000 " \
+                "and p_container = 'LG CAN' " \
+                "Order By l_orderkey LIMIT 10"
+
+        from_rels = ['orders', 'lineitem', 'part']
+        self.assertTrue(self.conn.conn is not None)
+        aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
+        print(self.global_min_instance_dict)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.assertTrue("l_extendedprice <= p_retailprice" in aoa.where_clause)
+        self.assertTrue("o_orderdate <= l_shipdate" in aoa.where_clause)
+        self.conn.closeConnection()
+        print(pj.projected_attribs)
+        print(pj.projection_names)
+
     def test_paper_subquery1_projection(self):
         self.conn.connectUsingParams()
         query, from_rels = get_subquery1()
