@@ -40,7 +40,8 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.all_relations = fc.all_relations
         self.global_pk_dict = fc.init.global_pk_dict
-        self.info[FROM_CLAUSE] = fc
+
+        self.info[FROM_CLAUSE] = fc.core_relations
 
         eq, t = self.after_from_clause_extract(query, self.all_relations,
                                                fc.core_relations,
@@ -65,7 +66,7 @@ class ExtractionPipeLine(GenericPipeLine):
         check = cs2.doJob(query)
         self.update_state(SAMPLING + DONE)
         time_profile.update_for_cs2(cs2.local_elapsed_time)
-        self.info[SAMPLING] = cs2
+        self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
         if not check or not cs2.done:
             self.info[SAMPLING] = None
             self.logger.info("Sampling failed!")
@@ -76,7 +77,7 @@ class ExtractionPipeLine(GenericPipeLine):
         check = vm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(vm.local_elapsed_time)
-        self.info[DB_MINIMIZATION] = vm
+        self.info[DB_MINIMIZATION] = vm.global_result_dict
         if not check:
             self.logger.error("Cannot do database minimization. ")
             self.info[DB_MINIMIZATION] = None
@@ -98,7 +99,7 @@ class ExtractionPipeLine(GenericPipeLine):
         check = ej.doJob(query)
         self.update_state(EQUI_JOIN + DONE)
         time_profile.update_for_where_clause(ej.local_elapsed_time)
-        self.info[EQUI_JOIN] = ej
+        self.info[EQUI_JOIN] = ej.global_join_graph
         if not check:
             self.info[EQUI_JOIN] = None
             self.logger.info("Cannot find Join Predicates.")
@@ -121,7 +122,7 @@ class ExtractionPipeLine(GenericPipeLine):
         check = fl.doJob(query)
         self.update_state(FILTER + DONE)
         time_profile.update_for_where_clause(fl.local_elapsed_time)
-        self.info[FILTER] = fl
+        self.info[FILTER] = fl.filter_predicates
         if not check:
             self.info[FILTER] = None
             self.logger.info("Cannot find Filter Predicates.")
@@ -140,7 +141,7 @@ class ExtractionPipeLine(GenericPipeLine):
         check = pj.doJob(query)
         self.update_state(PROJECTION + DONE)
         time_profile.update_for_projection(pj.local_elapsed_time)
-        self.info[PROJECTION] = pj
+        self.info[PROJECTION] = {'names': pj.projection_names, 'attribs': pj.projected_attribs}
         if not check:
             self.info[PROJECTION] = None
             self.logger.error("Cannot find projected attributes. ")
@@ -159,7 +160,7 @@ class ExtractionPipeLine(GenericPipeLine):
         check = gb.doJob(query)
         self.update_state(GROUP_BY + DONE)
         time_profile.update_for_group_by(gb.local_elapsed_time)
-        self.info[GROUP_BY] = gb
+        self.info[GROUP_BY] = gb.group_by_attrib
         if not check:
             self.info[GROUP_BY] = None
             self.logger.info("Cannot find group by attributes. ")
@@ -183,7 +184,7 @@ class ExtractionPipeLine(GenericPipeLine):
         check = agg.doJob(query)
         self.update_state(AGGREGATE + DONE)
         time_profile.update_for_aggregate(agg.local_elapsed_time)
-        self.info[AGGREGATE] = agg
+        self.info[AGGREGATE] = agg.global_aggregated_attributes
         if not check:
             self.info[AGGREGATE] = None
             self.logger.info("Cannot find aggregations.")
@@ -202,7 +203,7 @@ class ExtractionPipeLine(GenericPipeLine):
         ob.doJob(query)
         self.update_state(ORDER_BY + DONE)
         time_profile.update_for_order_by(ob.local_elapsed_time)
-        self.info[ORDER_BY] = ob
+        self.info[ORDER_BY] = ob.orderBy_string
         if not ob.has_orderBy:
             self.info[ORDER_BY] = None
             self.logger.info("Cannot find aggregations.")
@@ -218,7 +219,7 @@ class ExtractionPipeLine(GenericPipeLine):
         lm.doJob(query)
         self.update_state(LIMIT + DONE)
         time_profile.update_for_limit(lm.local_elapsed_time)
-        self.info[LIMIT] = lm
+        self.info[LIMIT] = lm.limit
         if lm.limit is None:
             self.info[LIMIT] = None
             self.logger.info("Cannot find limit.")

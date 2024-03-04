@@ -7,10 +7,10 @@ from psycopg2 import OperationalError
 from .src.pipeline.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionHelper import ConnectionHelper
 from .src.util.configParser import Config
-from .src.util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
+from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
     NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION
 
-l = [FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT]
+l = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT]
 # Create your views here.
 
 def login_view(request):
@@ -65,14 +65,15 @@ def func_start(connHelper, query, request):
 
 def check_progress(request, token):
     print("...Checking Progress...")
-    state_changed, state_msg = func_check_progress(request, token)
-    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg})
+    state_changed, state_msg, info = func_check_progress(request, token)
+    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg, 'state_info': info}, safe=False)
 
 
 def func_check_progress(request, token):
     print("...HIT...HIT...HIT...")
     state_changed = False
     factory = PipeLineFactory()
+    p = factory.get_pipeline_obj(token)
     print("TOKEN: ", token)
     state_msg = factory.get_pipeline_state(token)
     print("...got...", state_msg, factory.get_pipeline_query(token))
@@ -84,7 +85,7 @@ def func_check_progress(request, token):
         print("... still doing...", state_msg)
         to_pass = [factory.get_pipeline_query(token), state_msg, 'NA']
     request.session[str(token)+'partials'] = to_pass
-    return state_changed, state_msg
+    return state_changed, state_msg, p.info if p else None
 
 
 def prepare_result(query):

@@ -10,7 +10,7 @@
     <div class="subtitle">Unified Non-invasive MAchine for Sql QUery Extraction</div>
     <div class="hidQ subtext">
         <h1>Hidden Query</h1>
-        <pre>{{ query }}</pre>
+        <textarea readonly id="query" rows="5" cols="100">{{ query }}</textarea>
     </div>
     <div class="progress subtext">
         <h1>Please Wait...</h1>
@@ -27,6 +27,7 @@
     <script>
         let STATES = {{states | safe}}
         console.log(STATES)
+        var curr_state = STATES[0]
         // Function to fetch progress updates using AJAX
         function fetchProgress() {
             $.ajax({
@@ -41,6 +42,10 @@
                         console.log("Done")
                         setTimeout(() => window.location.href = "/unmasque/result/{{ token }}",1000)
                         return
+                    }
+                    else{
+                        curr_state = data.progress_message
+                        console.log(data.state_info)
                     }
                     // Set a timeout to fetch progress again after 1 second
                     setTimeout(fetchProgress, 1000);
