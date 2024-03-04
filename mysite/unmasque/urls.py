@@ -19,4 +19,5 @@ urlpatterns = [
     path('bye/', views.bye_page, name='bye'),
     path('progress/<negint:token>', views.progress_page, name='progress'),
     path('check_progress/<negint:token>', views.check_progress, name='check_progress'),
+    path('cancel/<negint:token>', views.cancel_exec, name='cancel')
 ]

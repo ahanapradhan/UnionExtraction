@@ -1,24 +1,32 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Progress...</title>
+    <link rel="stylesheet" href="{% static 'progress.css' %}">
 </head>
 <body>
-    <h1>Hidden Query</h1>
-    <pre>{{ query }}</pre>
-    <br>
-    <hr>
-    <h1>Please Wait...</h1>
-    <div id='progress-updates'>{{ progress_message }}</div>
-    <br>
-    <hr>
-
+    <div class="title">UNMASQUE</div>
+    <div class="subtitle">Unified Non-invasive MAchine for Sql QUery Extraction</div>
+    <div class="hidQ subtext">
+        <h1>Hidden Query</h1>
+        <pre>{{ query }}</pre>
+    </div>
+    <div class="progress subtext">
+        <h1>Please Wait...</h1>
+        <div id='progress-updates'>{{ progress_message }}</div>
+    </div>
+    <div class="btnContainer">
+        <a href="{% url 'cancel' token %}" ><button class="submit">Cancel</button></a>
+    </div>
     <!-- Progress updates will be displayed here -->
 
     <!-- Include jQuery library (you can use a different library if you prefer) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
+        let STATES = {{states | safe}}
+        console.log(STATES)
         // Function to fetch progress updates using AJAX
         function fetchProgress() {
             $.ajax({

@@ -4,14 +4,21 @@
 <head>
     <title>Home</title>
     <link rel="stylesheet" href="{% static 'home.css' %}">
+    <script>
+        if (window.location.href.split('/').length > 5){
+            window.location.href = '/unmasque/'  
+        }
+        
+    </script>
 </head>
 <body>
-    <div class="title">Welcome to UNMASQUE</div>
+    <div class="title">UNMASQUE</div>
+    <div class="subtitle">Unified Non-invasive MAchine for Sql QUery Extraction</div>
     {% if error_message %}
         <h3 style="color:Tomato;">{{ error_message }}</h3>
     {% endif %}
     <hr>
-    <h2>Enter the Query to be Extracted:</h2    >
+    <h2>Enter the Query to be Extracted</h2>
     <hr>
     <form method="post">
         {% csrf_token %}

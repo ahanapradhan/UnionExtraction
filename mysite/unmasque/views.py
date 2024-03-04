@@ -3,12 +3,14 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from psycopg2 import OperationalError
 
+
 from .src.pipeline.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionHelper import ConnectionHelper
 from .src.util.configParser import Config
-from .src.util.constants import DONE
+from .src.util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
+    NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION
 
-
+l = [FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT]
 # Create your views here.
 
 def login_view(request):
@@ -100,11 +102,22 @@ def prepare_result(query):
         to_pass.append("Nothing to show!")
     return to_pass
 
-
-def prepare_result_1(query, data):
+def cancel_exec(request, token):
+    print("ID:", token)
+    print("Trying to cancel")
     factory = PipeLineFactory()
-    tp = factory.pipeline.time_profile
+    factory.cancel_pipeline_exec(token)
+    return render(request, 'unmasque/login.html')
+
+def prepare_result_1(query, data, token):
+    factory = PipeLineFactory()
+    p = factory.get_pipeline_obj(token)
     to_pass = [query]
+    if not p:
+        to_pass.append('None')
+        to_pass.append('None')
+        return to_pass
+    tp = p.time_profile
     if data is not None:
         to_pass.append(data)
     else:
@@ -139,8 +152,7 @@ def result_page(request, token):
             data = i[2]
             break
     print(query, data)
-    partials = prepare_result_1(query, data)
-
+    partials = prepare_result_1(query, data, token)
     print(partials)
     return render(request, 'unmasque/result.html', {'query': partials[0], 'result': partials[1],
                                                     'profiling': partials[2]})
@@ -149,8 +161,8 @@ def result_page(request, token):
 def progress_page(request, token):
     partials = request.session.get(str(token)+'partials')
     print("Partials", partials, str(token)+'partials')
-    return render(request, 'unmasque/progress.html', {'query': partials[0], 'progress_message': partials[1],
-                                                      'profiling': 'NA', 'token': token})
+    return render(request, 'unmasque/progress.html', {'query': partials[0] if partials else "Not Valid Query", 'progress_message': partials[1] if partials else "_QNF_",
+                                                      'profiling': 'NA', 'token': token, 'states': l})
 
 
 def bye_page(request):

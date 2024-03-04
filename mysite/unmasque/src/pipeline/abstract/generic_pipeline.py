@@ -56,12 +56,17 @@ class GenericPipeLine:
         self.logger = Log(name, connectionHelper.config.log_level)
         self.correct = False
         self.all_relations = []
+        self.error = None
 
-    def doJob(self, query):
-        self.update_state(WAITING)
-        result = self.extract(query)
-        self.verify_correctness(query, result)
-        return result
+    def doJob(self, query, qe):
+        try:
+            self.update_state(WAITING)
+            result = self.extract(query)
+            self.verify_correctness(query, result)
+            qe[0] = result
+            return result
+        finally:
+            print("Ended Execution")
 
     def verify_correctness(self, query, result):
         self.update_state(RESULT_COMPARE + START)

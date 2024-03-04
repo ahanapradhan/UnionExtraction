@@ -1,12 +1,14 @@
 * {
     font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
     background-color: #d2dae2;
+    text-align: left;
 }
 
 body{
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 20px;
     
 }
 
@@ -20,23 +22,21 @@ body{
 }
 
 
-h2{
+.hidQ, .progress, .btnContainer{
     width: 52%;
 }
 
-#hidden_label{
-    font-size: 20px;
+.subtext{
+    font-size: 18px;
 }
 
-#query{
-    border: 2px solid #ccc;
-    border-radius: 5px;
-    padding: 12px 20px;
-    font-size: 16px;
-    width: 100%;
+a{
+    padding: 0;
 }
 
 .submit{
+    width: 10%;
+    padding: 8px;
     font-size: 16px;
     font-weight: 700;
     background-color: rgba(51, 51, 51, 0.2);
@@ -49,7 +49,6 @@ h2{
     line-height: 20px;
     list-style: none;
     margin: 0;
-    padding: 10px 12px;
     text-align: center;
     transition: all 200ms;
     vertical-align: baseline;
@@ -58,4 +57,3 @@ h2{
     -webkit-user-select: none;
     touch-action: manipulation;   
 }
-
