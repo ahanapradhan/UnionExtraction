@@ -52,7 +52,10 @@ class MyTestCase(BaseTestCase):
     def test_UQ10_sql(self):
         test_key = "e_UQ10.sql"
         self.conn.connectUsingParams()
-        query = "Select l_shipmode, count(*) as count From orders, lineitem Where o_orderkey = l_orderkey and l_commitdate < l_receiptdate and l_shipdate < l_commitdate and l_receiptdate >= '1994-01-01' and l_receiptdate < '1995-01-01' and l_extendedprice <= o_totalprice and l_extendedprice <= 70000 and o_totalprice > 60000 Group By l_shipmode Order By l_shipmode;"
+        query = "Select l_shipmode, count(*) as count From orders, lineitem Where o_orderkey = l_orderkey and " \
+                "l_commitdate < l_receiptdate and l_shipdate < l_commitdate and l_receiptdate >= '1994-01-01' and " \
+                "l_receiptdate < '1995-01-01' and l_extendedprice <= o_totalprice and l_extendedprice <= 70000 and " \
+                "o_totalprice > 60000 Group By l_shipmode Order By l_shipmode;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -84,7 +87,10 @@ class MyTestCase(BaseTestCase):
     def test_UQ5_sql(self):
         test_key = "e_UQ5.sql"
         self.conn.connectUsingParams()
-        query = "SELECT o_orderkey, o_orderdate FROM orders, customer where o_custkey = c_custkey and c_name like '%0001248%'  AND o_orderdate >= '1997-01-01' UNION ALL SELECT l_orderkey, l_shipdate FROM lineitem, orders where l_orderkey = o_orderkey and o_orderdate < '1994-01-01'   AND l_quantity > 20   AND l_extendedprice > 1000;"
+        query = "SELECT o_orderkey, o_orderdate FROM orders, customer where o_custkey = c_custkey and c_name like " \
+                "'%0001248%'  AND o_orderdate >= '1997-01-01' UNION ALL SELECT l_orderkey, l_shipdate FROM lineitem, " \
+                "orders where l_orderkey = o_orderkey and o_orderdate < '1994-01-01'   AND l_quantity > 20   AND " \
+                "l_extendedprice > 1000;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)

@@ -21,6 +21,18 @@ from mysite.unmasque.src.util.aoa_utils import add_pred_for, get_min, get_max, g
     find_concrete_lb_from_filter_bounds
 
 
+def do_numeric_drama(other_LB, datatype, my_val, delta, satisfied) -> bool:
+    # all the following DRAMA is to handle "numeric" datatype
+    if datatype == 'numeric':
+        bck_diff_1 = float(my_val) - other_LB
+        alt_sat = True
+        if not satisfied:
+            if bck_diff_1 > 0:
+                alt_sat = alt_sat & (abs(bck_diff_1) <= delta)
+        return alt_sat or satisfied
+    return satisfied
+
+
 class AlgebraicPredicate(MutationPipeLineBase):
     SUPPORTED_DATATYPES = ['int', 'date', 'numeric']
 
@@ -299,7 +311,9 @@ class AlgebraicPredicate(MutationPipeLineBase):
     def extract_dormant_LBs(self, E, absorbed_LBs, col_src, datatype, query, L):
         lb_dot = self.mutate_with_boundary_value(absorbed_LBs, E, datatype, query, col_src, False)
         min_val = self.what_is_possible_min_val(E, L, col_src, datatype)
-        if lb_dot != min_val:
+        check = do_numeric_drama(lb_dot, datatype, min_val, get_delta(self.constants_dict[datatype]),
+                                 True if lb_dot != min_val else False)
+        if not check:
             add_item_to_list((lb_dot, col_src), E)
 
     def what_is_possible_min_val(self, E, L, col_src, datatype):
@@ -340,7 +354,9 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 col_i = path[i]
                 ub_dot = self.mutate_with_boundary_value(absorbed_UBs, E, datatype, query, col_i, True)
                 max_val = self.what_is_possible_max_val(E, L, col_i, datatype)
-                if ub_dot != max_val:
+                check = do_numeric_drama(ub_dot, datatype, max_val, get_delta(self.constants_dict[datatype]),
+                                         True if ub_dot != max_val else False)
+                if not check:
                     add_item_to_list((col_i, ub_dot), E)
 
     def algo4_create_edgeSet_E(self, ineqaoa_preds: list) -> dict:
@@ -482,23 +498,9 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
     def is_dmin_val_leq_LB(self, myself, other) -> bool:
         val = self.get_dmin_val(get_attrib(myself), get_tab(myself))
-        satisfied = self.do_numeric_drama(get_LB(other), get_UB(myself), get_attrib(myself), get_tab(myself), val)
-        return satisfied
-
-    def do_numeric_drama(self, other_LB, my_UB, attrib, tab, my_val) -> bool:
-        datatype = self.get_datatype((tab, attrib))
-        satisfied = my_val <= other_LB  # <= _oB
-        # all the following DRAMA is to handle "numeric" datatype
-        if datatype == 'numeric':
-            bck_diff_1 = float(my_val) - other_LB
-            # bck_diff_2 = _B - _oB
-            alt_sat = True
-            if not satisfied:
-                if bck_diff_1 > 0:
-                    alt_sat = alt_sat & (abs(bck_diff_1) <= get_delta(self.constants_dict[datatype]))
-                # if bck_diff_2 > 0:
-                #    alt_sat = alt_sat & (abs(bck_diff_2) <= delta)
-            return alt_sat or satisfied
+        datatype = self.get_datatype((get_tab(myself), get_attrib(myself)))
+        delta = get_delta(self.constants_dict[datatype])
+        satisfied = do_numeric_drama(get_LB(other), datatype, val, delta, True if val <= get_LB(other) else False)
         return satisfied
 
     def create_dashed_edges(self, ineq_group, edge_set) -> None:

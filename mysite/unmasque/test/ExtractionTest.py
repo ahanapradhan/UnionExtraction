@@ -682,6 +682,21 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    def test_UQ10_subq2(self):
+        query = "SELECT l_orderkey, l_shipdate FROM lineitem, " \
+                "orders where l_orderkey = o_orderkey " \
+                "and o_orderdate < '1994-01-01' AND l_quantity > 20   AND " \
+                "l_extendedprice > 1000;"
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+        self.assertEqual(3, eq.count("and"))
+
+
+
     def test_UQ11(self):
         self.conn.connectUsingParams()
         query = "Select o_orderpriority, " \
