@@ -419,16 +419,7 @@ def get_all_elements(item_list, idx_list):
     return items
 
 
-def find_transitive_concrete_LupperBs(L, to_remove):
-    if not len(L):
-        return
-    ls, us = zip(*L)
-    for lm in ls:
-        idx = get_all_indices(lm, ls)
-
-
-def find_transitive_concrete_upperBs(E, to_remove, L):
-    find_transitive_concrete_LupperBs(L, to_remove)
+def find_transitive_concrete_upperBs(E, to_remove):
     if not len(E):
         return
     ls, us = zip(*E)
@@ -472,3 +463,23 @@ def find_transitive_concrete_lowerBs(E, to_remove):
                 lesser, greater = pair[0], pair[1]
                 if (lesser, greater) in E:
                     to_remove.append((lm, greater))
+
+
+def find_concrete_ub_from_filter_bounds(attrib, edge_set, prev_ub):
+    prev_ub_attrib = map(lambda x: x[1]
+    if is_same_tab_attrib(x[0], attrib) and not isinstance(x[1], tuple)
+    else None, edge_set)
+    prev_ub_list = list(filter(lambda ub: ub is not None, prev_ub_attrib))
+    if len(prev_ub_list):
+        prev_ub = prev_ub_list[0]  # only one concrete ub possible
+    return prev_ub
+
+
+def find_concrete_lb_from_filter_bounds(attrib, edge_set, prev_lb):
+    prev_lb_attrib = map(lambda x: x[0]
+    if is_same_tab_attrib(x[1], attrib) and not isinstance(x[0], tuple)
+    else None, edge_set)
+    prev_lb_list = list(filter(lambda lb: lb is not None, prev_lb_attrib))
+    if len(prev_lb_list):
+        prev_lb = prev_lb_list[0]  # only one concrete lb possible
+    return prev_lb

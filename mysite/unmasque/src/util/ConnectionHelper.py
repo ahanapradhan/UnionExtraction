@@ -18,15 +18,16 @@ def set_optimizer_params(is_on):
     return [mergejoin_option, indexscan_option, sort_option]
 
 
-def cus_execute_sqls(cur, sqls):
+def cus_execute_sqls(cur, sqls, logger=None):
     # print(cur)
     for sql in sqls:
         # print("..cur execute.." + sql)
         try:
             cur.execute(sql)
         except psycopg2.ProgrammingError as e:
-            print(e)
-            print(e.diag.message_detail)
+            if logger is not None:
+                logger.debug(e)
+                logger.debug(e.diag.message_detail)
         # print("..done")
     cur.close()
 
@@ -114,9 +115,9 @@ class ConnectionHelper:
             # print("done!")
         return self.conn
 
-    def execute_sql(self, sqls):
+    def execute_sql(self, sqls, logger=None):
         cur = self.get_cursor()
-        cus_execute_sqls(cur, sqls)
+        cus_execute_sqls(cur, sqls, logger)
 
     def execute_sql_with_params(self, sql, params):
         cur = self.get_cursor()
@@ -138,7 +139,7 @@ class ConnectionHelper:
         cur = self.get_DictCursor()
         return cur_execute_sql_fetch_one_0(cur, sql)
 
-    def execute_sql_fetchall(self, sql):
+    def execute_sql_fetchall(self, sql, logger=None):
         res = None
         des = None
         cur = self.get_cursor()
@@ -149,8 +150,9 @@ class ConnectionHelper:
             des = cur.description
             cur.close()
         except psycopg2.ProgrammingError as e:
-            print(e)
-            print(e.diag.message_detail)
+            if logger is not None:
+                logger.debug(e)
+                logger.debug(e.diag.message_detail)
             des = str(e)
         return res, des
 

@@ -1,7 +1,7 @@
 import copy
+from _decimal import Decimal
 
 import psycopg2
-from psycopg2._psycopg import Decimal
 
 from .ExtractorBase import Base
 from ..executable import Executable

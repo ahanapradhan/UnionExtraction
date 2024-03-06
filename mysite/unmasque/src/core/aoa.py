@@ -1,5 +1,4 @@
 import copy
-import decimal
 from datetime import date
 from typing import Union
 
@@ -16,9 +15,10 @@ from mysite.unmasque.src.util.aoa_utils import add_pred_for, get_min, get_max, g
     get_delta, \
     merge_equivalent_paritions, get_all_two_combs, get_val_bound_for_chain, get_min_max_for_chain_bounds, \
     optimize_edge_set, create_adjacency_map_from_aoa_predicates, find_all_chains, \
-    add_concrete_bounds_as_edge2, is_same_tab_attrib, get_op, remove_item_from_list, \
+    add_concrete_bounds_as_edge2, get_op, remove_item_from_list, \
     find_le_attribs_from_edge_set, find_ge_attribs_from_edge_set, add_item_to_list, remove_absorbed_Bs, \
-    find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs
+    find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, find_concrete_ub_from_filter_bounds, \
+    find_concrete_lb_from_filter_bounds
 
 
 class AlgebraicPredicate(MutationPipeLineBase):
@@ -61,12 +61,12 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.algo3_find_eq_joinGraph(query, partition_eq_dict, ineqaoa_preds)
 
         edge_set_dict = self.algo4_create_edgeSet_E(ineqaoa_preds)
-        print("edge_set_dict:", edge_set_dict)
+        self.logger.debug("edge_set_dict:", edge_set_dict)
 
         for datatype in edge_set_dict.keys():
             E, L = self.algo7_find_aoa(edge_set_dict, datatype, query)
-            print("E: ", E)
-            print("L: ", L)
+            self.logger.debug("E: ", E)
+            self.logger.debug("L: ", L)
             self.aoa_predicates.extend(E)
             self.aoa_less_thans.extend(L)
 
@@ -118,7 +118,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
                     self.absorb_variable_UBs(E, L, absorbed_UBs, datatype, col_src, col_sink, query)
                     remove_absorbed_Bs(E, absorbed_LBs, absorbed_UBs, col_sink, col_src)
                 self.extract_dormant_LBs(E, absorbed_LBs, col_src, datatype, query, L)
-            self.remove_redundant_concrete_bounds(E, L)
+            # self.remove_redundant_concrete_bounds(E, L)
 
         self.revert_mutation_on_filter_global_min_instance_dict()
         self.extract_dormant_UBs(E, absorbed_UBs, datatype, directed_paths, query, L)
@@ -140,7 +140,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
     def remove_redundant_concrete_bounds(self, E, L):
         to_remove = []
-        find_transitive_concrete_upperBs(E, to_remove, L)
+        find_transitive_concrete_upperBs(E, to_remove)
         find_transitive_concrete_lowerBs(E, to_remove)
 
         for aoa in E:
@@ -154,17 +154,46 @@ class AlgebraicPredicate(MutationPipeLineBase):
                     to_remove.append(aoa)
                 if aoa[1] == get_max(self.constants_dict[self.get_datatype(aoa[0])]):
                     to_remove.append(aoa)
+
+        cb_list_with_nones = map(lambda x: x if (not isinstance(x[0], tuple) or not isinstance(x[1], tuple))
+        else None, E)
+        cb_list = list(filter(lambda ub: ub is not None, cb_list_with_nones))
+
+        self.find_transitive_concrete_LupperBs(L, cb_list, to_remove)
+        self.find_transitive_concrete_LlowerBs(L, cb_list, to_remove)
+
         for t_r in to_remove:
             remove_item_from_list(t_r, E)
 
+    def find_transitive_concrete_LupperBs(self, L: list[tuple], cb_list: list, to_remove: list) -> None:
+        if not len(L) or not len(cb_list):
+            return
+        for edge in L:
+            datatype = self.get_datatype(edge[0])
+            lup, gup = None, None
+            lup = find_concrete_ub_from_filter_bounds(edge[0], cb_list, lup)
+            gup = find_concrete_ub_from_filter_bounds(edge[1], cb_list, gup)
+            if gup is not None and lup is not None:
+                gup_minus_one = get_val_plus_delta(datatype, gup, -1 * get_delta(self.constants_dict[datatype]))
+                if lup == gup_minus_one:
+                    to_remove.append((edge[0], lup))
+
+    def find_transitive_concrete_LlowerBs(self, L: list[tuple], cb_list: list, to_remove: list) -> None:
+        if not len(L) or not len(cb_list):
+            return
+        for edge in L:
+            datatype = self.get_datatype(edge[0])
+            lup, gup = None, None
+            lup = find_concrete_lb_from_filter_bounds(edge[0], cb_list, lup)
+            gup = find_concrete_lb_from_filter_bounds(edge[1], cb_list, gup)
+            if gup is not None and lup is not None:
+                lup_plus_one = get_val_plus_delta(datatype, lup, get_delta(self.constants_dict[datatype]))
+                if gup == lup_plus_one:
+                    to_remove.append((gup, edge[1]))
+
     def find_concrete_lb_from_edge_set(self, attrib, edge_set, datatype):
         prev_lb = None
-        prev_lb_attrib = map(lambda x: x[0]
-        if is_same_tab_attrib(x[1], attrib) and not isinstance(x[0], tuple)
-        else None, edge_set)
-        prev_lb_list = list(filter(lambda lb: lb is not None, prev_lb_attrib))
-        if len(prev_lb_list):
-            prev_lb = prev_lb_list[0]  # only one concrete lb possible
+        prev_lb = find_concrete_lb_from_filter_bounds(attrib, edge_set, prev_lb)
         if prev_lb is None:
             col_ps = find_le_attribs_from_edge_set(attrib, edge_set)
             for col_p in col_ps:
@@ -175,12 +204,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
     def find_concrete_ub_from_edge_set(self, attrib, edge_set, datatype):
         prev_ub = None
-        prev_ub_attrib = map(lambda x: x[1]
-        if is_same_tab_attrib(x[0], attrib) and not isinstance(x[1], tuple)
-        else None, edge_set)
-        prev_ub_list = list(filter(lambda ub: ub is not None, prev_ub_attrib))
-        if len(prev_ub_list):
-            prev_ub = prev_ub_list[0]  # only one concrete ub possible
+        prev_ub = find_concrete_ub_from_filter_bounds(attrib, edge_set, prev_ub)
         if prev_ub is None:
             col_ps = find_ge_attribs_from_edge_set(attrib, edge_set)
             for col_p in col_ps:

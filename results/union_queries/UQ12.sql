@@ -1,4 +1,4 @@
-Select p_brand, o_clerk, l_shipmode
+(Select p_brand, o_clerk, l_shipmode
 From orders, lineitem, part
 Where
 l_partkey = p_partkey
@@ -10,11 +10,11 @@ and p_retailprice >= l_extendedprice
 and p_partkey < 10000
 and l_suppkey < 10000
 and p_container = 'LG CAN'
-Order By l_orderkey LIMIT 10
+Order By o_clerk LIMIT 10)
 
 UNION ALL
 
-Select p_brand, s_name, l_shipmode
+(Select p_brand, s_name, l_shipmode
 From lineitem, part, supplier
 Where
 l_partkey = p_partkey
@@ -24,4 +24,4 @@ and s_acctbal >= l_extendedprice
 and p_partkey < 15000
 and l_suppkey < 14000
 and p_container = 'LG CAN'
-Order By l_orderkey LIMIT 10;
+Order By p_brand LIMIT 10);

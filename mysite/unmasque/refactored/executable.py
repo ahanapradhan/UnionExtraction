@@ -30,7 +30,7 @@ class Executable(Base):
         query = self.extract_params_from_args(args)
         result = []
         try:
-            res, description = self.connectionHelper.execute_sql_fetchall(query)
+            res, description = self.connectionHelper.execute_sql_fetchall(query, self.logger)
             if description is not None and not is_error(description):
                 colnames = [desc[0] for desc in description]
                 result.append(tuple(colnames))

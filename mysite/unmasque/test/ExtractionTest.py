@@ -661,6 +661,27 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.conn.closeConnection()
 
+    def test_UQ12(self):
+        self.conn.connectUsingParams()
+        query = "Select p_brand, o_clerk, l_shipmode " \
+                "From orders, lineitem, part " \
+                "Where l_partkey = p_partkey " \
+                "and o_orderkey = l_orderkey " \
+                "and l_shipdate >= o_orderdate " \
+                "and o_orderdate > '1994-01-01' " \
+                "and l_shipdate > '1995-01-01' " \
+                "and p_retailprice >= l_extendedprice " \
+                "and p_partkey < 10000 " \
+                "and l_suppkey < 10000 " \
+                "and p_container = 'LG CAN' " \
+                "Order By o_clerk LIMIT 10;"
+
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
     def test_UQ11(self):
         self.conn.connectUsingParams()
         query = "Select o_orderpriority, " \
