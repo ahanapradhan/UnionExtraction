@@ -769,3 +769,71 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         self.conn.closeConnection()
 
+    def test_UQ13(self):
+        self.conn.connectUsingParams()
+        core_rels = ['orders', 'lineitem', 'partsupp']
+        query = "Select l_orderkey, l_linenumber From orders, lineitem, partsupp Where " \
+                "o_orderkey = l_orderkey and " \
+                "ps_partkey = l_partkey and " \
+                "ps_suppkey = l_suppkey and " \
+                "ps_availqty = l_linenumber and " \
+                "l_shipdate >= o_orderdate and " \
+                "o_orderdate >= '1990-01-01' and " \
+                "l_commitdate <= l_receiptdate and " \
+                "l_shipdate <= l_commitdate and " \
+                "l_receiptdate > '1994-01-01' " \
+                "Order By l_orderkey Limit 7;"
+
+        self.conn.execute_sql([
+            f"Insert into lineitem(l_orderkey,l_partkey,l_suppkey,l_linenumber,l_quantity,"
+            f"l_extendedprice,"
+            f"l_discount,l_tax,l_returnflag,l_linestatus,l_shipdate,l_commitdate,l_receiptdate,"
+            f"l_shipinstruct,l_shipmode,l_comment)"
+            f" VALUES (2688869,24707, 4708, 2, 15.0, 24475.50, 0.04, 0.04, \'A\', \'F\', \'1995, 3, 9\',"
+            f"\'1995, 3, 13\', \'1995, 4, 4\',\'COLLECT COD              \', \'TRUCK       \',"
+            f"\'ckly bold att\');",
+
+            f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+            f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+            f"VALUES (2688869, 17513, \'F\', 258583.28, \'1995, 1, 14\', \'3-MEDIUM\', \'Clerk#000000672\', 0, "
+            f"\'ts. slyly regular escapades boost \');",
+
+            f"Insert into partsupp(ps_partkey, ps_suppkey, ps_availqty, ps_supplycost, ps_comment) "
+            f"VALUES (24707, 4708, 2, 788.97, \'ounts. blithely express platelets according to the \');"
+        ])
+
+        global_min_instance_dict = {
+            'orders': [('o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice',
+                        'o_orderdate', 'o_orderpriority', 'o_clerk', 'o_shippriority', 'o_comment'),
+                       (2688869, 17513, 'F', 258583.28, datetime.date(1995, 1, 14),
+                        '3-MEDIUM       ', 'Clerk#000000672', 0,
+                        'ts. slyly regular escapades boost ')],
+            'lineitem': [('l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity',
+                          'l_extendedprice', 'l_discount', 'l_tax', 'l_returnflag', 'l_linestatus',
+                          'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
+                          'l_shipmode', 'l_comment'), (2688869, 24707, 4708, 2, 15.00, 24475.50, 0.04, 0.04, 'A',
+                                                       'F', datetime.date(1995, 3, 9), datetime.date(1995, 3, 13),
+                                                       datetime.date(1995, 4, 4),
+                                                       'COLLECT COD              ', 'TRUCK     ', 'ckly bold att')],
+            'partsupp': [('ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment'),
+                         (24707, 4708, 2, 788.97, 'ounts. blithely express platelets according to the ')]}
+
+        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa.mock = True
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.assertEqual(len(aoa.aoa_predicates), 5)
+        self.assertEqual(len(aoa.aoa_less_thans), 0)
+        self.assertEqual(8, aoa.where_clause.count("and"))
+
+        delivery = aoa.pipeline_delivery
+        pj = Projection(self.conn, delivery)
+        pj.mock = True
+        check = pj.doJob(query)
+        self.assertTrue(check)
+        print(delivery.global_min_instance_dict)
+        self.assertTrue(check)
+        print(pj.projected_attribs)
+        print(pj.projection_names)
+        self.conn.closeConnection()
