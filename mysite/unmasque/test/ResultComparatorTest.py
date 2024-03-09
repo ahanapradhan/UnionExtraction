@@ -170,6 +170,64 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(matched_hash)
         self.conn.closeConnection()
 
+    def test_UQ12_sql(self):
+        self.conn.connectUsingParams()
+        q_h = "(Select p_brand, o_clerk, l_shipmode From orders, lineitem, part Where l_partkey = p_partkey and " \
+              "o_orderkey = l_orderkey and l_shipdate >= o_orderdate " \
+              "and o_orderdate > '1994-01-01' and l_shipdate " \
+              "> '1995-01-01' and p_retailprice >= l_extendedprice and p_partkey < 10000 and l_suppkey < 10000 and " \
+              "p_container = 'LG CAN' Order By o_clerk LIMIT 10)" \
+              "  UNION ALL  " \
+              "(Select p_brand, s_name, l_shipmode " \
+              "From lineitem, part, supplier Where l_partkey = p_partkey and s_suppkey = s_suppkey and l_shipdate > " \
+              "'1995-01-01' and s_acctbal >= l_extendedprice and p_partkey < 15000 and l_suppkey < 14000 and " \
+              "p_container = 'LG CAN' Order By p_brand LIMIT 10);"
+        q_e = "(Select p_brand, s_name as o_clerk, l_shipmode " \
+              "From lineitem, part, supplier Where l_partkey = p_partkey " \
+              "and s_suppkey = s_suppkey and l_shipdate > " \
+              "'1995-01-01' and s_acctbal >= l_extendedprice and p_partkey < 15000 and l_suppkey < 14000 and " \
+              "p_container = 'LG CAN' Order By p_brand LIMIT 10) " \
+              "UNION ALL " \
+              "(Select p_brand, o_clerk, l_shipmode From orders, lineitem, part Where l_partkey = p_partkey and " \
+              "o_orderkey = l_orderkey and l_shipdate >= o_orderdate and o_orderdate > '1994-01-01' and l_shipdate " \
+              "> '1995-01-01' and p_retailprice >= l_extendedprice and p_partkey < 10000 and l_suppkey < 10000 and " \
+              "p_container = 'LG CAN' Order By o_clerk LIMIT 10);"
+        rc_hash = ResultComparator(self.conn, True)
+        matched_hash = rc_hash.doJob(q_h, q_h)
+        self.assertTrue(matched_hash)
+        matched_hash = rc_hash.doJob(q_h, q_e)
+        self.assertTrue(matched_hash)
+        self.conn.closeConnection()
+
+    def test_UQ12_sql(self):
+        self.conn.connectUsingParams()
+        q_h = "(Select p_brand, o_clerk, l_shipmode From orders, lineitem, part Where l_partkey = p_partkey and " \
+              "o_orderkey = l_orderkey and l_shipdate >= o_orderdate " \
+              "and o_orderdate > '1994-01-01' and l_shipdate " \
+              "> '1995-01-01' and p_retailprice >= l_extendedprice and p_partkey < 10000 and l_suppkey < 10000 and " \
+              "p_container = 'LG CAN' Order By o_clerk LIMIT 10)" \
+              "  UNION ALL  " \
+              "(Select p_brand, s_name, l_shipmode " \
+              "From lineitem, part, supplier Where l_partkey = p_partkey and s_suppkey = s_suppkey and l_shipdate > " \
+              "'1995-01-01' and s_acctbal >= l_extendedprice and p_partkey < 15000 and l_suppkey < 14000 and " \
+              "p_container = 'LG CAN' Order By p_brand LIMIT 10);"
+        q_e = "(Select p_brand, s_name as o_clerk, l_shipmode " \
+              "From lineitem, part, supplier Where l_partkey = p_partkey " \
+              "and s_suppkey = s_suppkey and l_shipdate > " \
+              "'1995-01-01' and s_acctbal >= l_extendedprice and p_partkey < 15000 and l_suppkey < 14000 and " \
+              "p_container = 'LG CAN' Order By p_brand LIMIT 10) " \
+              "UNION ALL " \
+              "(Select p_brand, o_clerk, l_shipmode From orders, lineitem, part Where l_partkey = p_partkey and " \
+              "o_orderkey = l_orderkey and l_shipdate >= o_orderdate and o_orderdate > '1994-01-01' and l_shipdate " \
+              "> '1995-01-01' and p_retailprice >= l_extendedprice and p_partkey < 10000 and l_suppkey < 10000 and " \
+              "p_container = 'LG CAN' Order By o_clerk LIMIT 10);"
+        rc_hash = ResultComparator(self.conn, True)
+        matched_hash = rc_hash.doJob(q_h, q_h)
+        self.assertTrue(matched_hash)
+        matched_hash = rc_hash.doJob(q_h, q_e)
+        self.assertTrue(matched_hash)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()
