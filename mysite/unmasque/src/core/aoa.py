@@ -18,8 +18,8 @@ from mysite.unmasque.src.util.aoa_utils import add_pred_for, get_min, get_max, g
     optimize_edge_set, create_adjacency_map_from_aoa_predicates, find_all_chains, \
     add_concrete_bounds_as_edge2, get_op, remove_item_from_list, \
     find_le_attribs_from_edge_set, find_ge_attribs_from_edge_set, add_item_to_list, remove_absorbed_Bs, \
-    find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, find_concrete_ub_from_filter_bounds, \
-    find_concrete_lb_from_filter_bounds, do_numeric_drama, need_permanent_mutation
+    find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, do_numeric_drama, need_permanent_mutation, \
+    find_concrete_bound_from_filter_bounds
 
 
 class AlgebraicPredicate(MutationPipeLineBase):
@@ -172,8 +172,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
         for edge in L:
             datatype = self.get_datatype(edge[0])
             lup, gup = None, None
-            lup = find_concrete_ub_from_filter_bounds(edge[0], cb_list, lup)
-            gup = find_concrete_ub_from_filter_bounds(edge[1], cb_list, gup)
+            lup = find_concrete_bound_from_filter_bounds(edge[0], cb_list, lup, True)
+            gup = find_concrete_bound_from_filter_bounds(edge[1], cb_list, gup, True)
             if gup is not None and lup is not None:
                 gup_minus_one = get_val_plus_delta(datatype, gup, -1 * get_delta(self.constants_dict[datatype]))
                 if lup == gup_minus_one:
@@ -185,42 +185,34 @@ class AlgebraicPredicate(MutationPipeLineBase):
         for edge in L:
             datatype = self.get_datatype(edge[0])
             lup, gup = None, None
-            lup = find_concrete_lb_from_filter_bounds(edge[0], cb_list, lup)
-            gup = find_concrete_lb_from_filter_bounds(edge[1], cb_list, gup)
+            lup = find_concrete_bound_from_filter_bounds(edge[0], cb_list, lup, False)
+            gup = find_concrete_bound_from_filter_bounds(edge[1], cb_list, gup, False)
             if gup is not None and lup is not None:
                 lup_plus_one = get_val_plus_delta(datatype, lup, get_delta(self.constants_dict[datatype]))
                 if gup == lup_plus_one:
                     to_remove.append((gup, edge[1]))
 
-    def find_concrete_lb_from_edge_set(self, attrib, edge_set, datatype):
-        prev_lb = None
-        prev_lb = find_concrete_lb_from_filter_bounds(attrib, edge_set, prev_lb)
-        if prev_lb is None:
-            col_ps = find_le_attribs_from_edge_set(attrib, edge_set)
+    def find_concrete_bound_from_edge_set(self, attrib, edge_set, datatype, is_UB):
+        # prev_b_getter = find_concrete_bound_from_filter_bounds if is_UB else find_concrete_lb_from_filter_bounds
+        col_ps_getter = find_ge_attribs_from_edge_set if is_UB else find_le_attribs_from_edge_set
+        prev_b_none_getter = get_max if is_UB else get_min
+        prev_b = None
+        prev_b = find_concrete_bound_from_filter_bounds(attrib, edge_set, prev_b, is_UB)
+        if prev_b is None:
+            col_ps = col_ps_getter(attrib, edge_set)
             for col_p in col_ps:
-                prev_lb = self.get_dmin_val(get_attrib(col_p), get_tab(col_p))
-        if prev_lb is None:
-            prev_lb = get_min(self.constants_dict[datatype])
-        return prev_lb
-
-    def find_concrete_ub_from_edge_set(self, attrib, edge_set, datatype):
-        prev_ub = None
-        prev_ub = find_concrete_ub_from_filter_bounds(attrib, edge_set, prev_ub)
-        if prev_ub is None:
-            col_ps = find_ge_attribs_from_edge_set(attrib, edge_set)
-            for col_p in col_ps:
-                prev_ub = self.get_dmin_val(get_attrib(col_p), get_tab(col_p))
-        if prev_ub is None:
-            prev_ub = get_max(self.constants_dict[datatype])
-        return prev_ub
+                prev_b = self.get_dmin_val(get_attrib(col_p), get_tab(col_p))
+        if prev_b is None:
+            prev_b = prev_b_none_getter(self.constants_dict[datatype])
+        return prev_b
 
     def absorb_variable_UBs(self, E, L, absorbed_UBs, datatype, col_src, col_sink, query):
         joined_src = self.get_equi_join_group(col_src)
-        prev_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
+        prev_ub = self.find_concrete_bound_from_edge_set(col_src, E, datatype, True)
         if (col_src, col_sink) in E or (col_src, col_sink) in L:
             for _src in joined_src:
                 absorbed_UBs[_src] = prev_ub
-        col_sink_lb = self.find_concrete_lb_from_edge_set(col_sink, E, datatype)
+        col_sink_lb = self.find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
         val, dmin_val = self.mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, False, query)
         if val != dmin_val:
             new_ub_fe = self.do_bound_check_again(col_src, datatype, query)
@@ -242,8 +234,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
         lb is lesser than current d_min value
         if any mutation happens in d_min, make sure the lb is updated accordingly
         """
-        prev_lb = self.find_concrete_lb_from_edge_set(col_sink, E, datatype)
-        col_src_ub = self.find_concrete_ub_from_edge_set(col_src, E, datatype)
+        prev_lb = self.find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
+        col_src_ub = self.find_concrete_bound_from_edge_set(col_src, E, datatype, True)
         val, dmin_val = self.mutate_attrib_with_Bound_val(col_src, datatype, col_src_ub, True, query)
         if val != dmin_val:
             new_lb_fe = self.do_bound_check_again(col_sink, datatype, query)
@@ -447,8 +439,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
         if val is None:
             for key in joined_tab_attrib:
-                val = self.find_concrete_ub_from_edge_set(key, edge_set, datatype) if is_UB \
-                    else self.find_concrete_lb_from_edge_set(key, edge_set, datatype)
+                val = self.find_concrete_bound_from_edge_set(key, edge_set, datatype, is_UB)
 
         for key in joined_tab_attrib:
             tab, attrib = get_tab(key), get_attrib(key)

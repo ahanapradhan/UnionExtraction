@@ -467,24 +467,20 @@ def find_transitive_concrete_lowerBs(E, to_remove):
                     to_remove.append((lm, greater))
 
 
-def find_concrete_ub_from_filter_bounds(attrib, edge_set, prev_ub):
-    prev_ub_attrib = map(lambda x: x[1]
-    if is_same_tab_attrib(x[0], attrib) and not isinstance(x[1], tuple)
-    else None, edge_set)
-    prev_ub_list = list(filter(lambda ub: ub is not None, prev_ub_attrib))
-    if len(prev_ub_list):
-        prev_ub = prev_ub_list[0]  # only one concrete ub possible
-    return prev_ub
+def find_concrete_bound_from_filter_bounds(attrib, edge_set, prev_bound, is_upper_bound):
+    if is_upper_bound:
+        prev_attrib = map(lambda x: x[1]
+        if is_same_tab_attrib(x[0], attrib) and not isinstance(x[1], tuple)
+        else None, edge_set)
+    else:
+        prev_attrib = map(lambda x: x[0]
+        if is_same_tab_attrib(x[1], attrib) and not isinstance(x[0], tuple)
+        else None, edge_set)
 
-
-def find_concrete_lb_from_filter_bounds(attrib, edge_set, prev_lb):
-    prev_lb_attrib = map(lambda x: x[0]
-    if is_same_tab_attrib(x[1], attrib) and not isinstance(x[0], tuple)
-    else None, edge_set)
-    prev_lb_list = list(filter(lambda lb: lb is not None, prev_lb_attrib))
-    if len(prev_lb_list):
-        prev_lb = prev_lb_list[0]  # only one concrete lb possible
-    return prev_lb
+    prev_list = list(filter(lambda b: b is not None, prev_attrib))
+    if len(prev_list):
+        prev_bound = prev_list[0]  # only one concrete bound possible
+    return prev_bound
 
 
 def do_numeric_drama(other_LB, datatype, my_val, delta, satisfied) -> bool:
