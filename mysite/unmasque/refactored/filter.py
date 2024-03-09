@@ -366,38 +366,16 @@ class Filter(MutationPipeLineBase):
             else:
                 filterAttribs.append((tabname, attrib, 'equal', val, val))
 
-    def revert_filter_changes(self, tabname):
-        if not self.mock:
-            self.connectionHelper.execute_sql([truncate_table(tabname),
-                                               insert_into_tab_select_star_fromtab(tabname, get_tabname_4(tabname))])
-        else:
-            values = self.global_min_instance_dict[tabname]
-            headers = values[0]
-            comma_sep_h = ", ".join(headers)
-            tuple_ = [parse_for_int(e) for e in values[1]]
-            comma_sep_v = ", ".join(tuple_)
-            ddl_ql = f"insert into {tabname}({comma_sep_h}) values({comma_sep_v});"
-            self.connectionHelper.execute_sql([truncate_table(tabname), ddl_ql])
-
     def checkStringPredicate(self, query, tabname, attrib):
         prev_values = self.get_dmin_val_of_attrib_list([(tabname, attrib)])
-
         # update query
-        if self.global_d_plus_value[attrib] is not None and self.global_d_plus_value[attrib][0] == 'a':
-            val = 'b'
-        else:
-            val = 'a'
-        new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, val)
-        if isQ_result_empty(new_result):
-            self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)
-            return True
-        new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, "" "")
-        if isQ_result_empty(new_result):
-            self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)
-            return True
+        val = 'b' if (self.global_d_plus_value[attrib] is not None and self.global_d_plus_value[attrib][0] == 'a') else 'a'
+        val_result = self.run_updateQ_with_temp_str(attrib, query, tabname, val)
+        empty_result = self.run_updateQ_with_temp_str(attrib, query, tabname, "" "")
+        effect = isQ_result_empty(val_result) or isQ_result_empty(empty_result)
         # update table so that result is not empty
         self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)
-        return False
+        return effect
 
     def getStrFilterValue(self, query, tabname, attrib, representative, max_length):
         index = 0
@@ -458,9 +436,11 @@ class Filter(MutationPipeLineBase):
         return output
 
     def run_updateQ_with_temp_str(self, attrib, query, tabname, temp):
+        prev_values = self.get_dmin_val_of_attrib_list([(tabname, attrib)])
         up_query = update_tab_attrib_with_quoted_value(tabname, attrib, temp)
         self.connectionHelper.execute_sql([up_query])
         new_result = self.app.doJob(query)
+        self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)
         return new_result
 
 

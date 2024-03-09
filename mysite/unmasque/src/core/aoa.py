@@ -156,7 +156,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 if aoa[1] == get_max(self.constants_dict[self.get_datatype(aoa[0])]):
                     to_remove.append(aoa)
 
-
         cb_list_with_nones = map(lambda x: x if (not isinstance(x[0], tuple) or not isinstance(x[1], tuple))
         else None, E)
         cb_list = list(filter(lambda ub: ub is not None, cb_list_with_nones))
