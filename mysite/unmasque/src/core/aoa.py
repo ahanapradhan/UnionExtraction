@@ -73,7 +73,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
         self.cleanup_predicates()
         self.generate_where_clause()
-        self.post_process_for_generation_pipeline()
+        self.post_process_for_generation_pipeline(query)
         return True
 
     def cleanup_predicates(self):
@@ -324,11 +324,15 @@ class AlgebraicPredicate(MutationPipeLineBase):
             delta, _ = get_constants_for(datatype)
             self.constants_dict[datatype] = (i_min, i_max, delta)
 
-    def post_process_for_generation_pipeline(self) -> None:
+    def post_process_for_generation_pipeline(self, query) -> None:
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
         self.restore_d_min_from_dict()
 
         self.do_permanent_mutation()
+
+        res = self.app.doJob(query)
+        if isQ_result_empty(res):
+            print("Mutation got wrong! %%%%%%")
 
         self.pipeline_delivery = PackageForGenPipeline(self.core_relations,
                                                        self.filter_extractor.global_all_attribs,
@@ -353,16 +357,27 @@ class AlgebraicPredicate(MutationPipeLineBase):
             diffs = [dmin_vals[i + 1] - dmin_vals[i] for i in range(len(dmin_vals) - 1)]
             if need_permanent_mutation(datatype, diffs):
                 self.logger.debug("Need to mutate d_min permanently!")
-                _min = self.what_is_possible_min_val(self.aoa_predicates,
-                                                     self.aoa_less_thans, directed_paths[0], datatype)
-                _max = self.what_is_possible_max_val(self.aoa_predicates,
-                                                     self.aoa_less_thans, directed_paths[0], datatype)
-                self.logger.debug(f"min: {_min}, max: {_max}")
-                chunk_size = get_mid_val(datatype, _max, _min, num)
-                new_vals = [_min]
+                lb = find_concrete_bound_from_filter_bounds(path[0], self.aoa_predicates, None, False)
+                if lb is None:
+                    lb = self.what_is_possible_min_val(self.aoa_predicates,
+                                                       self.aoa_less_thans, path[0], datatype)
+                ub = find_concrete_bound_from_filter_bounds(path[-1], self.aoa_predicates, None, True)
+                if ub is None:
+                    ub = self.what_is_possible_max_val(self.aoa_predicates,
+                                                       self.aoa_less_thans, path[-1], datatype)
+                self.logger.debug(f"min: {path[0]} {lb}, max: {path[-1]} {ub}")
+                chunk_size = get_mid_val(datatype, ub, lb, num)
+                new_vals = [lb]
                 for i in range(1, num):
                     new_vals.append(add_two(copy.deepcopy(new_vals[-1]), chunk_size, datatype))
 
+                for i in range(num):
+                    min_val = find_concrete_bound_from_filter_bounds(path[i], self.aoa_predicates, None, False)
+                    if min_val is None:
+                        min_val = self.what_is_possible_min_val(self.aoa_predicates,
+                                                                self.aoa_less_thans, path[i], datatype)
+                    if min_val > new_vals[i]:
+                        new_vals[i] = min_val
                 self.logger.debug(new_vals)
                 for i in range(num):
                     self.mutate_dmin_with_val(datatype, path[i], new_vals[i])
