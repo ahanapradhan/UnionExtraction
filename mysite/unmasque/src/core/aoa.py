@@ -160,40 +160,30 @@ class AlgebraicPredicate(MutationPipeLineBase):
         else None, E)
         cb_list = list(filter(lambda ub: ub is not None, cb_list_with_nones))
 
-        self.find_transitive_concrete_LupperBs(L, cb_list, to_remove)
-        self.find_transitive_concrete_LlowerBs(L, cb_list, to_remove)
+        self.find_transitive_concrete_L_Bounds(L, cb_list, to_remove, is_UB=True)
+        self.find_transitive_concrete_L_Bounds(L, cb_list, to_remove, is_UB=False)
 
         for t_r in to_remove:
             remove_item_from_list(t_r, E)
 
-    def find_transitive_concrete_LupperBs(self, L: list[tuple], cb_list: list, to_remove: list) -> None:
+    def find_transitive_concrete_L_Bounds(self, L: list[tuple], cb_list: list, to_remove: list, is_UB: bool) -> None:
         if not len(L) or not len(cb_list):
             return
         for edge in L:
             datatype = self.get_datatype(edge[0])
+            coeff = -1 if is_UB else 1
             lup, gup = None, None
-            lup = find_concrete_bound_from_filter_bounds(edge[0], cb_list, lup, True)
-            gup = find_concrete_bound_from_filter_bounds(edge[1], cb_list, gup, True)
+            lup = find_concrete_bound_from_filter_bounds(edge[0], cb_list, lup, is_upper_bound=is_UB)
+            gup = find_concrete_bound_from_filter_bounds(edge[1], cb_list, gup, is_upper_bound=is_UB)
+            base_b = gup if is_UB else lup
+            other_b = lup if is_UB else gup
             if gup is not None and lup is not None:
-                gup_minus_one = get_val_plus_delta(datatype, gup, -1 * get_delta(self.constants_dict[datatype]))
-                if lup == gup_minus_one:
-                    to_remove.append((edge[0], lup))
-
-    def find_transitive_concrete_LlowerBs(self, L: list[tuple], cb_list: list, to_remove: list) -> None:
-        if not len(L) or not len(cb_list):
-            return
-        for edge in L:
-            datatype = self.get_datatype(edge[0])
-            lup, gup = None, None
-            lup = find_concrete_bound_from_filter_bounds(edge[0], cb_list, lup, False)
-            gup = find_concrete_bound_from_filter_bounds(edge[1], cb_list, gup, False)
-            if gup is not None and lup is not None:
-                lup_plus_one = get_val_plus_delta(datatype, lup, get_delta(self.constants_dict[datatype]))
-                if gup == lup_plus_one:
-                    to_remove.append((gup, edge[1]))
+                base_op_one = get_val_plus_delta(datatype, base_b, coeff * get_delta(self.constants_dict[datatype]))
+                if other_b == base_op_one:
+                    redundant_pred = (edge[0], lup) if is_UB else (gup, edge[1])
+                    to_remove.append(redundant_pred)
 
     def find_concrete_bound_from_edge_set(self, attrib, edge_set, datatype, is_UB):
-        # prev_b_getter = find_concrete_bound_from_filter_bounds if is_UB else find_concrete_lb_from_filter_bounds
         col_ps_getter = find_ge_attribs_from_edge_set if is_UB else find_le_attribs_from_edge_set
         prev_b_none_getter = get_max if is_UB else get_min
         prev_b = None
