@@ -126,6 +126,9 @@ class Projection(GenerationPipeLineBase):
             if fe[1] == attrib and (fe[2] == 'equal' or fe[2] == '=') and fe[1] not in self.joined_attribs:
                 return
         val, prev = self.update_attrib_to_see_impact(attrib, tabname)
+        if val == prev:
+            self.logger.debug("Could not find other s-value! Cannot verify impact!")
+            return
         new_result1 = self.app.doJob(query)
         if len(new_result1) > 1:
             new_result1 = list(new_result1[1])

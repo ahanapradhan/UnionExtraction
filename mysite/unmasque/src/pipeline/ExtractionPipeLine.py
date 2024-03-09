@@ -104,6 +104,7 @@ class ExtractionPipeLine(GenericPipeLine):
         '''
         self.update_state(PROJECTION + START)
         pj = Projection(self.connectionHelper, delivery)
+        print(delivery.global_min_instance_dict)
 
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)

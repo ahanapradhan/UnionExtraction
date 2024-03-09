@@ -3,6 +3,7 @@ import datetime
 import pytest
 
 from mysite.unmasque.refactored.projection import Projection
+from mysite.unmasque.refactored.util.utils import isQ_result_empty
 from mysite.unmasque.src.core.aoa import AlgebraicPredicate
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.src.util.aoa_utils import find_all_chains, create_adjacency_map_from_aoa_predicates, \
@@ -651,6 +652,66 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(pj.projected_attribs[0], 'l_shipmode')
         self.conn.closeConnection()
 
+    def test_UQ10_2(self):
+        self.conn.connectUsingParams()
+        core_rels = ['orders', 'lineitem']
+        query = "Select l_shipmode " \
+                "From orders, lineitem " \
+                "Where o_orderkey = l_orderkey " \
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate " \
+                "and l_receiptdate >= '1994-01-01' and " \
+                "l_receiptdate < '1995-01-01';"
+
+        self.conn.execute_sql([
+            f"Insert into lineitem(l_orderkey,l_partkey,l_suppkey,l_linenumber,l_quantity,"
+            f"l_extendedprice,"
+            f"l_discount,l_tax,l_returnflag,l_linestatus,l_shipdate,l_commitdate,l_receiptdate,"
+            f"l_shipinstruct,l_shipmode,l_comment)"
+            f" VALUES (3000000,83848, 1381, 5, 5.0, 9159.2, 0.09, 0.07, \'N\', \'O\', \'1994, 7, 25\',"
+            f"\'1994, 7, 26\', \'1994, 7, 27\',\'NONE              \', \'TRUCK       \',"
+            f"\'ecial packages haggle furious\');",
+
+            f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+            f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+            f"VALUES (3000000, 47480, \'O\', 189194.91, \'1995, 6, 20\', \'1-URGENT\', \'Clerk#000000149\', 0, "
+            f"\'lly special ideas maintain furiously special requests. furio\');"
+        ])
+
+        global_min_instance_dict = {
+            'orders': [('o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice',
+                        'o_orderdate', 'o_orderpriority', 'o_clerk', 'o_shippriority', 'o_comment'),
+                       (3000000, 47480, 'O', 189194.91, datetime.date(1995, 6, 20),
+                        '1-URGENT       ', 'Clerk#000000149', 0,
+                        'lly special ideas maintain furiously special requests. furio')],
+            'lineitem': [('l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity',
+                          'l_extendedprice', 'l_discount', 'l_tax', 'l_returnflag', 'l_linestatus',
+                          'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
+                          'l_shipmode', 'l_comment'), (3000000, 83848, 1381, 5, 5.0, 9159.2, 0.09, 0.07,
+                                                       'N', 'O', datetime.date(1995, 7, 25),
+                                                       datetime.date(1995, 7, 26), datetime.date(1995, 7, 27),
+                                                       'NONE                     ', 'TRUCK     ',
+                                                       'ecial packages haggle furious')]}
+
+        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa.mock = True
+
+        res = aoa.app.doJob(query)
+        self.assertFalse(isQ_result_empty(res))
+
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.assertEqual(4, aoa.where_clause.count("and"))
+
+        delivery = aoa.pipeline_delivery
+        pj = Projection(self.conn, delivery)
+        pj.mock = True
+        check = pj.doJob(query)
+        self.assertTrue(check)
+        print(delivery.global_min_instance_dict)
+        self.assertTrue(check)
+        self.conn.closeConnection()
+
     def test_UQ10_1(self):
         self.conn.connectUsingParams()
         core_rels = ['orders', 'lineitem']
@@ -698,4 +759,13 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(aoa.arithmetic_eq_predicates), 0)
         self.assertEqual(len(aoa.aoa_predicates), 0)
         self.assertEqual(len(aoa.aoa_less_thans), 2)
+
+        delivery = aoa.pipeline_delivery
+        pj = Projection(self.conn, delivery)
+        pj.mock = True
+        check = pj.doJob(query)
+        self.assertTrue(check)
+        print(delivery.global_min_instance_dict)
+        self.assertTrue(check)
         self.conn.closeConnection()
+

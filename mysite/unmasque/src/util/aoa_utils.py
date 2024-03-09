@@ -1,6 +1,8 @@
+import datetime
 from datetime import date
 from typing import Union
 
+from mysite.unmasque.refactored.filter import get_constants_for
 from mysite.unmasque.refactored.util.utils import get_datatype_of_val, get_format
 
 
@@ -483,3 +485,38 @@ def find_concrete_lb_from_filter_bounds(attrib, edge_set, prev_lb):
     if len(prev_lb_list):
         prev_lb = prev_lb_list[0]  # only one concrete lb possible
     return prev_lb
+
+
+def do_numeric_drama(other_LB, datatype, my_val, delta, satisfied) -> bool:
+    # all the following DRAMA is to handle "numeric" datatype
+    if datatype == 'numeric':
+        bck_diff_1 = float(my_val) - other_LB
+        alt_sat = True
+        if not satisfied:
+            if bck_diff_1 > 0:
+                alt_sat = alt_sat & (abs(bck_diff_1) <= delta)
+        return alt_sat or satisfied
+    return satisfied
+
+
+def conseq(nums):
+    for i in range(len(nums) - 1):
+        if nums[i] == nums[i + 1]:
+            return nums[i]
+
+    # Only return False once we've exhausted all numbers.
+    # Since we didn't return True so far - it means there are
+    # no consecutive equal numbers, so we can safely return False
+    return False
+
+
+def need_permanent_mutation(datatype, diffs: list) -> bool:
+    delta, cutoff = get_constants_for(datatype)
+    if datatype == 'date':
+        d_val = delta * datetime.timedelta(days=1)
+    elif datatype in ['int', 'numeric']:
+        d_val = delta
+    else:
+        raise ValueError
+    val = conseq(diffs)
+    return val == d_val

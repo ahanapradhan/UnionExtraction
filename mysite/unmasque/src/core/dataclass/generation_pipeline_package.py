@@ -76,7 +76,6 @@ class PackageForGenPipeline:
         self.get_datatype = get_datatype
 
     def doJob(self):
-        print(self.global_min_instance_dict)
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         self.filter_attrib_dict = self.construct_filter_attribs_dict()
         self.joined_attribs = collect_attribs_from(self.global_join_graph)

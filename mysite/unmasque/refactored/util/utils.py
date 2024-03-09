@@ -3,6 +3,8 @@ import datetime
 import itertools
 import math
 
+from dateutil.relativedelta import relativedelta
+
 from ...src.util import constants
 from ...src.util.constants import dummy_int, dummy_date, dummy_char
 
@@ -169,13 +171,26 @@ def get_format(datatype, val):
     return str(val)
 
 
-def get_mid_val(datatype, high, low):
+def add_two(one, two, datatype):
     if datatype == 'date':
-        mid_val = low + datetime.timedelta(days=int(math.floor((high - low).days / 2)))
+        year = two.year
+        month = two.month
+        day = two.day
+        one_ = one + datetime.timedelta(days=day)
+        one__ = one_ + relativedelta(months=month)
+        one___ = one__ + relativedelta(years=year)
+        return one___
+    else:
+        return one + two
+
+
+def get_mid_val(datatype, high, low, div=2):
+    if datatype == 'date':
+        mid_val = low + datetime.timedelta(days=int(math.floor((high - low).days / div)))
     elif datatype == 'int':
-        mid_val = low + int((high - low) / 2)
+        mid_val = low + int((high - low) / div)
     else:  # numeric
-        mid_val = (high + low) / 2
+        mid_val = (high + low) / div
         mid_val = round(mid_val, 3)
     return mid_val
 
