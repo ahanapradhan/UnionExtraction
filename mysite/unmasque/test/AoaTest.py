@@ -659,7 +659,7 @@ class MyTestCase(BaseTestCase):
                 "From orders, lineitem " \
                 "Where o_orderkey = l_orderkey " \
                 "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate " \
-                "and l_receiptdate >= '1994-01-01' and " \
+                "and l_receiptdate >= '1993-01-01' and " \
                 "l_receiptdate < '1995-01-01';"
 
         self.conn.execute_sql([

@@ -156,6 +156,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 if aoa[1] == get_max(self.constants_dict[self.get_datatype(aoa[0])]):
                     to_remove.append(aoa)
 
+
         cb_list_with_nones = map(lambda x: x if (not isinstance(x[0], tuple) or not isinstance(x[1], tuple))
         else None, E)
         cb_list = list(filter(lambda ub: ub is not None, cb_list_with_nones))
@@ -278,7 +279,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         min_val = self.what_is_possible_min_val(E, L, col_src, datatype)
         check = do_numeric_drama(lb_dot, datatype, min_val, get_delta(self.constants_dict[datatype]),
                                  True if lb_dot != min_val else False)
-        if not check:
+        if check:
             add_item_to_list((lb_dot, col_src), E)
 
     def what_is_possible_min_val(self, E, L, col_src, datatype):
@@ -321,7 +322,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 max_val = self.what_is_possible_max_val(E, L, col_i, datatype)
                 check = do_numeric_drama(ub_dot, datatype, max_val, get_delta(self.constants_dict[datatype]),
                                          True if ub_dot != max_val else False)
-                if not check:
+                if check:
                     add_item_to_list((col_i, ub_dot), E)
 
     def algo4_create_edgeSet_E(self, ineqaoa_preds: list) -> dict:
