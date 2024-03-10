@@ -21,7 +21,8 @@ def set_optimizer_params(is_on):
 def cus_execute_sqls(cur, sqls, logger=None):
     # print(cur)
     for sql in sqls:
-        # print(f"..cur execute..{sql}")
+        if logger is not None:
+            logger.debug(f"..cur execute..{sql}")
         try:
             cur.execute(sql)
         except psycopg2.ProgrammingError as e:
@@ -32,9 +33,11 @@ def cus_execute_sqls(cur, sqls, logger=None):
     cur.close()
 
 
-def cus_execute_sql_with_params(cur, sql, params):
+def cus_execute_sql_with_params(cur, sql, params, logger=None):
     for param in params:
         cur.execute(sql, param)
+        if logger is not None:
+            logger.debug(sql, param)
     cur.close()
 
 
@@ -119,9 +122,9 @@ class ConnectionHelper:
         cur = self.get_cursor()
         cus_execute_sqls(cur, sqls, logger)
 
-    def execute_sql_with_params(self, sql, params):
+    def execute_sql_with_params(self, sql, params, logger=None):
         cur = self.get_cursor()
-        cus_execute_sql_with_params(cur, sql, params)
+        cus_execute_sql_with_params(cur, sql, params, logger)
 
     def execute_sqls_with_DictCursor(self, sqls):
         cur = self.get_DictCursor()

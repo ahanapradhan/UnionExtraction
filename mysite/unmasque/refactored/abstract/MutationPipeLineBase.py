@@ -34,6 +34,7 @@ class MutationPipeLineBase(Base):
         self.logger.debug("======================")
         for tab in self.core_relations:
             res, des = self.connectionHelper.execute_sql_fetchall(get_star(tab))
+            self.logger.debug(f"-----  {tab} ------")
             self.logger.debug(res)
         self.logger.debug("======================")
 
@@ -47,12 +48,17 @@ class MutationPipeLineBase(Base):
 
     def get_dmin_val(self, attrib: str, tab: str):
         res, des, val = None, None, None
+        data_problem = False
         try:
             res, des = self.connectionHelper.execute_sql_fetchall(f"select {attrib} from {tab};")
             val = res[0][0]
         except psycopg2.Error:
+            data_problem = True
             pass
-        if des is not None and f"relation \"{tab}\" does not exist" in des:
+        except IndexError:
+            data_problem = True
+            pass
+        if data_problem:
             values = self.global_min_instance_dict[tab]
             attribs, vals = values[0], values[1]
             attrib_idx = attribs.index(attrib)

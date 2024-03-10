@@ -2,6 +2,9 @@ import datetime
 
 import pytest
 
+from mysite.unmasque.refactored.aggregation import Aggregation
+from mysite.unmasque.refactored.groupby_clause import GroupBy
+from mysite.unmasque.refactored.orderby_clause import OrderBy
 from mysite.unmasque.refactored.projection import Projection
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
 from mysite.unmasque.src.core.aoa import AlgebraicPredicate
@@ -836,4 +839,93 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(pj.projected_attribs)
         print(pj.projection_names)
+        self.conn.closeConnection()
+
+    def test_order_by(self):
+        self.conn.connectUsingParams()
+        core_rels = ['orders', 'lineitem', 'part']
+
+        global_min_instant_dict = {'orders':
+                                       [('o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice',
+                                         'o_orderdate', 'o_orderpriority', 'o_clerk', 'o_shippriority', 'o_comment'),
+                                        (2940454, 134431, 'O', 216011.31, datetime.date(1996, 2, 15), '2-HIGH         ',
+                                         'Clerk#000000781',
+                                         0, ' accounts haggle above the slyly si')],
+                                   'part': [("p_partkey",
+                                             "p_name",
+                                             "p_mfgr",
+                                             "p_brand",
+                                             "p_type",
+                                             "p_size",
+                                             "p_container",
+                                             "p_retailprice",
+                                             "p_comment"),
+                                            (280, 'blue azure slate lace burlywood', 'Manufacturer#2           ',
+                                             'Brand#21  ',
+                                             'STANDARD BURNISHED STEEL', 33, 'LG CAN    ', 1180.28, 'egular, s')],
+                                   'lineitem': [('l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity',
+                                                 'l_extendedprice', 'l_discount', 'l_tax', 'l_returnflag',
+                                                 'l_linestatus',
+                                                 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
+                                                 'l_shipmode', 'l_comment'), (
+                                                    2940454, 280, 4031, 2, 1.00, 1180.28, 0.05, 0.02, 'N', 'O',
+                                                    datetime.date(1996, 4, 9), datetime.date(1996, 4, 20),
+                                                    datetime.date(1996, 4, 12),
+                                                    'TAKE BACK RETURN         ', 'RAIL      ', 'sts. final')]}
+
+        self.conn.execute_sql([
+            f"Insert into lineitem(l_orderkey,l_partkey,l_suppkey,l_linenumber,l_quantity,"
+            f"l_extendedprice,"
+            f"l_discount,l_tax,l_returnflag,l_linestatus,l_shipdate,l_commitdate,l_receiptdate,"
+            f"l_shipinstruct,l_shipmode,l_comment)"
+            f" VALUES (2940454, 280, 4031, 2, 1.00, 1180.28, 0.05, 0.02, \'N\', \'O\', \'1996, 4, 9\',"
+            f"\'1996, 4, 20\', \'1996, 4, 12\',\'TAKE BACK RETURN              \', \'RAIL       \',"
+            f"\'sts. final\');",
+
+            f"Insert into orders(o_orderkey,o_custkey,o_orderstatus,o_totalprice,"
+            f"o_orderdate,o_orderpriority,o_clerk,o_shippriority,o_comment) "
+            f"VALUES (2940454, 134431, \'O\', 216011.31, \'1996, 2, 15\', \'2-HIGH\', \'Clerk#000000781\', 0, "
+            f"\' accounts haggle above the slyly si\');",
+
+            f"Insert into part(p_partkey, p_name, p_mfgr, p_brand, p_type, p_size, p_container, p_retailprice, "
+            f"p_comment)"
+            f"VALUES (280, \'blue azure slate lace burlywood\', \'Manufacturer#2           \', \'Brand#21  \', "
+            f"\'STANDARD BURNISHED STEEL\', 33, \'LG CAN    \', 1180.28, \'egular, s\');"
+        ])
+
+        query = "Select p_brand, o_clerk, l_shipmode " \
+                "From orders, lineitem, part " \
+                "Where l_partkey = p_partkey " \
+                "and o_orderkey = l_orderkey " \
+                "and l_shipdate >= o_orderdate " \
+                "and o_orderdate > '1994-01-01' " \
+                "and l_shipdate > '1995-01-01' " \
+                "and p_retailprice >= l_extendedprice " \
+                "and p_partkey < 10000 " \
+                "and l_suppkey < 10000 " \
+                "and p_container = 'LG CAN' " \
+                "Order By o_clerk LIMIT 10;"
+
+        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instant_dict)
+        aoa.mock = True
+        res = aoa.app.doJob(query)
+        self.assertFalse(isQ_result_empty(res))
+        check = aoa.doJob(query)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.assertEqual(8, aoa.where_clause.count("and"))
+
+        pj = Projection(self.conn, aoa.pipeline_delivery)
+        check = pj.doJob(query)
+        self.assertTrue(check)
+        self.assertEqual(3, len(pj.projected_attribs))
+
+        ob = OrderBy(self.conn, pj.projected_attribs, pj.projection_names, pj.dependencies,
+                     [('p_brand', ''), ('o_clerk', ''), ('l_shipmode', '')], aoa.pipeline_delivery)
+        ob.doJob(query)
+        self.assertTrue(ob.has_orderBy)
+        self.assertTrue("o_clerk" in ob.orderBy_string)
+        print(ob.orderBy_string)
+        print(ob.orderby_list)
+
         self.conn.closeConnection()

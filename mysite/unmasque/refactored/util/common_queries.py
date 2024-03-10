@@ -1,5 +1,7 @@
 from ..util.utils import get_format
 
+GET_ALL_COLUMNS_QUERY = "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND " \
+                        "table_name   = 'part';"
 DEBUG_QUERY = "select pid, state, query from pg_stat_activity where datname = 'tpch';"
 TERMINATE_STUCK_QUERIES = "SELECT pg_terminate_backend(pid);"
 
@@ -98,6 +100,8 @@ def truncate_table(table):
 
 def insert_into_tab_attribs_format(att_order, esc_string, tab):
     return f"INSERT INTO {tab} {att_order}  VALUES {esc_string}"
+    # return f"INSERT INTO {tab} {att_order}  VALUES {esc_string}"
+
 
 
 def update_tab_attrib_with_value(attrib, tab, value):

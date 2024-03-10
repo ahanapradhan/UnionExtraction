@@ -63,6 +63,7 @@ class GroupBy(GenerationPipeLineBase):
 
                     self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
 
+                self.see_d_min()
                 new_result = self.app.doJob(query)
 
                 if isQ_result_empty(new_result):

@@ -19,12 +19,12 @@ class CandidateAttribute:
         self.logger = logger
 
     def debug_print(self):
-        self.logger.debug(self.attrib)
-        self.logger.debug(self.aggregation)
-        self.logger.debug(self.dependency)
-        self.logger.debug(self.dependencyList)
-        self.logger.debug(self.attrib_dependency)
-        self.logger.debug(self.index)
+        self.logger.debug(f"attrib: {self.attrib}")
+        self.logger.debug(f"aggregation: {self.aggregation}")
+        self.logger.debug(f"dependency: {self.dependency}")
+        self.logger.debug(f"dependency list: {self.dependencyList}")
+        self.logger.debug(f"attrib_dependency: {self.attrib_dependency}")
+        self.logger.debug(f"projection index: {self.index}")
         self.logger.debug('')
 
 
@@ -72,18 +72,13 @@ class OrderBy(GenerationPipeLineBase):
         self.has_orderBy = True
 
     def doExtractJob(self, query):
-        self.see_d_min()
         # ORDERBY ON PROJECTED COLUMNS ONLY
         # ASSUMING NO ORDER ON JOIN ATTRIBUTES
-        res = self.app.doJob(query)
-        if isQ_result_empty(res):
-            self.logger.debug("****** PROBLEM ******")
-            return False
         cand_list = self.construct_candidate_list()
         self.logger.debug("candidate list: ", cand_list)
         # CHECK ORDER BY ON COUNT
         self.orderBy_string = self.get_order_by(cand_list, query)
-        self.has_orderBy = self.orderBy_string or self.orderby_list
+        self.has_orderBy = True if len(self.orderby_list) else False
         self.logger.debug("order by string: ", self.orderBy_string)
         self.logger.debug("order by list: ", self.orderby_list)
         return True
@@ -138,9 +133,9 @@ class OrderBy(GenerationPipeLineBase):
                     break
             for elt in remove_list:
                 cand_list.remove(elt)
-        s = ", ".join(curr_orderby)
-        self.logger.debug(s)
-        return s
+        curr_orderby_str = ", ".join(curr_orderby)
+        self.logger.debug(curr_orderby_str)
+        return curr_orderby_str
 
     def construct_candidate_list(self):
         cand_list = []
@@ -157,6 +152,12 @@ class OrderBy(GenerationPipeLineBase):
         for i in cand_list:
             i.debug_print()
         return cand_list
+
+    def is_part_of_output(self, tab, attrib):
+        for agg in self.global_dependencies:
+            if (tab, attrib) in agg:
+                return True
+        return False
 
     def generateData(self, obj, orderby_list, query, row_num):
         # check if it is a key attribute, #NO CHECKING ON KEY ATTRIBUTES
@@ -198,62 +199,25 @@ class OrderBy(GenerationPipeLineBase):
                     attrib_list_str = ",".join(attrib_list_inner)
                     att_order = f"({attrib_list_str})"
                     for attrib_inner in attrib_list_inner:
-                        datatype = self.get_datatype((tabname_inner, attrib_inner))
-
-                        if datatype == 'date':
-                            if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-                                first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-                                second = min(get_val_plus_delta('date', first, 1),
-                                             self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
+                        if self.is_part_of_output(tabname_inner, attrib_inner):
+                            datatype = self.get_datatype((tabname_inner, attrib_inner))
+                            if datatype == 'date':
+                                first, second = self.get_date_values(attrib_inner, tabname_inner)
+                            elif datatype in ['int', 'integer', 'numeric', 'float']:
+                                first, second = self.get_number_values(attrib_inner, tabname_inner)
                             else:
-                                first = get_dummy_val_for('date')
-                                second = get_val_plus_delta('date', first, 1)
-                            first = get_format('date', first)
-                            second = get_format('date', second)
-                        elif datatype in ['int', 'integer', 'numeric', 'float']:
-                            # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-                            if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-                                first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-                                second = min(get_val_plus_delta('int', first, 1),
-                                             self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
-                                self.logger.debug(f"{tabname_inner}.{attrib_inner}, first: {first}, second: {second}")
-                            else:
-                                first = get_dummy_val_for('int')
-                                second = get_val_plus_delta('int', first, 1)
-                                self.logger.debug(f"Dummy: {tabname_inner}.{attrib_inner}, first: {first}, second: {second}")
+                                first, second = self.get_text_value(attrib_inner, tabname_inner)
                         else:
-                            if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-                                # EQUAL FILTER WILL NOT COME HERE
-                                s_val_text = self.get_s_val_for_textType(attrib_inner, tabname_inner)
-                                if '_' in s_val_text:
-                                    string = copy.deepcopy(s_val_text)
-                                    first = string.replace('_', get_char(get_dummy_val_for('char')))
-                                    string = copy.deepcopy(s_val_text)
-                                    second = string.replace('_', get_char(
-                                        get_val_plus_delta('char', get_dummy_val_for('char'), 1)))
-                                else:
-                                    string = copy.deepcopy(s_val_text)
-                                    first = string.replace('%', get_char(get_dummy_val_for('char')), 1)
-                                    string = copy.deepcopy(s_val_text)
-                                    second = string.replace('%', get_char(
-                                        get_val_plus_delta('char', get_dummy_val_for('char'), 1)), 1)
-                                first = first.replace('%', '')
-                                second = second.replace('%', '')
-                            else:
-                                first = get_char(get_dummy_val_for('char'))
-                                second = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 1))
+                            dmin_val = self.get_dmin_val(attrib_inner, tabname_inner)
+                            first, second = dmin_val, dmin_val
                         insert_values1.append(first)
                         insert_values2.append(second)
                         if k == no_of_db - 1 and (any([(attrib_inner in i) for i in
                                                        obj.attrib_dependency]) or 'Count' in obj.aggregation) or (
                                 k == no_of_db - 1 and key_elt and attrib_inner in key_elt):
                             # swap first and second
-                            self.logger.debug("Swapping", attrib_inner)
-                            self.logger.debug("Attribute Order", att_order)
-                            self.logger.debug("Prev", insert_values1, insert_values2)
                             insert_values2[-1], insert_values1[-1] = insert_values1[-1], insert_values2[-1]
-                            self.logger.debug("New", insert_values1, insert_values2)
-                        self.logger.debug("same value", same_value_list)
+
                         if any([(attrib_inner in i) for i in same_value_list]):
                             insert_values2[-1] = insert_values1[-1]
                     if row_num == 3:
@@ -264,23 +228,7 @@ class OrderBy(GenerationPipeLineBase):
                         insert_rows.append(tuple(insert_values1))
                         insert_rows.append(tuple(insert_values2))
 
-                    self.logger.debug(att_order)
-                    self.logger.debug("Insert 1", insert_values1)
-                    self.logger.debug("Insert 2", insert_values2)
-                    new_result = self.app.doJob(query)
-                    self.logger.debug("New Result", new_result)
-                    if isQ_result_empty(new_result):
-                        self.logger.error('&&&&&&&&&&&&  some error in generating new database. '
-                                          'Result is empty. Can not identify Ordering')
-                        return None
-
                     self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
-                    new_result = self.app.doJob(query)
-                    self.logger.debug("New Result", new_result)
-                    if isQ_result_empty(new_result):
-                        self.logger.error('%%%%%%%%%%%%%%%%%%  some error in generating new database. '
-                                          'Result is empty. Can not identify Ordering')
-                        return None
 
                 new_result = self.app.doJob(query)
                 self.logger.debug("New Result", k, new_result)
@@ -298,3 +246,52 @@ class OrderBy(GenerationPipeLineBase):
             else:
                 return NO_ORDER
         return NO_ORDER
+
+    def get_text_value(self, attrib_inner, tabname_inner):
+        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+            # EQUAL FILTER WILL NOT COME HERE
+            s_val_text = self.get_s_val_for_textType(attrib_inner, tabname_inner)
+            if '_' in s_val_text:
+                string = copy.deepcopy(s_val_text)
+                first = string.replace('_', get_char(get_dummy_val_for('char')))
+                string = copy.deepcopy(s_val_text)
+                second = string.replace('_', get_char(
+                    get_val_plus_delta('char', get_dummy_val_for('char'), 1)))
+            else:
+                string = copy.deepcopy(s_val_text)
+                first = string.replace('%', get_char(get_dummy_val_for('char')), 1)
+                string = copy.deepcopy(s_val_text)
+                second = string.replace('%', get_char(
+                    get_val_plus_delta('char', get_dummy_val_for('char'), 1)), 1)
+            first = first.replace('%', '')
+            second = second.replace('%', '')
+        else:
+            first = get_char(get_dummy_val_for('char'))
+            second = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 1))
+        return first, second
+
+    def get_number_values(self, attrib_inner, tabname_inner):
+        # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
+        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+            first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+            second = min(get_val_plus_delta('int', first, 1),
+                         self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
+            # self.logger.debug(f"{tabname_inner}.{attrib_inner}, first: {first}, second: {second}")
+        else:
+            first = get_dummy_val_for('int')
+            second = get_val_plus_delta('int', first, 1)
+            # self.logger.debug(f"Dummy: {tabname_inner}.{attrib_inner}, first: {first}, second:
+            # {second}")
+        return first, second
+
+    def get_date_values(self, attrib_inner, tabname_inner):
+        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+            first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+            second = min(get_val_plus_delta('date', first, 1),
+                         self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
+        else:
+            first = get_dummy_val_for('date')
+            second = get_val_plus_delta('date', first, 1)
+        first = get_format('date', first)
+        second = get_format('date', second)
+        return first, second

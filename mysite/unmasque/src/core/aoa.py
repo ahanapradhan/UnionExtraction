@@ -619,7 +619,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
     def mutate_dmin_with_val(self, datatype, t_a, val):
         self.connectionHelper.execute_sql([update_tab_attrib_with_value(get_attrib(t_a),
                                                                         get_tab(t_a),
-                                                                        get_format(datatype, val))])
+                                                                        get_format(datatype, val))], self.logger)
         self.mutate_filter_global_min_instance_dict(get_tab(t_a),
                                                     get_attrib(t_a), val)
         self.filter_extractor.global_d_plus_value[get_attrib(t_a)] = val
