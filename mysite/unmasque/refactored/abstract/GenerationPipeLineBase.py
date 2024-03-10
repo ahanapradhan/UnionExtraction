@@ -45,6 +45,10 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                 self.update_with_val(attrib, tab, val)
 
     def do_init(self) -> None:
+        for tab in self.core_relations:
+            self.connectionHelper.execute_sql([f"create table _{tab}_temp as select * from {tab} limit 1;",
+                                               f"drop table {tab};",
+                                               f"alter table _{tab}_temp rename to {tab};"])
         self.restore_d_min_from_dict()
         self.see_d_min()
 

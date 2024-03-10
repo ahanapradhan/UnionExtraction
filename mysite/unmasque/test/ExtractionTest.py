@@ -637,9 +637,9 @@ class MyTestCase(BaseTestCase):
         query = "SELECT c_name as name, (c_acctbal - o_totalprice) as account_balance " \
                 "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
                 "and c_nationkey = n_nationkey " \
-                "and c_mktsegment = 'FURNITURE' "\
+                "and c_mktsegment = 'FURNITURE' " \
                 "and n_name = 'INDIA' " \
-                "and o_orderdate between '1998-01-01' and '1998-01-05' "  \
+                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
                 "and o_totalprice <= c_acctbal;"
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -661,7 +661,11 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.conn.closeConnection()
 
-    def test_UQ12(self):
+    def test_UQ12_loop(self):
+        for i in range(10):
+            self.test_UQ12()
+
+    def test_UQ12_subq1(self):
         self.conn.connectUsingParams()
         query = "Select p_brand, o_clerk, l_shipmode " \
                 "From orders, lineitem, part " \
@@ -682,6 +686,19 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    def test_UQ12_subq2(self):
+        self.conn.connectUsingParams()
+        query = "(Select p_brand, s_name, l_shipmode From lineitem, part, supplier  Where l_partkey = " \
+                "p_partkey " \
+                "and p_container = 'LG CAN' and l_shipdate  >= '1995-01-02' and l_suppkey <= 13999 and l_partkey <= " \
+                "14999 " \
+                "and l_extendedprice <= s_acctbal order by s_name Limit 10); "
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
     def test_UQ10_subq2(self):
         query = "SELECT l_orderkey, l_shipdate FROM lineitem, " \
                 "orders where l_orderkey = o_orderkey " \
@@ -695,8 +712,6 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
         self.assertEqual(3, eq.count("and"))
 
-
-
     def test_UQ11(self):
         self.conn.connectUsingParams()
         query = "Select o_orderpriority, " \
@@ -706,6 +721,15 @@ class MyTestCase(BaseTestCase):
                 "and o_orderdate < '1993-10-01' and l_commitdate < l_receiptdate " \
                 "Group By o_orderpriority " \
                 "Order By o_orderpriority;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_extreme(self):
+        self.conn.connectUsingParams()
+        query = "select count(*) from part where p_size >= -2147483647;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)

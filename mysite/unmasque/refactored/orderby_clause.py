@@ -72,12 +72,17 @@ class OrderBy(GenerationPipeLineBase):
         self.has_orderBy = True
 
     def doExtractJob(self, query):
+        self.see_d_min()
         # ORDERBY ON PROJECTED COLUMNS ONLY
         # ASSUMING NO ORDER ON JOIN ATTRIBUTES
+        res = self.app.doJob(query)
+        if isQ_result_empty(res):
+            self.logger.debug("****** PROBLEM ******")
+            return False
         cand_list = self.construct_candidate_list()
         self.logger.debug("candidate list: ", cand_list)
         # CHECK ORDER BY ON COUNT
-        self.orderBy_string = self.remove_equality_predicates(cand_list, query)
+        self.orderBy_string = self.get_order_by(cand_list, query)
         self.has_orderBy = self.orderBy_string or self.orderby_list
         self.logger.debug("order by string: ", self.orderBy_string)
         self.logger.debug("order by list: ", self.orderby_list)
@@ -103,7 +108,7 @@ class OrderBy(GenerationPipeLineBase):
                         self.orderBy_string += elt.name + " " + order + ", "
                         break
 
-    def remove_equality_predicates(self, cand_list, query):
+    def get_order_by(self, cand_list, query):
         # REMOVE ELEMENTS WITH EQUALITY FILTER PREDICATES
         remove_list = []
         for elt in cand_list:
@@ -126,7 +131,6 @@ class OrderBy(GenerationPipeLineBase):
                 if order is None:
                     remove_list.append(elt)
                 elif order != NO_ORDER:
-                    # self.logger.debug("Order by eq", order)
                     self.has_orderBy = True
                     self.orderby_list.append((elt, order))
                     curr_orderby.append(f"{elt.name} {order}")
@@ -212,9 +216,11 @@ class OrderBy(GenerationPipeLineBase):
                                 first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
                                 second = min(get_val_plus_delta('int', first, 1),
                                              self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
+                                self.logger.debug(f"{tabname_inner}.{attrib_inner}, first: {first}, second: {second}")
                             else:
                                 first = get_dummy_val_for('int')
                                 second = get_val_plus_delta('int', first, 1)
+                                self.logger.debug(f"Dummy: {tabname_inner}.{attrib_inner}, first: {first}, second: {second}")
                         else:
                             if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                                 # EQUAL FILTER WILL NOT COME HERE
@@ -261,7 +267,20 @@ class OrderBy(GenerationPipeLineBase):
                     self.logger.debug(att_order)
                     self.logger.debug("Insert 1", insert_values1)
                     self.logger.debug("Insert 2", insert_values2)
+                    new_result = self.app.doJob(query)
+                    self.logger.debug("New Result", new_result)
+                    if isQ_result_empty(new_result):
+                        self.logger.error('&&&&&&&&&&&&  some error in generating new database. '
+                                          'Result is empty. Can not identify Ordering')
+                        return None
+
                     self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
+                    new_result = self.app.doJob(query)
+                    self.logger.debug("New Result", new_result)
+                    if isQ_result_empty(new_result):
+                        self.logger.error('%%%%%%%%%%%%%%%%%%  some error in generating new database. '
+                                          'Result is empty. Can not identify Ordering')
+                        return None
 
                 new_result = self.app.doJob(query)
                 self.logger.debug("New Result", k, new_result)

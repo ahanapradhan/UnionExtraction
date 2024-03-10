@@ -21,7 +21,7 @@ def set_optimizer_params(is_on):
 def cus_execute_sqls(cur, sqls, logger=None):
     # print(cur)
     for sql in sqls:
-        # print("..cur execute.." + sql)
+        # print(f"..cur execute..{sql}")
         try:
             cur.execute(sql)
         except psycopg2.ProgrammingError as e:
