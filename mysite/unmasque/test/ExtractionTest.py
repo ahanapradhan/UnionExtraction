@@ -631,6 +631,16 @@ class MyTestCase(BaseTestCase):
         # self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    def test_extreme(self):
+        query = "select * from part where p_size + 1 <= 10;"
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+
     @pytest.mark.skip
     def test_6_mul(self):
         for i in range(10):
