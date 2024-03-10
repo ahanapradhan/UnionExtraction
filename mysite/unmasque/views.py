@@ -24,6 +24,7 @@ def login_view(request):
         try:
             c = Config()
             c.parse_config()
+            print(c)
             conn = connect_to_db(c.dbname, c.host, c.password, c.port, c.user)
             print(conn)
             cur = conn.cursor()
@@ -163,7 +164,7 @@ def progress_page(request, token):
     partials = request.session.get(str(token)+'partials')
     print("Partials", partials, str(token)+'partials')
     return render(request, 'unmasque/progress.html', {'query': partials[0] if partials else "Not Valid Query", 'progress_message': partials[1] if partials else "_QNF_",
-                                                      'profiling': 'NA', 'token': token, 'states': l})
+                                                      'profiling': 'NA', 'token': token, 'states': l, "start": START, "running": RUNNING, "done": DONE})
 
 
 def bye_page(request):

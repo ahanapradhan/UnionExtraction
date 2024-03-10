@@ -42,6 +42,39 @@ a{
     padding: 0;
 }
 
+.collapsible {
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 20px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.content {
+    padding: 0 18px;
+    display: none;
+    overflow: hidden;
+    background-color: #f1f1f1;
+}
+
+.active, .collapsible:hover {
+    background-color: #ccc;
+}
+
+.state_info{
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    padding: 12px 20px;
+    font-size: 16px;
+    width: 100%;
+}
+
 .submit{
     width: 10%;
     padding: 8px;
@@ -64,4 +97,10 @@ a{
     user-select: none;
     -webkit-user-select: none;
     touch-action: manipulation;   
+}
+
+.actualInfo{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }

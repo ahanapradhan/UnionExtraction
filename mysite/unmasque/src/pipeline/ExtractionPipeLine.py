@@ -77,7 +77,7 @@ class ExtractionPipeLine(GenericPipeLine):
         check = vm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(vm.local_elapsed_time)
-        self.info[DB_MINIMIZATION] = vm.global_result_dict
+        self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
         if not check:
             self.logger.error("Cannot do database minimization. ")
             self.info[DB_MINIMIZATION] = None

@@ -16,8 +16,15 @@
         <h1>Please Wait...</h1>
         <div id='progress-updates'>{{ progress_message }}</div>
     </div>
+    <div class="stateinfo">
+        <h1>Output from previous States</h1>
+        <div class="actualInfo">
+            
+        </div>
+    </div>
     <div class="btnContainer">
         <a href="{% url 'cancel' token %}" ><button class="submit">Cancel</button></a>
+        <a href="{% url 'result' token %}" ><button class="submit">Result</button></a>
     </div>
     <!-- Progress updates will be displayed here -->
 
@@ -25,10 +32,52 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
+        let g = () => {
+            (onOrOff[STATES.indexOf(i)] == 1)
+            var coll = document.getElementsByClassName("collapsible");
+            var i;
+            for (i = 0; i < coll.length; i++) {
+                if((onOrOff[1+i] == 1)){
+                    coll[i].classList.toggle("active")
+                    content = coll[i].nextElementSibling
+                    if (content.style.display === "block") {
+                        content.style.display = "none";
+                    } else {
+                        content.style.display = "block";
+                    }
+                }
+            }
+        }
+
+        let f = () =>{
+            var coll = document.getElementsByClassName("collapsible");
+            var i;
+
+            for (i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                console.log(this.innerHTML)
+                onOrOff[STATES.indexOf(this.innerHTML)] = 1- onOrOff[STATES.indexOf(this.innerHTML)]
+                var content = this.nextElementSibling;
+                if (content.style.display === "block") {
+                    content.style.display = "none";
+                } else {
+                    content.style.display = "block";
+                }
+            });
+            }
+        }
         let STATES = {{states | safe}}
+        var onOrOff = new Array(STATES.length)
+        onOrOff.fill(0)
+        STATES.push("DUMMY")
         console.log(STATES)
         var curr_state = STATES[0]
         // Function to fetch progress updates using AJAX
+        let stateInfoRefine = (data, curr_state) =>{
+            if(curr_state == STATES[0]) return ""
+            return JSON.stringify(data.state_info[curr_state])
+        }
         function fetchProgress() {
             $.ajax({
                 url: "{% url 'check_progress' token %}", // Update with your view's URL
@@ -40,11 +89,24 @@
                     $("#progress-updates").html(data.progress_message);
                     if(data.progress_message == "_DONE" || data.progress_message == "_WRONG"){
                         console.log("Done")
-                        setTimeout(() => window.location.href = "/unmasque/result/{{ token }}",1000)
+                        //setTimeout(() => window.location.href = "/unmasque/result/{{ token }}",5000)
                         return
                     }
                     else{
+                        data.progress_message = data.progress_message.replace("_START", "")
+                        data.progress_message = data.progress_message.replace("_RUNNING", "")
+                        data.progress_message = data.progress_message.replace("_DONE", "")
+                        if(data.progress_message != curr_state){
+                            $(".actualInfo").empty()
+                            for(let i of STATES.slice(1, STATES.indexOf(curr_state)+1)){
+                                $(".actualInfo").append("<div class=\"innerContainer\"><button class=\"collapsible\">"+ i +"</button><div class=\"content\"><textarea class=\"state_info\" readonly rows=\"5\" cols=\"100\">"+stateInfoRefine(data, i)+"</textarea></div>")
+                                
+                            }
+                            f()
+                            g()
+                        }
                         curr_state = data.progress_message
+
                         console.log(data.state_info)
                     }
                     // Set a timeout to fetch progress again after 1 second
