@@ -10,7 +10,7 @@ and p_retailprice >= l_extendedprice
 and p_partkey < 10000
 and l_suppkey < 10000
 and p_container = 'LG CAN'
-Order By o_clerk LIMIT 8)
+Order By o_clerk LIMIT 5)
 
 UNION ALL
 
@@ -24,4 +24,4 @@ and s_acctbal >= l_extendedprice
 and p_partkey < 15000
 and l_suppkey < 14000
 and p_container = 'LG CAN'
-Order By p_brand, s_name LIMIT 10);
+Order By s_name LIMIT 10);

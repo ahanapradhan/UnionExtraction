@@ -68,7 +68,7 @@ class MyTestCase(BaseTestCase):
         query = "(Select p_brand, o_clerk, l_shipmode From orders, lineitem, part Where l_partkey = p_partkey and " \
                 "o_orderkey = l_orderkey and l_shipdate >= o_orderdate and o_orderdate > '1994-01-01' and l_shipdate " \
                 "> '1995-01-01' and p_retailprice >= l_extendedprice and p_partkey < 10000 and l_suppkey < 10000 and " \
-                "p_container = 'LG CAN' Order By o_clerk LIMIT 8)  UNION ALL  (Select p_brand, s_name, l_shipmode " \
+                "p_container = 'LG CAN' Order By o_clerk LIMIT 5)  UNION ALL  (Select p_brand, s_name, l_shipmode " \
                 "From lineitem, part, supplier Where l_partkey = p_partkey and s_suppkey = s_suppkey and l_shipdate > " \
                 "'1995-01-01' and s_acctbal >= l_extendedprice and p_partkey < 15000 and l_suppkey < 14000 and " \
                 "p_container = 'LG CAN' Order By s_name LIMIT 10);"
@@ -84,7 +84,10 @@ class MyTestCase(BaseTestCase):
     def test_UQ5_sql(self):
         test_key = "e_UQ5.sql"
         self.conn.connectUsingParams()
-        query = "SELECT o_orderkey, o_orderdate FROM orders, customer where o_custkey = c_custkey and c_name like '%0001248%'  AND o_orderdate >= '1997-01-01' UNION ALL SELECT l_orderkey, l_shipdate FROM lineitem, orders where l_orderkey = o_orderkey and o_orderdate < '1994-01-01'   AND l_quantity > 20   AND l_extendedprice > 1000;"
+        query = "SELECT o_orderkey, o_orderdate FROM orders, customer where o_custkey = c_custkey and c_name like " \
+                "'%0001248%'  AND o_orderdate >= '1997-01-01' UNION ALL SELECT l_orderkey, l_shipdate FROM lineitem, " \
+                "orders where l_orderkey = o_orderkey and o_orderdate < '1994-01-01'   AND l_quantity > 20   AND " \
+                "l_extendedprice > 1000;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -97,7 +100,10 @@ class MyTestCase(BaseTestCase):
     def test_UQ4_sql(self):
         test_key = "e_UQ4.sql"
         self.conn.connectUsingParams()
-        query = "SELECT c_custkey, c_name FROM customer,  nation where c_nationkey = n_nationkey and n_name = 'UNITED STATES' UNION ALL SELECT s_suppkey, s_name FROM supplier ,  nation where s_nationkey = n_nationkey and n_name = 'CANADA' UNION ALL SELECT p_partkey, p_name FROM part ,  lineitem where p_partkey = l_partkey and l_quantity > 20;"
+        query = "SELECT c_custkey, c_name FROM customer,  nation where c_nationkey = n_nationkey and n_name = 'UNITED " \
+                "STATES' UNION ALL SELECT s_suppkey, s_name FROM supplier ,  nation where s_nationkey = n_nationkey " \
+                "and n_name = 'CANADA' UNION ALL SELECT p_partkey, p_name FROM part ,  lineitem where p_partkey = " \
+                "l_partkey and l_quantity > 20;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -110,7 +116,10 @@ class MyTestCase(BaseTestCase):
     def test_UQ13_sql(self):
         test_key = "e_UQ13.sql"
         self.conn.connectUsingParams()
-        query = "Select l_orderkey, l_linenumber From orders, lineitem, partsupp Where o_orderkey = l_orderkey and ps_partkey = l_partkey and ps_suppkey = l_suppkey and ps_availqty = l_linenumber and l_shipdate >= o_orderdate and o_orderdate >= '1990-01-01' and l_commitdate <= l_receiptdate and l_shipdate <= l_commitdate and l_receiptdate > '1994-01-01' Order By l_orderkey Limit 7;"
+        query = "Select l_orderkey, l_linenumber From orders, lineitem, partsupp Where o_orderkey = l_orderkey and " \
+                "ps_partkey = l_partkey and ps_suppkey = l_suppkey and ps_availqty = l_linenumber and l_shipdate >= " \
+                "o_orderdate and o_orderdate >= '1990-01-01' and l_commitdate <= l_receiptdate and l_shipdate <= " \
+                "l_commitdate and l_receiptdate > '1994-01-01' Order By l_orderkey Limit 7;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -123,7 +132,9 @@ class MyTestCase(BaseTestCase):
     def test_UQ1_sql(self):
         test_key = "e_UQ1.sql"
         self.conn.connectUsingParams()
-        query = "(SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100) UNION ALL (SELECT s_suppkey, s_name FROM supplier, partsupp where s_suppkey = ps_suppkey and ps_availqty > 200);"
+        query = "(SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100) " \
+                "UNION ALL (SELECT s_suppkey, s_name FROM supplier, partsupp where s_suppkey = ps_suppkey and " \
+                "ps_availqty > 200);"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -136,7 +147,9 @@ class MyTestCase(BaseTestCase):
     def test_UQ14_sql(self):
         test_key = "e_UQ14.sql"
         self.conn.connectUsingParams()
-        query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' and l_receiptdate >= l_commitdate and s_nationkey = n_nationkey Group By s_name Order By numwait desc Limit 100;"
+        query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation Where s_suppkey = " \
+                "l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' and l_receiptdate >= l_commitdate and " \
+                "s_nationkey = n_nationkey Group By s_name Order By numwait desc Limit 100;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -149,7 +162,9 @@ class MyTestCase(BaseTestCase):
     def test_UQ3_sql(self):
         test_key = "e_UQ3.sql"
         self.conn.connectUsingParams()
-        query = "SELECT c_custkey as key, c_name as name FROM customer, nation where c_nationkey = n_nationkey and  n_name = 'UNITED STATES' UNION ALL SELECT p_partkey as key, p_name as name FROM part , lineitem where p_partkey = l_partkey and l_quantity > 35;"
+        query = "SELECT c_custkey as key, c_name as name FROM customer, nation where c_nationkey = n_nationkey and  " \
+                "n_name = 'UNITED STATES' UNION ALL SELECT p_partkey as key, p_name as name FROM part , " \
+                "lineitem where p_partkey = l_partkey and l_quantity > 35;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)

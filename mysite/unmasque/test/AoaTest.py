@@ -4,6 +4,7 @@ import pytest
 
 from mysite.unmasque.refactored.aggregation import Aggregation
 from mysite.unmasque.refactored.groupby_clause import GroupBy
+from mysite.unmasque.refactored.limit import Limit
 from mysite.unmasque.refactored.orderby_clause import OrderBy
 from mysite.unmasque.refactored.projection import Projection
 from mysite.unmasque.refactored.util.utils import isQ_result_empty
@@ -927,5 +928,10 @@ class MyTestCase(BaseTestCase):
         self.assertTrue("o_clerk" in ob.orderBy_string)
         print(ob.orderBy_string)
         print(ob.orderby_list)
+
+        lm = Limit(self.conn, [], aoa.pipeline_delivery)
+        lm.doJob(query)
+        print(lm.limit)
+        self.assertTrue(lm.limit is not None)
 
         self.conn.closeConnection()

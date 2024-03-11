@@ -2,6 +2,8 @@ import ast
 import copy
 import itertools
 
+import frozenlist as frozenlist
+
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_format, get_dummy_val_for, get_char
 
@@ -12,6 +14,7 @@ class Limit(GenerationPipeLineBase):
         super().__init__(connectionHelper, "Limit", delivery)
         self.limit = None
         self.global_groupby_attributes = global_groupby_attributes
+        self.joined_attrib_valDict = {}
 
     def construct_filter_dict(self):
         # get filter values and their allowed minimum and maximum value
@@ -87,41 +90,14 @@ class Limit(GenerationPipeLineBase):
                 insert_values = []
                 for attrib_inner in attrib_list_inner:
                     datatype = self.get_datatype((tabname_inner, attrib_inner))
-
                     if attrib_inner in grouping_attribute_values.keys():
                         insert_values.append(grouping_attribute_values[attrib_inner][k])
-                    elif datatype == 'date':
-                        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-                            zero_k = get_val_plus_delta('date',
-                                                        self.filter_attrib_dict[(tabname_inner, attrib_inner)][0], k)
-                            one = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
-                            date_val = min(zero_k, one)
-                        else:
-                            date_val = get_val_plus_delta('date', get_dummy_val_for('date'), k)
-                        insert_values.append(ast.literal_eval(get_format('date', date_val)))
-
-                    elif datatype in ['int', 'integer', 'numeric', 'float']:
-                        # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-                        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-                            zero_k = get_val_plus_delta('int',
-                                                        self.filter_attrib_dict[(tabname_inner, attrib_inner)][0], k)
-                            one = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
-                            date_val = min(zero_k, one)
-                        else:
-                            date_val = get_val_plus_delta('int', get_dummy_val_for('int'), k)
-                        insert_values.append(ast.literal_eval(get_format('int', date_val)))
+                    elif attrib_inner not in self.joined_attribs:
+                        insert_values.append(self.get_dmin_val(attrib_inner, tabname_inner))
+                    elif datatype == 'date' or datatype in ['int', 'integer', 'numeric', 'float']:
+                        self.insert_non_text_attrib(datatype, attrib_inner, insert_values, k, tabname_inner)
                     else:
-                        char_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), k))
-                        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-                            s_val_text = self.get_s_val_for_textType(attrib_inner, tabname_inner)
-                            temp = copy.deepcopy(s_val_text)
-                            if '_' in s_val_text:
-                                insert_values.append(temp.replace('_', char_val))
-                            else:
-                                insert_values.append(temp.replace('%', char_val, 1))
-                            insert_values[-1].replace('%', '')
-                        else:
-                            insert_values.append(char_val)
+                        self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
                 insert_rows.append(tuple(insert_values))
 
             self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
@@ -134,6 +110,48 @@ class Limit(GenerationPipeLineBase):
             if 4 <= len(new_result) <= 1000:
                 self.limit = len(new_result) - 1
             return True
+
+    def insert_text_attrib(self, attrib_inner, insert_values, k, tabname_inner):
+        char_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), k))
+        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+            s_val_text = self.get_s_val_for_textType(attrib_inner, tabname_inner)
+            temp = copy.deepcopy(s_val_text)
+            if '_' in s_val_text:
+                insert_values.append(temp.replace('_', char_val))
+            else:
+                insert_values.append(temp.replace('%', char_val, 1))
+            insert_values[-1].replace('%', '')
+        else:
+            insert_values.append(char_val)
+
+    def insert_non_text_attrib(self, datatype, attrib_inner, insert_values, k, tabname_inner):
+        for edge in self.global_join_graph:
+            if attrib_inner in edge:
+                edge_key = frozenlist.FrozenList(edge)
+                edge_key.freeze()
+                if edge_key in self.joined_attrib_valDict.keys() \
+                        and k < len(self.joined_attrib_valDict[edge_key]):
+                    s_val_plus_k = self.joined_attrib_valDict[edge_key][k]
+                    insert_values.append(ast.literal_eval(get_format(datatype, s_val_plus_k)))
+                    return
+
+        if datatype != 'date':
+            datatype = 'int'
+        # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
+        s_val = self.get_s_val(attrib_inner, tabname_inner)
+        s_val_plus_k = get_val_plus_delta(datatype, s_val, k)
+        if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+            one = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+            s_val_plus_k = min(s_val_plus_k, one)
+        insert_values.append(ast.literal_eval(get_format(datatype, s_val_plus_k)))
+        for edge in self.global_join_graph:
+            if attrib_inner in edge:
+                edge_key = frozenlist.FrozenList(edge)
+                edge_key.freeze()
+                if edge_key in self.joined_attrib_valDict.keys():
+                    self.joined_attrib_valDict[edge_key].append(s_val_plus_k)
+                else:
+                    self.joined_attrib_valDict[edge_key] = [s_val_plus_k]
 
     def get_pre_assignment(self):
         pre_assignment = True
