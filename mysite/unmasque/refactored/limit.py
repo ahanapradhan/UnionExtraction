@@ -15,6 +15,7 @@ class Limit(GenerationPipeLineBase):
         self.limit = None
         self.global_groupby_attributes = global_groupby_attributes
         self.joined_attrib_valDict = {}
+        self.no_rows = 1000
 
     def construct_filter_dict(self):
         # get filter values and their allowed minimum and maximum value
@@ -26,43 +27,32 @@ class Limit(GenerationPipeLineBase):
     def doExtractJob(self, query):
         grouping_attribute_values = {}
 
-        notable_filter_attrib_dict = self.construct_filter_dict()
-        notable_attrib_type_dict = self.construct_types_dict()
+        # notable_filter_attrib_dict = self.construct_filter_dict()
+        # notable_attrib_type_dict = self.construct_types_dict()
         pre_assignment = self.get_pre_assignment()
+
+        gb_tab_attribs = [(self.find_tabname_for_given_attrib(attrib), attrib)
+                          for attrib in self.global_groupby_attributes]
 
         total_combinations = 1
         if pre_assignment:
             # GET LIMITS FOR ALL GROUPBY ATTRIBUTES
             group_lists = []
-            for elt in self.global_groupby_attributes:
+            for elt in gb_tab_attribs:
                 temp = []
-                if elt not in notable_filter_attrib_dict.keys():
+                if elt not in self.filter_attrib_dict.keys():
                     pre_assignment = False
                     break
-                if ('int' in notable_attrib_type_dict[elt] or 'numeric' in notable_attrib_type_dict[elt] or 'date' in
-                        notable_attrib_type_dict[elt]):
-                    if 'date' in notable_attrib_type_dict[elt]:
-                        tot_values = (notable_filter_attrib_dict[elt][1] - notable_filter_attrib_dict[elt][0]).days + 1
-                    else:
-                        tot_values = notable_filter_attrib_dict[elt][1] - notable_filter_attrib_dict[elt][0] + 1
-                    if (total_combinations * tot_values) > 1000:
-                        i = 1
-                        while (total_combinations * i) < 1001 and i < tot_values:
-                            i = i + 1
-                        tot_values = i
-                    if 'date' in notable_attrib_type_dict[elt]:
-                        for k in range(tot_values):
-                            date_val = get_val_plus_delta('date', notable_filter_attrib_dict[elt][0], k)
-                            temp.append(ast.literal_eval(get_format('date', date_val)))
-                    else:
-                        for k in range(tot_values):
-                            temp.append(notable_filter_attrib_dict[elt][0] + k)
+                datatype = self.get_datatype(elt)
+                if datatype in ['date', 'int', 'numeric']:
+                    tot_values = self.compute_total_values(datatype, elt, total_combinations)
+                    self.get_temp_total_values(datatype, elt, temp, tot_values)
                 else:
-                    if '%' in notable_filter_attrib_dict[elt] or '_' in notable_filter_attrib_dict[elt]:
+                    if '%' in self.filter_attrib_dict[elt] or '_' in self.filter_attrib_dict[elt]:
                         pre_assignment = False
                         break
                     else:
-                        temp = [notable_filter_attrib_dict[elt]]
+                        temp = [self.filter_attrib_dict[elt]]
                 total_combinations = total_combinations * len(temp)
                 group_lists.append(copy.deepcopy(temp))
 
@@ -76,9 +66,8 @@ class Limit(GenerationPipeLineBase):
                     for (val1, val2) in zip(self.global_groupby_attributes, temp):
                         grouping_attribute_values[val1].append(val2)
 
-        no_of_rows = 1000
         if pre_assignment:
-            no_of_rows = min(no_of_rows, total_combinations)
+            self.no_rows = min(self.no_rows, total_combinations)
 
         for j in range(len(self.core_relations)):
             tabname_inner = self.core_relations[j]
@@ -86,15 +75,16 @@ class Limit(GenerationPipeLineBase):
             attrib_list_str = ",".join(attrib_list_inner)
             att_order = f"({attrib_list_str})"
             insert_rows = []
-            for k in range(no_of_rows):
+            for k in range(self.no_rows):
                 insert_values = []
                 for attrib_inner in attrib_list_inner:
                     datatype = self.get_datatype((tabname_inner, attrib_inner))
                     if attrib_inner in grouping_attribute_values.keys():
                         insert_values.append(grouping_attribute_values[attrib_inner][k])
-                    elif attrib_inner not in self.joined_attribs:
+                    elif attrib_inner not in self.joined_attribs \
+                            and (tabname_inner, attrib_inner) not in gb_tab_attribs:
                         insert_values.append(self.get_dmin_val(attrib_inner, tabname_inner))
-                    elif datatype == 'date' or datatype in ['int', 'integer', 'numeric', 'float']:
+                    elif datatype in ['date', 'int', 'numeric']:
                         self.insert_non_text_attrib(datatype, attrib_inner, insert_values, k, tabname_inner)
                     else:
                         self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
@@ -110,6 +100,27 @@ class Limit(GenerationPipeLineBase):
             if 4 <= len(new_result) <= 1000:
                 self.limit = len(new_result) - 1
             return True
+
+    def get_temp_total_values(self, datatype, elt, temp, tot_values):
+        if datatype == 'date':
+            for k in range(tot_values):
+                date_val = get_val_plus_delta('date', self.filter_attrib_dict[elt][0], k)
+                temp.append(ast.literal_eval(get_format('date', date_val)))
+        else:
+            for k in range(tot_values):
+                temp.append(self.filter_attrib_dict[elt][0] + k)
+
+    def compute_total_values(self, datatype, elt, total_combinations):
+        if datatype == 'date':
+            tot_values = (self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0]).days + 1
+        else:
+            tot_values = self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0] + 1
+        if (total_combinations * tot_values) > 1000:
+            i = 1
+            while (total_combinations * i) < 1001 and i < tot_values:
+                i = i + 1
+            tot_values = i
+        return tot_values
 
     def insert_text_attrib(self, attrib_inner, insert_values, k, tabname_inner):
         char_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), k))
