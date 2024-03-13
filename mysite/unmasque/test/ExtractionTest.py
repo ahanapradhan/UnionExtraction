@@ -631,6 +631,29 @@ class MyTestCase(BaseTestCase):
         # self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    def test_extreme(self):
+        query = "select * from part where p_size + 1 <= 10;"
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_diff_res(self):
+        query = "SELECT * FROM lineitem, orders " \
+                "WHERE l_quantity < 1000 " \
+                "AND l_tax < 1000 " \
+                "AND o_orderkey=l_orderkey  " \
+                "ORDER BY l_tax LIMIT 10;"
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+
     @pytest.mark.skip
     def test_6_mul(self):
         for i in range(10):

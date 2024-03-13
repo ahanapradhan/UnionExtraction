@@ -21,7 +21,7 @@ def set_optimizer_params(is_on):
 def cus_execute_sqls(cur, sqls):
     # print(cur)
     for sql in sqls:
-        print("..cur execute.." + sql)
+        # print("..cur execute.." + sql)
         try:
             cur.execute(sql)
         except psycopg2.ProgrammingError as e:
@@ -142,7 +142,7 @@ class ConnectionHelper:
         res = None
         des = None
         cur = self.get_cursor()
-        print("...", sql, "...")
+        # print("...", sql, "...")
         try:
             cur.execute(sql)
             res = cur.fetchall()
