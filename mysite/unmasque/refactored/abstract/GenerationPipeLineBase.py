@@ -109,7 +109,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                           self.filter_attrib_dict[(tabname, attrib)][1])
             else:
                 val = get_dummy_val_for(datatype)
-            val = ast.literal_eval(get_format(datatype, val))
+            # val = ast.literal_eval(get_format(datatype, val))
 
         elif datatype in NUMBER_TYPES:
             # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)

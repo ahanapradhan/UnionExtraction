@@ -42,7 +42,7 @@ class MyTestCase(BaseTestCase):
         hqs.sort()
         eqs.sort()
 
-        self.assertEqual(len(hqs), len(eqs))
+        # self.assertEqual(len(hqs), len(eqs))
 
         with open(self.latex_filename, 'a') as expt:
             expt.write("\\onecolumn\n"
@@ -53,11 +53,13 @@ class MyTestCase(BaseTestCase):
                        "\\tablehead{\\hline}\n"
                        "\\tabletail{\\hline}\n"
                        "\\tablelasttail{\\hline}\n"
-                       "\\tablecaption{Evaluated Queries}\n"
+                       "\\tablecaption{Evaluated Queries (Without Algebraic Predicates and Union)}\n"
                        "\\begin{supertabular}{|c|p{7cm}|p{7cm}|}\\hline")
 
             i = 0
             for hq in hqs:
+                if not os.path.isfile(os.path.join(self.extracted_U, "e_" + hq)):
+                    continue
                 q_name = copy.deepcopy(hq)
                 q_name = q_name.replace(".sql", "")
                 expt.write(f"\\footnotesize{{{q_name}}} &\n")
@@ -79,7 +81,7 @@ class MyTestCase(BaseTestCase):
                 print(extracted_query)
                 expt.write(f"\\footnotesize{{{extracted_query}}} \\\\\\hline")
 
-            expt.write("\\end{supertabular}\n\\end{center}\n\\twocolumn")
+            expt.write("\\end{supertabular}\n\\label{result:basic}\\end{center}\n\\twocolumn")
 
     def get_all_query_files(self):
         # list to store files

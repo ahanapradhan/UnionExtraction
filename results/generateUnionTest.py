@@ -79,7 +79,7 @@ class MyTestCase(BaseTestCase):
                 print(extracted_query)
                 expt.write(f"\\footnotesize{{{extracted_query}}} \\\\\\hline")
 
-            expt.write("\\end{supertabular}\n\\end{center}\n\\twocolumn")
+            expt.write("\\end{supertabular}\n\\label{result:union_aoa}\\end{center}\n\\twocolumn")
 
     def get_all_query_files(self):
         # list to store files
