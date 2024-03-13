@@ -156,20 +156,23 @@
                     case STATES[7]:
                         $("#group_by").empty();
                         res = ""
+                    
                         let g_attribs = data.state_info[STATES[7]]
+                        if(!g_attribs) continue
                         for(let i=0; i<g_attribs.length; i++){
                             if(i!=g_attribs.length-1) res += (g_attribs[i] + ", ")
                             else res += g_attribs[i]
                         }
-                        console.log(res)
                         $("#group_by").append(res)
                         break
                     
                     case STATES[8]:
-                        $("#select").empty()
+                        
                         let aggs = data.state_info[STATES[8]]
+                        if(!aggs) continue;
                         res = ""
-                        for(let i=0; i<aggs.length; i++){
+                        $("#select").empty()
+                        for(let i=0; aggs != null &&  i<aggs.length; i++){
                             if(aggs[i][1] == "") res += aggs[i][0];
                             else{
                                 res += aggs[i][1] + "(" + aggs[i][0] + ")"
@@ -182,12 +185,13 @@
                     
                     case STATES[9]:
                         $("#order_by").empty()
-                        $("#order_by").append(data.state_info[STATES[9]].slice(0, data.state_info[STATES[9]].length-2))
+                        
+                        if(data.state_info[STATES[9]]) $("#order_by").append(data.state_info[STATES[9]].slice(0, data.state_info[STATES[9]].length-2))
                         break;
 
                     case STATES[10]:
                         $("#limit").empty();
-                        $("#limit").append(data.state_info[STATES[10]]);
+                        if(data.state_info[STATES[10]]) $("#limit").append(data.state_info[STATES[10]]);
                         break;
                 }
             }
