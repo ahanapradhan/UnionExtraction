@@ -1,9 +1,14 @@
 import unittest
 
+from mysite.unmasque.refactored.orderby_clause import check_sort_order
 from mysite.unmasque.src.util import utils
 
 
 class MyTestCase(unittest.TestCase):
+    def test_check_order(self):
+        check = check_sort_order([2, 1, 2, 2, 3])
+        print(check)
+
     def test_pairing(self):
         elems = {1, 2, 3}
         res = utils.get_pairs_from_set(elems)

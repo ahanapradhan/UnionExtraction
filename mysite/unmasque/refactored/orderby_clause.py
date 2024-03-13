@@ -2,7 +2,8 @@ import copy
 
 import frozenlist
 
-from .util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char, isQ_result_empty
+from .util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char, isQ_result_empty, \
+    get_unused_dummy_val
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..src.util.constants import COUNT, NO_ORDER, SUM
 
@@ -47,6 +48,7 @@ def tryConvert(logger, val):
             temp = val
     return temp
 
+
 def check_sort_order(lst):
     if all(lst[i] <= lst[i + 1] for i in range(len(lst) - 1)):
         return "asc"
@@ -54,6 +56,8 @@ def check_sort_order(lst):
         return "desc"
     else:
         return NO_ORDER
+
+
 def checkOrdering(logger, obj, result):
     if len(result) < 2:
         return None
@@ -71,6 +75,7 @@ class OrderBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper, projected_attribs, global_projection_names, global_dependencies,
                  global_aggregated_attributes, delivery):
         super().__init__(connectionHelper, "Order By", delivery)
+        self.values_used = []
         self.global_projection_names = global_projection_names
         self.projected_attribs = projected_attribs
         self.global_aggregated_attributes = global_aggregated_attributes
@@ -158,8 +163,6 @@ class OrderBy(GenerationPipeLineBase):
                                                 self.global_aggregated_attributes[i][1], not (not dependencyList),
                                                 dependencyList, self.global_dependencies[i], i,
                                                 self.global_projection_names[i]))
-        for i in cand_list:
-            i.debug_print()
         return cand_list
 
     def is_part_of_output(self, tab, attrib):
@@ -211,6 +214,7 @@ class OrderBy(GenerationPipeLineBase):
             # For this attribute (obj.attrib), fill all tables now
             for k in range(no_of_db):
                 self.truncate_core_relations()
+                self.values_used.clear()
                 for j in range(len(self.core_relations)):
                     tabname_inner = self.core_relations[j]
                     attrib_list_inner = self.global_all_attribs[j]
@@ -309,8 +313,9 @@ class OrderBy(GenerationPipeLineBase):
             second = min(get_val_plus_delta(datatype, first, 1),
                          self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
         else:
-            first = get_dummy_val_for(datatype)
+            first = get_unused_dummy_val(datatype, self.values_used) #get_dummy_val_for(datatype)
             second = get_val_plus_delta(datatype, first, 1)
+        self.values_used.extend([first, second])
         for edge in self.global_join_graph:
             if attrib_inner in edge:
                 edge_key = frozenlist.FrozenList(edge)
