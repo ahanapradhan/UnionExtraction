@@ -1,5 +1,7 @@
 import copy
 
+import frozenlist
+
 from .util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char, isQ_result_empty
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..src.util.constants import COUNT, NO_ORDER, SUM
@@ -34,18 +36,24 @@ def tryConvert(logger, val):
         temp = int(val)
         changed = True
     except ValueError as e:
-        logger.debug("Not int error, ", e)
+        # logger.debug("Not int error, ", e)
         temp = val
     if not changed:
         try:
             temp = float(val)
             changed = True
         except ValueError as e:
-            logger.debug("Not int error, ", e)
+            # logger.debug("Not int error, ", e)
             temp = val
     return temp
 
-
+def check_sort_order(lst):
+    if all(lst[i] <= lst[i + 1] for i in range(len(lst) - 1)):
+        return "asc"
+    elif all(lst[i] >= lst[i + 1] for i in range(len(lst) - 1)):
+        return "desc"
+    else:
+        return NO_ORDER
 def checkOrdering(logger, obj, result):
     if len(result) < 2:
         return None
@@ -70,6 +78,7 @@ class OrderBy(GenerationPipeLineBase):
         self.global_dependencies = global_dependencies
         self.orderBy_string = ''
         self.has_orderBy = True
+        self.joined_attrib_valDict = {}
 
     def doExtractJob(self, query):
         # ORDERBY ON PROJECTED COLUMNS ONLY
@@ -154,10 +163,20 @@ class OrderBy(GenerationPipeLineBase):
         return cand_list
 
     def is_part_of_output(self, tab, attrib):
+        is_output = False
+        for edge in self.global_join_graph:
+            if attrib in edge:
+                for o_attrib in edge:
+                    for agg in self.global_dependencies:
+                        for tup in agg:
+                            if o_attrib in tup:
+                                is_output = True
+                                break
         for agg in self.global_dependencies:
             if (tab, attrib) in agg:
-                return True
-        return False
+                is_output = True
+                break
+        return is_output
 
     def generateData(self, obj, orderby_list, query, row_num):
         # check if it is a key attribute, #NO CHECKING ON KEY ATTRIBUTES
@@ -181,7 +200,7 @@ class OrderBy(GenerationPipeLineBase):
                     for j in self.global_join_graph:
                         if i[1] in j:
                             key_f = j
-                    self.logger.debug("Key: ", key_f)
+                    # self.logger.debug("Key: ", key_f)
                     if key_f:
                         for in_e in key_f:
                             same_value_list.append(("check", in_e))
@@ -201,10 +220,8 @@ class OrderBy(GenerationPipeLineBase):
                     for attrib_inner in attrib_list_inner:
                         if self.is_part_of_output(tabname_inner, attrib_inner):
                             datatype = self.get_datatype((tabname_inner, attrib_inner))
-                            if datatype == 'date':
-                                first, second = self.get_date_values(attrib_inner, tabname_inner)
-                            elif datatype in ['int', 'integer', 'numeric', 'float']:
-                                first, second = self.get_number_values(attrib_inner, tabname_inner)
+                            if datatype in ['int', 'numeric', 'date']:
+                                first, second = self.get_non_text_attrib(datatype, attrib_inner, tabname_inner)
                             else:
                                 first, second = self.get_text_value(attrib_inner, tabname_inner)
                         else:
@@ -231,6 +248,7 @@ class OrderBy(GenerationPipeLineBase):
                     self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
 
                 new_result = self.app.doJob(query)
+                self.joined_attrib_valDict.clear()
                 self.logger.debug("New Result", k, new_result)
                 if isQ_result_empty(new_result):
                     self.logger.error('some error in generating new database. '
@@ -238,7 +256,13 @@ class OrderBy(GenerationPipeLineBase):
                     return None
                 if len(new_result) == 2:
                     return None
-                order[k] = checkOrdering(self.logger, obj, new_result)
+                header = new_result[0]
+                data = new_result[1:]
+                check_res = []
+                for d in data:
+                    check_res.append(d[obj.index])
+                order[k] = check_sort_order(check_res)
+                # order[k] = checkOrdering(self.logger, obj, new_result)
                 self.logger.debug("Order", k, order)
             if order[0] is not None and order[1] is not None and order[0] == order[1]:
                 self.logger.debug("Order Found", order[0])
@@ -270,18 +294,32 @@ class OrderBy(GenerationPipeLineBase):
             second = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 1))
         return first, second
 
-    def get_number_values(self, attrib_inner, tabname_inner):
+    def get_non_text_attrib(self, datatype, attrib_inner, tabname_inner):
+        for edge in self.global_join_graph:
+            if attrib_inner in edge:
+                edge_key = frozenlist.FrozenList(edge)
+                edge_key.freeze()
+                if edge_key in self.joined_attrib_valDict.keys():
+                    return self.joined_attrib_valDict[edge_key][0], self.joined_attrib_valDict[edge_key][1]
         # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
+        if datatype != 'date':
+            datatype = 'int'
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-            second = min(get_val_plus_delta('int', first, 1),
+            second = min(get_val_plus_delta(datatype, first, 1),
                          self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
-            # self.logger.debug(f"{tabname_inner}.{attrib_inner}, first: {first}, second: {second}")
         else:
-            first = get_dummy_val_for('int')
-            second = get_val_plus_delta('int', first, 1)
-            # self.logger.debug(f"Dummy: {tabname_inner}.{attrib_inner}, first: {first}, second:
-            # {second}")
+            first = get_dummy_val_for(datatype)
+            second = get_val_plus_delta(datatype, first, 1)
+        for edge in self.global_join_graph:
+            if attrib_inner in edge:
+                edge_key = frozenlist.FrozenList(edge)
+                edge_key.freeze()
+                if edge_key not in self.joined_attrib_valDict.keys():
+                    if datatype == 'date':
+                        first = get_format('date', first)
+                        second = get_format('date', second)
+                    self.joined_attrib_valDict[edge_key] = [first, second]
         return first, second
 
     def get_date_values(self, attrib_inner, tabname_inner):

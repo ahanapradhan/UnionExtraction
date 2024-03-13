@@ -90,7 +90,8 @@ class Limit(GenerationPipeLineBase):
                         self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
                 insert_rows.append(tuple(insert_values))
 
-            self.insert_attrib_vals_into_table(att_order, attrib_list_inner, insert_rows, tabname_inner)
+            self.insert_attrib_vals_into_table(att_order, attrib_list_inner,
+                                               insert_rows, tabname_inner, insert_logger=False)
 
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):

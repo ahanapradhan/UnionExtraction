@@ -4,5 +4,5 @@ Select c_name, o_orderdate, o_totalprice, Sum(l_quantity) as sum
  and l_orderkey = o_orderkey
  and c_phone LIKE '27-%' 
  Group By c_name, o_totalprice, o_orderdate 
- Order By c_name asc, o_orderdate asc, o_totalprice desc 
+ Order By o_orderdate asc, o_totalprice desc, c_name asc 
  Limit 100;

@@ -58,10 +58,15 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             filtered_val = filtered_val[0]
         return filtered_val
 
-    def insert_attrib_vals_into_table(self, att_order, attrib_list_inner, insert_rows, tabname_inner) -> None:
+    def insert_attrib_vals_into_table(self, att_order, attrib_list_inner,
+                                      insert_rows, tabname_inner, insert_logger=True) -> None:
         esc_string = get_escape_string(attrib_list_inner)
         insert_query = insert_into_tab_attribs_format(att_order, esc_string, tabname_inner)
-        self.connectionHelper.execute_sql_with_params(insert_query, insert_rows, self.logger)
+        if insert_logger:
+            self.connectionHelper.execute_sql_with_params(insert_query, insert_rows, self.logger)
+        else:
+            self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
+
 
     def update_attrib_in_table(self, attrib, value, tabname) -> None:
         update_query = update_tab_attrib_with_value(attrib, tabname, value)
