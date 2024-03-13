@@ -75,6 +75,7 @@ class GenericPipeLine:
         rc.set_all_relations(self.all_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
+        self.info[RESULT_COMPARE] = matched
         self.connectionHelper.closeConnection()
 
         self.time_profile.update_for_result_comparator(rc.local_elapsed_time)

@@ -17,7 +17,7 @@ body{
     font-weight: 700;
 }
 
-#query{
+.roArea{
     border: 2px solid #ccc;
     border-radius: 5px;
     padding: 12px 20px;
@@ -30,8 +30,13 @@ body{
 }
 
 
-.hidQ, .progress, .btnContainer{
+.hidQ, .progress, .btnContainer, .res, .stateinfo{
     width: 52%;
+}
+
+.state_label{
+    font-size: 18px;
+    font-weight: 700;
 }
 
 .subtext{
@@ -100,6 +105,33 @@ a{
 }
 
 .actualInfo{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.outContainer{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.min_tab{
+    display: block;
+    overflow: scroll;
+    background-color: #fff;
+}
+
+th, td{
+    background-color: #fff;
+}
+
+table{
+    border: black solid 2px;
+    border-radius: 2px;
+}
+
+.dbmin{
     display: flex;
     flex-direction: column;
     gap: 10px;

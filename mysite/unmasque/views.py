@@ -8,9 +8,9 @@ from .src.pipeline.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionHelper import ConnectionHelper
 from .src.util.configParser import Config
 from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION
+    NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE
 
-l = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT]
+l = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, DONE]
 # Create your views here.
 
 def login_view(request):

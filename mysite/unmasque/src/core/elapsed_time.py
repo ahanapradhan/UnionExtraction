@@ -97,7 +97,7 @@ class ElapsedTime:
 
         times = self.get_times()
 
-        self.display_string += "\n--------------Extraction Time per Module in the Pipeline------------------:"
+        self.display_string = "\n--------------Extraction Time per Module in the Pipeline------------------:"
         i = 0
         while i < len(self.clause_keys):
             if i == len(self.clause_keys) - 1:

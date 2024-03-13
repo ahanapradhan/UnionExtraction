@@ -56,6 +56,7 @@ class ExtractionPipeLine(GenericPipeLine):
                                   key_lists):  # get core_relations, key_lists from from clause
 
         time_profile = create_zero_time_profile()
+        q_generator = QueryStringGenerator(self.connectionHelper)
 
         '''
         Correlated Sampling
@@ -122,7 +123,7 @@ class ExtractionPipeLine(GenericPipeLine):
         check = fl.doJob(query)
         self.update_state(FILTER + DONE)
         time_profile.update_for_where_clause(fl.local_elapsed_time)
-        self.info[FILTER] = fl.filter_predicates
+        self.info[FILTER] = (fl.filter_predicates, q_generator.get_filter_only(fl))
         if not check:
             self.info[FILTER] = None
             self.logger.info("Cannot find Filter Predicates.")
@@ -228,7 +229,7 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
 
-        q_generator = QueryStringGenerator(self.connectionHelper)
+        
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
         self.logger.debug("extracted query:\n", eq)
 

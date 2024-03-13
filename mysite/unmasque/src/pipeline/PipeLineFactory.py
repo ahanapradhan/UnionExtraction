@@ -42,15 +42,10 @@ class PipeLineFactory:
         pipe = self.get_pipeline_obj(token)
         _stopper = self.get_pipeline_stopper(token)
         qe = [None]
-        t = threading.Thread(target = pipe.doJob, args = [query, qe])
-        t.start()
-        while t.is_alive() and not _stopper.is_set():
-            continue
+        pipe.doJob(query, qe)
         self.result = qe[0]
         print("Result", qe)
         self.results.append((token, query, qe[0]))
-        if _stopper.is_set():
-            raise_exception(t.ident)
         self.q.get_nowait()
         # print("unlocked: ", query)
 
