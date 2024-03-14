@@ -4,15 +4,15 @@ from typing import Union
 
 from psycopg2._psycopg import Decimal
 
-from mysite.unmasque.refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
-from mysite.unmasque.refactored.filter import Filter, get_constants_for
-from mysite.unmasque.refactored.util.common_queries import update_tab_attrib_with_value
-from mysite.unmasque.refactored.util.utils import get_min_and_max_val, get_format, get_val_plus_delta, isQ_result_empty, \
+from ...refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
+from ...refactored.filter import Filter, get_constants_for
+from ...refactored.util.common_queries import update_tab_attrib_with_value
+from ...refactored.util.utils import get_min_and_max_val, get_format, get_val_plus_delta, isQ_result_empty, \
     get_mid_val, add_two
-from mysite.unmasque.src.core.QueryStringGenerator import handle_range_preds
-from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
-from mysite.unmasque.src.util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \
+from .QueryStringGenerator import handle_range_preds
+from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from ..util.ConnectionHelper import ConnectionHelper
+from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \
     get_delta, \
     merge_equivalent_paritions, get_all_two_combs, get_val_bound_for_chain, get_min_max_for_chain_bounds, \
     optimize_edge_set, create_adjacency_map_from_aoa_predicates, find_all_chains, \

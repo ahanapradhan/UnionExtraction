@@ -49,25 +49,13 @@ def tryConvert(logger, val):
     return temp
 
 
-def check_sort_order(lst):
-    if all(lst[i] <= lst[i + 1] for i in range(len(lst) - 1)):
+def check_sort_order(logger, lst):
+    if all(tryConvert(logger, lst[i]) <= tryConvert(logger,lst[i + 1]) for i in range(len(lst) - 1)):
         return "asc"
-    elif all(lst[i] >= lst[i + 1] for i in range(len(lst) - 1)):
+    elif all(tryConvert(logger, lst[i]) >= tryConvert(logger,lst[i + 1]) for i in range(len(lst) - 1)):
         return "desc"
     else:
         return NO_ORDER
-
-
-def checkOrdering(logger, obj, result):
-    if len(result) < 2:
-        return None
-    reference_value = tryConvert(logger, result[1][obj.index])
-    for i in range(2, len(result)):
-        logger.debug(result)
-        curr_val = tryConvert(logger, result[i][obj.index])
-        if curr_val != reference_value:
-            return 'asc' if curr_val > reference_value else 'desc'
-    return None
 
 
 class OrderBy(GenerationPipeLineBase):
@@ -222,15 +210,15 @@ class OrderBy(GenerationPipeLineBase):
                     attrib_list_str = ",".join(attrib_list_inner)
                     att_order = f"({attrib_list_str})"
                     for attrib_inner in attrib_list_inner:
+                        datatype = self.get_datatype((tabname_inner, attrib_inner))
                         if self.is_part_of_output(tabname_inner, attrib_inner):
-                            datatype = self.get_datatype((tabname_inner, attrib_inner))
                             if datatype in ['int', 'numeric', 'date']:
                                 first, second = self.get_non_text_attrib(datatype, attrib_inner, tabname_inner)
                             else:
                                 first, second = self.get_text_value(attrib_inner, tabname_inner)
                         else:
-                            dmin_val = self.get_dmin_val(attrib_inner, tabname_inner)
-                            first, second = dmin_val, dmin_val
+                            first = self.get_dmin_val(attrib_inner, tabname_inner)
+                            second = get_val_plus_delta(datatype, first, 1) if attrib_inner in self.joined_attribs else first
                         insert_values1.append(first)
                         insert_values2.append(second)
                         if k == no_of_db - 1 and (any([(attrib_inner in i) for i in
@@ -265,7 +253,7 @@ class OrderBy(GenerationPipeLineBase):
                 check_res = []
                 for d in data:
                     check_res.append(d[obj.index])
-                order[k] = check_sort_order(check_res)
+                order[k] = check_sort_order(self.logger, check_res)
                 # order[k] = checkOrdering(self.logger, obj, new_result)
                 self.logger.debug("Order", k, order)
             if order[0] is not None and order[1] is not None and order[0] == order[1]:
@@ -313,7 +301,7 @@ class OrderBy(GenerationPipeLineBase):
             second = min(get_val_plus_delta(datatype, first, 1),
                          self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
         else:
-            first = get_unused_dummy_val(datatype, self.values_used) #get_dummy_val_for(datatype)
+            first = get_unused_dummy_val(datatype, self.values_used)
             second = get_val_plus_delta(datatype, first, 1)
         self.values_used.extend([first, second])
         for edge in self.global_join_graph:

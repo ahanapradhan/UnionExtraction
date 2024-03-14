@@ -93,7 +93,11 @@ class MyTestCase(BaseTestCase):
     def test_Q2_sql(self):
         test_key = "e_Q2.sql"
         self.conn.connectUsingParams()
-        query = "Select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment        From part, supplier, partsupp, nation, region        Where p_partkey = ps_partkey and s_suppkey = ps_suppkey and p_size = 38 and p_type like        '%TIN' and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'MIDDLE EAST'        Order by s_acctbal desc, n_name, s_name, p_partkey Limit 100;"
+        query = ("Select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment        From part, "
+                 "supplier, partsupp, nation, region        Where p_partkey = ps_partkey and s_suppkey = ps_suppkey "
+                 "and p_size = 38 and p_type like        '%TIN' and s_nationkey = n_nationkey and n_regionkey = "
+                 "r_regionkey and r_name = 'MIDDLE EAST'        Order by s_acctbal desc, n_name, s_name, "
+                 "p_partkey Limit 100;")
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -119,7 +123,9 @@ class MyTestCase(BaseTestCase):
     def test_Q11_sql(self):
         test_key = "e_Q11.sql"
         self.conn.connectUsingParams()
-        query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, supplier, nation         Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'ARGENTINA' Group By ps_COMMENT         Order by value desc Limit 100;"
+        query = ("Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, supplier, nation         "
+                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'ARGENTINA' Group By "
+                 "ps_COMMENT         Order by value desc Limit 100;")
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -149,7 +155,8 @@ class MyTestCase(BaseTestCase):
     def test_Q17_sql(self):
         test_key = "e_Q17.sql"
         self.conn.connectUsingParams()
-        query = "Select AVG(l_extendedprice) as avgTOTAL From lineitem, part         Where p_partkey = l_partkey and p_brand = 'Brand#52' and p_container = 'LG CAN' ;"
+        query = ("Select AVG(l_extendedprice) as avgTOTAL From lineitem, part         Where p_partkey = l_partkey and "
+                 "p_brand = 'Brand#52' and p_container = 'LG CAN' ;")
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -162,7 +169,11 @@ class MyTestCase(BaseTestCase):
     def test_Q16_sql(self):
         test_key = "e_Q16.sql"
         self.conn.connectUsingParams()
-        query = "Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part               Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and p_size >=               4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, p_type, p_size;"
+        query = ("Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part               "
+                 "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and "
+                 "p_size >=  4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, "
+                 "p_type, p_size;")
+        self.conn.config.detect_nep = True
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -171,4 +182,6 @@ class MyTestCase(BaseTestCase):
         with open(os.path.join("extracted_tech_report_queries", test_key), 'w') as file:
             file.write(eq)
         self.assertTrue(self.pipeline.correct)
+        self.conn.config.detect_nep = False
+
 

@@ -1,8 +1,8 @@
 Select s_name, Count(*) as numwait
  From lineitem, nation, orders, supplier 
- Where n_nationkey = s_nationkey
+ Where l_orderkey = o_orderkey
  and l_suppkey = s_suppkey
- and l_orderkey = o_orderkey
+ and n_nationkey = s_nationkey
  and n_name = 'GERMANY'
  and o_orderstatus = 'F' 
  Group By s_name 

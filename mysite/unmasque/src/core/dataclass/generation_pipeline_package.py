@@ -2,8 +2,8 @@ import copy
 from datetime import date
 from typing import Callable, Union
 
-from mysite.unmasque.refactored.filter import get_constants_for
-from mysite.unmasque.refactored.util.utils import get_min_and_max_val, get_val_plus_delta
+from ....refactored.filter import get_constants_for
+from ....refactored.util.utils import get_min_and_max_val, get_val_plus_delta
 
 
 def collect_attribs_from(_input):
