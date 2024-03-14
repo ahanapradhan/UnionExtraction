@@ -3,8 +3,6 @@ import unittest
 
 import pytest
 
-sys.path.append("../../../")
-
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from mysite.unmasque.refactored.from_clause import FromClause
 from mysite.unmasque.test.util import queries

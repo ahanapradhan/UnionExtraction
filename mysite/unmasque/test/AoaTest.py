@@ -2,8 +2,6 @@ import datetime
 
 import pytest
 
-from mysite.unmasque.refactored.aggregation import Aggregation
-from mysite.unmasque.refactored.groupby_clause import GroupBy
 from mysite.unmasque.refactored.limit import Limit
 from mysite.unmasque.refactored.orderby_clause import OrderBy
 from mysite.unmasque.refactored.projection import Projection
