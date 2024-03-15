@@ -54,27 +54,25 @@ class AlgebraicPredicate(MutationPipeLineBase):
         query = self.extract_params_from_args(args)
         self.init_constants()
         check = self.filter_extractor.doJob(query)
-        if not check:
-            return False
+        if check:
+            self.extract_aoa(query)
+        self.post_process_for_generation_pipeline(query)
+        return True
+
+    def extract_aoa(self, query):
         self.filter_extractor.logger.debug("Filters: ", self.filter_extractor.filter_predicates)
         partition_eq_dict, ineqaoa_preds = self.algo2_preprocessing()
-
         self.algo3_find_eq_joinGraph(query, partition_eq_dict, ineqaoa_preds)
-
         edge_set_dict = self.algo4_create_edgeSet_E(ineqaoa_preds)
         self.logger.debug("edge_set_dict:", edge_set_dict)
-
         for datatype in edge_set_dict.keys():
             E, L = self.algo7_find_aoa(edge_set_dict, datatype, query)
             self.logger.debug("E: ", E)
             self.logger.debug("L: ", L)
             self.aoa_predicates.extend(E)
             self.aoa_less_thans.extend(L)
-
         self.cleanup_predicates()
         self.generate_where_clause()
-        self.post_process_for_generation_pipeline(query)
-        return True
 
     def cleanup_predicates(self):
         self.optimize_edge_set(self.aoa_predicates)

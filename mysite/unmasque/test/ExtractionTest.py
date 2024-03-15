@@ -605,15 +605,22 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_correlated_nested_query(self):
-        query = "select c_name from customer where c_acctbal > (select count(o_totalprice) from orders where " \
+        query = "select c_name from customer " \
+                "where c_acctbal > (select avg(o_totalprice) from orders where " \
                 "c_custkey = o_custkey);"
+
         self.conn.connectUsingParams()
         eq = self.pipeline.doJob(query)
-        # self.assertTrue(eq is not None)
+        self.assertTrue(eq is not None)
         print(eq)
-        # self.assertTrue(self.pipeline.correct)
+        '''
+        query = "select l_orderkey, l_extendedprice from lineitem " \
+                "where l_extendedprice >= (select max(l_discount) from lineitem);"
+        eq = Select l_orderkey, l_extendedprice From lineitem Where l_discount <= l_extendedprice; 
+        '''
+        self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
     @pytest.mark.skip

@@ -13,9 +13,7 @@ class MyTestCase(BaseTestCase):
     def test_Q18_sql(self):
         test_key = "e_Q18.sql"
         self.conn.connectUsingParams()
-        query = "Select c_name, o_orderdate, o_totalprice,  sum(l_quantity) From customer, orders, lineitem       " \
-                "Where c_phone Like '27-_%'       and c_custkey = o_custkey       and o_orderkey = l_orderkey       " \
-                "Group By c_name, o_orderdate, o_totalprice       Order by o_orderdate, o_totalprice desc Limit 100;"
+        query = "Select c_name, o_orderdate, o_totalprice,  sum(l_quantity) From customer, orders, lineitem       Where c_phone Like '27-_%'       and c_custkey = o_custkey       and o_orderkey = l_orderkey       Group By c_name, o_orderdate, o_totalprice       Order by o_orderdate, o_totalprice desc Limit 100;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -93,11 +91,7 @@ class MyTestCase(BaseTestCase):
     def test_Q2_sql(self):
         test_key = "e_Q2.sql"
         self.conn.connectUsingParams()
-        query = ("Select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment        From part, "
-                 "supplier, partsupp, nation, region        Where p_partkey = ps_partkey and s_suppkey = ps_suppkey "
-                 "and p_size = 38 and p_type like        '%TIN' and s_nationkey = n_nationkey and n_regionkey = "
-                 "r_regionkey and r_name = 'MIDDLE EAST'        Order by s_acctbal desc, n_name, s_name, "
-                 "p_partkey Limit 100;")
+        query = "Select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment        From part, supplier, partsupp, nation, region        Where p_partkey = ps_partkey and s_suppkey = ps_suppkey and p_size = 38 and p_type like        '%TIN' and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = 'MIDDLE EAST'        Order by s_acctbal desc, n_name, s_name, p_partkey Limit 100;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -123,9 +117,7 @@ class MyTestCase(BaseTestCase):
     def test_Q11_sql(self):
         test_key = "e_Q11.sql"
         self.conn.connectUsingParams()
-        query = ("Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, supplier, nation         "
-                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'ARGENTINA' Group By "
-                 "ps_COMMENT         Order by value desc Limit 100;")
+        query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, supplier, nation         Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'ARGENTINA' Group By ps_COMMENT         Order by value desc Limit 100;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -138,11 +130,7 @@ class MyTestCase(BaseTestCase):
     def test_Q10_sql(self):
         test_key = "e_Q10.sql"
         self.conn.connectUsingParams()
-        query = "Select c_name, sum(l_extendedprice * (1 - l_discount)) as revenue, c_acctbal, n_name, c_address,     " \
-                "    c_phone, c_comment From customer, orders, lineitem, nation         Where c_custkey = o_custkey " \
-                "and l_orderkey = o_orderkey and o_orderdate >= date '1994-01-01'         and o_orderdate < date " \
-                "'1994-01-01' + interval '3' month and l_returnflag = 'R' and c_nationkey = n_nationkey         Group " \
-                "By c_name, c_acctbal, c_phone, n_name, c_address, c_comment Order by revenue desc Limit 20;"
+        query = "Select c_name, sum(l_extendedprice * (1 - l_discount)) as revenue, c_acctbal, n_name, c_address,         c_phone, c_comment From customer, orders, lineitem, nation         Where c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate >= date '1994-01-01'         and o_orderdate < date '1994-01-01' + interval '3' month and l_returnflag = 'R' and c_nationkey = n_nationkey         Group By c_name, c_acctbal, c_phone, n_name, c_address, c_comment Order by revenue desc Limit 20;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -155,8 +143,7 @@ class MyTestCase(BaseTestCase):
     def test_Q17_sql(self):
         test_key = "e_Q17.sql"
         self.conn.connectUsingParams()
-        query = ("Select AVG(l_extendedprice) as avgTOTAL From lineitem, part         Where p_partkey = l_partkey and "
-                 "p_brand = 'Brand#52' and p_container = 'LG CAN' ;")
+        query = "Select AVG(l_extendedprice) as avgTOTAL From lineitem, part         Where p_partkey = l_partkey and p_brand = 'Brand#52' and p_container = 'LG CAN' ;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -169,11 +156,7 @@ class MyTestCase(BaseTestCase):
     def test_Q16_sql(self):
         test_key = "e_Q16.sql"
         self.conn.connectUsingParams()
-        query = ("Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part               "
-                 "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and "
-                 "p_size >=  4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, "
-                 "p_type, p_size;")
-        self.conn.config.detect_nep = True
+        query = "Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part               Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and p_size >=               4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, p_type, p_size;"
         self.pipeline = UnionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
@@ -182,6 +165,4 @@ class MyTestCase(BaseTestCase):
         with open(os.path.join("extracted_tech_report_queries", test_key), 'w') as file:
             file.write(eq)
         self.assertTrue(self.pipeline.correct)
-        self.conn.config.detect_nep = False
-
 
