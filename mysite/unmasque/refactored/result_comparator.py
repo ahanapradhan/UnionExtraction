@@ -44,6 +44,7 @@ class ResultComparator(Comparator):
                 for val in row:
                     temp.append(str(val))
                 ins = (tuple(temp))
+                # print(ins)
                 if len(res_Qh_) == 1 and len(res_Qh_[0]) == 1:
                     self.insert_into_r_h_values(header, ins[0])
                 else:
