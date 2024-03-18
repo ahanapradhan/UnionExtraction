@@ -97,7 +97,7 @@ class Comparator(Base):
         str_values = str_values.replace(",)", ")")
         if not str_values.startswith('('):
             str_values = f"({str_values})"
-        self.connectionHelper.execute_sql([f"INSERT INTO {self.r_h}{header_} VALUES {str_values};"])
+        self.connectionHelper.execute_sql([f"INSERT INTO {self.r_h}{header_} VALUES {str_values};"], self.logger)
 
     def insert_data_into_Qh_table(self, res_Qh):
         # Filling the table temp2
