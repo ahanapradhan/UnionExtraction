@@ -1,7 +1,7 @@
 Select l_orderkey, Sum(l_extendedprice*(1 - l_discount)) as revenue, o_orderdate, o_shippriority
  From customer, lineitem, orders 
- Where c_custkey = o_custkey
- and l_orderkey = o_orderkey
+ Where l_orderkey = o_orderkey
+ and c_custkey = o_custkey
  and c_mktsegment = 'BUILDING'
  and '1995-03-16' <= l_shipdate
  and o_orderdate <= '1995-03-14' 
