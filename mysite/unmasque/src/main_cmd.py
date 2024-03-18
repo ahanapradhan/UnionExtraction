@@ -1,6 +1,7 @@
 import signal
 import sys
 
+from .pipeline.UnionPipeLine import UnionPipeLine
 from ..test.util import queries
 from .pipeline.ExtractionPipeLine import ExtractionPipeLine
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
@@ -28,13 +29,11 @@ if __name__ == '__main__':
      "From lineitem Where l_shipdate <= date '1998-12-01' - interval '71 days' " \
      "Group By l_returnflag, l_linestatus Order by l_returnflag, l_linestatus;"
 
-    # hq = "SELECT avg(s_nationkey) FROM supplier WHERE s_suppkey >= 10 and s_suppkey <= 15;"
-
     conn = ConnectionHelper()
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
-    pipeline = ExtractionPipeLine(conn)
+    pipeline = UnionPipeLine(conn)
     eq = pipeline.doJob(hq)
 
     print("=========== Extracted Query =============")
