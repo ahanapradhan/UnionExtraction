@@ -65,7 +65,7 @@ class MyTestCase(BaseTestCase):
 
         check = agg.doJob(queries.Q1)
         self.assertTrue(check)
-        print(agg.global_aggregated_attributes)
+        print("Agg List", agg.global_aggregated_attributes)
 
         self.assertEqual(10, len(agg.global_aggregated_attributes))
 
@@ -158,7 +158,7 @@ class MyTestCase(BaseTestCase):
 
         check = agg.doJob(queries.Q3)
         self.assertTrue(check)
-        print(agg.global_aggregated_attributes)
+        print("Agg List",agg.global_aggregated_attributes)
 
         self.assertEqual(4, len(agg.global_aggregated_attributes))
 
@@ -233,7 +233,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipinstruct', 'character'),
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
-        projections = ['o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate',
+        projections = ['o_orderkey', 'l_extendedprice*(1 - l_discount) + l_quantity', 'o_orderdate',
                        'o_shippriority']
         global_key_attribs = ['l_orderkey', 'c_custkey', 'o_custkey', 'o_orderkey', ]
         has_groupBy = True
@@ -241,10 +241,8 @@ class MyTestCase(BaseTestCase):
         dep = [[(IDENTICAL_EXPR, 'o_orderkey')],
                [('lineitem', 'l_quantity'), ('lineitem', 'l_extendedprice'), ('lineitem', 'l_discount')],
                [(IDENTICAL_EXPR, 'o_orderdate')], [(IDENTICAL_EXPR, 'o_shippriority')]]
-        sol = [[], [[1.], [1.], [0.], [0.], [-1.], [-0.], [-0.], [0.]], [], []]
-        p_list = [[], ['l_quantity', 'l_extendedprice', 'l_discount', 'l_quantity*l_extendedprice',
-                       'l_extendedprice*l_discount', 'l_discount*l_quantity', 'l_quantity*l_extendedprice*l_discount'],
-                  [], []]
+        sol = [[[1.], [0.]], [[ 0.],[ 1.],[ 1.],[-1.],[-0.],[ 0.],[ 0.],[0.]], [[1]], [[1.], [0.]]]
+        p_list = [['l_orderkey'], ['l_discount', 'l_extendedprice', 'l_quantity', 'l_discount*l_extendedprice', 'l_discount*l_quantity', 'l_extendedprice*l_quantity', 'l_discount*l_extendedprice*l_quantity'], ['o_orderdate'], ['o_shippriority']]
         agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
                           global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
                           global_min_instance_dict)
@@ -327,7 +325,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipinstruct', 'character'),
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
-        projections = ['o_orderkey', '-1.0*o_totalprice+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate',
+        projections = ['o_orderkey', 'l_extendedprice*(1 - l_discount) - o_totalprice', 'o_orderdate',
                        'o_shippriority']
         global_key_attribs = ['l_orderkey', 'c_custkey', 'o_custkey', 'o_orderkey', ]
         has_groupBy = True
@@ -335,10 +333,8 @@ class MyTestCase(BaseTestCase):
         dep = [[(IDENTICAL_EXPR, 'o_orderkey')],
                [('orders', 'o_totalprice'), ('lineitem', 'l_extendedprice'), ('lineitem', 'l_discount')],
                [(IDENTICAL_EXPR, 'o_orderdate')], [(IDENTICAL_EXPR, 'o_shippriority')]]
-        sol = [[], [[-1.], [1.], [0.], [0.], [-1.], [-0.], [-0.], [0.]], [], []]
-        p_list = [[], ['o_totalprice', 'l_extendedprice', 'l_discount', 'o_totalprice*l_extendedprice',
-                       'l_extendedprice*l_discount', 'l_discount*o_totalprice', 'o_totalprice*l_extendedprice*l_discount'],
-                  [], []]
+        sol = [[1.],[0.]], [[-0.],[ 1.],[-1.],[-1.],[-0.],[ 0.],[ 0.],[ 0.]], [[1]], [[1.],[0.]]
+        p_list = [['l_orderkey'], ['l_discount', 'l_extendedprice', 'l_quantity', 'l_discount*l_extendedprice', 'l_discount*l_quantity', 'l_extendedprice*l_quantity', 'l_discount*l_extendedprice*l_quantity'], ['o_orderdate'], ['o_shippriority']]
         agg = Aggregation(self.conn, global_key_attribs, global_attrib_types, from_rels, filter_predicates,
                           global_all_attribs, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, p_list,
                           global_min_instance_dict)
@@ -360,7 +356,7 @@ class MyTestCase(BaseTestCase):
                 sum_count += 1
             elif agtuple[1] == 'Avg':
                 avg_count += 1
-        self.assertEqual(count, 1)
+        self.assertEqual(count, 1)  
         self.assertEqual(sum_count, 1)
         self.assertEqual(avg_count, 0)
 

@@ -1,3 +1,4 @@
+import sys
 import signal
 import sys
 
@@ -20,22 +21,28 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    hq = "Select n_name, sum(l_extendedprice * (1 - l_discount)) as revenue " \
+     "From customer, orders, lineitem, supplier, nation, region " \
+     "Where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and " \
+     "c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and " \
+     "r_name = 'MIDDLE EAST' and o_orderdate >= date '1994-01-01' and o_orderdate < date " \
+     "'1994-01-01' + interval '1' year " \
+     "Group By n_name " \
+     "Order by revenue desc Limit 100;"
 
-    hq = "Select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as " \
-     "sum_base_price, sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, sum(l_extendedprice *" \
-     "(1 - l_discount) * (1 + l_tax)) as sum_charge, avg(l_quantity) as avg_qty, avg(l_extendedprice) as " \
-     "avg_price, avg(l_discount) as avg_disc, count(*) as count_order " \
-     "From lineitem Where l_shipdate <= date '1998-12-01' - interval '71 days' " \
-     "Group By l_returnflag, l_linestatus Order by l_returnflag, l_linestatus;"
-
-    hq = "SELECT avg(s_nationkey) FROM supplier WHERE s_suppkey >= 10 and s_suppkey <= 15;"
+    hq = "select l_orderkey, sum(l_extendedprice*(1 - l_discount) - o_totalprice) as revenue, o_orderdate, " \
+       "o_shippriority  from customer, orders, " \
+       "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate " \
+       "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
+       "desc, o_orderdate limit 10;"
 
     conn = ConnectionHelper()
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
-
+    print("Starting")
     pipeline = ExtractionPipeLine(conn)
-    eq = pipeline.doJob(hq)
+    q = [None]
+    eq = pipeline.doJob(hq, q)
 
     print("=========== Extracted Query =============")
     print(eq)

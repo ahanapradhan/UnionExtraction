@@ -36,12 +36,13 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     @pytest.mark.skip
-    def test_no_tables_in_db(self):
+    def no_tables_in_db(self): # Not sure what this is for?
         query = "select count(*) from lineitem;"
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         fc = FromClause(self.conn)
         rels = fc.doJob(query, "error")
+        print("Problem", rels)
         self.assertTrue(not rels)
         self.conn.closeConnection()
 

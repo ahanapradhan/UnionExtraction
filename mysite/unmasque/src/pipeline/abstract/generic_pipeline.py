@@ -32,22 +32,23 @@ def synchronized(wrapped):
 
 class PipeLineState(object):
     state = None
-
-    @synchronized
+    info = {}
     def set(self, state):
         self.state = state
 
 
 class GenericPipeLine:
     _instance = None
-    state = PipeLineState()
+    state = WAITING
 
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(GenericPipeLine, cls).__new__(cls)
-        return cls._instance
+    # def __new__(cls, *args, **kwargs):
+    #     if cls._instance is None:
+    #         cls._instance = super(GenericPipeLine, cls).__new__(cls)
+    #     return cls._instance
 
     def __init__(self, connectionHelper, name):
+        self.update_state(WAITING)
+        self.info = {}
         self.connectionHelper = connectionHelper
         self.pipeline_name = name
         self.time_profile = create_zero_time_profile()
@@ -55,12 +56,17 @@ class GenericPipeLine:
         self.logger = Log(name, connectionHelper.config.log_level)
         self.correct = False
         self.all_relations = []
+        self.error = None
 
-    def doJob(self, query):
-        self.update_state(WAITING)
-        result = self.extract(query)
-        self.verify_correctness(query, result)
-        return result
+    def doJob(self, query, qe):
+        try:
+            self.update_state(WAITING)
+            result = self.extract(query)
+            self.verify_correctness(query, result)
+            qe[0] = result
+            return result
+        finally:
+            print("Ended Execution")
 
     def verify_correctness(self, query, result):
         self.update_state(RESULT_COMPARE + START)
@@ -69,6 +75,7 @@ class GenericPipeLine:
         rc.set_all_relations(self.all_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
+        self.info[RESULT_COMPARE] = matched
         self.connectionHelper.closeConnection()
 
         self.time_profile.update_for_result_comparator(rc.local_elapsed_time)
@@ -85,7 +92,7 @@ class GenericPipeLine:
         pass
 
     def update_state(self, state):
-        self.state.set(state)
+        self.state = state
 
     def get_state(self):
-        return self.state.state
+        return self.state

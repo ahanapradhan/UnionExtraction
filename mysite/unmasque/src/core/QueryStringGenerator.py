@@ -80,6 +80,26 @@ class QueryStringGenerator(Base):
         eq = self.refine_Query1(ej.global_key_attributes, pj, gb, agg, ob, lm)
         return eq
 
+    def get_filter_only(self, wc):
+        filters = []
+        res = ""
+        for pred in wc.filter_predicates:
+            tab_col = tuple(pred[:2])
+            pred_op = pred[1] + " "
+            datatype = get_datatype(wc.global_attrib_types, tab_col)
+            if pred[2] != ">=" and pred[2] != "<=" and pred[2] != "range":
+                if pred[2] == "equal":
+                    pred_op += " = "
+                else:
+                    pred_op += pred[2] + " "
+                pred_op += get_format(datatype, pred[3])
+            else:
+                pred_op = handle_range_preds(datatype, pred, pred_op)
+
+            filters.append(pred_op)
+        res += " and ".join(filters)
+        return res
+
     def add_filters(self, wc):
         filters = []
         for pred in wc.filter_predicates:

@@ -1,0 +1,62 @@
+* {
+    font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background-color: #d2dae2;
+}
+
+body{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+}
+
+.title{
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.subtitle{
+    font-size: 22px;
+}
+
+
+h2{
+    width: 52%;
+}
+
+#hidden_label{
+    font-size: 20px;
+}
+
+#query{
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    padding: 12px 20px;
+    font-size: 16px;
+    width: 100%;
+}
+
+
+.submit{
+    font-size: 16px;
+    font-weight: 700;
+    background-color: rgba(51, 51, 51, 0.2);
+    border-radius: 8px;
+    border-width: 0;
+    color: #333333;
+    cursor: pointer;
+    display: inline-block;
+    font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 20px;
+    list-style: none;
+    margin: 0;
+    padding: 10px 12px;
+    text-align: center;
+    transition: all 200ms;
+    vertical-align: baseline;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;   
+}
+
