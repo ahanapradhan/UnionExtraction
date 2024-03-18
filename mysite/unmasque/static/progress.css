@@ -21,7 +21,8 @@ body{
     border: 2px solid #ccc;
     border-radius: 5px;
     padding: 12px 20px;
-    font-size: 16px;
+    font-size: 18px;
+    font-weight: 700;
     width: 100%;
 }
 
@@ -57,13 +58,12 @@ a{
     text-align: left;
     outline: none;
     font-size: 20px;
-    border-radius: 10px;
     font-weight: 700;
 }
 
 .content {
     padding: 0 18px;
-    display: none;
+    display: flex;
     overflow: hidden;
     background-color: #f1f1f1;
 }
@@ -76,7 +76,7 @@ a{
     border: 2px solid #ccc;
     border-radius: 5px;
     padding: 12px 20px;
-    font-size: 16px;
+    font-size: 20px;
     width: 100%;
 }
 
@@ -132,7 +132,14 @@ table{
 }
 
 .dbmin{
-    display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+#query{
+    font-size: 16px;
+}
+
+.innerContainer{
+    border-radius: 10px;
 }
