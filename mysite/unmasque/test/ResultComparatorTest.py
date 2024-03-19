@@ -1,8 +1,8 @@
 import unittest
 
-from mysite.unmasque.refactored.result_comparator import ResultComparator
-from mysite.unmasque.test.util import queries
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from ..refactored.result_comparator import ResultComparator
+from ..test.util import queries
+from ..test.util.BaseTestCase import BaseTestCase
 
 
 class MyTestCase(BaseTestCase):
