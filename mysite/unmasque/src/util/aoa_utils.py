@@ -395,8 +395,13 @@ def add_item_to_list(item, item_list):
 def remove_absorbed_Bs(E, absorbed_LBs, absorbed_UBs, col_sink, col_src):
     if col_src in absorbed_UBs.keys():
         remove_item_from_list((col_src, absorbed_UBs[col_src]), E)
-    if col_sink in absorbed_LBs:
+    if col_src in absorbed_LBs.keys():
+        remove_item_from_list((absorbed_LBs[col_src], col_src), E)
+    if col_sink in absorbed_LBs.keys():
         remove_item_from_list((absorbed_LBs[col_sink], col_sink), E)
+    if col_sink in absorbed_UBs.keys():
+        remove_item_from_list((col_sink, absorbed_UBs[col_sink]), E)
+
 
 
 def remove_all_absorbed_Bs(E, absorbed_LBs, absorbed_UBs):
