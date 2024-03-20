@@ -7,13 +7,16 @@ from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
     get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff
 from .abstract.where_clause import WhereClause
 
+
 def round_ceil(num, places):
-    adder = 5/(10**(places+1))
+    adder = 5 / (10 ** (places + 1))
     return round(num + adder, places)
 
+
 def round_floor(num, places):
-    adder = 5/(10**(places+1))
+    adder = 5 / (10 ** (places + 1))
     return round(num - adder, places)
+
 
 class Filter(WhereClause):
 
@@ -119,7 +122,7 @@ class Filter(WhereClause):
                          min_val, max_val, operator):
         query_front = update_sql_query_tab_attribs(tabname, filter_attrib)
         delta, while_cut_off = get_constants_for(datatype)
-        
+
         self.revert_filter_changes(tabname)
 
         low = min_val

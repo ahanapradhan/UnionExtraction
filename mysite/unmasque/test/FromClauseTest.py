@@ -22,6 +22,8 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(rels), 1)
         self.assertTrue('lineitem' in rels)
         self.conn.closeConnection()
+        self.assertEqual(8, len(fc.all_relations))
+        self.assertEqual(8, fc.app_calls)
 
     def test_like_tpchq3(self):
         query = queries.tpch_query3

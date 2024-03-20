@@ -1,7 +1,6 @@
 import copy
 
-from ..refactored.abstract.ExtractorBase import Base
-from ..refactored.executable import Executable
+from .abstract.AppExtractorBase import AppExtractorBase
 from ..refactored.util.common_queries import get_row_count, drop_table, alter_table_rename_to, \
     get_restore_name, create_table_like
 from ..refactored.util.utils import isQ_result_empty
@@ -17,7 +16,7 @@ def get_base_t(key_list, sizes):
     return base_t
 
 
-class Cs2(Base):
+class Cs2(AppExtractorBase):
     sf = 1
     iteration_count = 3
     seed_sample_size_per = 0.16 / sf
@@ -33,7 +32,6 @@ class Cs2(Base):
         self.all_relations = all_relations
         self.core_relations = core_relations
         self.global_key_lists = global_key_lists
-        self.app = Executable(connectionHelper)
         self.sizes = {}
 
     def getSizes_cs(self):

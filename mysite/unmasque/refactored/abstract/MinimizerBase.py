@@ -1,19 +1,14 @@
-
+from .AppExtractorBase import AppExtractorBase
 from ..util.common_queries import create_view_as_select_star_where_ctid, drop_view, alter_table_rename_to, \
-    get_ctid_from, create_table_as_select_star_from_ctid, drop_table, get_row_count, get_star, \
-    create_table_as_select_star_from, get_tabname_4, select_ctid_from_tabname_offset, select_next_ctid
+    get_ctid_from, create_table_as_select_star_from_ctid, drop_table, get_row_count, create_table_as_select_star_from, get_tabname_4, select_ctid_from_tabname_offset, select_next_ctid
 from ..util.utils import isQ_result_empty
 
-from ...refactored.abstract.ExtractorBase import Base
-from ...refactored.executable import Executable
 
-
-class Minimizer(Base):
+class Minimizer(AppExtractorBase):
 
     def __init__(self, connectionHelper, core_relations, all_sizes, name):
-        Base.__init__(self, connectionHelper, name)
+        AppExtractorBase.__init__(self, connectionHelper, name)
         self.core_relations = core_relations
-        self.app = Executable(connectionHelper)
         self.all_sizes = all_sizes
         self.mock = False
 

@@ -1,24 +1,26 @@
 import copy
 
+from tabulate import tabulate
+
 
 def create_zero_time_profile():
     return ElapsedTime()
 
 
 class ElapsedTime:
-    clause_keys = ["Union Detection:",
-                   "From Clause:",
-                   "Correlated Sampling:",
-                   "View Minimization:",
-                   "Where Clause:",
+    clause_keys = ["Union\n Detection:",
+                   "From\n Clause:",
+                   "Correlated\n Sampling:",
+                   "View\n Minimization:",
+                   "Where\n Clause:",
                    "Projection:",
-                   "Group BY:",
+                   "Group\n BY:",
                    "Aggregation:",
-                   "Order by:",
+                   "Order\n by:",
                    "Limit:",
                    "NEP: ",
-                   "Result Comparator:",
-                   "Number of Times Executable called: "
+                   "Result\n Comparator:",
+                   "Number of Times\n Executable called: "
                    ]
 
     def __init__(self):
@@ -37,41 +39,66 @@ class ElapsedTime:
         self.t_result_comp = 0
         self.display_string = ''
 
-    def update_for_from_clause(self, t_u):
+        self.app_sampling = 0
+        self.app_view_min = 0
+        self.app_where_clause = 0
+        self.app_projection = 0
+        self.app_groupby = 0
+        self.app_aggregate = 0
+        self.app_orderby = 0
+        self.app_limit = 0
+        self.app_nep = 0
+        self.app_union = 0
+        self.app_from_clause = 0
+        self.app_result_comp = 0
+
+    def update_for_from_clause(self, t_u, c_app):
         self.t_from_clause += t_u
+        self.app_from_clause += c_app
 
-    def update_for_union(self, t_u):
+    def update_for_union(self, t_u, c_app):
         self.t_union += t_u
+        self.app_union += c_app
 
-    def update_for_result_comparator(self, t_u):
+    def update_for_result_comparator(self, t_u, c_app):
         self.t_result_comp += t_u
+        self.app_result_comp += c_app
 
-    def update_for_where_clause(self, t_u):
+    def update_for_where_clause(self, t_u, c_app):
         self.t_where_clause += t_u
+        self.app_where_clause += c_app
 
-    def update_for_projection(self, t_u):
+    def update_for_projection(self, t_u, c_app):
         self.t_projection += t_u
+        self.app_projection += c_app
 
-    def update_for_group_by(self, t_u):
+    def update_for_group_by(self, t_u, c_app):
         self.t_groupby += t_u
+        self.app_groupby += c_app
 
-    def update_for_aggregate(self, t_u):
+    def update_for_aggregate(self, t_u, c_app):
         self.t_aggregate += t_u
+        self.app_aggregate += c_app
 
-    def update_for_order_by(self, t_u):
+    def update_for_order_by(self, t_u, c_app):
         self.t_orderby += t_u
+        self.app_orderby += c_app
 
-    def update_for_limit(self, t_u):
+    def update_for_limit(self, t_u, c_app):
         self.t_limit += t_u
+        self.app_limit += c_app
 
-    def update_for_cs2(self, t_u):
+    def update_for_cs2(self, t_u, c_app):
         self.t_sampling += t_u
+        self.app_sampling += c_app
 
-    def update_for_view_minimization(self, t_u):
+    def update_for_view_minimization(self, t_u, c_app):
         self.t_view_min += t_u
+        self.app_view_min += c_app
 
-    def update_for_nep(self, t_u):
+    def update_for_nep(self, t_u, c_app):
         self.t_nep += t_u
+        self.app_nep += c_app
 
     def update_for_app(self, t_u):
         self.executable_call_count += t_u
@@ -97,7 +124,7 @@ class ElapsedTime:
 
         times = self.get_times()
 
-        self.display_string = "\n--------------Extraction Time per Module in the Pipeline------------------:"
+        self.display_string += "\n--------------Extraction Time per Module in the Pipeline------------------:"
         i = 0
         while i < len(self.clause_keys):
             if i == len(self.clause_keys) - 1:
@@ -112,7 +139,14 @@ class ElapsedTime:
                                            str(round(times[i] * 1000)) + " ms.")
             i += 1
 
-        print(self.display_string)
+        # print(self.display_string)
+
+        pp_tab = zip(self.clause_keys, times, self.get_app_calls())
+
+        table = list(pp_tab)
+        header = ["Step", "Time (ms)", "Exe calls"]
+        table.insert(0, header)
+        print(tabulate(table, headers='firstrow', tablefmt='fancy_grid'))
 
     def get_json_display_string(self):
         self.print()
@@ -135,3 +169,19 @@ class ElapsedTime:
                  self.t_result_comp,
                  self.executable_call_count]
         return times
+
+    def get_app_calls(self):
+        apps = [self.app_union,
+                self.app_from_clause,
+                self.app_sampling,
+                self.app_view_min,
+                self.app_where_clause,
+                self.app_projection,
+                self.app_groupby,
+                self.app_aggregate,
+                self.app_orderby,
+                self.app_limit,
+                self.app_nep,
+                self.app_result_comp,
+                "-"]
+        return apps

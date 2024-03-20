@@ -27,7 +27,7 @@ class Base(TpchSanitizer):
 
     def doJob(self, *args):
         self.local_start_time = time.time()
-        self.result = self.doActualJob(args)
+        self.result = self.doAppCountJob(args)
         self.local_end_time = time.time()
         self.local_elapsed_time = self.local_end_time - self.local_start_time
         self.done = True
@@ -36,6 +36,9 @@ class Base(TpchSanitizer):
 
     def doActualJob(self, args):
         pass
+
+    def doAppCountJob(self, args):
+        return self.doActualJob(args)
 
     def extract_params_from_args(self, args):
         pass

@@ -1,8 +1,7 @@
 import copy
 
 from ..util.constants import COUNT, SUM, max_str_len
-from ...refactored.abstract.ExtractorBase import Base
-from ...refactored.executable import Executable
+from ...refactored.abstract.AppExtractorBase import AppExtractorBase
 from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val
 
 
@@ -44,11 +43,10 @@ def get_exact_NE_string_predicate(elt, output):
     return elt[1] + " " + str(elt[2]) + " '" + str(output) + "' "
 
 
-class QueryStringGenerator(Base):
+class QueryStringGenerator(AppExtractorBase):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Query String Generator")
-        self.app = Executable(connectionHelper)
         self.select_op = ''
         self.from_op = ''
         self.where_op = ''

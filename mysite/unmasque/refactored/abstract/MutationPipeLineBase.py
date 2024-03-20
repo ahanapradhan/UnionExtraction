@@ -1,17 +1,14 @@
-from .ExtractorBase import Base
-from ..executable import Executable
-from ..util.common_queries import get_tabname_4, get_star, truncate_table, create_table_as_select_star_from, \
-    insert_into_tab_select_star_fromtab
+from .AppExtractorBase import AppExtractorBase
+from ..util.common_queries import get_tabname_4, truncate_table, insert_into_tab_select_star_fromtab
 
 
-class MutationPipeLineBase(Base):
+class MutationPipeLineBase(AppExtractorBase):
 
     def __init__(self, connectionHelper,
                  core_relations,
                  global_min_instance_dict,
                  name):
         super().__init__(connectionHelper, name)
-        self.app = Executable(connectionHelper)
         # from from clause
         self.core_relations = core_relations
         # from view minimizer

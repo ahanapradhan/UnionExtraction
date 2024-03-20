@@ -78,7 +78,7 @@ class GenericPipeLine:
         self.info[RESULT_COMPARE] = matched
         self.connectionHelper.closeConnection()
 
-        self.time_profile.update_for_result_comparator(rc.local_elapsed_time)
+        self.time_profile.update_for_result_comparator(rc.local_elapsed_time, rc.app_calls)
         if matched:
             self.logger.info("Extracted Query is Correct.")
             self.correct = True

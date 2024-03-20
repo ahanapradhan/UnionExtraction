@@ -32,7 +32,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(FROM_CLAUSE + RUNNING)
         check = fc.doJob(query)
         self.update_state(FROM_CLAUSE + DONE)
-        self.time_profile.update_for_from_clause(fc.local_elapsed_time)
+        self.time_profile.update_for_from_clause(fc.local_elapsed_time, fc.app_calls)
         if not check or not fc.done:
             self.logger.error("Some problem while extracting from clause. Aborting!")
             self.info[FROM_CLAUSE] = None
@@ -66,7 +66,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(SAMPLING + RUNNING)
         check = cs2.doJob(query)
         self.update_state(SAMPLING + DONE)
-        time_profile.update_for_cs2(cs2.local_elapsed_time)
+        time_profile.update_for_cs2(cs2.local_elapsed_time, cs2.app_calls)
         self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
         if not check or not cs2.done:
             self.info[SAMPLING] = None
@@ -77,7 +77,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(DB_MINIMIZATION + RUNNING)
         check = vm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
-        time_profile.update_for_view_minimization(vm.local_elapsed_time)
+        time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
         self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
         if not check:
             self.logger.error("Cannot do database minimization. ")
@@ -99,7 +99,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(EQUI_JOIN + RUNNING)
         check = ej.doJob(query)
         self.update_state(EQUI_JOIN + DONE)
-        time_profile.update_for_where_clause(ej.local_elapsed_time)
+        time_profile.update_for_where_clause(ej.local_elapsed_time, ej.app_calls)
         self.info[EQUI_JOIN] = ej.global_join_graph
         if not check:
             self.info[EQUI_JOIN] = None
@@ -122,7 +122,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(FILTER + RUNNING)
         check = fl.doJob(query)
         self.update_state(FILTER + DONE)
-        time_profile.update_for_where_clause(fl.local_elapsed_time)
+        time_profile.update_for_where_clause(fl.local_elapsed_time, fl.app_calls)
         self.info[FILTER] = (fl.filter_predicates, q_generator.get_filter_only(fl))
         if not check:
             self.info[FILTER] = None
@@ -141,7 +141,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
         self.update_state(PROJECTION + DONE)
-        time_profile.update_for_projection(pj.local_elapsed_time)
+        time_profile.update_for_projection(pj.local_elapsed_time, pj.app_calls)
         self.info[PROJECTION] = {'names': pj.projection_names, 'attribs': pj.projected_attribs}
         if not check:
             self.info[PROJECTION] = None
@@ -160,7 +160,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
         self.update_state(GROUP_BY + DONE)
-        time_profile.update_for_group_by(gb.local_elapsed_time)
+        time_profile.update_for_group_by(gb.local_elapsed_time, gb.app_calls)
         self.info[GROUP_BY] = gb.group_by_attrib
         if not check:
             self.info[GROUP_BY] = None
@@ -184,7 +184,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
         self.update_state(AGGREGATE + DONE)
-        time_profile.update_for_aggregate(agg.local_elapsed_time)
+        time_profile.update_for_aggregate(agg.local_elapsed_time, agg.app_calls)
         self.info[AGGREGATE] = agg.global_aggregated_attributes
         if not check:
             self.info[AGGREGATE] = None
@@ -203,7 +203,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
         self.update_state(ORDER_BY + DONE)
-        time_profile.update_for_order_by(ob.local_elapsed_time)
+        time_profile.update_for_order_by(ob.local_elapsed_time, ob.app_calls)
         self.info[ORDER_BY] = ob.orderBy_string
         if not ob.has_orderBy:
             self.info[ORDER_BY] = None
@@ -219,7 +219,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
         self.update_state(LIMIT + DONE)
-        time_profile.update_for_limit(lm.local_elapsed_time)
+        time_profile.update_for_limit(lm.local_elapsed_time, lm.app_calls)
         self.info[LIMIT] = lm.limit
         if lm.limit is None:
             self.info[LIMIT] = None
@@ -229,7 +229,6 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
 
-        
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
         self.logger.debug("extracted query:\n", eq)
 
@@ -251,7 +250,7 @@ class ExtractionPipeLine(GenericPipeLine):
             check = nep.doJob([query, eq])
             if nep.Q_E:
                 eq = nep.Q_E
-            time_profile.update_for_nep(nep.local_elapsed_time)
+            time_profile.update_for_nep(nep.local_elapsed_time, nep.app_calls)
             self.update_state(NEP_ + DONE)
 
             if not check:

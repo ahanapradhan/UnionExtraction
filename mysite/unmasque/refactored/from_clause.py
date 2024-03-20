@@ -1,5 +1,4 @@
-from ..refactored.abstract.ExtractorBase import Base
-from ..refactored.executable import Executable
+from .abstract.AppExtractorBase import AppExtractorBase
 from ..refactored.initialization import Initiator
 from ..refactored.util.common_queries import alter_table_rename_to, create_table_like
 from ..refactored.util.utils import isQ_result_empty
@@ -12,11 +11,10 @@ except ImportError:
     pass
 
 
-class FromClause(Base):
+class FromClause(AppExtractorBase):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "FromClause")
-        self.app = Executable(connectionHelper)
         self.init = Initiator(connectionHelper)
 
         self.all_relations = set()
@@ -84,7 +82,7 @@ class FromClause(Base):
             return args[0], ""
         return args[0], args[1]
 
-    def doJob(self, *args):
+    def setup(self):
         self.set_app_type()
         check = self.init.result
         if not self.init.done:
@@ -92,9 +90,13 @@ class FromClause(Base):
         if not check:
             return False
         self.all_relations = self.init.all_relations
-        return super().doJob(*args)
+        return True
 
     def doActualJob(self, args):
+        setup_done = self.setup()
+        if not setup_done:
+            return False
+
         if self.timeout:
             self.connectionHelper.execute_sql(["set statement_timeout to '2s';"])
         query, method = self.extract_params_from_args(args)
