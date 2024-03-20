@@ -607,9 +607,7 @@ class MyTestCase(BaseTestCase):
 
     # @pytest.mark.skip
     def test_correlated_nested_query(self):
-        query = "select c_name from customer " \
-                "where c_acctbal > (select avg(o_totalprice) from orders where " \
-                "c_custkey = o_custkey);"
+        query = "select c_name from customer where c_acctbal <= (select MIN(s_acctbal) from supplier);"
 
         self.conn.connectUsingParams()
         eq = self.pipeline.doJob(query)
