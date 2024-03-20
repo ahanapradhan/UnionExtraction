@@ -9,7 +9,7 @@ from ....refactored.result_comparator import ResultComparator
 
 def synchronized(wrapped):
     lock = threading.Lock()
-    print(lock, id(lock))
+    # print(lock, id(lock))
 
     @functools.wraps(wrapped)
     def _wrap(*args, **kwargs):

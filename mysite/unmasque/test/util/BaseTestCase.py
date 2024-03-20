@@ -2,8 +2,8 @@ import signal
 import sys
 import unittest
 
-from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from ...src.pipeline.abstract.TpchSanitizer import TpchSanitizer
+from ...src.util.ConnectionHelper import ConnectionHelper
 
 
 def signal_handler(signum, frame):

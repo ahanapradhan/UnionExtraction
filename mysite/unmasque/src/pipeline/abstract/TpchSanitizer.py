@@ -3,7 +3,7 @@ from typing import Literal
 
 from ...util.ConnectionHelper import ConnectionHelper
 from ....refactored.util.common_queries import drop_view, get_restore_name, drop_table, alter_table_rename_to, \
-    get_tabname_1, get_tabname_4, get_tabname_un, get_tabname_nep, drop_table_cascade
+    get_tabname_1, get_tabname_4, get_tabname_un, get_tabname_nep, drop_table_cascade, get_row_count
 
 
 def get_mutated_names(tab: str) -> list[str]:
@@ -55,6 +55,9 @@ class TpchSanitizer:
     def sanitize(self):
         res, desc = self.connectionHelper.execute_sql_fetchall(self.select_query(["count(*)"], []))
 
+        # print(res)
+        # print(self.all_relations)
+
         if res[0][0] > len(self.all_relations):
             print("Database needs to be restored!")
 
@@ -64,11 +67,15 @@ class TpchSanitizer:
                               ["table_name like '%_restore'"]))
         for row in res:
             table = row[0]
+            # print(table)
             self.drop_derived_relations(table)
 
             drop_fn = self.get_drop_fn(table)
             restore_name = get_restore_name(table)
             self.connectionHelper.execute_sql([drop_fn(table), alter_table_rename_to(restore_name, table)])
+
+            res, _ = self.connectionHelper.execute_sql_fetchall([get_row_count(table)])
+            print(res)
 
         self.connectionHelper.execute_sql([drop_table("temp"),
                                            drop_view("r_e"), drop_table("r_h")])

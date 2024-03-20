@@ -80,7 +80,6 @@ class ExtractionPipeLine(GenericPipeLine):
         if not vm.done:
             self.logger.error("Some problem while view minimization. Aborting extraction!")
             return None, time_profile
-        print(vm.global_min_instance_dict)
 
         '''
         AOA Extraction
@@ -90,7 +89,6 @@ class ExtractionPipeLine(GenericPipeLine):
         aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
         self.update_state(AOA + RUNNING)
         check = aoa.doJob(query)
-        # print(aoa.pipeline_delivery.global_min_instance_dict)
         self.update_state(AOA + DONE)
         time_profile.update_for_where_clause(aoa.local_elapsed_time)
         if not check:
@@ -109,7 +107,6 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
-        print(delivery.global_min_instance_dict)
         self.update_state(PROJECTION + DONE)
         time_profile.update_for_projection(pj.local_elapsed_time)
         if not check:
@@ -123,7 +120,6 @@ class ExtractionPipeLine(GenericPipeLine):
         gb = GroupBy(self.connectionHelper, delivery, pj.projected_attribs)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
-        print(delivery.global_min_instance_dict)
 
         self.update_state(GROUP_BY + DONE)
         time_profile.update_for_group_by(gb.local_elapsed_time)
@@ -144,7 +140,6 @@ class ExtractionPipeLine(GenericPipeLine):
                           pj.dependencies, pj.solution, pj.param_list, delivery)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
-        print(delivery.global_min_instance_dict)
 
         self.update_state(AGGREGATE + DONE)
         time_profile.update_for_aggregate(agg.local_elapsed_time)
@@ -159,7 +154,6 @@ class ExtractionPipeLine(GenericPipeLine):
                      agg.global_aggregated_attributes, delivery)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
-        print(delivery.global_min_instance_dict)
 
         self.update_state(ORDER_BY + DONE)
         time_profile.update_for_order_by(ob.local_elapsed_time)
@@ -173,7 +167,6 @@ class ExtractionPipeLine(GenericPipeLine):
         lm = Limit(self.connectionHelper, gb.group_by_attrib, delivery)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
-        print(delivery.global_min_instance_dict)
 
         self.update_state(LIMIT + DONE)
         time_profile.update_for_limit(lm.local_elapsed_time)
