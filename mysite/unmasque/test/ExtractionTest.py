@@ -4,13 +4,13 @@ from datetime import datetime, timedelta, date
 
 import pytest
 
-from mysite.unmasque.refactored.executable import Executable
-from mysite.unmasque.refactored.util.utils import isQ_result_empty
-from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
-from mysite.unmasque.test.src.Optimizer_config import set_optimizer_params
-from mysite.unmasque.test.util import tpchSettings, queries
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-from mysite.unmasque.test.util.queries import Q3, Q6
+from ..refactored.executable import Executable
+from ..refactored.util.utils import isQ_result_empty
+from ..src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from ..test.src.Optimizer_config import set_optimizer_params
+from ..test.util import tpchSettings, queries
+from ..test.util.BaseTestCase import BaseTestCase
+from ..test.util.queries import Q3, Q6
 
 
 def generate_random_dates():
@@ -363,6 +363,23 @@ class MyTestCase(BaseTestCase):
         tp.print()
         self.conn.closeConnection()
 
+    def test_extraction_full_Q5(self):
+        self.conn.connectUsingParams()
+        key = 'Q5'
+        query = queries.queries_dict[key]
+        app = Executable(self.conn)
+        result = app.doJob(query)
+        if isQ_result_empty(result):
+            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
+                  "query!")
+            self.assertTrue(False)
+
+        eq = self.pipeline.extract(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.conn.closeConnection()
+
     def test_extraction_Q6(self):
         self.conn.connectUsingParams()
         key = 'Q6'
@@ -652,7 +669,6 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
-
 
     @pytest.mark.skip
     def test_6_mul(self):
