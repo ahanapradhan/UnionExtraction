@@ -10,10 +10,8 @@ class AppExtractorBase(Base):
         self.app_calls = 0
 
     def doAppCountJob(self, args):
-        print(self.app.method_call_count)
         self.app_calls = self.app.method_call_count
         self.result = self.doActualJob(args)
         self.app_calls = self.app.method_call_count - self.app_calls
-        print(self.app.method_call_count)
         return self.result
 

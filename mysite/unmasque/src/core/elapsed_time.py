@@ -20,7 +20,7 @@ class ElapsedTime:
                    "Limit:",
                    "NEP: ",
                    "Result\n Comparator:",
-                   "Number of Times\n Executable called: "
+                   "Total: "
                    ]
 
     def __init__(self):
@@ -33,10 +33,10 @@ class ElapsedTime:
         self.t_orderby = 0
         self.t_limit = 0
         self.t_nep = 0
-        self.executable_call_count = 0
         self.t_union = 0
         self.t_from_clause = 0
         self.t_result_comp = 0
+        self.t_total = 0
         self.display_string = ''
 
         self.app_sampling = 0
@@ -51,6 +51,7 @@ class ElapsedTime:
         self.app_union = 0
         self.app_from_clause = 0
         self.app_result_comp = 0
+        self.app_total = 0
 
     def update_for_from_clause(self, t_u, c_app):
         self.t_from_clause += t_u
@@ -101,7 +102,10 @@ class ElapsedTime:
         self.app_nep += c_app
 
     def update_for_app(self, t_u):
-        self.executable_call_count += t_u
+        self.app_total += t_u
+
+    def update_for_total_time(self, t_u):
+        self.t_total += t_u
 
     def update(self, other_profile):
         self.t_sampling += other_profile.t_sampling
@@ -113,7 +117,18 @@ class ElapsedTime:
         self.t_orderby += other_profile.t_orderby
         self.t_limit += other_profile.t_limit
         self.t_nep += other_profile.t_nep
-        self.executable_call_count = other_profile.executable_call_count
+
+        self.app_total = other_profile.app_total
+
+        self.app_sampling += other_profile.app_sampling
+        self.app_view_min += other_profile.app_view_min
+        self.app_where_clause += other_profile.app_where_clause
+        self.app_projection += other_profile.app_projection
+        self.app_groupby += other_profile.app_groupby
+        self.app_aggregate += other_profile.app_aggregate
+        self.app_orderby += other_profile.app_orderby
+        self.app_limit += other_profile.app_limit
+        self.app_nep += other_profile.app_nep
 
     def print(self):
         max_len = len(max(self.clause_keys, key=len)) + 1
@@ -127,16 +142,10 @@ class ElapsedTime:
         self.display_string += "\n--------------Extraction Time per Module in the Pipeline------------------:"
         i = 0
         while i < len(self.clause_keys):
-            if i == len(self.clause_keys) - 1:
-                self.display_string += str("\n" +
-                                           self.clause_keys[i] + " " + ' ' * (
-                                                   max_len - len(self.clause_keys[i])) + " " +
-                                           str(round(times[i])))
-            else:
-                self.display_string += str("\n" +
-                                           self.clause_keys[i] + " " + ' ' * (
-                                                   max_len - len(self.clause_keys[i])) + " " +
-                                           str(round(times[i] * 1000)) + " ms.")
+            self.display_string += str("\n" +
+                                       self.clause_keys[i] + " " + ' ' * (
+                                               max_len - len(self.clause_keys[i])) + " " +
+                                       str(round(times[i] * 1000, 4)) + " ms.")
             i += 1
 
         # print(self.display_string)
@@ -144,7 +153,7 @@ class ElapsedTime:
         pp_tab = zip(self.clause_keys, times, self.get_app_calls())
 
         table = list(pp_tab)
-        header = ["Step", "Time (ms)", "Exe calls"]
+        header = ["Step", "Time (ms)", "Total"]
         table.insert(0, header)
         print(tabulate(table, headers='firstrow', tablefmt='fancy_grid'))
 
@@ -167,7 +176,7 @@ class ElapsedTime:
                  self.t_limit,
                  self.t_nep,
                  self.t_result_comp,
-                 self.executable_call_count]
+                 self.t_total]
         return times
 
     def get_app_calls(self):
@@ -183,5 +192,5 @@ class ElapsedTime:
                 self.app_limit,
                 self.app_nep,
                 self.app_result_comp,
-                "-"]
+                self.app_total]
         return apps

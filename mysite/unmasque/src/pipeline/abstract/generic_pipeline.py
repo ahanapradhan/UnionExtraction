@@ -1,5 +1,6 @@
 import functools
 import threading
+import time
 
 from ...core.elapsed_time import create_zero_time_profile
 from ...util.Log import Log
@@ -59,6 +60,8 @@ class GenericPipeLine:
         self.error = None
 
     def doJob(self, query, qe=None):
+        local_start_time = time.time()
+
         if qe is None:
             qe = []
         try:
@@ -70,6 +73,8 @@ class GenericPipeLine:
             qe.append(result)
             return result
         finally:
+            local_end_time = time.time()
+            self.time_profile.update_for_total_time(local_end_time - local_start_time)
             print("Ended Execution")
 
     def verify_correctness(self, query, result):

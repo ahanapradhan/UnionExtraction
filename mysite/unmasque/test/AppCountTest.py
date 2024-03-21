@@ -2,10 +2,10 @@
 
 import unittest
 
-from mysite.unmasque.refactored.from_clause import FromClause
-from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
-from mysite.unmasque.test.util import queries
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from ..refactored.from_clause import FromClause
+from ..src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from .util import queries
+from .util.BaseTestCase import BaseTestCase
 
 
 class MyTestCase(BaseTestCase):

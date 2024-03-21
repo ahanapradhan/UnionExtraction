@@ -39,7 +39,7 @@ class FromClause(AppExtractorBase):
         for tabname in self.all_relations:
             try:
                 self.connectionHelper.execute_sql(
-                    ["BEGIN;", alter_table_rename_to(tabname, "temp"), create_table_like(tabname, "temp")])
+                    ["BEGIN;", alter_table_rename_to(tabname, "temp"), create_table_like(tabname, "temp")], self.logger)
 
                 new_result = self.app.doJob(query)
                 if isQ_result_empty(new_result):
@@ -56,7 +56,7 @@ class FromClause(AppExtractorBase):
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
             try:
-                self.connectionHelper.execute_sql(["BEGIN;", alter_table_rename_to(tabname, "temp")])
+                self.connectionHelper.execute_sql(["BEGIN;", alter_table_rename_to(tabname, "temp")], self.logger)
 
                 try:
                     new_result = self.app.doJob(query)  # slow

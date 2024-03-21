@@ -10,8 +10,8 @@ def get_mutated_names(tab):
             get_tabname_4(tab),
             get_tabname_un(tab),
             get_tabname_nep(tab),
-            tab+"2",
-            tab+"3"]
+            tab + "2",
+            tab + "3"]
 
 
 class TpchSanitizer:
@@ -55,8 +55,8 @@ class TpchSanitizer:
     def sanitize(self):
         res, desc = self.connectionHelper.execute_sql_fetchall(self.select_query(["count(*)"], []))
 
-        if res[0][0] > len(self.all_relations):
-            print("Database needs to be restored!")
+        # if res[0][0] > len(self.all_relations):
+        #    print("Database needs to be restored!")
 
         self.begin_transaction()
         res, desc = self.connectionHelper.execute_sql_fetchall(
