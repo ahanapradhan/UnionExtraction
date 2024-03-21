@@ -3,14 +3,17 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from psycopg2 import OperationalError
 
-
 from .src.pipeline.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionHelper import ConnectionHelper
 from .src.util.configParser import Config
-from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, \
-    NEP_, LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE
+from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, \
+    FILTER, \
+    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE
 
-l = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, DONE]
+l = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY,
+     LIMIT, RESULT_COMPARE, DONE]
+
+
 # Create your views here.
 
 def login_view(request):
@@ -28,7 +31,7 @@ def login_view(request):
             conn = connect_to_db(c.dbname, c.host, c.password, c.port, c.user)
             print(conn)
             cur = conn.cursor()
-            try:    
+            try:
                 cur.execute("EXPLAIN " + query)
             except:
                 error_message = "Invalid query. Please Try again!"
@@ -60,7 +63,7 @@ def func_start(connHelper, query, request):
     state_msg = factory.get_pipeline_state(token)
     print("State at init", state_msg)
     to_pass = [query, state_msg, 'NA']
-    request.session[str(token)+'partials'] = to_pass
+    request.session[str(token) + 'partials'] = to_pass
     return token
 
 
@@ -85,7 +88,7 @@ def func_check_progress(request, token):
     else:
         print("... still doing...", state_msg)
         to_pass = [factory.get_pipeline_query(token), state_msg, 'NA']
-    request.session[str(token)+'partials'] = to_pass
+    request.session[str(token) + 'partials'] = to_pass
     return state_changed, state_msg, p.info if p else None
 
 
@@ -104,12 +107,14 @@ def prepare_result(query):
         to_pass.append("Nothing to show!")
     return to_pass
 
+
 def cancel_exec(request, token):
     print("ID:", token)
     print("Trying to cancel")
     factory = PipeLineFactory()
     factory.cancel_pipeline_exec(token)
     return render(request, 'unmasque/login.html')
+
 
 def prepare_result_1(query, data, token):
     factory = PipeLineFactory()
@@ -131,6 +136,7 @@ def prepare_result_1(query, data, token):
         to_pass.append("Nothing to show!")
     return to_pass
 
+
 def connect_to_db(database, host, password, port, username):
     connection = psycopg2.connect(
         database=database,
@@ -150,7 +156,7 @@ def result_page(request, token):
     query = None
     for i in factory.results:
         if i[0] == token:
-            query = i[1]    
+            query = i[1]
             data = i[2]
             break
     print(query, data)
@@ -161,10 +167,12 @@ def result_page(request, token):
 
 
 def progress_page(request, token):
-    partials = request.session.get(str(token)+'partials')
-    print("Partials", partials, str(token)+'partials')
-    return render(request, 'unmasque/progress.html', {'query': partials[0] if partials else "Not Valid Query", 'progress_message': partials[1] if partials else "_QNF_",
-                                                      'profiling': 'NA', 'token': token, 'states': l, "start": START, "running": RUNNING, "done": DONE})
+    partials = request.session.get(str(token) + 'partials')
+    print("Partials", partials, str(token) + 'partials')
+    return render(request, 'unmasque/progress.html', {'query': partials[0] if partials else "Not Valid Query",
+                                                      'progress_message': partials[1] if partials else "_QNF_",
+                                                      'profiling': 'NA', 'token': token, 'states': l, "start": START,
+                                                      "running": RUNNING, "done": DONE})
 
 
 def bye_page(request):

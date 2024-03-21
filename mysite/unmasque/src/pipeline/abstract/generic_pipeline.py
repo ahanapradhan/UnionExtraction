@@ -58,12 +58,16 @@ class GenericPipeLine:
         self.all_relations = []
         self.error = None
 
-    def doJob(self, query, qe):
+    def doJob(self, query, qe=None):
+        if qe is None:
+            qe = []
         try:
             self.update_state(WAITING)
             result = self.extract(query)
             self.verify_correctness(query, result)
-            qe[0] = result
+            if len(qe):
+                qe.clear()
+            qe.append(result)
             return result
         finally:
             print("Ended Execution")
