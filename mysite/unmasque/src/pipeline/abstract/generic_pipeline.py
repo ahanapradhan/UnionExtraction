@@ -5,6 +5,7 @@ import time
 from ...core.elapsed_time import create_zero_time_profile
 from ...util.Log import Log
 from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING
+from ....refactored.executable import Executable
 from ....refactored.result_comparator import ResultComparator
 
 
@@ -54,6 +55,8 @@ class GenericPipeLine:
         result = None
         try:
             self.update_state(WAITING)
+            app = Executable(self.connectionHelper)
+            app.method_call_count = 0
             result = self.extract(query)
             self.verify_correctness(query, result)
         except Exception as e:

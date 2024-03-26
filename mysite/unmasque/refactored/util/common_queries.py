@@ -123,7 +123,7 @@ def form_update_query_with_value(update_string, datatype, val):
 def get_column_details_for_table(schema, tab):
     return f"select column_name, data_type, character_maximum_length from " \
            f"information_schema.columns where table_schema = '{schema}' and " \
-           f"table_name = '{tab}';"
+           f"table_name = '{tab}' order by column_name;"
 
 
 def select_attribs_from_relation(tab_attribs, relation):

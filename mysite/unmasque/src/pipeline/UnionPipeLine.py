@@ -10,7 +10,7 @@ class UnionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Union PipeLine")
-        self.old_pipeline = ExtractionPipeLine(self.connectionHelper)
+        self.spjagoal_pipeline = ExtractionPipeLine(self.connectionHelper)
 
     def extract(self, query):
         # opening and closing connection actions are vital.
@@ -40,8 +40,8 @@ class UnionPipeLine(GenericPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.nullify_relations(nullify)
-            eq, time_profile = self.old_pipeline.after_from_clause_extract(query, self.all_relations,
-                                                                           core_relations, key_lists)
+            eq, time_profile = self.spjagoal_pipeline.after_from_clause_extract(query, self.all_relations,
+                                                                                core_relations, key_lists)
             self.revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
 
@@ -91,4 +91,4 @@ class UnionPipeLine(GenericPipeLine):
 
     def get_state(self):
         if super().get_state() == UNION + DONE:
-            return self.old_pipeline.get_state()
+            return self.spjagoal_pipeline.get_state()

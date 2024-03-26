@@ -1,7 +1,7 @@
 import signal
 import sys
 
-from .pipeline.ExtractionPipeLine import ExtractionPipeLine
+from .pipeline.PipeLineFactory import PipeLineFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
 from .util.ConnectionHelper import ConnectionHelper
 
@@ -37,13 +37,16 @@ if __name__ == '__main__':
     conn = ConnectionHelper()
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
-    print("Starting")
-    pipeline = ExtractionPipeLine(conn)
-    q = [None]
-    eq = pipeline.doJob(hq, q)
+    factory = PipeLineFactory()
+    token = factory.init_job(conn, hq)
+    factory.doJob(hq, token)
+    result = factory.result
 
-    print("=========== Extracted Query =============")
-    print(eq)
-    pipeline.time_profile.print()
+    if result is not None:
+        print("=========== Extracted Query =============")
+        print(result)
+        print("============= Profile ===================")
+        pipe = factory.get_pipeline_obj(token)
+        print(pipe.time_profile.print())
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

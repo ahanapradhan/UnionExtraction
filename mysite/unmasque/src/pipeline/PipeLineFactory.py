@@ -1,8 +1,6 @@
-import threading
-import sys
-import multiprocessing as mp
-import time
 import ctypes
+import threading
+import time
 from queue import Queue
 
 from .ExtractionPipeLine import ExtractionPipeLine
@@ -36,7 +34,7 @@ class PipeLineFactory:
             cls._instance = super(PipeLineFactory, cls).__new__(cls)
         return cls._instance
 
-    def doJob(self, query, token):
+    def doJob(self, query, token=0):
         # print("lock: ", query)
         print("waiting for queue")
         self.q.put(token, True)
@@ -52,17 +50,21 @@ class PipeLineFactory:
         # print("unlocked: ", query)
 
     def doJobAsync(self, query, connectionHelper):
-        token = hash((query, time.time()))
-        pipe = self.create_pipeline(connectionHelper)
-        pipe.token = token
-        self.pipelines.append(pipe)
-        self.queries.append((token, query))
+        token = self.init_job(connectionHelper, query)
         job = threading.Thread(target=self.doJob, args=(query, token,))
         _stopper = threading.Event()
         self.events.append((token, _stopper))
         self.threads.append((token, job))
         job.start()
         # print("TOKEN", token)
+        return token
+
+    def init_job(self, connectionHelper, query):
+        token = hash((query, time.time()))
+        pipe = self.create_pipeline(connectionHelper)
+        pipe.token = token
+        self.pipelines.append(pipe)
+        self.queries.append((token, query))
         return token
 
     def create_pipeline(self, connectionHelper):

@@ -163,10 +163,6 @@ class Projection(GenerationPipeLineBase):
         return value_used
 
     def doExtractJob(self, query, attrib_types_dict, filter_attrib_dict):
-        # print(query)
-        # q = self.app.doJob("select * from lineitem;")
-        # for i in q:
-        #     self.logger.debug("min ", i)
         projected_attrib, projection_names, value_used, check = \
             self.find_projection_on_unfiltered_attribs(attrib_types_dict, query)
         if not check:
