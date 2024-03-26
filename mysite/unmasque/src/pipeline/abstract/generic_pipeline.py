@@ -15,17 +15,7 @@ def synchronized(wrapped):
     @functools.wraps(wrapped)
     def _wrap(*args, **kwargs):
         with lock:
-            '''
-            print("Calling '%s' with Lock %s from thread %s [%s]"
-                  % (wrapped.__name__, id(lock),
-                     threading.current_thread().name, time.time()))
-            '''
             result = wrapped(*args, **kwargs)
-            '''
-            print("Done '%s' with Lock %s from thread %s [%s]"
-                  % (wrapped.__name__, id(lock),
-                     threading.current_thread().name, time.time()))
-            '''
             return result
 
     return _wrap
@@ -34,6 +24,7 @@ def synchronized(wrapped):
 class PipeLineState(object):
     state = None
     info = {}
+
     def set(self, state):
         self.state = state
 
@@ -59,23 +50,31 @@ class GenericPipeLine:
         self.all_relations = []
         self.error = None
 
-    def doJob(self, query, qe=None):
-        local_start_time = time.time()
-
-        if qe is None:
-            qe = []
+    def process(self, query: str):
+        result = None
         try:
             self.update_state(WAITING)
             result = self.extract(query)
             self.verify_correctness(query, result)
-            if len(qe):
-                qe.clear()
-            qe.append(result)
+        except Exception as e:
+            print("Some problem while Execution!")
+            return result
+        else:
+            print("Valid Execution")
             return result
         finally:
-            local_end_time = time.time()
-            self.time_profile.update_for_total_time(local_end_time - local_start_time)
             print("Ended Execution")
+
+    def doJob(self, query, qe=None):
+        local_start_time = time.time()
+        if qe is None:
+            qe = []
+        result = self.process(query)
+        qe.clear()
+        qe.append(result)
+        local_end_time = time.time()
+        self.time_profile.update_for_total_time(local_end_time - local_start_time)
+        return result
 
     def verify_correctness(self, query, result):
         self.update_state(RESULT_COMPARE + START)

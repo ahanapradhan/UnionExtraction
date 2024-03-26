@@ -9,19 +9,21 @@ from .ExtractionPipeLine import ExtractionPipeLine
 from .UnionPipeLine import UnionPipeLine
 from ..util.constants import WAITING
 
+
 def raise_exception(id):
     res = ctypes.pythonapi.PyThreadState_SetAsyncExc(id,
-        ctypes.py_object(SystemExit))
+                                                     ctypes.py_object(SystemExit))
     if res > 1:
         ctypes.pythonapi.PyThreadState_SetAsyncExc(id, 0)
         print('Exception raise failure')
+
 
 class PipeLineFactory:
     _instance = None
     q = Queue(1)  # blocking queue of size one
     pipeline = None
     result = None
-    results = [] 
+    results = []
     pipelines = []
     queries = []
     progress = []
@@ -65,18 +67,16 @@ class PipeLineFactory:
 
     def create_pipeline(self, connectionHelper):
         detect_union = connectionHelper.config.detect_union
-        pipe = None
         if detect_union:
-            pipe = UnionPipeLine(connxectionHelper)
+            pipe = UnionPipeLine(connectionHelper)
         else:
             pipe = ExtractionPipeLine(connectionHelper)
         self.pipeline = pipe
         return pipe
 
     def get_pipeline_state(self, token):
-        
         pipe = self.get_pipeline_obj(token)
-        if pipe: 
+        if pipe:
             return pipe.get_state()
 
         return WAITING
@@ -86,11 +86,12 @@ class PipeLineFactory:
             if i.token == token:
                 return i
         return None
+
     def get_pipeline_query(self, token):
         for q in self.queries:
             if q[0] == token:
                 return q[1]
-                
+
         return None
 
     def get_pipeline_thread(self, token):
@@ -98,12 +99,13 @@ class PipeLineFactory:
             if i[0] == token:
                 return i[1]
         return None
+
     def get_pipeline_stopper(self, token):
         for i in self.events:
             if i[0] == token:
                 return i[1]
         return None
-    
+
     def cancel_pipeline_exec(self, token):
         p = self.get_pipeline_obj(token)
         if not p:
@@ -113,7 +115,7 @@ class PipeLineFactory:
                 _stopper = self.get_pipeline_stopper(token)
                 _stopper.set()
                 self.results.append((token, self.get_pipeline_query(token), '__CANCELED__'))
-                
+
         except Exception as e:
             print('Nothing being executed', e)
             return None
