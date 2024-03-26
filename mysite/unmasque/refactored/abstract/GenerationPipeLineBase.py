@@ -5,7 +5,8 @@ from typing import Union
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..util.common_queries import insert_into_tab_attribs_format, update_tab_attrib_with_value, \
-    update_tab_attrib_with_quoted_value
+    update_tab_attrib_with_quoted_value, drop_table, create_table_as_select_star_from_limit_1, alter_table_rename_to, \
+    select_attribs_from_relation
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val
 from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ...src.util.ConnectionHelper import ConnectionHelper
@@ -46,9 +47,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def do_init(self) -> None:
         for tab in self.core_relations:
-            self.connectionHelper.execute_sql([f"create table _{tab}_temp as select * from {tab} limit 1;",
-                                               f"drop table {tab};",
-                                               f"alter table _{tab}_temp rename to {tab};"])
+            self.connectionHelper.execute_sql([create_table_as_select_star_from_limit_1(f"_{tab}_temp", tab),
+                                               drop_table(tab), alter_table_rename_to(f"_{tab}_temp", tab)])
         self.restore_d_min_from_dict()
         self.see_d_min()
 
@@ -66,7 +66,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             self.connectionHelper.execute_sql_with_params(insert_query, insert_rows, self.logger)
         else:
             self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
-
 
     def update_attrib_in_table(self, attrib, value, tabname) -> None:
         update_query = update_tab_attrib_with_value(attrib, tabname, value)
@@ -92,9 +91,9 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def update_attrib_to_see_impact(self, attrib: str, tabname: str) \
             -> tuple[Union[int, float, date, str], Union[int, float, date, str]]:
-        prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
+        prev = self.connectionHelper.execute_sql_fetchone_0(select_attribs_from_relation([attrib], tabname))
         val = self.get_different_s_val(attrib, tabname, prev)
-        self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
+        self.logger.debug(f"update {tabname}.{ attrib} with value {val} that had previous value {prev}")
         self.update_with_val(attrib, tabname, val)
         return val, prev
 

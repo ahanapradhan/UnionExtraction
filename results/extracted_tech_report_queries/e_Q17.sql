@@ -1,5 +1,4 @@
-Select Avg(l_extendedprice) as avgtotal
- From lineitem, part 
- Where l_partkey = p_partkey
- and p_brand = 'Brand#52'
- and p_container = 'LG CAN';
+Could not extract the query due to errors DB MINIMIZATION_DONE.
+Here's what I have as a half-baked answer:
+FROM(q1) = { orders, lineitem, customer, part, region, partsupp, nation, supplier }
+;

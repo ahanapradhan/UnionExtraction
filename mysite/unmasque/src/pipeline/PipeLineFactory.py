@@ -34,7 +34,6 @@ class PipeLineFactory:
             cls._instance = super(PipeLineFactory, cls).__new__(cls)
         return cls._instance
 
-
     def doJob(self, query, token=0):
         # print("lock: ", query)
         print("waiting for queue")

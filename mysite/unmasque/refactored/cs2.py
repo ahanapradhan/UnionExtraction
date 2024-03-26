@@ -2,7 +2,8 @@ import copy
 
 from .abstract.AppExtractorBase import AppExtractorBase
 from ..refactored.util.common_queries import get_row_count, drop_table, alter_table_rename_to, \
-    get_restore_name, create_table_like
+    get_restore_name, create_table_like, insert_into_sampletable_from_table_samplesize, \
+    insert_query_for_not_sampled_tables, insert_query_for_base_tables
 from ..refactored.util.utils import isQ_result_empty
 
 
@@ -106,10 +107,10 @@ class Cs2(AppExtractorBase):
     def do_for_empty_key_lists(self, not_sampled_tables):
         if len(self.global_key_lists) == 0:
             for table in not_sampled_tables:
-                self.connectionHelper.execute_sqls_with_DictCursor(["insert into " + table +
-                                                                    " select * from " + get_restore_name(table)
-                                                                    + " tablesample system("
-                                                                    + str(self.seed_sample_size_per) + ");"])
+                self.connectionHelper.execute_sqls_with_DictCursor([
+                    insert_into_sampletable_from_table_samplesize(table,
+                                                                  get_restore_name(table),
+                                                                  str(self.seed_sample_size_per))])
                 res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(table))
                 self.logger.debug(table, res)
 
@@ -123,12 +124,8 @@ class Cs2(AppExtractorBase):
             if base_table in self.core_relations:
                 limit_row = sizes[base_table]
                 self.connectionHelper.execute_sqls_with_DictCursor([
-                    "insert into " + base_table
-                    + " select * from " + get_restore_name(base_table)
-                    + " tablesample system(" + str(self.seed_sample_size_per) + ") where ("
-                    + base_key + ") not in (select distinct("
-                    + base_key + ") from "
-                    + base_table + ")  Limit " + str(limit_row) + " ;"])
+                    insert_query_for_base_tables(base_table, get_restore_name(base_table),
+                                                 base_key, base_table, str(limit_row), str(self.seed_sample_size_per))])
                 res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(base_table))
                 self.logger.debug(base_table, res)
 
@@ -141,8 +138,7 @@ class Cs2(AppExtractorBase):
                 if tabname2 != base_table and tabname2 in self.core_relations:
                     limit_row = sizes[tabname2]
                     self.connectionHelper.execute_sqls_with_DictCursor([
-                        f"insert into {tabname2} select * from {tabname2}_restore "
-                        f"where {key2} in (select distinct({base_key}) from {base_table}) "
-                        f"and {key2} not in (select distinct({key2}) from {tabname2}) Limit {str(limit_row)} ;"])
+                        insert_query_for_not_sampled_tables(tabname2, get_restore_name(tabname2),
+                                                            key2, base_key, base_table, str(limit_row))])
                     res = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname2))
                     self.logger.debug(tabname2, res)

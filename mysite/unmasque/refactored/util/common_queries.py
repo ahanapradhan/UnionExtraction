@@ -6,6 +6,30 @@ DEBUG_QUERY = "select pid, state, query from pg_stat_activity where datname = 't
 TERMINATE_STUCK_QUERIES = "SELECT pg_terminate_backend(pid);"
 
 
+def select_row_count_from_query(query):
+    query = query.replace(";", "")
+    return f"select count(*) from ({query}) as q;"
+
+
+def insert_query_for_base_tables(stable, ftable, base_key, base_table, limit, perc):
+    return f"insert into {stable} " \
+           f"select * from {ftable} " \
+           f"tablesample system({perc}) " \
+           f"where ({base_key}) not in (select distinct({base_key}) from {base_table}) " \
+           f"Limit {limit};"
+
+
+def insert_query_for_not_sampled_tables(stable, ftable, key, base_key, base_table, limit):
+    return f"insert into {stable} select * from {ftable} " \
+           f"where {key} in (select distinct({base_key}) from {base_table}) " \
+           f"and {key} not in (select distinct({key}) from {stable}) Limit {limit} ;"
+
+
+def insert_into_sampletable_from_table_samplesize(stable, ftable, perc):
+    return f"insert into {stable} " \
+           f"select * from {ftable} tablesample system({perc});"
+
+
 def drop_table(tab):
     return f"drop table if exists {tab};"
 
@@ -28,6 +52,10 @@ def create_table_like(tab, ctab):
 
 def create_table_as_select_star_from(tab, fromtab):
     return f"Create table {tab} as select * from {fromtab};"
+
+
+def create_table_as_select_star_from_limit_1(tab, fromtab):
+    return f"Create table {tab} as select * from {fromtab} limit 1;"
 
 
 def get_row_count(tab):
@@ -101,7 +129,6 @@ def truncate_table(table):
 def insert_into_tab_attribs_format(att_order, esc_string, tab):
     return f"INSERT INTO {tab} {att_order}  VALUES {esc_string}"
     # return f"INSERT INTO {tab} {att_order}  VALUES {esc_string}"
-
 
 
 def update_tab_attrib_with_value(attrib, tab, value):

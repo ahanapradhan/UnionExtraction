@@ -2,8 +2,8 @@ import copy
 import math
 
 from .abstract.MutationPipeLineBase import MutationPipeLineBase
-from .util.common_queries import get_tabname_4, update_sql_query_tab_attribs, form_update_query_with_value, \
-    insert_into_tab_select_star_fromtab, truncate_table, update_tab_attrib_with_quoted_value, \
+from .util.common_queries import update_sql_query_tab_attribs, form_update_query_with_value, \
+    update_tab_attrib_with_quoted_value, \
     select_attribs_from_relation, get_column_details_for_table
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
     get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff, is_int
@@ -21,7 +21,6 @@ def parse_for_int(val):
     return v_int
 
 
-
 def round_ceil(num, places):
     adder = 5 / (10 ** (places + 1))
     return round(num + adder, places)
@@ -30,6 +29,7 @@ def round_ceil(num, places):
 def round_floor(num, places):
     adder = 5 / (10 ** (places + 1))
     return round(num - adder, places)
+
 
 class Filter(MutationPipeLineBase):
 
@@ -369,7 +369,8 @@ class Filter(MutationPipeLineBase):
     def checkStringPredicate(self, query, tabname, attrib):
         prev_values = self.get_dmin_val_of_attrib_list([(tabname, attrib)])
         # update query
-        val = 'b' if (self.global_d_plus_value[attrib] is not None and self.global_d_plus_value[attrib][0] == 'a') else 'a'
+        val = 'b' if (self.global_d_plus_value[attrib] is not None and self.global_d_plus_value[attrib][
+            0] == 'a') else 'a'
         val_result = self.run_updateQ_with_temp_str(attrib, query, tabname, val)
         empty_result = self.run_updateQ_with_temp_str(attrib, query, tabname, "" "")
         effect = isQ_result_empty(val_result) or isQ_result_empty(empty_result)

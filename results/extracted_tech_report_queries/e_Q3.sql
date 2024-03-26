@@ -1,4 +1,4 @@
-Select l_orderkey, Sum(l_extendedprice*(1 - l_discount)) as revenue, o_orderdate, o_shippriority
+Select l_orderkey, Sum(-l_discount*l_extendedprice + l_extendedprice) as revenue, o_orderdate, o_shippriority
  From customer, lineitem, orders 
  Where l_orderkey = o_orderkey
  and c_custkey = o_custkey

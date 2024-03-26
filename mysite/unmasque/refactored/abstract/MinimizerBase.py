@@ -4,6 +4,13 @@ from ..util.common_queries import create_view_as_select_star_where_ctid, drop_vi
 from ..util.utils import isQ_result_empty
 
 
+def calculate_mid_ctids(size):
+    mid_row = int(size / 2)
+    mid_ctid1 = "(" + str(0) + "," + str(mid_row) + ")"
+    mid_ctid2 = "(" + str(0) + "," + str(mid_row + 1) + ")"
+    return mid_ctid1, mid_ctid2
+
+
 class Minimizer(AppExtractorBase):
 
     def __init__(self, connectionHelper, core_relations, all_sizes, name):
@@ -46,12 +53,6 @@ class Minimizer(AppExtractorBase):
         self.connectionHelper.execute_sql([drop_view(tabname)])
         return end_ctid, start_ctid
 
-    def calculate_mid_ctids(self, start_page, end_page, size):
-        mid_row = int(size / 2)
-        mid_ctid1 = "(" + str(0) + "," + str(mid_row) + ")"
-        mid_ctid2 = "(" + str(0) + "," + str(mid_row + 1) + ")"
-        return mid_ctid1, mid_ctid2
-
     def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
         self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
         end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
@@ -75,7 +76,7 @@ class Minimizer(AppExtractorBase):
         end_page, end_row = self.get_boundary("max", tabname1)
         start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
         end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
-        mid_ctid1, mid_ctid2 = self.calculate_mid_ctids(start_page, end_page, core_sizes[tabname])
+        mid_ctid1, mid_ctid2 = calculate_mid_ctids(core_sizes[tabname])
         if start_ctid == mid_ctid1:
             mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid

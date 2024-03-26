@@ -2,7 +2,8 @@ from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
 from .util.common_queries import alter_table_rename_to, create_view_as_select_star_where_ctid, \
-    get_tabname_1, drop_view, drop_table, get_restore_name, create_table_as_select_star_from
+    get_tabname_1, drop_view, drop_table, get_restore_name, create_table_as_select_star_from, \
+    select_attribs_from_relation, select_row_count_from_query
 
 
 class NepComparator(ResultComparator):
@@ -157,10 +158,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
         found = self.nep_comparator.match(query, self.Q_E)
         if found:
             return False
-        query = query.replace(";", "")
-        q_e = self.Q_E.replace(";", "")
-        query_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({query}) as q_h;")
-        q_e_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({q_e}) as q_e;")
+        query_result = self.connectionHelper.execute_sql_fetchone_0(select_row_count_from_query(query))
+        q_e_result = self.connectionHelper.execute_sql_fetchone_0(select_row_count_from_query(self.Q_E))
         self.logger.debug(f"q_e result: {q_e_result}, query result: {query_result}")
         if q_e_result >= 1:
             return True
@@ -206,7 +205,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         single_attribs = [attrib for attrib in attrib_list if attrib not in self.joined_attribs]
         for attrib in single_attribs:
             self.logger.debug(tabname, attrib)
-            prev = self.connectionHelper.execute_sql_fetchone_0(f"SELECT {attrib} FROM {tabname};")
+            prev = self.connectionHelper.execute_sql_fetchone_0(select_attribs_from_relation([attrib], tabname))
             val = self.get_different_s_val(attrib, tabname, prev)
             self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
             self.update_with_val(attrib, tabname, val)

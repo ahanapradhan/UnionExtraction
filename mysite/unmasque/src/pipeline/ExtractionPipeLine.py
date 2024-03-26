@@ -100,7 +100,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(AOA + RUNNING)
         check = aoa.doJob(query)
         self.update_state(AOA + DONE)
-        time_profile.update_for_where_clause(aoa.local_elapsed_time)
+        time_profile.update_for_where_clause(aoa.local_elapsed_time, aoa.app_calls)
         self.info[AOA] = aoa.where_clause
 
         if not check:

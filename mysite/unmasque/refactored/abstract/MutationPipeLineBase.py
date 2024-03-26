@@ -4,7 +4,7 @@ from _decimal import Decimal
 import psycopg2
 
 from .AppExtractorBase import AppExtractorBase
-from ..util.common_queries import get_star
+from ..util.common_queries import get_star, select_attribs_from_relation
 from ..util.common_queries import get_tabname_4, truncate_table, insert_into_tab_select_star_fromtab
 from ...src.util.ConnectionHelper import ConnectionHelper
 
@@ -50,7 +50,7 @@ class MutationPipeLineBase(AppExtractorBase):
         res, des, val = None, None, None
         data_problem = False
         try:
-            res, des = self.connectionHelper.execute_sql_fetchall(f"select {attrib} from {tab};")
+            res, des = self.connectionHelper.execute_sql_fetchall(select_attribs_from_relation([attrib], tab))
             val = res[0][0]
         except psycopg2.Error:
             data_problem = True

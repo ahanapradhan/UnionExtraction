@@ -27,9 +27,8 @@ def cus_execute_sqls(cur, sqls, logger=None):
             cur.execute(sql)
         except psycopg2.ProgrammingError as e:
             if logger is not None:
-
-                logger.trace(e)
-                logger.trace(e.diag.message_detail)
+                logger.error(e)
+                logger.error(e.diag.message_detail)
         # print("..done")
     cur.close()
 
@@ -53,8 +52,8 @@ def cur_execute_sql_fetch_one_0(cur, sql, logger=None):
         cur.close()
     except psycopg2.ProgrammingError as e:
         if logger is not None:
-            logger.trace(e)
-            logger.trace(e.diag.message_detail)
+            logger.error(e)
+            logger.error(e.diag.message_detail)
     return prev
 
 
@@ -66,8 +65,8 @@ def cur_execute_sql_fetch_one(cur, sql, logger=None):
         cur.close()
     except psycopg2.ProgrammingError as e:
         if logger is not None:
-            logger.trace(e)
-            logger.trace(e.diag.message_detail)
+            logger.error(e)
+            logger.error(e.diag.message_detail)
     return prev
 
 
@@ -158,8 +157,8 @@ class ConnectionHelper:
         except psycopg2.ProgrammingError as e:
             if logger is not None:
 
-                logger.trace(e)
-                logger.trace(e.diag.message_detail)
+                logger.error(e)
+                logger.error(e.diag.message_detail)
             des = str(e)
         return res, des
 
