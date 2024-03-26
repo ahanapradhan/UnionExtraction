@@ -145,7 +145,7 @@ class ElapsedTime:
             self.display_string += str("\n" +
                                        self.clause_keys[i] + " " + ' ' * (
                                                max_len - len(self.clause_keys[i])) + " " +
-                                       str(round(times[i] * 1000, 4)) + " ms.")
+                                       str(round(times[i], 2)) + " s.")
             i += 1
 
         # print(self.display_string)
@@ -153,7 +153,7 @@ class ElapsedTime:
         pp_tab = zip(self.clause_keys, times, self.get_app_calls())
 
         table = list(pp_tab)
-        header = ["Step", "Time (ms)", "Total"]
+        header = ["Step", "Time (s)", "Total"]
         table.insert(0, header)
         print(tabulate(table, headers='firstrow', tablefmt='fancy_grid'))
 
@@ -164,19 +164,20 @@ class ElapsedTime:
         return ds
 
     def get_times(self):
-        times = [self.t_union,
-                 self.t_from_clause,
-                 self.t_sampling,
-                 self.t_view_min,
-                 self.t_where_clause,
-                 self.t_projection,
-                 self.t_groupby,
-                 self.t_aggregate,
-                 self.t_orderby,
-                 self.t_limit,
-                 self.t_nep,
-                 self.t_result_comp,
-                 self.t_total]
+        times = [round(entry, 2) for entry in [self.t_union,
+                                               self.t_from_clause,
+                                               self.t_sampling,
+                                               self.t_view_min,
+                                               self.t_where_clause,
+                                               self.t_projection,
+                                               self.t_groupby,
+                                               self.t_aggregate,
+                                               self.t_orderby,
+                                               self.t_limit,
+                                               self.t_nep,
+                                               self.t_result_comp,
+                                               self.t_total]]
+
         return times
 
     def get_app_calls(self):
