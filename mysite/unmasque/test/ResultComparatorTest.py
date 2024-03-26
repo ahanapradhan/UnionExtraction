@@ -203,6 +203,7 @@ class MyTestCase(BaseTestCase):
         self.conn.connectUsingParams()
         rc_hash = ResultComparator(self.conn, True)
         matched_hash = rc_hash.doJob(q_h, q_a)
+
         self.assertTrue(matched_hash)
         self.conn.closeConnection()
 

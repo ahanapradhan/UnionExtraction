@@ -94,12 +94,11 @@ class Initiator(Base):
                 self.global_key_lists.append([(row[0], row[1]), (row[4], row[5])])
             elif row[0]:
                 self.global_key_lists.append([(row[0], row[1])])
-
         self.set_all_relations(list(set(all_relations)))
+        self.all_relations.sort()
         self.logger.debug("all relations: ", self.all_relations)
 
     def get_all_pkfk(self):
-        all_pkfk = []
         with open(self.pkfk_file_path, 'rt') as f:
             data = csv.reader(f)
             all_pkfk = list(data)[1:]

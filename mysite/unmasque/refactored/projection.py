@@ -38,6 +38,7 @@ class Projection(GenerationPipeLineBase):
         # return False # test
         s_values = []
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
+
         if not check:
             self.logger.error("Some problem while identifying the dependency list!")
             return False

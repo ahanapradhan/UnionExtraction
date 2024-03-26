@@ -27,21 +27,24 @@ def cus_execute_sqls(cur, sqls, logger=None):
             cur.execute(sql)
         except psycopg2.ProgrammingError as e:
             if logger is not None:
-                logger.debug(e)
-                logger.debug(e.diag.message_detail)
+
+                logger.trace(e)
+                logger.trace(e.diag.message_detail)
         # print("..done")
     cur.close()
 
 
 def cus_execute_sql_with_params(cur, sql, params, logger=None):
     for param in params:
+        if logger is not None:
+            logger.debug(sql, param)
         cur.execute(sql, param)
         if logger is not None:
             logger.debug(sql, param)
     cur.close()
 
 
-def cur_execute_sql_fetch_one_0(cur, sql):
+def cur_execute_sql_fetch_one_0(cur, sql, logger=None):
     prev = None
     try:
         cur.execute(sql)
@@ -49,20 +52,22 @@ def cur_execute_sql_fetch_one_0(cur, sql):
         prev = prev[0]
         cur.close()
     except psycopg2.ProgrammingError as e:
-        print(e)
-        print(e.diag.message_detail)
+        if logger is not None:
+            logger.trace(e)
+            logger.trace(e.diag.message_detail)
     return prev
 
 
-def cur_execute_sql_fetch_one(cur, sql):
+def cur_execute_sql_fetch_one(cur, sql, logger=None):
     prev = None
     try:
         cur.execute(sql)
         prev = cur.fetchone()
         cur.close()
     except psycopg2.ProgrammingError as e:
-        print(e)
-        print(e.diag.message_detail)
+        if logger is not None:
+            logger.trace(e)
+            logger.trace(e.diag.message_detail)
     return prev
 
 
@@ -113,9 +118,7 @@ class ConnectionHelper:
 
     def getConnection(self):
         if self.conn is None:
-            # print("connecting...")
             self.connectUsingParams()
-            # print("done!")
         return self.conn
 
     def execute_sql(self, sqls, logger=None):
@@ -126,21 +129,21 @@ class ConnectionHelper:
         cur = self.get_cursor()
         cus_execute_sql_with_params(cur, sql, params, logger)
 
-    def execute_sqls_with_DictCursor(self, sqls):
+    def execute_sqls_with_DictCursor(self, sqls, logger=None):
         cur = self.get_DictCursor()
-        cus_execute_sqls(cur, sqls)
+        cus_execute_sqls(cur, sqls, logger)
 
-    def execute_sql_fetchone_0(self, sql):
+    def execute_sql_fetchone_0(self, sql, logger=None):
         cur = self.get_cursor()
-        return cur_execute_sql_fetch_one_0(cur, sql)
+        return cur_execute_sql_fetch_one_0(cur, sql, logger)
 
-    def execute_sql_fetchone(self, sql):
+    def execute_sql_fetchone(self, sql, logger=None):
         cur = self.get_cursor()
-        return cur_execute_sql_fetch_one(cur, sql)
+        return cur_execute_sql_fetch_one(cur, sql, logger)
 
-    def execute_sql_with_DictCursor_fetchone_0(self, sql):
+    def execute_sql_with_DictCursor_fetchone_0(self, sql, logger=None):
         cur = self.get_DictCursor()
-        return cur_execute_sql_fetch_one_0(cur, sql)
+        return cur_execute_sql_fetch_one_0(cur, sql, logger)
 
     def execute_sql_fetchall(self, sql, logger=None):
         res = None
@@ -154,8 +157,9 @@ class ConnectionHelper:
             cur.close()
         except psycopg2.ProgrammingError as e:
             if logger is not None:
-                logger.debug(e)
-                logger.debug(e.diag.message_detail)
+
+                logger.trace(e)
+                logger.trace(e.diag.message_detail)
             des = str(e)
         return res, des
 

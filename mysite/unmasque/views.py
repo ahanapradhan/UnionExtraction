@@ -5,7 +5,13 @@ from psycopg2 import OperationalError
 
 from .src.pipeline.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionHelper import ConnectionHelper
-from .src.util.constants import DONE
+from .src.util.configParser import Config
+from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, \
+    FILTER, \
+    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE
+
+l = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY,
+     LIMIT, RESULT_COMPARE, DONE]
 
 
 # Create your views here.
@@ -19,13 +25,18 @@ def login_view(request):
         database = request.POST.get('database')
         query = request.POST.get('query')
         try:
-            conn = connect_to_db(database, host, password, port, username)
+            c = Config()
+            c.parse_config()
+            print(c)
+            conn = connect_to_db(c.dbname, c.host, c.password, c.port, c.user)
             print(conn)
             cur = conn.cursor()
             try:
                 cur.execute("EXPLAIN " + query)
-            except:
-                error_message = "Invalid query. Please Try again!"
+            except Exception as e:
+                er = str(e)
+                er = er.replace("\n", "<br/>")
+                error_message = f"Invalid query:\n {er}"
                 conn.close()
                 return render(request, 'unmasque/login.html', {'error_message': error_message})
             conn.close()
@@ -33,16 +44,16 @@ def login_view(request):
             error_message = 'Invalid credentials. Please try again.'
             return render(request, 'unmasque/login.html', {'error_message': error_message})
 
-        connHelper = ConnectionHelper(dbname=database, user=username, password=password, port=port, host=host)
-        start_extraction_pipeline_async(connHelper, query, request)
-        return redirect('progress')
+        connHelper = ConnectionHelper()
+        token = start_extraction_pipeline_async(connHelper, query, request)
+        return redirect(f'progress/{token}')
 
     return render(request, 'unmasque/login.html')
 
 
 def start_extraction_pipeline_async(connHelper, query, request):
-    func_start(connHelper, query, request)
-    return redirect('progress')
+    token = func_start(connHelper, query, request)
+    return token
 
 
 def func_start(connHelper, query, request):
@@ -52,31 +63,35 @@ def func_start(connHelper, query, request):
     request.session['token'] = token
     print("TOKEN: ", token)
     state_msg = factory.get_pipeline_state(token)
+    print("State at init", state_msg)
     to_pass = [query, state_msg, 'NA']
-    request.session['partials'] = to_pass
+    request.session[str(token) + 'partials'] = to_pass
+    return token
 
 
-def check_progress(request):
-    state_changed, state_msg = func_check_progress(request)
-    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg})
+def check_progress(request, token):
+    print("...Checking Progress...")
+    state_changed, state_msg, info = func_check_progress(request, token)
+    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg, 'state_info': info}, safe=False)
 
 
-def func_check_progress(request):
+def func_check_progress(request, token):
     print("...HIT...HIT...HIT...")
     state_changed = False
     factory = PipeLineFactory()
-    print("TOKEN: ", request.session.get('token'))
-    state_msg = factory.get_pipeline_state(request.session.get('token'))
-    print("...got...", state_msg)
+    p = factory.get_pipeline_obj(token)
+    print("TOKEN: ", token)
+    state_msg = factory.get_pipeline_state(token)
+    print("...got...", state_msg, factory.get_pipeline_query(token))
     if state_msg == DONE:
         print("...done...")
         state_changed = True
-        to_pass = prepare_result(request.session.get('hq'))
+        to_pass = prepare_result(factory.get_pipeline_query(token))
     else:
         print("... still doing...", state_msg)
-        to_pass = [request.session.get('hq'), state_msg, 'NA']
-    request.session['partials'] = to_pass
-    return state_changed, state_msg
+        to_pass = [factory.get_pipeline_query(token), state_msg, 'NA']
+    request.session[str(token) + 'partials'] = to_pass
+    return state_changed, state_msg, p.info if p else None
 
 
 def prepare_result(query):
@@ -95,6 +110,35 @@ def prepare_result(query):
     return to_pass
 
 
+def cancel_exec(request, token):
+    print("ID:", token)
+    print("Trying to cancel")
+    factory = PipeLineFactory()
+    factory.cancel_pipeline_exec(token)
+    return render(request, 'unmasque/login.html')
+
+
+def prepare_result_1(query, data, token):
+    factory = PipeLineFactory()
+    p = factory.get_pipeline_obj(token)
+    to_pass = [query]
+    if not p:
+        to_pass.append('None')
+        to_pass.append('None')
+        return to_pass
+    tp = p.time_profile
+    if data is not None:
+        to_pass.append(data)
+    else:
+        to_pass.append("Sorry! Could not extract hidden query!")
+    print("Time info", tp.get_json_display_string())
+    if tp is not None:
+        to_pass.append(tp.get_json_display_string())
+    else:
+        to_pass.append("Nothing to show!")
+    return to_pass
+
+
 def connect_to_db(database, host, password, port, username):
     connection = psycopg2.connect(
         database=database,
@@ -106,19 +150,31 @@ def connect_to_db(database, host, password, port, username):
     return connection
 
 
-def result_page(request):
+def result_page(request, token):
     # Retrieve the result from the previous view through session
     partials = request.session.get('partials')
+    factory = PipeLineFactory()
+    data = None
+    query = None
+    for i in factory.results:
+        if i[0] == token:
+            query = i[1]
+            data = i[2]
+            break
+    print(query, data)
+    partials = prepare_result_1(query, data, token)
     print(partials)
     return render(request, 'unmasque/result.html', {'query': partials[0], 'result': partials[1],
                                                     'profiling': partials[2]})
 
 
-def progress_page(request):
-    partials = request.session.get('partials')
-    print(partials)
-    return render(request, 'unmasque/progress.html', {'query': partials[0], 'progress_message': partials[1],
-                                                      'profiling': 'NA'})
+def progress_page(request, token):
+    partials = request.session.get(str(token) + 'partials')
+    print("Partials", partials, str(token) + 'partials')
+    return render(request, 'unmasque/progress.html', {'query': partials[0] if partials else "Not Valid Query",
+                                                      'progress_message': partials[1] if partials else "_QNF_",
+                                                      'profiling': 'NA', 'token': token, 'states': l, "start": START,
+                                                      "running": RUNNING, "done": DONE})
 
 
 def bye_page(request):

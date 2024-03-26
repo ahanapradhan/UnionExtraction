@@ -1,9 +1,11 @@
 import functools
 import threading
+import time
 
 from ...core.elapsed_time import create_zero_time_profile
 from ...util.Log import Log
 from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING
+from ....refactored.executable import Executable
 from ....refactored.result_comparator import ResultComparator
 
 
@@ -14,17 +16,7 @@ def synchronized(wrapped):
     @functools.wraps(wrapped)
     def _wrap(*args, **kwargs):
         with lock:
-            '''
-            print("Calling '%s' with Lock %s from thread %s [%s]"
-                  % (wrapped.__name__, id(lock),
-                     threading.current_thread().name, time.time()))
-            '''
             result = wrapped(*args, **kwargs)
-            '''
-            print("Done '%s' with Lock %s from thread %s [%s]"
-                  % (wrapped.__name__, id(lock),
-                     threading.current_thread().name, time.time()))
-            '''
             return result
 
     return _wrap
@@ -32,22 +24,24 @@ def synchronized(wrapped):
 
 class PipeLineState(object):
     state = None
+    info = {}
 
-    @synchronized
     def set(self, state):
         self.state = state
 
 
 class GenericPipeLine:
     _instance = None
-    state = PipeLineState()
+    state = WAITING
 
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(GenericPipeLine, cls).__new__(cls)
-        return cls._instance
+    # def __new__(cls, *args, **kwargs):
+    #     if cls._instance is None:
+    #         cls._instance = super(GenericPipeLine, cls).__new__(cls)
+    #     return cls._instance
 
     def __init__(self, connectionHelper, name):
+        self.update_state(WAITING)
+        self.info = {}
         self.connectionHelper = connectionHelper
         self.pipeline_name = name
         self.time_profile = create_zero_time_profile()
@@ -55,11 +49,35 @@ class GenericPipeLine:
         self.logger = Log(name, connectionHelper.config.log_level)
         self.correct = False
         self.all_relations = []
+        self.error = None
 
-    def doJob(self, query):
-        self.update_state(WAITING)
-        result = self.extract(query)
-        self.verify_correctness(query, result)
+    def process(self, query: str):
+        result = None
+        try:
+            self.update_state(WAITING)
+            app = Executable(self.connectionHelper)
+            app.method_call_count = 0
+            result = self.extract(query)
+            self.verify_correctness(query, result)
+        except Exception as e:
+            print("Some problem while Execution!")
+            print(e)
+            return result
+        else:
+            print("Valid Execution")
+            return result
+        finally:
+            print("Ended Execution")
+
+    def doJob(self, query, qe=None):
+        local_start_time = time.time()
+        if qe is None:
+            qe = []
+        result = self.process(query)
+        qe.clear()
+        qe.append(result)
+        local_end_time = time.time()
+        self.time_profile.update_for_total_time(local_end_time - local_start_time)
         return result
 
     def verify_correctness(self, query, result):
@@ -69,9 +87,10 @@ class GenericPipeLine:
         rc.set_all_relations(self.all_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
+        self.info[RESULT_COMPARE] = matched
         self.connectionHelper.closeConnection()
 
-        self.time_profile.update_for_result_comparator(rc.local_elapsed_time)
+        self.time_profile.update_for_result_comparator(rc.local_elapsed_time, rc.app_calls)
         if matched:
             self.logger.info("Extracted Query is Correct.")
             self.correct = True
@@ -85,7 +104,7 @@ class GenericPipeLine:
         pass
 
     def update_state(self, state):
-        self.state.set(state)
+        self.state = state
 
     def get_state(self):
-        return self.state.state
+        return self.state

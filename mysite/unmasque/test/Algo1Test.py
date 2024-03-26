@@ -103,7 +103,7 @@ class MyTestCase(BaseTestCase):
                 "(SELECT * FROM customer,nation,region) union all " \
                 "(SELECT * FROM orders,nation,region)"
         db = TPCH()
-        p, pstr = algorithm1.algo(db, query)
+        p, pstr, _ = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'orders'}), frozenset({'customer'}), frozenset({'lineitem'})})
 
     def test_algo1(self):
@@ -111,7 +111,7 @@ class MyTestCase(BaseTestCase):
                 "(SELECT * FROM customer,nation where some other thing) union all " \
                 "(SELECT * FROM customer,lineitem where more things)"
         db = TPCH()
-        p, pstr = algorithm1.algo(db, query)
+        p, pstr, _ = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'nation'}), frozenset({'customer', 'nation'}),
                              frozenset({'lineitem', 'customer'})})
 
@@ -120,7 +120,7 @@ class MyTestCase(BaseTestCase):
                 "(SELECT * FROM customer,orders) union all " \
                 "(SELECT * FROM nation,region,part)"
         db = TPCH()
-        p, pstr = algorithm1.algo(db, query)
+        p, pstr, _ = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'customer', 'orders'}),
                              frozenset({'nation', 'region', 'part'})})
 
@@ -133,7 +133,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.conn.conn is not None)
         db = UnionFromClause(self.conn)
 
-        p, pstr = algorithm1.algo(db, query)
+        p, pstr, _ = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'lineitem', 'orders'})})
         self.conn.closeConnection()
 
@@ -143,7 +143,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.conn.conn is not None)
         db = UnionFromClause(self.conn)
 
-        p, pstr = algorithm1.algo(db, query)
+        p, pstr, _ = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'part'})})
         self.assertTrue("FROM(q1)" in pstr)
         self.assertTrue("FROM(q2)" not in pstr)
@@ -160,7 +160,7 @@ class MyTestCase(BaseTestCase):
         db = UnionFromClause(self.conn)
         #db = TPCH()
 
-        p, pstr = algorithm1.algo(db, query)
+        p, pstr, _ = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'lineitem', 'orders'}),
                              frozenset({'customer', 'orders'})})
         self.assertTrue("FROM(q1)" in pstr)

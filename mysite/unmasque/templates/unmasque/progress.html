@@ -1,38 +1,281 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Progress...</title>
+    <link rel="stylesheet" href="{% static 'progress.css' %}">
 </head>
 <body>
-    <h1>Hidden Query</h1>
-    <pre>{{ query }}</pre>
-    <br>
-    <hr>
-    <h1>Please Wait...</h1>
-    <div id='progress-updates'>{{ progress_message }}</div>
-    <br>
-    <hr>
-
+    <div class="title">UNMASQUE</div>
+    <div class="subtitle">Unified Non-invasive MAchine for Sql QUery Extraction</div>
+    <div class="hidQ subtext">
+        <h1>Hidden Query</h1>
+        <textarea readonly class="roArea" id="query" rows="5" cols="100">{{ query }}</textarea>
+    </div>
+    <div class="progress subtext">
+        <h1>Please Wait...</h1>
+        <div id='progress-updates'>{{ progress_message }}</div>
+    </div>
+    <div class="res">
+        <h1>Output</h1>
+        <div class="outContainer">
+            <div>
+                <label class="state_label">SELECT</label>
+                <textarea readonly class="roArea state_sql" id="select" rows="3" cols="50"></textarea>
+            </div>
+            <div>
+                <label class="state_label">FROM</label>
+                <textarea readonly class="roArea state_sql" id="from" rows="3" cols="50"></textarea>
+            </div>
+            <div>
+                <label class="state_label">WHERE</label>
+                <textarea readonly class="roArea state_sql" id="where" rows="3" cols="50"></textarea>
+            </div>
+            <div>
+                <label class="state_label">GROUP BY</label>
+                <textarea readonly class="roArea state_sql" id="group_by" rows="3" cols="50"></textarea>
+            </div>
+            <div>
+                <label class="state_label">ORDER BY</label>
+                <textarea readonly class="roArea state_sql" id="order_by" rows="3" cols="50"></textarea>
+            </div>
+            <div>
+                <label class="state_label">LIMIT</label>
+                <textarea readonly class="roArea state_sql" id="limit" rows="1" cols="50"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="stateinfo">
+        <h1>Output from modules</h1>
+        <div class="actualInfo">
+            
+        </div>
+    </div>
+    <div class="btnContainer">
+        <a href="{% url 'cancel' token %}" ><button class="submit">Cancel</button></a>
+        <a href="{% url 'result' token %}" ><button class="submit">Result</button></a>
+    </div>
     <!-- Progress updates will be displayed here -->
 
     <!-- Include jQuery library (you can use a different library if you prefer) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
+
+        let where_and_join = (fil, ej) =>{
+            let joins = []
+            where_op = ""
+            if(ej){
+                for (let edge of ej){
+                    edge.sort()
+                    for(let i=0; i < edge.length - 1; i++){
+                        left_e = edge[i]
+                        right_e = edge[i + 1]
+                        join_e = `${left_e} = ${right_e}`
+                        joins.push(join_e)
+                    }    
+                }
+            }
+            where_op = joins.join(" and ")
+            if(where_op != "" && fil && fil[1] != ""){
+                where_op += " and "
+            }
+            where_op += (fil)?fil[1]:""
+            return where_op
+        }
+
+        let g = () => {
+            (onOrOff[STATES.indexOf(i)] == 1)
+            var coll = document.getElementsByClassName("collapsible");
+            var i;
+            for (i = 0; i < coll.length; i++) {
+                if((onOrOff[1+i] == 1)){
+                    coll[i].classList.toggle("active")
+                    content = coll[i].nextElementSibling
+                    if (content.style.display === "block") {
+                        content.style.display = "none";
+                    } else {
+                        content.style.display = "block";
+                    }
+                }
+            }
+        }
+
+        let f = () =>{
+            var coll = document.getElementsByClassName("collapsible");
+            var i; 
+
+            for (i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                console.log(this.innerHTML)
+                onOrOff[STATES.indexOf(this.innerHTML)] = 1- onOrOff[STATES.indexOf(this.innerHTML)]
+                console.log(onOrOff)
+                var content = this.nextElementSibling;
+                if (content.style.display === "flex") {
+                    content.style.display = "none";
+                } else {
+                    content.style.display = "flex";
+                }
+            });
+            }
+        }
+        let k = (prev, data) =>{
+            for(let i of STATES.slice(1, STATES.indexOf(curr_state)+1)){
+                switch(i){
+                    case STATES[1]:
+
+                        $("#from").empty()
+                        for(let f=0; f<data.state_info[STATES[1]].length; f++){
+                            if(f == data.state_info[STATES[1]].length-1) $("#from").append(data.state_info[STATES[1]][f])
+                            else $("#from").append(data.state_info[STATES[1]][f] + ", ")
+                        }
+                        break
+                    
+                    case STATES[5]:
+                        $("#where").empty()
+                        $("#where").append(where_and_join(data.state_info[STATES[5]], data.state_info[STATES[4]]))
+                        break
+                    
+                    case STATES[6]:
+                        var p_name = data.state_info[STATES[6]]['names']
+                        var p_attrib = data.state_info[STATES[6]]['attribs']
+                        res = ""
+                        for(let i = 0; i<p_name.length; i++){
+                            if(p_name[i] == p_attrib[i]){
+                                res += (p_name[i])
+                            }
+                            else{
+                                res += (p_attrib[i]+" as " + p_name[i]);
+                            }
+                            if(i!=p_name.length-1) res += ", ";
+                        }
+                        $("#select").empty()
+                        $("#select").append(res)
+                        break
+                    
+                    case STATES[7]:
+                        $("#group_by").empty();
+                        res = ""
+                    
+                        let g_attribs = data.state_info[STATES[7]]
+                        if(!g_attribs) continue
+                        for(let i=0; i<g_attribs.length; i++){
+                            if(i!=g_attribs.length-1) res += (g_attribs[i] + ", ")
+                            else res += g_attribs[i]
+                        }
+                        $("#group_by").append(res)
+                        break
+                    
+                    case STATES[8]:
+                        
+                        let aggs = data.state_info[STATES[8]]
+                        if(!aggs) continue;
+                        res = ""
+                        $("#select").empty()
+                        for(let i=0; aggs != null &&  i<aggs.length; i++){
+                            if(aggs[i][1] == "") res += aggs[i][0];
+                            else{
+                                res += aggs[i][1] + "(" + aggs[i][0] + ")"
+                            }
+                            if(p_name[i] != p_attrib[i]) res += " as " + p_name[i]
+                            if(i != aggs.length-1) res += ", "
+                        }
+                        $("#select").append(res)
+                        break;
+                    
+                    case STATES[9]:
+                        $("#order_by").empty()
+                        
+                        if(data.state_info[STATES[9]]) $("#order_by").append(data.state_info[STATES[9]].slice(0, data.state_info[STATES[9]].length-2))
+                        break;
+
+                    case STATES[10]:
+                        $("#limit").empty();
+                        if(data.state_info[STATES[10]]) $("#limit").append(data.state_info[STATES[10]]);
+                        break;
+                }
+            }
+        }
+        let STATES = {{states | safe}}
+        var onOrOff = new Array(STATES.length)
+        var SELECT = []
+        var FROM = []
+        var WHERE = []
+        var GROUP_BY = []
+        var ORDER_BY = []
+        var LIMIT = null 
+        onOrOff.fill(0)
+        STATES.push("DUMMY")
+        console.log(STATES)
+        var curr_state = STATES[0]
         // Function to fetch progress updates using AJAX
+        let stateInfoRefine = (data, curr_state) =>{
+            if(curr_state == STATES[0]) return ""
+            if(curr_state == STATES[5] && data.state_info[curr_state] != null) return JSON.stringify(data.state_info[curr_state][0])
+            if(curr_state == STATES[2]){
+                res = "TABLE\tSAMPLE\tORIGINAL\n"
+                for(let ele of data.state_info[STATES[1]]){
+                    res += (ele+"\t"+data.state_info[STATES[2]]["sample"][ele] + "\t" + data.state_info[STATES[2]]["size"][ele] + "\n")
+                }
+                return res;
+            }            
+            return JSON.stringify(data.state_info[curr_state])
+        }
+
+        let getTables = (data) => {
+            tables = data.state_info[STATES[1]]
+            dbmin = data.state_info[STATES[3]]
+            res = ""
+            for(let i=0; i<tables.length; i++){
+                res+="<table class=\"min_tab\"><tr>"
+                for(let j=0; j<dbmin[tables[i]][0].length; j++){
+                    res += "<th>"+ dbmin[tables[i]][0][j] +"</th>"
+                }
+                res += "</tr><tr>"
+                for(let j=0; j<dbmin[tables[i]][1].length; j++){
+                    res += "<td>"+ dbmin[tables[i]][1][j] +"</td>"
+                }
+                res+="</tr></table>"
+            }
+            return res
+        }
+
         function fetchProgress() {
             $.ajax({
-                url: "{% url 'check_progress' %}", // Update with your view's URL
+                url: "{% url 'check_progress' token %}", // Update with your view's URL
                 type: "GET",
                 dataType: "json", // Change data type if necessary
                 success: function(data) {
                     // Update the progress-updates div with the received data
                     console.log(data.progress_message)
                     $("#progress-updates").html(data.progress_message);
-                    if(data.progress_message == "_DONE" || data.progress_message == "_WRONG"){
-                        console.log("Done")
+                    if(data.progress_message == "_WRONG"){
+                        console.log("WRONG")
+                        //setTimeout(() => window.location.href = "/unmasque/result/{{ token }}",5000)
                         return
                     }
+                    else{
+                        data.progress_message = data.progress_message.replace("_START", "")
+                        data.progress_message = data.progress_message.replace("_RUNNING", "")
+                        if(data.progress_message != "_DONE") data.progress_message = data.progress_message.replace("_DONE", "")
+                        if(data.progress_message != curr_state){
+                            $(".actualInfo").empty()
+                            for(let i of STATES.slice(1, STATES.indexOf(curr_state)+1)){
+                                if(i == STATES[3]){
+                                    $(".actualInfo").append("<div class=\"innerContainer\"><button class=\"collapsible\">"+ i +"</button><div class=\"content dbmin\">" + getTables(data)+ "</textarea></div>")
+                                }
+                                else if(i == STATES[2]) $(".actualInfo").append("<div class=\"innerContainer\"><button class=\"collapsible\">"+ i +"</button><div class=\"content\"><textarea class=\"state_info\" readonly rows=\"5\" cols=\"100\">"+stateInfoRefine(data, i)+"</textarea></div>")   
+                            }
+                            //f()
+                            //g()
+                            k(curr_state, data)
+                        }
+                        curr_state = data.progress_message
+
+                        console.log(data.state_info)
+                    }
+                    if(curr_state == "_DONE") return
                     // Set a timeout to fetch progress again after 1 second
                     setTimeout(fetchProgress, 1000);
                 },

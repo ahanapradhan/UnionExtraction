@@ -1,8 +1,7 @@
 import copy
 
 from ..util.constants import COUNT, SUM, max_str_len
-from ...refactored.abstract.ExtractorBase import Base
-from ...refactored.executable import Executable
+from ...refactored.abstract.AppExtractorBase import AppExtractorBase
 from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val, get_datatype_of_val
 
 
@@ -12,6 +11,7 @@ def add_pred_for(aoa_l, pred):
     else:
         pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
     return aoa_l
+
 
 def refine_aggregates(agg, wc):
     for i, attrib in enumerate(agg.global_projected_attributes):
@@ -51,11 +51,10 @@ def get_exact_NE_string_predicate(elt, output):
     return elt[1] + " " + str(elt[2]) + " '" + str(output) + "' "
 
 
-class QueryStringGenerator(Base):
+class QueryStringGenerator(AppExtractorBase):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Query String Generator")
-        self.app = Executable(connectionHelper)
         self.select_op = ''
         self.from_op = ''
         self.where_op = ''
@@ -92,6 +91,26 @@ class QueryStringGenerator(Base):
         self.where_op = aoa.where_clause
         eq = self.refine_Query1(pj.joined_attribs, pj, gb, agg, ob, lm)
         return eq
+
+    def get_filter_only(self, wc):
+        filters = []
+        res = ""
+        for pred in wc.filter_predicates:
+            tab_col = tuple(pred[:2])
+            pred_op = pred[1] + " "
+            datatype = get_datatype(wc.global_attrib_types, tab_col)
+            if pred[2] != ">=" and pred[2] != "<=" and pred[2] != "range":
+                if pred[2] == "equal":
+                    pred_op += " = "
+                else:
+                    pred_op += pred[2] + " "
+                pred_op += get_format(datatype, pred[3])
+            else:
+                pred_op = handle_range_preds(datatype, pred, pred_op)
+
+            filters.append(pred_op)
+        res += " and ".join(filters)
+        return res
 
     def add_filters(self, wc):
         filters = []

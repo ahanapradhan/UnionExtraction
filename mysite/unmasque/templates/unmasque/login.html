@@ -1,37 +1,31 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login to Database</title>
+    <title>Home</title>
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+    <script>
+        if (window.location.href.split('/').length > 5){
+            window.location.href = '/unmasque/'  
+        }
+        
+    </script>
 </head>
 <body>
-
+    <div class="title">UNMASQUE</div>
+    <div class="subtitle">Unified Non-invasive MAchine for Sql QUery Extraction</div>
     {% if error_message %}
         <h3 style="color:Tomato;">{{ error_message }}</h3>
     {% endif %}
     <hr>
-    <h2>Enter the Details:</h2>
+    <h2>Enter the Query to be Extracted</h2>
     <hr>
     <form method="post">
-
         {% csrf_token %}
-        <label> DB Engine: </label>
-        <select>
-             <option value = "PostgreSQL">PostgreSQL</option>
-        </select>
-        <br><br>
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" value="postgres"><br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" value="postgres"><br><br>
-        <label for="host">Host    :</label>
-        <input type="text" id="host" name="host" value="localhost"><br><br>
-        <label for="port">Port    :</label>
-        <input type="text" id="port" name="port" value="5432"><br><br>
-        <label for="database">Database:</label>
-        <input type="text" id="database" name="database" value="tpch"><br><br>
-        <label for="query">Hidden Query:</label><br>
+        <br>
+        <label for="query" id="hidden_label">Hidden Query:</label><br>
         <textarea name="query" id = "query" rows="5" cols="100" required></textarea><br><br>
-        <input type="submit" value="Extract">
+        <input type="submit" class="submit" value="Extract">
     </form>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import sys
+import time
 
 sys.path.append(".")
 from ..util.utils import get_combs, construct_maxNonNulls
@@ -8,7 +9,10 @@ def algo(db, QH):
     Partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S = init(db, QH)
 
     if len(Partial_QH) == 0:
-        return {frozenset(db.fromtabs)}, construct_pretty_print_string({frozenset(db.fromtabs)})
+        return {frozenset(db.fromtabs)}, construct_pretty_print_string({frozenset(db.fromtabs)}), (0, db.app_calls)
+
+    local_start_time = time.time()
+    local_start_capp_calls = db.app_calls
 
     NonNulls = construct_nulls_nonNulls(NonNulls, Nulls, QH, S, db)
 
@@ -24,7 +28,10 @@ def algo(db, QH):
 
     prettY_str = construct_pretty_print_string(Partials)
 
-    return Partials, prettY_str
+    local_end_time = time.time()
+    local_end_capp_calls = db.app_calls
+
+    return Partials, prettY_str, (local_end_time - local_start_time, local_end_capp_calls - local_start_capp_calls)
 
 
 def construct_pretty_print_string(Partials):

@@ -10,9 +10,10 @@ class UnionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Union PipeLine")
-        self.old_pipeline = ExtractionPipeLine(self.connectionHelper)
+
         self.pipeLineError = False
         self.errorState = ""
+        self.spjagoal_pipeline = ExtractionPipeLine(self.connectionHelper)
 
     def extract(self, query):
         # opening and closing connection actions are vital.
@@ -21,9 +22,9 @@ class UnionPipeLine(GenericPipeLine):
         self.update_state(UNION + START)
         union = Union(self.connectionHelper)
         self.update_state(UNION + RUNNING)
-        p, pstr = union.doJob(query)
+        p, pstr, union_profile = union.doJob(query)
         self.update_state(UNION + DONE)
-        self.time_profile.update_for_union(union.local_elapsed_time)
+        self.update_time_profile(union, union_profile)
         self.all_relations = union.all_relations
         key_lists = union.key_lists
 
@@ -40,8 +41,8 @@ class UnionPipeLine(GenericPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.nullify_relations(nullify)
-            eq, time_profile = self.old_pipeline.after_from_clause_extract(query, self.all_relations,
-                                                                           core_relations, key_lists)
+            eq, time_profile = self.spjagoal_pipeline.after_from_clause_extract(query, self.all_relations,
+                                                                                core_relations, key_lists)
             self.revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
 
@@ -52,7 +53,7 @@ class UnionPipeLine(GenericPipeLine):
                 u_eq.append(eq)
             else:
                 self.pipeLineError = True
-                self.errorState = self.old_pipeline.state
+                self.errorState = self.spjagoal_pipeline.state
                 break
 
             if time_profile is not None:
@@ -77,6 +78,11 @@ class UnionPipeLine(GenericPipeLine):
         self.update_state(DONE)
         return result
 
+    def update_time_profile(self, union, union_time):
+        duration, app_calls = union_time[0], union_time[1]
+        self.time_profile.update_for_from_clause(union.local_elapsed_time - duration, union.app_calls - app_calls)
+        self.time_profile.update_for_union(duration, app_calls)
+
     def nullify_relations(self, relations):
         for tab in relations:
             self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_un(tab)),
@@ -96,4 +102,4 @@ class UnionPipeLine(GenericPipeLine):
 
     def get_state(self):
         if super().get_state() == UNION + DONE:
-            return self.old_pipeline.get_state()
+            return self.spjagoal_pipeline.get_state()

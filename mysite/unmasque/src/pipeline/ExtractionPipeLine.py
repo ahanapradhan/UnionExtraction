@@ -4,8 +4,8 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.aoa import AlgebraicPredicate
 from ..core.elapsed_time import create_zero_time_profile
-from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, LIMIT, ORDER_BY, \
-    AGGREGATE, GROUP_BY, PROJECTION, AOA
+from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, AOA, PROJECTION, \
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
 from ...refactored.from_clause import FromClause
@@ -34,13 +34,16 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(FROM_CLAUSE + RUNNING)
         check = fc.doJob(query)
         self.update_state(FROM_CLAUSE + DONE)
-        self.time_profile.update_for_from_clause(fc.local_elapsed_time)
+        self.time_profile.update_for_from_clause(fc.local_elapsed_time, fc.app_calls)
         if not check or not fc.done:
             self.logger.error("Some problem while extracting from clause. Aborting!")
+            self.info[FROM_CLAUSE] = None
             return None, self.time_profile
 
         self.all_relations = fc.all_relations
         self.global_pk_dict = fc.init.global_pk_dict
+
+        self.info[FROM_CLAUSE] = fc.core_relations
 
         eq, t = self.after_from_clause_extract(query, self.all_relations,
                                                fc.core_relations,
@@ -55,6 +58,7 @@ class ExtractionPipeLine(GenericPipeLine):
                                   key_lists):  # get core_relations, key_lists from from clause
 
         time_profile = create_zero_time_profile()
+        q_generator = QueryStringGenerator(self.connectionHelper)
 
         '''
         Correlated Sampling
@@ -64,8 +68,10 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(SAMPLING + RUNNING)
         check = cs2.doJob(query)
         self.update_state(SAMPLING + DONE)
-        time_profile.update_for_cs2(cs2.local_elapsed_time)
+        time_profile.update_for_cs2(cs2.local_elapsed_time, cs2.app_calls)
+        self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
         if not check or not cs2.done:
+            self.info[SAMPLING] = None
             self.logger.info("Sampling failed!")
 
         self.update_state(DB_MINIMIZATION + START)
@@ -73,17 +79,21 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(DB_MINIMIZATION + RUNNING)
         check = vm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
-        time_profile.update_for_view_minimization(vm.local_elapsed_time)
+        time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
+        self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
         if not check:
             self.logger.error("Cannot do database minimization. ")
+            self.info[DB_MINIMIZATION] = None
             return None, time_profile
         if not vm.done:
+            self.info[DB_MINIMIZATION] = None
             self.logger.error("Some problem while view minimization. Aborting extraction!")
             return None, time_profile
 
         '''
         AOA Extraction
         '''
+
         self.update_state(AOA + START)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
@@ -91,9 +101,13 @@ class ExtractionPipeLine(GenericPipeLine):
         check = aoa.doJob(query)
         self.update_state(AOA + DONE)
         time_profile.update_for_where_clause(aoa.local_elapsed_time)
+        self.info[AOA] = aoa.where_clause
+
         if not check:
-            self.logger.info("Cannot find Filter Predicates.")
+            self.info[AOA] = None
+            self.logger.info("Cannot find Algebraic Predicates.")
         if not aoa.done:
+            self.info[AOA] = None
             self.logger.error("Some error while Filter Predicate extraction. Aborting extraction!")
             return None, time_profile
 
@@ -108,11 +122,14 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(PROJECTION + RUNNING)
         check = pj.doJob(query)
         self.update_state(PROJECTION + DONE)
-        time_profile.update_for_projection(pj.local_elapsed_time)
+        time_profile.update_for_projection(pj.local_elapsed_time, pj.app_calls)
+        self.info[PROJECTION] = {'names': pj.projection_names, 'attribs': pj.projected_attribs}
         if not check:
+            self.info[PROJECTION] = None
             self.logger.error("Cannot find projected attributes. ")
             return None, time_profile
         if not pj.done:
+            self.info[PROJECTION] = None
             self.logger.error("Some error while projection extraction. Aborting extraction!")
             return None, time_profile
 
@@ -122,11 +139,14 @@ class ExtractionPipeLine(GenericPipeLine):
         check = gb.doJob(query)
 
         self.update_state(GROUP_BY + DONE)
-        time_profile.update_for_group_by(gb.local_elapsed_time)
+        time_profile.update_for_group_by(gb.local_elapsed_time, gb.app_calls)
+        self.info[GROUP_BY] = gb.group_by_attrib
         if not check:
+            self.info[GROUP_BY] = None
             self.logger.info("Cannot find group by attributes. ")
 
         if not gb.done:
+            self.info[GROUP_BY] = None
             self.logger.error("Some error while group by extraction. Aborting extraction!")
             return None, time_profile
 
@@ -142,10 +162,13 @@ class ExtractionPipeLine(GenericPipeLine):
         check = agg.doJob(query)
 
         self.update_state(AGGREGATE + DONE)
-        time_profile.update_for_aggregate(agg.local_elapsed_time)
+        time_profile.update_for_aggregate(agg.local_elapsed_time, agg.app_calls)
+        self.info[AGGREGATE] = agg.global_aggregated_attributes
         if not check:
+            self.info[AGGREGATE] = None
             self.logger.info("Cannot find aggregations.")
         if not agg.done:
+            self.info[AGGREGATE] = None
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
 
@@ -156,11 +179,14 @@ class ExtractionPipeLine(GenericPipeLine):
         ob.doJob(query)
 
         self.update_state(ORDER_BY + DONE)
-        time_profile.update_for_order_by(ob.local_elapsed_time)
+        time_profile.update_for_order_by(ob.local_elapsed_time, ob.app_calls)
+        self.info[ORDER_BY] = ob.orderBy_string
         if not ob.has_orderBy:
-            self.logger.info("Cannot find order by.")
+            self.info[ORDER_BY] = None
+            self.logger.info("Cannot find aggregations.")
         if not ob.done:
-            self.logger.error("Some error while extracting order by. Aborting extraction!")
+            self.info[ORDER_BY] = None
+            self.logger.error("Some error while extrating aggregations. Aborting extraction!")
             return None, time_profile
 
         self.update_state(LIMIT + START)
@@ -169,15 +195,19 @@ class ExtractionPipeLine(GenericPipeLine):
         lm.doJob(query)
 
         self.update_state(LIMIT + DONE)
-        time_profile.update_for_limit(lm.local_elapsed_time)
+        time_profile.update_for_limit(lm.local_elapsed_time, lm.app_calls)
+        self.info[LIMIT] = lm.limit
         if lm.limit is None:
+            self.info[LIMIT] = None
             self.logger.info("Cannot find limit.")
         if not lm.done:
+            self.info[LIMIT] = None
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
         q_generator = QueryStringGenerator(self.connectionHelper)
         eq = q_generator.generate_query_string(core_relations, pj, gb, agg, ob, lm, aoa)
+
         self.logger.debug("extracted query:\n", eq)
 
         eq = self.extract_NEP(core_relations, cs2.sizes, eq, q_generator, query, time_profile, delivery)
@@ -196,7 +226,7 @@ class ExtractionPipeLine(GenericPipeLine):
             check = nep.doJob([query, eq])
             if nep.Q_E:
                 eq = nep.Q_E
-            time_profile.update_for_nep(nep.local_elapsed_time)
+            time_profile.update_for_nep(nep.local_elapsed_time, nep.app_calls)
             self.update_state(NEP_ + DONE)
 
             if not check:

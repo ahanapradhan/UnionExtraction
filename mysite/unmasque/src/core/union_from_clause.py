@@ -1,15 +1,15 @@
-from ...refactored.abstract.ExtractorBase import Base
+from ..mocks.database import Schema
+from ...refactored.abstract.AppExtractorBase import AppExtractorBase
 from ...refactored.from_clause import FromClause
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_tabname_1
 from ...refactored.util.utils import isQ_result_empty
-from ..mocks.database import Schema
 
 
-class UnionFromClause(Schema, Base):
+class UnionFromClause(Schema, AppExtractorBase):
 
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "Old Unmasque")
+        super().__init__(connectionHelper, "Union From Clause")
         self.comtabs = None
         self.fromtabs = None
         self.to_nullify = None
@@ -29,7 +29,8 @@ class UnionFromClause(Schema, Base):
                                                create_table_like(tab, get_tabname_1(tab))])
 
     def run_query(self, QH):
-        return self.fromClause.app.doJob(QH)
+        self.app_calls += 1
+        return self.app.doJob(QH)
 
     def revert_nullify(self):
         for tab in self.to_nullify:

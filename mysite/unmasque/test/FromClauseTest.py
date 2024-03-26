@@ -8,6 +8,7 @@ from mysite.unmasque.refactored.from_clause import FromClause
 from mysite.unmasque.test.util import queries
 
 
+
 class MyTestCase(BaseTestCase):
 
     def test_like_tpchq1(self):
@@ -20,6 +21,8 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(rels), 1)
         self.assertTrue('lineitem' in rels)
         self.conn.closeConnection()
+        self.assertEqual(8, len(fc.all_relations))
+        self.assertEqual(8, fc.app_calls)
 
     def test_like_tpchq3(self):
         query = queries.tpch_query3
@@ -34,12 +37,13 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     @pytest.mark.skip
-    def test_no_tables_in_db(self):
+    def no_tables_in_db(self): # Not sure what this is for?
         query = "select count(*) from lineitem;"
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         fc = FromClause(self.conn)
         rels = fc.doJob(query, "error")
+        print("Problem", rels)
         self.assertTrue(not rels)
         self.conn.closeConnection()
 

@@ -3,20 +3,19 @@ from _decimal import Decimal
 
 import psycopg2
 
-from .ExtractorBase import Base
-from ..executable import Executable
-from ..util.common_queries import get_tabname_4, get_star, truncate_table, insert_into_tab_select_star_fromtab
+from .AppExtractorBase import AppExtractorBase
+from ..util.common_queries import get_star
+from ..util.common_queries import get_tabname_4, truncate_table, insert_into_tab_select_star_fromtab
 from ...src.util.ConnectionHelper import ConnectionHelper
 
 
-class MutationPipeLineBase(Base):
+class MutationPipeLineBase(AppExtractorBase):
 
     def __init__(self, connectionHelper: ConnectionHelper,
                  core_relations: list[str],
                  global_min_instance_dict: dict,
                  name: str):
         super().__init__(connectionHelper, name)
-        self.app = Executable(connectionHelper)
         # from from clause
         self.core_relations = core_relations
         # from view minimizer
@@ -33,6 +32,7 @@ class MutationPipeLineBase(Base):
     def see_d_min(self):
         self.logger.debug("======================")
         for tab in self.core_relations:
+            pass
             res, des = self.connectionHelper.execute_sql_fetchall(get_star(tab))
             self.logger.debug(f"-----  {tab} ------")
             self.logger.debug(res)
