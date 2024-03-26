@@ -34,7 +34,10 @@ if __name__ == '__main__':
          "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
          "desc, o_orderdate limit 10;"
 
+    # hq = "select c_name from customer UNION ALL select s_name from supplier UNION ALL select n_name from nation;"
+
     conn = ConnectionHelper()
+    conn.config.detect_union = False
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     factory = PipeLineFactory()

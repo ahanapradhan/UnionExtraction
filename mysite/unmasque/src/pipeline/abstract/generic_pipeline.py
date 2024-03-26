@@ -61,6 +61,7 @@ class GenericPipeLine:
             self.verify_correctness(query, result)
         except Exception as e:
             print("Some problem while Execution!")
+            print(e)
             return result
         else:
             print("Valid Execution")

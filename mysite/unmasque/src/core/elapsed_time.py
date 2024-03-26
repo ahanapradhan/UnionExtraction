@@ -8,8 +8,8 @@ def create_zero_time_profile():
 
 
 class ElapsedTime:
-    clause_keys = ["Union\n Detection:",
-                   "From\n Clause:",
+    clause_keys = ["From\n Clause:",
+                   "Union\n Detection:",
                    "Correlated\n Sampling:",
                    "View\n Minimization:",
                    "Where\n Clause:",
@@ -164,8 +164,8 @@ class ElapsedTime:
         return ds
 
     def get_times(self):
-        times = [round(entry, 2) for entry in [self.t_union,
-                                               self.t_from_clause,
+        times = [round(entry, 2) for entry in [self.t_from_clause,
+                                               self.t_union,
                                                self.t_sampling,
                                                self.t_view_min,
                                                self.t_where_clause,
@@ -181,8 +181,8 @@ class ElapsedTime:
         return times
 
     def get_app_calls(self):
-        apps = [self.app_union,
-                self.app_from_clause,
+        apps = [self.app_from_clause,
+                self.app_union,
                 self.app_sampling,
                 self.app_view_min,
                 self.app_where_clause,

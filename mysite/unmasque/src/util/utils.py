@@ -16,7 +16,7 @@ def get_combs(elems):
     combs = set()
     for e in pw_elems:
         combs.add(frozenset(e))
-    print(combs)
+    # print(combs)
     return combs
 
 

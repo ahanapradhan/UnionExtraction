@@ -18,10 +18,10 @@ class Union(AppExtractorBase):
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
         db = UnionFromClause(self.connectionHelper)
-        p, pstr = algorithm1.algo(db, query)
+        p, pstr, union_profile = algorithm1.algo(db, query)
         self.all_relations = db.get_relations()
         self.key_lists = db.fromClause.init.global_key_lists
-        return p, pstr
+        return p, pstr, union_profile
 
 
 

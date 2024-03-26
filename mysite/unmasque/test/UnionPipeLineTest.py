@@ -63,7 +63,7 @@ class MyTestCase(BaseTestCase):
                 "and l_quantity > 35);"
 
         db = UnionFromClause(self.conn)
-        p, pstr = algorithm1.algo(db, query)
+        p, pstr, _ = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'customer', 'nation'}), frozenset({'part', 'lineitem'})})
         self.assertTrue(pstr is not None)
         self.conn.closeConnection()

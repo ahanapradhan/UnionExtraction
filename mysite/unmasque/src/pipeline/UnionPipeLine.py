@@ -19,9 +19,9 @@ class UnionPipeLine(GenericPipeLine):
         self.update_state(UNION + START)
         union = Union(self.connectionHelper)
         self.update_state(UNION + RUNNING)
-        p, pstr = union.doJob(query)
+        p, pstr, union_profile = union.doJob(query)
         self.update_state(UNION + DONE)
-        self.time_profile.update_for_union(union.local_elapsed_time)
+        self.update_time_profile(union, union_profile)
         self.all_relations = union.all_relations
         key_lists = union.key_lists
 
@@ -71,6 +71,11 @@ class UnionPipeLine(GenericPipeLine):
 
         self.update_state(DONE)
         return result
+
+    def update_time_profile(self, union, union_time):
+        duration, app_calls = union_time[0], union_time[1]
+        self.time_profile.update_for_from_clause(union.local_elapsed_time - duration, union.app_calls - app_calls)
+        self.time_profile.update_for_union(duration, app_calls)
 
     def nullify_relations(self, relations):
         for tab in relations:

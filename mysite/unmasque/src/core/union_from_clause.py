@@ -9,7 +9,7 @@ from ...refactored.util.utils import isQ_result_empty
 class UnionFromClause(Schema, AppExtractorBase):
 
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "Old Unmasque")
+        super().__init__(connectionHelper, "Union From Clause")
         self.comtabs = None
         self.fromtabs = None
         self.to_nullify = None
@@ -29,6 +29,7 @@ class UnionFromClause(Schema, AppExtractorBase):
                                                create_table_like(tab, get_tabname_1(tab))])
 
     def run_query(self, QH):
+        self.app_calls += 1
         return self.app.doJob(QH)
 
     def revert_nullify(self):
