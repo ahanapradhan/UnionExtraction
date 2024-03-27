@@ -3,7 +3,7 @@ from pathlib import Path
 
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
-    SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2
+    SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE
 
 
 class Config:
@@ -31,6 +31,7 @@ class Config:
         self.detect_nep = False
         self.use_cs2 = False
         self.app_type = ApplicationType.SQL_ERR_FWD
+        self.database = "postgres"
 
     def parse_config(self):
         if self.config_loaded:
@@ -42,6 +43,7 @@ class Config:
             config_object = configparser.ConfigParser()
             with open(config_file, "r") as file_object:
                 config_object.read_file(file_object)
+                self.database = config_object.get(DATABASE_SECTION, DATABASE)
                 self.host = config_object.get(DATABASE_SECTION, HOST)
                 self.port = config_object.get(DATABASE_SECTION, PORT)
                 self.user = config_object.get(DATABASE_SECTION, USER)

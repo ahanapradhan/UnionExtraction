@@ -1,25 +1,12 @@
 import psycopg2
 import psycopg2.extras
+import cx_Oracle
 
 from .configParser import Config
-from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA
-
-
-def set_optimizer_params(is_on):
-    if is_on:
-        option = "on"
-    else:
-        option = "off"
-
-    mergejoin_option = f"SET enable_mergejoin = {option};"
-    indexscan_option = f"SET enable_indexscan = {option};"
-    sort_option = f"SET enable_sort = {option};"
-
-    return [mergejoin_option, indexscan_option, sort_option]
+from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA, DATABASE
 
 
 def cus_execute_sqls(cur, sqls, logger=None):
-    # print(cur)
     for sql in sqls:
         if logger is not None:
             logger.debug(f"..cur execute..{sql}")
@@ -29,7 +16,9 @@ def cus_execute_sqls(cur, sqls, logger=None):
             if logger is not None:
                 logger.error(e)
                 logger.error(e.diag.message_detail)
-        # print("..done")
+        except cx_Oracle.Error as e:
+            if logger is not None:
+                logger.error(e)
     cur.close()
 
 
@@ -87,6 +76,8 @@ class ConnectionHelper:
         If configs come from the caller (e.g. UI), prioritize it
         """
         for key, value in kwargs.items():
+            if key == DATABASE:
+                self.config.database = value
             if key == DBNAME:
                 self.config.dbname = value
             elif key == HOST:
@@ -102,10 +93,13 @@ class ConnectionHelper:
 
         self.config.config_loaded = True
 
+        self.database = self.config.database
+
         self.conn = None
         self.db = self.config.dbname
-        self.paramString = "dbname=" + self.config.dbname + " user=" + self.config.user + \
-                           " password=" + self.config.password + " host=" + self.config.host + " port=" + self.config.port
+        self.paramString = f"dbname={self.config.dbname} user={self.config.user} password={self.config.password} " \
+                           f"host={self.config.host} port={self.config.port}"
+        self.dsn = cx_Oracle.makedsn(self.config.host, self.config.port, service_name="ORCLCDB")
 
     def closeConnection(self):
         if self.conn is not None:
@@ -113,7 +107,10 @@ class ConnectionHelper:
             self.conn = None
 
     def connectUsingParams(self):
-        self.conn = psycopg2.connect(self.paramString)
+        if self.database == "postgres":
+            self.conn = psycopg2.connect(self.paramString)
+        elif self.database == "oracle":
+            self.conn = cx_Oracle.connect(self.config.user, self.config.password, self.dsn)
 
     def getConnection(self):
         if self.conn is None:
@@ -156,17 +153,19 @@ class ConnectionHelper:
             cur.close()
         except psycopg2.ProgrammingError as e:
             if logger is not None:
-
                 logger.error(e)
                 logger.error(e.diag.message_detail)
+            des = str(e)
+        except cx_Oracle.Error as e:
+            if logger is not None:
+                logger.error(e)
             des = str(e)
         return res, des
 
     def get_cursor(self):
         cur = self.conn.cursor()
-        # for cmd in set_optimizer_params(False):
-        #     cur.execute(cmd)
         return cur
 
     def get_DictCursor(self):
-        return self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        if self.database == "postgres":
+            return self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
