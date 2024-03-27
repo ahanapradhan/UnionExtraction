@@ -1,6 +1,6 @@
 import psycopg2
 import psycopg2.extras
-import cx_Oracle
+import oracledb as cx_Oracle
 
 from .configParser import Config
 from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA, DATABASE

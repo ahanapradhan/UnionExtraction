@@ -1,19 +1,19 @@
 from .ExtractionPipeLine import ExtractionPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.union import Union
-from ..util.constants import UNION, START, DONE, RUNNING, WRONG
+from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
 
 
-class UnionPipeLine(GenericPipeLine):
+class UnionPipeLine(ExtractionPipeLine):
 
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "Union PipeLine")
-
+        super().__init__(connectionHelper)
+        self.name = "Union PipeLine"
         self.pipeLineError = False
         self.errorState = ""
-        self.spjagoal_pipeline = ExtractionPipeLine(self.connectionHelper)
+        # self.spjagoal_pipeline = ExtractionPipeLine(self.connectionHelper)
 
     def extract(self, query):
         # opening and closing connection actions are vital.
@@ -36,13 +36,14 @@ class UnionPipeLine(GenericPipeLine):
             for r in rels:
                 core_relations.append(r)
             self.logger.debug(core_relations)
+            self.info[FROM_CLAUSE] = core_relations
 
             nullify = set(self.all_relations).difference(core_relations)
 
             self.connectionHelper.connectUsingParams()
             self.nullify_relations(nullify)
-            eq, time_profile = self.spjagoal_pipeline.after_from_clause_extract(query, self.all_relations,
-                                                                                core_relations, key_lists)
+            eq, time_profile = self.after_from_clause_extract(query, self.all_relations,
+                                                              core_relations, key_lists)
             self.revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
 
@@ -53,7 +54,7 @@ class UnionPipeLine(GenericPipeLine):
                 u_eq.append(eq)
             else:
                 self.pipeLineError = True
-                self.errorState = self.spjagoal_pipeline.state
+                self.errorState = self.state
                 break
 
             if time_profile is not None:
@@ -100,6 +101,5 @@ class UnionPipeLine(GenericPipeLine):
                                                alter_table_rename_to(get_restore_name(tab), tab),
                                                drop_table(get_tabname_4(tab))])
 
-    def get_state(self):
-        if super().get_state() == UNION + DONE:
-            return self.spjagoal_pipeline.get_state()
+    # def get_state(self):
+    #    return super().get_state()

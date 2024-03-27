@@ -128,7 +128,6 @@ def truncate_table(table):
 
 def insert_into_tab_attribs_format(att_order, esc_string, tab):
     return f"INSERT INTO {tab} {att_order}  VALUES {esc_string}"
-    # return f"INSERT INTO {tab} {att_order}  VALUES {esc_string}"
 
 
 def update_tab_attrib_with_value(attrib, tab, value):

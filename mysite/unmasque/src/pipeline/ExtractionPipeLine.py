@@ -93,7 +93,6 @@ class ExtractionPipeLine(GenericPipeLine):
         '''
         AOA Extraction
         '''
-
         self.update_state(AOA + START)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
@@ -205,7 +204,6 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-        q_generator = QueryStringGenerator(self.connectionHelper)
         eq = q_generator.generate_query_string(core_relations, pj, gb, agg, ob, lm, aoa)
 
         self.logger.debug("extracted query:\n", eq)
