@@ -101,6 +101,7 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(EQUI_JOIN + DONE)
         time_profile.update_for_where_clause(ej.local_elapsed_time, ej.app_calls)
         self.info[EQUI_JOIN] = ej.global_join_graph
+
         if not check:
             self.info[EQUI_JOIN] = None
             self.logger.info("Cannot find Join Predicates.")
@@ -230,6 +231,7 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
 
         eq = q_generator.generate_query_string(core_relations, ej, fl, pj, gb, agg, ob, lm)
+
         self.logger.debug("extracted query:\n", eq)
 
         eq = self.extract_NEP(core_relations, cs2, ej, eq, fl, q_generator, query, time_profile, vm)
