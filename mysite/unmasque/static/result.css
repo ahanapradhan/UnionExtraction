@@ -63,3 +63,20 @@ body{
     -webkit-user-select: none;
     touch-action: manipulation;   
 }
+
+table{
+    border-collapse: collapse;
+}
+
+td, th{
+    border: solid black 2px;
+}
+
+td, th{
+    padding: 5px;
+}
+
+th{
+    font-weight: 700;
+    font-size: 20px;
+}
