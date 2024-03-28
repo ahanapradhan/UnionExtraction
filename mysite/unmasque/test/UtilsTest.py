@@ -66,9 +66,12 @@ class MyTestCase(unittest.TestCase):
         conn.config.password = "postgres"
         conn.config.host = "HP-Z4-G4-Workstation"
         conn.config.port = "1539"
-        conn.config.user = "SYSDBA"
+        conn.config.user = "TPCH"
         conn.connectUsingParams()
         res = conn.execute_sql_fetchall("SELECT * FROM v$version")
+        self.assertTrue(res)
+        print(res)
+        res = conn.execute_sql_fetchone_0("SELECT n_name, r_name FROM tpch.nation, tpch.region WHERE n_nationkey = 1")
         self.assertTrue(res)
         print(res)
         conn.closeConnection()
