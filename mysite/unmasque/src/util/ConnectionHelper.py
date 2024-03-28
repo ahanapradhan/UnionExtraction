@@ -99,7 +99,7 @@ class ConnectionHelper:
         self.db = self.config.dbname
         self.paramString = f"dbname={self.config.dbname} user={self.config.user} password={self.config.password} " \
                            f"host={self.config.host} port={self.config.port}"
-        self.dsn = cx_Oracle.makedsn(self.config.host, self.config.port, service_name="ORCLCDB")
+        self.dsn = f'{self.config.user}/{self.config.password}@{self.config.host}:{self.config.port}/{self.config.dbname}'
 
     def closeConnection(self):
         if self.conn is not None:
@@ -110,7 +110,7 @@ class ConnectionHelper:
         if self.database == "postgres":
             self.conn = psycopg2.connect(self.paramString)
         elif self.database == "oracle":
-            self.conn = cx_Oracle.connect(self.config.user, self.config.password, self.dsn)
+            self.conn = cx_Oracle.connect(self.dsn)
 
     def getConnection(self):
         if self.conn is None:

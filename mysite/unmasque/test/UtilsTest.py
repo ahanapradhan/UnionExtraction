@@ -1,5 +1,6 @@
 import unittest
 
+from ..src.util.ConnectionHelper import ConnectionHelper
 from ..refactored.orderby_clause import check_sort_order
 from ..src.util import utils
 
@@ -57,6 +58,20 @@ class MyTestCase(unittest.TestCase):
         maxnonNulls = set()
         maxnonNulls = utils.construct_maxNonNulls(maxnonNulls, nonNulls)
         self.assertEqual(maxnonNulls, {ab, ad, cd})
+
+    def test_oracle_connection(self):
+        conn = ConnectionHelper()
+        conn.config.database = "oracle"
+        conn.database = "oracle"
+        conn.config.password = "postgres"
+        conn.config.host = "HP-Z4-G4-Workstation"
+        conn.config.port = "1539"
+        conn.config.user = "SYSDBA"
+        conn.connectUsingParams()
+        res = conn.execute_sql_fetchall("SELECT * FROM v$version")
+        self.assertTrue(res)
+        print(res)
+        conn.closeConnection()
 
 
 if __name__ == '__main__':
