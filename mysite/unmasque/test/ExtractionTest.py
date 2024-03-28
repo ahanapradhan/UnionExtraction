@@ -195,8 +195,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -214,8 +213,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -233,8 +231,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -274,8 +271,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -337,8 +333,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -356,8 +351,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -392,8 +386,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -411,8 +404,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -430,8 +422,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -449,8 +440,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -468,8 +458,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -487,8 +476,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
 
         self.assertTrue(eq is not None)
         print(eq)
@@ -507,8 +495,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
 
         self.assertTrue(eq is not None)
         print(eq)
@@ -527,8 +514,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
 
         self.assertTrue(eq is not None)
         print(eq)
@@ -547,8 +533,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()
@@ -566,8 +551,7 @@ class MyTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                         tpchSettings.key_lists)
+        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
         self.assertTrue(eq is not None)
         print(eq)
         tp.print()

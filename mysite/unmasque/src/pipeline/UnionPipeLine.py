@@ -1,7 +1,7 @@
 from .ExtractionPipeLine import ExtractionPipeLine
 from ..core.union import Union
 
-from ..util.constants import UNION, START, DONE, RUNNING, FROM_CLAUSE
+from ..util.constants import UNION, START, DONE, RUNNING, FROM_CLAUSE, WRONG
 from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
     get_restore_name, get_tabname_4, get_tabname_un
 
@@ -13,8 +13,6 @@ class UnionPipeLine(ExtractionPipeLine):
         super().__init__(connectionHelper)
         self.name = "Union PipeLine"
         self.pipeLineError = False
-        self.errorState = ""
-        # self.spjagoal_pipeline = ExtractionPipeLine(self.connectionHelper)
 
     def extract(self, query):
         # opening and closing connection actions are vital.
@@ -28,16 +26,12 @@ class UnionPipeLine(ExtractionPipeLine):
         self.update_time_profile(union, union_profile)
         self.all_relations = union.all_relations
         key_lists = union.key_lists
-
         self.connectionHelper.closeConnection()
 
         u_eq = []
-        pipeLineError = False
 
         for rels in p:
-            core_relations = []
-            for r in rels:
-                core_relations.append(r)
+            core_relations = [r for r in rels]
             self.logger.debug(core_relations)
             self.info[FROM_CLAUSE] = core_relations
 
@@ -45,10 +39,12 @@ class UnionPipeLine(ExtractionPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.nullify_relations(nullify)
-            eq, time_profile = self.after_from_clause_extract(query, self.all_relations,
-                                                              core_relations, key_lists)
+            eq, time_profile = self.after_from_clause_extract(query, core_relations, key_lists)
             self.revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
+
+            if time_profile is not None:
+                self.time_profile.update(time_profile)
 
             if eq is not None:
                 self.logger.debug(eq)
@@ -57,24 +53,23 @@ class UnionPipeLine(ExtractionPipeLine):
                 u_eq.append(eq)
             else:
                 self.pipeLineError = True
-                self.errorState = self.state
                 break
 
-            if time_profile is not None:
-                self.time_profile.update(time_profile)
+        result = self.post_process(pstr, u_eq)
+        return result
 
+    def post_process(self, pstr, u_eq):
         u_Q = "\n UNION ALL \n".join(u_eq)
         u_Q += ";"
-
         if "UNION ALL" not in u_Q:
             if u_Q.startswith('(') and u_Q.endswith(');'):
                 u_Q = u_Q[1:-2] + ';'
-
         result = ""
-        if pipeLineError:
-            result = "Could not extract the query due to errors.\nHere's what I have as a half-baked answer:\n" + pstr + "\n"
+        if self.pipeLineError:
+            result = ("Could not extract the query due to errors."
+                      "\nHere's what I have as a half-baked answer:\n") + pstr + "\n"
+            self.update_state(WRONG)
         result += u_Q
-
         self.update_state(DONE)
         return result
 
