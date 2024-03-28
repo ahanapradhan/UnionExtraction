@@ -226,7 +226,8 @@ class ExtractionPipeLine(GenericPipeLine):
                 eq = nep.Q_E
             time_profile.update_for_nep(nep.local_elapsed_time, nep.app_calls)
             self.update_state(NEP_ + DONE)
-
+            self.info[NEP_] = eq
             if not check:
                 self.logger.info("NEP does not exists.")
+                self.info[NEP_] = None
         return eq

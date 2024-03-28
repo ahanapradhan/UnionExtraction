@@ -82,8 +82,8 @@ class PipeLineFactory:
     def get_pipeline_state(self, token):
         pipe = self.get_pipeline_obj(token)
         if pipe:
+            print(pipe.get_state())
             return pipe.get_state()
-
         return WAITING
 
     def get_pipeline_obj(self, token):

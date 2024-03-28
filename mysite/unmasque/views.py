@@ -76,7 +76,6 @@ def check_progress(request, token):
 
 
 def func_check_progress(request, token):
-    print("...HIT...HIT...HIT...")
     state_changed = False
     factory = PipeLineFactory()
     p = factory.get_pipeline_obj(token)
