@@ -8,18 +8,18 @@ def create_zero_time_profile():
 
 
 class ElapsedTime:
-    clause_keys = ["From\n Clause:",
-                   "Union\n Detection:",
-                   "Correlated\n Sampling:",
-                   "View\n Minimization:",
-                   "Where\n Clause:",
+    clause_keys = ["From Clause:",
+                   "Union Detection:",
+                   "Correlated Sampling:",
+                   "View Minimization:",
+                   "Where Clause:",
                    "Projection:",
-                   "Group\n BY:",
+                   "Group BY:",
                    "Aggregation:",
-                   "Order\n by:",
+                   "Order by:",
                    "Limit:",
                    "NEP: ",
-                   "Result\n Comparator:",
+                   "Result Comparator:",
                    "Total: "
                    ]
 
@@ -162,6 +162,19 @@ class ElapsedTime:
         ds = copy.deepcopy(self.display_string)
         ds = ds.replace("\n", "<br>")
         return ds
+    
+    def get_table_display_string(self):
+        times = self.get_times()
+        app = self.get_app_calls()
+        self.table_string = '''<table class="min_tab">'''
+        self.table_string += '''<tr><th>Stage</th><th>Time Taken</th><th>Exec Called</th></tr>'''
+        for i in range(len(self.clause_keys)):
+            if i!=len(self.clause_keys)-1:
+                self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(round(times[i]*1000)) + ' ms</td><td>' +str(app[i])+ '</td></tr>'
+            else:
+                self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(round(times[i])) + '</td><td>' + str(app[i]) +'</td></tr>'        
+        self.table_string += '</table>'
+        return self.table_string
 
     def get_times(self):
         times = [round(entry, 2) for entry in [self.t_from_clause,
