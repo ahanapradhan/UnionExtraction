@@ -1,7 +1,7 @@
 import psycopg2
 import psycopg2.extras
 
-
+import oracledb as cx_Oracle
 from .configParser import Config
 from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA
 
@@ -102,8 +102,9 @@ class ConnectionHelper:
 
         self.conn = None
         self.db = self.config.dbname
-        self.paramString = "dbname=" + self.config.dbname + " user=" + self.config.user + \
-                           " password=" + self.config.password + " host=" + self.config.host + " port=" + self.config.port
+        self.paramString = f"dbname={self.config.dbname} user={self.config.user} password={self.config.password} " \
+                           f"host={self.config.host} port={self.config.port}"
+        self.dsn = f'{self.config.user}/{self.config.password}@{self.config.host}:{self.config.port}/{self.config.dbname}'
 
     def closeConnection(self):
         if self.conn is not None:
@@ -111,7 +112,10 @@ class ConnectionHelper:
             self.conn = None
 
     def connectUsingParams(self):
-        self.conn = psycopg2.connect(self.paramString)
+        if self.config.database == "postgres":
+            self.conn = psycopg2.connect(self.paramString)
+        elif self.config.database == "oracle":
+            self.conn = cx_Oracle.connect(self.dsn)
 
     def getConnection(self):
         if self.conn is None:

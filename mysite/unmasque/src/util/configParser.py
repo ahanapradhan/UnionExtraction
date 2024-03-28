@@ -16,6 +16,7 @@ class Config:
 
     def __init__(self):
         # default values
+        self.database = "postgres"
         self.index_maker = "create_indexes.sql"
         self.pkfk = "pkfkrelations.csv"
         self.schema = "public"
