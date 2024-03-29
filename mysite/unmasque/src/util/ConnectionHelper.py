@@ -1,6 +1,7 @@
 import psycopg2
 import psycopg2.extras
 
+
 from .configParser import Config
 from .constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA
 
@@ -156,7 +157,6 @@ class ConnectionHelper:
             cur.close()
         except psycopg2.ProgrammingError as e:
             if logger is not None:
-
                 logger.error(e)
                 logger.error(e.diag.message_detail)
             des = str(e)

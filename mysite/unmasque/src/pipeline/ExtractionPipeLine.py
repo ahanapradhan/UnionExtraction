@@ -93,7 +93,6 @@ class ExtractionPipeLine(GenericPipeLine):
         '''
         AOA Extraction
         '''
-
         self.update_state(AOA + START)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)

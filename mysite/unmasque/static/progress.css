@@ -119,16 +119,19 @@ a{
 .min_tab{
     display: block;
     overflow: scroll;
-    background-color: #fff;
+    background-color: #f1f1f1;
 }
 
 th, td{
-    background-color: #fff;
+    background-color: #f1f1f1;
+    border: black solid 2px;
+    padding: 5px;
+    border-collapse: collapse;
 }
 
 table{
-    border: black solid 2px;
     border-radius: 2px;
+    border-collapse: collapse;
 }
 
 .dbmin{
@@ -142,4 +145,8 @@ table{
 
 .innerContainer{
     border-radius: 10px;
+}
+
+.sample_table{
+    font-size: 18px;
 }
