@@ -1,7 +1,6 @@
 import copy
 
 from .MutationPipeLineBase import MutationPipeLineBase
-from ..util.common_queries import get_column_details_for_table, select_attribs_from_relation
 from ..util.utils import is_int
 
 
@@ -31,7 +30,7 @@ class WhereClause(MutationPipeLineBase):
         for tabname in self.core_relations:
 
             res, desc = self.connectionHelper.execute_sql_fetchall(
-                get_column_details_for_table(self.connectionHelper.config.schema, tabname))
+                self.connectionHelper.queries.get_column_details_for_table(self.connectionHelper.config.schema, tabname))
 
             tab_attribs = []
             tab_attribs.extend(row[0] for row in res)
@@ -43,7 +42,7 @@ class WhereClause(MutationPipeLineBase):
                 {(tabname, row[0]): int(str(row[2])) for row in res if is_int(str(row[2]))})
 
             res, desc = self.connectionHelper.execute_sql_fetchall(
-                select_attribs_from_relation(tab_attribs, tabname))
+                self.connectionHelper.queries.select_attribs_from_relation(tab_attribs, tabname))
             for row in res:
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
