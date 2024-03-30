@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from mysite.unmasque.src.util.constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA, OK
+from ....src.util.constants import DBNAME, HOST, PORT, USER, PASSWORD, SCHEMA, OK
 
 
 class AbstractConnectionHelper:

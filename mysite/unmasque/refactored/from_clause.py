@@ -41,41 +41,26 @@ class FromClause(AppExtractorBase):
                     ["BEGIN;",
                      ["alter_table_rename_to", tabname, "temp"],
                      ["create_table_like", tabname, "temp"]], self.logger)
-
                 new_result = self.app.doJob(query)
                 if isQ_result_empty(new_result):
                     self.core_relations.append(tabname)
                     self.logger.info("Table ", tabname, " is in from clause..")
-
             except Exception as error:
                 self.logger.error("Error Occurred in table extraction. Error: " + str(error))
+            finally:
                 self.connectionHelper.execute_sql(["ROLLBACK;"])
-                # exit(1)
-
-            self.connectionHelper.execute_sql(["ROLLBACK;"])
 
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
             try:
                 self.connectionHelper.execute_sql(["BEGIN;",
                                                    ["alter_table_rename_to", tabname, "temp"]], self.logger)
-
-                try:
-                    new_result = self.app.doJob(query)  # slow
-                    if isQ_result_empty(new_result):
-                        self.core_relations.append(tabname)
-                except psycopg2.Error as e:
-                    if e.pgcode == '42P01':
-                        self.core_relations.append(tabname)
-                    elif e.pgcode != '57014':
-                        raise
-
+                self.app.doJob(query)  # slow
             except Exception as error:
                 if str(error) == REL_ERROR:
                     self.core_relations.append(tabname)
                 else:
                     self.logger.error("Error Occurred in table extraction. Error: " + str(error))
-
             finally:
                 self.connectionHelper.execute_sql(["ROLLBACK;"])
 
