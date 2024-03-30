@@ -104,5 +104,6 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual(observed[i], factory.pipeline.state_sequence[i % len(factory.pipeline.state_sequence)])
 
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -83,7 +83,7 @@ class FromClause(AppExtractorBase):
             return False
 
         if self.timeout:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.set_timeout_to_2s()])
+            self.connectionHelper.execute_sql([self.connectionHelper.set_timeout_to_2s()])
         query, method = self.extract_params_from_args(args)
         if not method:
             method = self.method
@@ -92,7 +92,7 @@ class FromClause(AppExtractorBase):
             self.get_core_relations_by_rename(query)
         else:
             self.get_core_relations_by_error(query)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.reset_timeout()])
+        self.connectionHelper.execute_sql([self.connectionHelper.reset_timeout()])
         return self.core_relations
 
     def get_key_lists(self):

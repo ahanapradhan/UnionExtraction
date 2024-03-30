@@ -1,6 +1,9 @@
 import datetime
 import sys
 import unittest
+
+import pytest
+
 sys.path.append("../../../")
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 from mysite.unmasque.refactored.projection import Projection
@@ -162,6 +165,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def disabled_test_proj_Q3_1(self):
         for i in range(10):
             self.test_projections_Q3_1()
@@ -239,7 +243,7 @@ class MyTestCase(BaseTestCase):
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
 
-        self.assertEqual(frozenset({'o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate', 'o_shippriority'}),
+        self.assertEqual(frozenset({'o_orderkey', 'l_extendedprice*(1 - l_discount) + l_quantity', 'o_orderdate', 'o_shippriority'}),
                          frozenset(set(pj.projected_attribs)))
 
         self.conn.closeConnection()
