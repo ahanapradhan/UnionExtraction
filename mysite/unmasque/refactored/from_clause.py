@@ -1,6 +1,5 @@
 from .abstract.AppExtractorBase import AppExtractorBase
 from ..refactored.initialization import Initiator
-from ..refactored.util.common_queries import alter_table_rename_to, create_table_like
 from ..refactored.util.utils import isQ_result_empty
 from ..src.util.application_type import ApplicationType
 from ..src.util.constants import REL_ERROR
@@ -39,7 +38,9 @@ class FromClause(AppExtractorBase):
         for tabname in self.all_relations:
             try:
                 self.connectionHelper.execute_sql(
-                    ["BEGIN;", alter_table_rename_to(tabname, "temp"), create_table_like(tabname, "temp")], self.logger)
+                    ["BEGIN;",
+                     ["alter_table_rename_to", tabname, "temp"],
+                     ["create_table_like", tabname, "temp"]], self.logger)
 
                 new_result = self.app.doJob(query)
                 if isQ_result_empty(new_result):
@@ -56,7 +57,8 @@ class FromClause(AppExtractorBase):
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
             try:
-                self.connectionHelper.execute_sql(["BEGIN;", alter_table_rename_to(tabname, "temp")], self.logger)
+                self.connectionHelper.execute_sql(["BEGIN;",
+                                                   ["alter_table_rename_to", tabname, "temp"]], self.logger)
 
                 try:
                     new_result = self.app.doJob(query)  # slow

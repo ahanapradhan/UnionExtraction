@@ -1,5 +1,6 @@
 import csv
 import os.path
+import pathlib
 
 from ..refactored.abstract.ExtractorBase import Base
 
@@ -8,7 +9,12 @@ class Initiator(Base):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Initiator")
-        self.resource_path = connectionHelper.config.base_path
+        # Ensure base_path is correctly set in the configuration
+        base_path = connectionHelper.config.base_path
+        if base_path is None:
+            raise ValueError("base_path in configuration cannot be None")
+        # Convert base_path to a Path object if it's not already one
+        self.resource_path = pathlib.Path(base_path) if not isinstance(base_path, pathlib.Path) else base_path
         self.pkfk_file_path = (self.resource_path / connectionHelper.config.pkfk).resolve()
         self.create_index_filepath = (self.resource_path / connectionHelper.config.index_maker).resolve()
         self.schema = connectionHelper.config.schema
@@ -33,10 +39,11 @@ class Initiator(Base):
 
     def doActualJob(self, args):
         self.logger.debug("inside -- initialization.initialization")
-        # self.sanitize()
+        self.sanitize()
 
         self.logger.info("sanitized!")
         self.reset()
+
 
         check = self.verify_support_files()
         self.logger.info("support files verified..")
@@ -55,6 +62,7 @@ class Initiator(Base):
         self.logger.info("index dict done..!")
 
         self.sanitize()
+
         return True
 
     def make_index_dict(self):

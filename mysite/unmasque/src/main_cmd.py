@@ -1,14 +1,15 @@
 import signal
 import sys
 
+from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
+from mysite.unmasque.src.util.configParser import Config
 from .pipeline.PipeLineFactory import PipeLineFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
-from .util.ConnectionHelper import ConnectionHelper
 
 
 def signal_handler(signum, frame):
     print('You pressed Ctrl+C!')
-    sigconn = ConnectionHelper()
+    sigconn = ConnectionHelperFactory().createConnectionHelper()
     sigconn.connectUsingParams()
     sanitizer = TpchSanitizer(sigconn)
     sanitizer.sanitize()
@@ -36,7 +37,7 @@ if __name__ == '__main__':
 
     # hq = "select c_name from customer UNION ALL select s_name from supplier UNION ALL select n_name from nation;"
 
-    conn = ConnectionHelper()
+    conn = ConnectionHelperFactory().createConnectionHelper()
     conn.config.detect_union = False
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)

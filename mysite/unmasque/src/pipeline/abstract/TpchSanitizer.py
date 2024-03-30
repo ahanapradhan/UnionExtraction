@@ -1,18 +1,6 @@
 import re
 from typing import Literal
 
-from ....refactored.util.common_queries import drop_view, get_restore_name, drop_table, alter_table_rename_to, \
-    get_tabname_1, get_tabname_4, get_tabname_un, get_tabname_nep, drop_table_cascade
-
-
-def get_mutated_names(tab):
-    return [get_tabname_1(tab),
-            get_tabname_4(tab),
-            get_tabname_un(tab),
-            get_tabname_nep(tab),
-            tab + "2",
-            tab + "3"]
-
 
 class TpchSanitizer:
 
@@ -30,7 +18,7 @@ class TpchSanitizer:
             wheres = " and " + wheres
         query = f"Select {selections}  From information_schema.tables " + \
                 f"WHERE table_schema = '{self.connectionHelper.config.schema}' and " \
-                f"TABLE_CATALOG= '{self.connectionHelper.db}' {wheres} ;"
+                f"TABLE_CATALOG= '{self.connectionHelper.config.dbname}' {wheres} ;"
         query = re.sub(' +', ' ', query)
         return query
 
@@ -67,20 +55,26 @@ class TpchSanitizer:
             self.drop_derived_relations(table)
 
             drop_fn = self.get_drop_fn(table)
-            restore_name = get_restore_name(table)
-            self.connectionHelper.execute_sql([drop_fn(table), alter_table_rename_to(restore_name, table)])
+            restore_name = self.connectionHelper.queries.get_restore_name(table)
+            self.connectionHelper.execute_sql([[drop_fn, table],
+                                               ["alter_table_rename_to", restore_name, table]])
 
-        self.connectionHelper.execute_sql([drop_table("temp"),
-                                           drop_view("r_e"), drop_table("r_h")])
+        self.connectionHelper.execute_sql([["drop_table", "temp"],
+                                           ["drop_view", "r_e"], ["drop_table", "r_h"]])
         self.commit_transaction()
 
     def get_drop_fn(self, table):
-        return drop_table_cascade if self.is_view_or_table(table) == 'table' else drop_view
+        return "drop_table_cascade" if self.is_view_or_table(table) == 'table' else "drop_view"
 
     def drop_derived_relations(self, table):
-        derived_objects = get_mutated_names(table)
+        derived_objects = [self.connectionHelper.queries.get_tabname_1(table),
+                           self.connectionHelper.queries.get_tabname_4(table),
+                           self.connectionHelper.queries.get_tabname_un(table),
+                           self.connectionHelper.queries.get_tabname_nep(table),
+                           table + "2",
+                           table + "3"]
         drop_fns = [self.get_drop_fn(tab) for tab in derived_objects]
         for n in range(len(derived_objects)):
             drop_object = derived_objects[n]
             drop_command = drop_fns[n]
-            self.connectionHelper.execute_sql([drop_command(drop_object)])
+            self.connectionHelper.execute_sql([[drop_command, drop_object]])

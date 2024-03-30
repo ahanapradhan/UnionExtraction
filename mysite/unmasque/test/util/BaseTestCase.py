@@ -2,13 +2,15 @@ import signal
 import sys
 import unittest
 
+from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
+from mysite.unmasque.src.util.configParser import Config
 from ...src.pipeline.abstract.TpchSanitizer import TpchSanitizer
-from ...src.util.ConnectionHelper import ConnectionHelper
+from ...src.util.PostgresConnectionHelper import PostgresConnectionHelper
 
 
 def signal_handler(signum, frame):
     print('You pressed Ctrl+C!')
-    sigconn = ConnectionHelper()
+    sigconn = PostgresConnectionHelper(Config())
     sigconn.connectUsingParams()
     sanitizer = TpchSanitizer(sigconn)
     sanitizer.sanitize()
@@ -18,8 +20,8 @@ def signal_handler(signum, frame):
 
 
 class BaseTestCase(unittest.TestCase):
-    conn = ConnectionHelper()
-    sigconn = ConnectionHelper()
+    conn = ConnectionHelperFactory().createConnectionHelper()
+    sigconn = ConnectionHelperFactory().createConnectionHelper()
     sanitizer = TpchSanitizer(sigconn)
 
     def setUp(self):

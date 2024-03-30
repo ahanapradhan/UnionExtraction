@@ -1,12 +1,12 @@
 import unittest
 
-from ..src.core.aoa import AlgebraicPredicate
-from ..src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.src.util.configParser import Config
+from ..src.util.PostgresConnectionHelper import PostgresConnectionHelper
 
 
 class MyTestCase(unittest.TestCase):
     def test_oracle_connection(self):
-        conn = ConnectionHelper()
+        conn = PostgresConnectionHelper(Config())
         conn.config.database = "oracle"
         conn.database = "oracle"
         conn.config.password = "postgres"
@@ -23,8 +23,9 @@ class MyTestCase(unittest.TestCase):
             ('n_nationkey', 'n_name', 'r_regionkey', 'n_comment'),
             (1, 'ALGERIA', 1, 'embark quickly. bold foxes adapt slyly')],
             'tpch.region': [('r_regionkey', 'r_name', 'r_comment'),
-                       (1, 'AFRICA', 'nag efully about the slyly bold instructions. quickly regular pinto beans wake '
-                                     'blithely')]}
+                            (1, 'AFRICA',
+                             'nag efully about the slyly bold instructions. quickly regular pinto beans wake '
+                             'blithely')]}
         aoa = AlgebraicPredicate(conn, core_rels, global_min_instance_dict)
         aoa.filter_extractor.set_col_data_getter_method(self.feed_dummy_col_data)
         aoa.mock = True
@@ -36,9 +37,11 @@ class MyTestCase(unittest.TestCase):
 
     def feed_dummy_col_data(self, tabname):
         if tabname == 'tpch.nation':
-            return [('n_nationkey', 'numeric', 25), ('n_name', 'varchar', 30), ('r_regionkey', 'numeric', 25), ('n_comment', 'varchar', 30)]
+            return [('n_nationkey', 'numeric', 25), ('n_name', 'varchar', 30), ('r_regionkey', 'numeric', 25),
+                    ('n_comment', 'varchar', 30)]
         elif tabname == 'tpch.region':
             return [('r_regionkey', 'numeric', 25), ('r_name', 'varchar', 30), ('r_comment', 'varchar', 30)]
+
 
 if __name__ == '__main__':
     unittest.main()
