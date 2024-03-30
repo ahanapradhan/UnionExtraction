@@ -162,7 +162,7 @@ class Filter(WhereClause):
             return not is_low and not is_high
 
     def run_app_for_a_val(self, datatype, is_low, low, query, query_front):
-        self.connectionHelper.execute_sql([["form_update_query_with_value", query_front, datatype, low]])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.form_update_query_with_value(query_front, datatype, low)])
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
             is_low = False
@@ -171,7 +171,7 @@ class Filter(WhereClause):
     def run_app_with_mid_val(self, datatype, high, low, query, q_front):
         mid_val = get_mid_val(datatype, high, low)
         self.logger.debug(f"low: {low}, high: {high}, mid: {mid_val}")
-        self.connectionHelper.execute_sql([["form_update_query_with_value", q_front, datatype, mid_val]])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.form_update_query_with_value(q_front, datatype, mid_val)])
         new_result = self.app.doJob(query)
         return mid_val, new_result
 
@@ -236,9 +236,9 @@ class Filter(WhereClause):
         self.revert_filter_changes(tabname)
 
     def revert_filter_changes(self, tabname):
-        self.connectionHelper.execute_sql([["truncate_table", tabname],
-                                           ["insert_into_tab_select_star_fromtab",
-                                            tabname, self.connectionHelper.queries.get_tabname_4(tabname)]])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(tabname),
+                                           self.connectionHelper.queries.insert_into_tab_select_star_fromtab(tabname,
+                                                                                                             self.connectionHelper.queries.get_tabname_4(tabname))])
 
     def checkStringPredicate(self, query, tabname, attrib):
         # updatequery
@@ -315,7 +315,7 @@ class Filter(WhereClause):
         return output
 
     def run_updateQ_with_temp_str(self, attrib, query, tabname, temp):
-        self.connectionHelper.execute_sql([["update_tab_attrib_with_quoted_value", tabname, attrib, temp]])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)])
         new_result = self.app.doJob(query)
         return new_result
 

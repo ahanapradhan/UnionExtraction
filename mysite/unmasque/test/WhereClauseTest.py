@@ -36,14 +36,6 @@ class MyTestCase(BaseTestCase):
                           ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
                           ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
                           ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
-                          ('lineitem', 'l_shipmode', 'character'), ('lineitem', 'l_comment', 'character varying'),
-                          ('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
-                          ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
-                          ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
-                          ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
-                          ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
-                          ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
-                          ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
                           ('lineitem', 'l_shipmode', 'character'), ('lineitem', 'l_comment', 'character varying')})
 
         self.assertEqual(len(wc.global_all_attribs[0]), 16)

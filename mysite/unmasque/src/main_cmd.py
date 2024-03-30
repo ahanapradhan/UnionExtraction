@@ -1,8 +1,7 @@
 import signal
 import sys
 
-from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
-from mysite.unmasque.src.util.configParser import Config
+from ..src.util.ConnectionFactory import ConnectionHelperFactory
 from .pipeline.PipeLineFactory import PipeLineFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
 

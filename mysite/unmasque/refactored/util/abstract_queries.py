@@ -114,3 +114,40 @@ class CommonQueries(ABC):
     @abstractmethod
     def get_column_details_for_table(self, schema, tab):
         pass
+
+    @abstractmethod
+    def select_attribs_from_relation(self, tab_attribs, relation):
+        attribs = ", ".join(tab_attribs)
+        return f"select {attribs} from {relation};"
+
+    @abstractmethod
+    def insert_into_tab_select_star_fromtab(self, tab, fromtab):
+        return f"Insert into {tab} Select * from {fromtab};"
+
+    @abstractmethod
+    def insert_into_tab_select_star_fromtab_with_ctid(self, tab, fromtab, ctid):
+        return f"Insert into {tab} (Select * from {fromtab} Where ctid = {ctid});"
+
+    @abstractmethod
+    def select_ctid_from_tabname_offset(self,tabname, offset):
+        return f"Select ctid from {tabname} offset {offset} Limit 1;"
+
+    @abstractmethod
+    def select_next_ctid(self, tabname, mid_ctid1):
+        return f"Select Min(ctid) from {tabname} Where ctid > '{mid_ctid1}';"
+
+    @abstractmethod
+    def select_previous_ctid(self, tab, ctid1):
+        return f"Select MAX(ctid) from {tab} Where ctid < '{ctid1}';"
+
+    @abstractmethod
+    def select_max_ctid(self, tab):
+        return f"Select MAX(ctid) from {tab};"
+
+    @abstractmethod
+    def select_start_ctid_of_any_table(self):
+        return '(0,1)'
+
+    @abstractmethod
+    def hashtext_query(self, tab):
+        pass

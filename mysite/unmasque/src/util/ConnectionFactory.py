@@ -1,6 +1,6 @@
-from mysite.unmasque.src.util.PostgresConnectionHelper import PostgresConnectionHelper
-from mysite.unmasque.src.util.Oracle_connectionHelper import OracleConnectionHelper
-from mysite.unmasque.src.util.configParser import Config
+from .PostgresConnectionHelper import PostgresConnectionHelper
+from .Oracle_connectionHelper import OracleConnectionHelper
+from .configParser import Config
 
 
 class ConnectionHelperFactory:

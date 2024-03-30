@@ -11,6 +11,15 @@ from ...refactored.util.postgres_queries import PostgresQueries
 
 class PostgresConnectionHelper(AbstractConnectionHelper):
 
+    def rollback_transaction(self):
+        self.execute_sql(["ROLLBACK;"])
+
+    def set_timeout_to_2s(self):
+        return "set statement_timeout to '2s';"
+
+    def reset_timeout(self):
+        return "set statement_timeout to DEFAULT;"
+
     def get_all_tables_for_restore(self):
         res, desc = self.execute_sql_fetchall(
             self.get_sanitization_select_query(["SPLIT_PART(table_name, '_', 1) as original_name"],
@@ -99,6 +108,9 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
                     logger.error(e)
                     logger.error(e.diag.message_detail)
             # print("..done")
+            except ValueError as e:
+                raise e
+
         cur.close()
 
     def cur_execute_sql_fetch_one_0(self, cur, sql, logger=None):

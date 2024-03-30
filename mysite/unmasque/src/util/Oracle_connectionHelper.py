@@ -1,14 +1,23 @@
 import oracledb
 from oracledb import OperationalError
 
-from mysite.unmasque.refactored.util.oracle_queries import OracleQueries
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
+from ...refactored.util.oracle_queries import OracleQueries
+from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 import oracledb as cx_Oracle
 
 from mysite.unmasque.src.util.constants import OK
 
 
 class OracleConnectionHelper(AbstractConnectionHelper):
+    def rollback_transaction(self):
+        self.execute_sql(["ROLLBACK"])
+
+    def set_timeout_to_2s(self):
+        pass
+
+    def reset_timeout(self):
+        pass
+
     def get_all_tables_for_restore(self):
         pass
 

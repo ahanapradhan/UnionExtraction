@@ -14,15 +14,17 @@ class TpchSanitizer:
             self.drop_derived_relations(table)
             drop_fn = self.get_drop_fn(table)
             restore_name = self.connectionHelper.queries.get_restore_name(table)
-            self.connectionHelper.execute_sql([[drop_fn, table],
-                                               ["alter_table_rename_to", restore_name, table]])
+            self.connectionHelper.execute_sql([drop_fn(table),
+                                               self.connectionHelper.queries.alter_table_rename_to(restore_name, table)])
 
-        self.connectionHelper.execute_sql([["drop_table", "temp"],
-                                           ["drop_view", "r_e"], ["drop_table", "r_h"]])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table("temp"),
+                                           self.connectionHelper.queries.drop_view("r_e"),
+                                           self.connectionHelper.queries.drop_table("r_h")])
         self.connectionHelper.commit_transaction()
 
     def get_drop_fn(self, table):
-        return "drop_table_cascade" if self.connectionHelper.is_view_or_table(table) == 'table' else "drop_view"
+        return self.connectionHelper.queries.drop_table_cascade \
+            if self.connectionHelper.is_view_or_table(table) == 'table' else self.connectionHelper.queries.drop_view
 
     def drop_derived_relations(self, table):
         derived_objects = [self.connectionHelper.queries.get_tabname_1(table),

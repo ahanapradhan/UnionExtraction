@@ -29,11 +29,23 @@ class AbstractConnectionHelper:
         self.queries = None
 
     @abstractmethod
+    def set_timeout_to_2s(self):
+        pass
+
+    @abstractmethod
+    def reset_timeout(self):
+        pass
+
+    @abstractmethod
     def begin_transaction(self):
         pass
 
     @abstractmethod
     def commit_transaction(self):
+        pass
+
+    @abstractmethod
+    def rollback_transaction(self):
         pass
 
     def get_sanitization_select_query(self, projectns, predicates):
