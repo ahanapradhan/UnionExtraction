@@ -29,6 +29,21 @@ class AbstractConnectionHelper:
         self.queries = None
 
     @abstractmethod
+    def begin_transaction(self):
+        pass
+
+    @abstractmethod
+    def commit_transaction(self):
+        pass
+
+    def get_sanitization_select_query(self, projectns, predicates):
+        selections = " and ".join(projectns)
+        wheres = " and ".join(predicates)
+        if len(predicates) == 1:
+            wheres = " and " + wheres
+        return self.form_query(selections, wheres)
+
+    @abstractmethod
     def test_connection(self):
         pass
 
@@ -108,4 +123,16 @@ class AbstractConnectionHelper:
 
     @abstractmethod
     def cur_execute_sql_fetch_one(self, cur, sql, logger=None):
+        pass
+
+    @abstractmethod
+    def form_query(self, selections, wheres):
+        pass
+
+    @abstractmethod
+    def is_view_or_table(self, tab):
+        pass
+
+    @abstractmethod
+    def get_all_tables_for_restore(self):
         pass

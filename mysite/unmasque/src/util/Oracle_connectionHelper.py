@@ -9,11 +9,26 @@ from mysite.unmasque.src.util.constants import OK
 
 
 class OracleConnectionHelper(AbstractConnectionHelper):
+    def get_all_tables_for_restore(self):
+        pass
+
+    def is_view_or_table(self, tab):
+        pass
+
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
         self.paramString = f'{self.config.user}/{self.config.password}@{self.config.host}:{self.config.port}/{self.config.dbname}'
         self.queries = OracleQueries()
         self.config.config_loaded = True
+
+    def form_query(self, selections, wheres):
+        pass
+
+    def begin_transaction(self):
+        self.execute_sql(["BEGIN;"])
+
+    def commit_transaction(self):
+        self.execute_sql(["COMMIT;"])
 
     def test_connection(self):
         try:
