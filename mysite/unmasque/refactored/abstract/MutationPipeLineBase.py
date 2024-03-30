@@ -1,5 +1,4 @@
 from .AppExtractorBase import AppExtractorBase
-from ..util.common_queries import get_tabname_4, truncate_table, insert_into_tab_select_star_fromtab
 
 
 class MutationPipeLineBase(AppExtractorBase):
@@ -32,8 +31,10 @@ class MutationPipeLineBase(AppExtractorBase):
 
     def restore_d_min(self):
         for tab in self.core_relations:
-            self.connectionHelper.execute_sql([truncate_table(tab),
-                                               insert_into_tab_select_star_fromtab(tab, get_tabname_4(tab))])
+            self.connectionHelper.execute_sql([
+                self.connectionHelper.queries.truncate_table(tab),
+                self.connectionHelper.queries.insert_into_tab_select_star_fromtab(
+                    tab, self.connectionHelper.queries.get_tabname_4(tab))])
 
     def extract_params_from_args(self, args):
         return args[0]
