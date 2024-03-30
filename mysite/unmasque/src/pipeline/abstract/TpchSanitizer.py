@@ -37,4 +37,4 @@ class TpchSanitizer:
         for n in range(len(derived_objects)):
             drop_object = derived_objects[n]
             drop_command = drop_fns[n]
-            self.connectionHelper.execute_sql([[drop_command, drop_object]])
+            self.connectionHelper.execute_sql([drop_command(drop_object)])
