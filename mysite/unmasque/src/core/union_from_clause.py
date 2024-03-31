@@ -27,7 +27,7 @@ class UnionFromClause(Schema, AppExtractorBase):
                                                self.connectionHelper.queries.create_table_like(tab, self.connectionHelper.queries.get_tabname_1(tab))])
 
     def run_query(self, QH):
-        self.app_calls += 1
+        # self.app_calls += 1
         return self.app.doJob(QH)
 
     def revert_nullify(self):
