@@ -1,17 +1,18 @@
-import sys
 import unittest
 
 import pytest
 
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-from mysite.unmasque.refactored.from_clause import FromClause
-from mysite.unmasque.test.util import queries
-
+from mysite.unmasque.src.util.constants import OK
+from ..refactored.from_clause import FromClause
+from ..test.util import queries
+from ..test.util.BaseTestCase import BaseTestCase
 
 
 class MyTestCase(BaseTestCase):
 
     def test_like_tpchq1(self):
+        check = self.conn.test_connection()
+        self.assertEqual(OK, check)
         query = queries.tpch_query1
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)

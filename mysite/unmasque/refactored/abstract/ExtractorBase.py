@@ -28,12 +28,17 @@ class Base(TpchSanitizer):
 
     def doJob(self, *args):
         self.local_start_time = time.time()
-        self.result = self.doAppCountJob(args)
-        self.local_end_time = time.time()
-        self.local_elapsed_time = self.local_end_time - self.local_start_time
-        self.done = True
-        self.method_call_count += 1
-        return self.result
+        try:
+            self.result = self.doAppCountJob(args)
+        except Exception as e:
+            raise e
+        else:
+            self.done = True
+            return self.result
+        finally:
+            self.local_end_time = time.time()
+            self.local_elapsed_time = self.local_end_time - self.local_start_time
+            self.method_call_count += 1
 
     def doActualJob(self, args):
         pass

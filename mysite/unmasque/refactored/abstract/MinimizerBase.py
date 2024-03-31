@@ -1,6 +1,4 @@
 from .AppExtractorBase import AppExtractorBase
-from ..util.common_queries import create_view_as_select_star_where_ctid, drop_view, alter_table_rename_to, \
-    get_ctid_from, create_table_as_select_star_from_ctid, drop_table, get_row_count, create_table_as_select_star_from, get_tabname_4, select_ctid_from_tabname_offset, select_next_ctid
 from ..util.utils import isQ_result_empty
 
 
@@ -50,15 +48,15 @@ class Minimizer(AppExtractorBase):
         else:
             # Take the lower half
             start_ctid = mid_ctid2
-        self.connectionHelper.execute_sql([drop_view(tabname)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
         return end_ctid, start_ctid
 
     def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
-        self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, tabname1)])
         end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
 
         if mid_ctid1 is None:
-            self.connectionHelper.execute_sql([alter_table_rename_to(tabname1, tabname)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname1, tabname)])
             return None, None
 
         self.logger.debug(start_ctid, mid_ctid1, mid_ctid2, end_ctid)
@@ -82,7 +80,7 @@ class Minimizer(AppExtractorBase):
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid
 
     def get_boundary(self, min_or_max, tabname):
-        m_ctid = self.connectionHelper.execute_sql_fetchone_0(get_ctid_from(min_or_max, tabname))
+        m_ctid = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_ctid_from(min_or_max, tabname))
         m_ctid = m_ctid[1:-1]
         m_ctid2 = m_ctid.split(",")
         row = int(m_ctid2[1])
@@ -91,9 +89,9 @@ class Minimizer(AppExtractorBase):
 
     def check_result_for_half(self, start_ctid, end_ctid, tab, view, query):
         self.connectionHelper.execute_sql(
-            [create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
+            [self.connectionHelper.queries.create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
         new_result = self.app.doJob(query)
-        self.connectionHelper.execute_sql([drop_view(view)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(view)])
         if not isQ_result_empty(new_result):
             return True  # this half works
         return False  # this half does not work
@@ -101,21 +99,21 @@ class Minimizer(AppExtractorBase):
     def update_with_remaining_size(self, core_sizes, end_ctid, start_ctid, tabname, tabname1):
         self.logger.debug(start_ctid, end_ctid)
         self.connectionHelper.execute_sql(
-            [create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname, tabname1),
-             drop_table(tabname1)])
-        core_sizes[tabname] = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
+            [self.connectionHelper.queries.create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname, tabname1),
+             self.connectionHelper.queries.drop_table(tabname1)])
+        core_sizes[tabname] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tabname))
         self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
         return core_sizes
 
     def determine_mid_ctid_from_db(self, tabname):
-        count = self.connectionHelper.execute_sql_fetchone_0(get_row_count(tabname))
+        count = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tabname))
         mid_idx = int(count / 2)
         if not mid_idx:
             return None, None
         offset = str(mid_idx - 1)
-        mid_ctid1 = self.connectionHelper.execute_sql_fetchone_0(select_ctid_from_tabname_offset(tabname, offset))
+        mid_ctid1 = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_ctid_from_tabname_offset(tabname, offset))
         self.logger.debug(mid_ctid1)
-        mid_ctid2 = self.connectionHelper.execute_sql_fetchone_0(select_next_ctid(tabname, mid_ctid1))
+        mid_ctid2 = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_next_ctid(tabname, mid_ctid1))
         self.logger.debug(mid_ctid2)
         return mid_ctid1, mid_ctid2
 
@@ -140,7 +138,7 @@ class Minimizer(AppExtractorBase):
     def restore_d_min(self):
         for tab in self.core_relations:
             drop_fn = self.get_drop_fn(tab)
-            self.connectionHelper.execute_sql([create_table_as_select_star_from(get_tabname_4(tab), tab),
-                                               drop_fn(tab), alter_table_rename_to(get_tabname_4(tab), tab)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_as_select_star_from(self.connectionHelper.queries.get_tabname_4(tab), tab),
+                                               drop_fn(tab), self.connectionHelper.queries.alter_table_rename_to(self.connectionHelper.queries.get_tabname_4(tab), tab)])
 
 

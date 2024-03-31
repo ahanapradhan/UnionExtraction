@@ -1,85 +1,40 @@
-import re
-from typing import Literal
-
-from ...util.ConnectionHelper import ConnectionHelper
-from ....refactored.util.common_queries import drop_view, get_restore_name, drop_table, alter_table_rename_to, \
-    get_tabname_1, get_tabname_4, get_tabname_un, get_tabname_nep, drop_table_cascade, get_row_count
-
-
-def get_mutated_names(tab: str) -> list[str]:
-    return [get_tabname_1(tab),
-            get_tabname_4(tab),
-            get_tabname_un(tab),
-            get_tabname_nep(tab),
-            tab + "2",
-            tab + "3"]
+from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 
 
 class TpchSanitizer:
 
-    def __init__(self, connectionHelper: ConnectionHelper):
+    def __init__(self, connectionHelper: AbstractConnectionHelper):
         self.all_relations = []
         self.connectionHelper = connectionHelper
 
     def set_all_relations(self, relations: list[str]):
         self.all_relations.extend(relations)
 
-    def select_query(self, projection_strs, predicate_strs):
-        selections = " and ".join(projection_strs)
-        wheres = " and ".join(predicate_strs)
-        if len(predicate_strs) == 1:
-            wheres = " and " + wheres
-        query = f"Select {selections}  From information_schema.tables " + \
-                f"WHERE table_schema = '{self.connectionHelper.config.schema}' and " \
-                f"TABLE_CATALOG= '{self.connectionHelper.db}' {wheres} ;"
-        query = re.sub(' +', ' ', query)
-        return query
-
-    def is_view_or_table(self, table_or_view_name: str) -> Literal['view', 'table']:
-        # Reference: https://www.postgresql.org/docs/current/infoschema-tables.html
-        check_query = self.select_query(["table_type"], [f" table_name = '{table_or_view_name}'"])
-        res, _ = self.connectionHelper.execute_sql_fetchall(check_query)
-
-        if len(res) > 0:
-            if res[0][0] == 'VIEW':
-                return 'view'
-            else:
-                return 'table'
-
-    def begin_transaction(self):
-        self.connectionHelper.execute_sql(["BEGIN;"])
-
-    def commit_transaction(self):
-        self.connectionHelper.execute_sql(["COMMIT;"])
-
     def sanitize(self):
-        res, desc = self.connectionHelper.execute_sql_fetchall(self.select_query(["count(*)"], []))
-
-        self.begin_transaction()
-        res, desc = self.connectionHelper.execute_sql_fetchall(
-            self.select_query(["SPLIT_PART(table_name, '_', 1) as original_name"],
-                              ["table_name like '%_restore'"]))
-        for row in res:
-            table = row[0]
-            # print(table)
+        self.connectionHelper.begin_transaction()
+        tables = self.connectionHelper.get_all_tables_for_restore()
+        for table in tables:
             self.drop_derived_relations(table)
-
             drop_fn = self.get_drop_fn(table)
-            restore_name = get_restore_name(table)
-            self.connectionHelper.execute_sql([drop_fn(table), alter_table_rename_to(restore_name, table)])
+            restore_name = self.connectionHelper.queries.get_restore_name(table)
+            self.connectionHelper.execute_sql([drop_fn(table),
+                                               self.connectionHelper.queries.alter_table_rename_to(restore_name, table)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table("temp"),
+                                           self.connectionHelper.queries.drop_view("r_e"),
+                                           self.connectionHelper.queries.drop_table("r_h")])
+        self.connectionHelper.commit_transaction()
 
-            res, _ = self.connectionHelper.execute_sql_fetchall([get_row_count(table)])
-            print(res)
+    def get_drop_fn(self, table):
+        return self.connectionHelper.queries.drop_table_cascade \
+            if self.connectionHelper.is_view_or_table(table) == 'table' else self.connectionHelper.queries.drop_view
 
-        self.connectionHelper.execute_sql([drop_table("temp"),
-                                           drop_view("r_e"), drop_table("r_h")])
-        self.commit_transaction()
-
-    def get_drop_fn(self, table: str):
-        return drop_table_cascade if self.is_view_or_table(table) == 'table' else drop_view
-
-    def drop_derived_relations(self, table: str):
-        derived_objects = get_mutated_names(table)
+    def drop_derived_relations(self, table):
+        derived_objects = [self.connectionHelper.queries.get_tabname_1(table),
+                           self.connectionHelper.queries.get_tabname_4(table),
+                           self.connectionHelper.queries.get_tabname_un(table),
+                           self.connectionHelper.queries.get_tabname_nep(table),
+                           table + "2",
+                           table + "3"]
         drop_fns = [self.get_drop_fn(tab) for tab in derived_objects]
         for n in range(len(derived_objects)):
             drop_object = derived_objects[n]

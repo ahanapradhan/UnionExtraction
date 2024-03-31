@@ -152,7 +152,7 @@ class MyTestCase(BaseTestCase):
 
         check = agg.doJob(queries.Q3)
         self.assertTrue(check)
-        print("Agg List",agg.global_aggregated_attributes)
+        print("Agg List", agg.global_aggregated_attributes)
 
         self.assertEqual(4, len(agg.global_aggregated_attributes))
 
@@ -333,7 +333,6 @@ class MyTestCase(BaseTestCase):
                        'o_totalprice*l_extendedprice*l_discount'],
                   [], []]
         agg = Aggregation(self.conn, join_graph, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
-
         agg.mock = True
 
         check = agg.doJob(queries.Q3_2)
@@ -352,7 +351,7 @@ class MyTestCase(BaseTestCase):
                 sum_count += 1
             elif agtuple[1] == 'Avg':
                 avg_count += 1
-        self.assertEqual(count, 1)  
+        self.assertEqual(count, 1)
         self.assertEqual(sum_count, 1)
         self.assertEqual(avg_count, 0)
 

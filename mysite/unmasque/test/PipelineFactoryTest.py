@@ -5,7 +5,8 @@ from time import sleep
 from mysite.unmasque import views
 from mysite.unmasque.src.pipeline.PipeLineFactory import PipeLineFactory
 from mysite.unmasque.src.pipeline.abstract.generic_pipeline import GenericPipeLine
-from mysite.unmasque.src.util.ConnectionHelper import ConnectionHelper
+from mysite.unmasque.src.util.PostgresConnectionHelper import PostgresConnectionHelper
+from mysite.unmasque.src.util.configParser import Config
 from mysite.unmasque.src.util.constants import START, WAITING, RUNNING, DONE
 
 EXTRACTION_TIME = 10
@@ -64,7 +65,7 @@ class MockRequest:
 
 class MyTestCase(unittest.TestCase):
     timeout = EXTRACTION_TIME * NUM_THREADS + 1
-    connHelper = ConnectionHelper()
+    connHelper = PostgresConnectionHelper(Config())
 
     def test_state_changes(self):
         req = MockRequest()
@@ -102,6 +103,7 @@ class MyTestCase(unittest.TestCase):
         for i in range(len(observed)):
             # print(i, i % NUM_THREADS)
             self.assertEqual(observed[i], factory.pipeline.state_sequence[i % len(factory.pipeline.state_sequence)])
+
 
 
 if __name__ == '__main__':

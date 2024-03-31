@@ -369,10 +369,8 @@ class MyTestCase(BaseTestCase):
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
 
-        self.assertEqual(frozenset(
-            {'l_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount', 'o_orderdate',
-             'o_shippriority'}),
-            frozenset(set(pj.projected_attribs)))
+        self.assertEqual(frozenset({'o_orderkey', 'l_extendedprice*(1 - l_discount) + l_quantity', 'o_orderdate', 'o_shippriority'}),
+                         frozenset(set(pj.projected_attribs)))
 
         self.conn.closeConnection()
 

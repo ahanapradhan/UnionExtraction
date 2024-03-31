@@ -8,12 +8,11 @@ def create_zero_time_profile():
 
 
 class ElapsedTime:
-
-    clause_keys = ["From\n Clause:",
-                   "Union\n Detection:",
-                   "Correlated\n Sampling:",
-                   "View\n Minimization:",
-                   "Where\n Clause:",
+    clause_keys = ["From Clause:",
+                   "Union:",
+                   "Correlated Sampling:",
+                   "View Minimization:",
+                   "Where Clause:",
                    "Projection:",
                    "Group BY:",
                    "Aggregation:",

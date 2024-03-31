@@ -1,8 +1,6 @@
 from ..mocks.database import Schema
 from ...refactored.abstract.AppExtractorBase import AppExtractorBase
 from ...refactored.from_clause import FromClause
-from ...refactored.util.common_queries import alter_table_rename_to, create_table_like, drop_table, \
-    get_tabname_1
 from ...refactored.util.utils import isQ_result_empty
 
 
@@ -25,18 +23,18 @@ class UnionFromClause(Schema, AppExtractorBase):
         self.to_nullify = s_set.difference(self.comtabs)
         self.logger.debug("to nullify " + str(self.to_nullify))
         for tab in self.to_nullify:
-            self.connectionHelper.execute_sql([alter_table_rename_to(tab, get_tabname_1(tab)),
-                                               create_table_like(tab, get_tabname_1(tab))])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, self.connectionHelper.queries.get_tabname_1(tab)),
+                                               self.connectionHelper.queries.create_table_like(tab, self.connectionHelper.queries.get_tabname_1(tab))])
 
     def run_query(self, QH):
-        self.app_calls += 1
+        # self.app_calls += 1
         return self.app.doJob(QH)
 
     def revert_nullify(self):
         for tab in self.to_nullify:
-            self.connectionHelper.execute_sql([drop_table(tab),
-                                               alter_table_rename_to(get_tabname_1(tab), tab),
-                                               drop_table(get_tabname_1(tab))])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
+                                               self.connectionHelper.queries.alter_table_rename_to(self.connectionHelper.queries.get_tabname_1(tab), tab),
+                                               self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_1(tab))])
 
     def get_partial_QH(self, QH):
         return self.doJob(QH)
@@ -56,12 +54,12 @@ class UnionFromClause(Schema, AppExtractorBase):
 
     def get_fromTabs(self, QH):
         if self.fromtabs is None:
-            self.fromtabs = self.fromClause.doJob(QH, "error")
+            self.fromtabs = self.fromClause.doJob(QH, FromClause.TYPE_ERROR)
         self.logger.debug(str(self.fromtabs))
         return self.fromtabs
 
     def get_comTabs(self, QH):
         if self.comtabs is None:
-            self.comtabs = self.fromClause.doJob(QH, "rename")
+            self.comtabs = self.fromClause.doJob(QH, FromClause.TYPE_RENAME)
         return self.comtabs
 

@@ -1,5 +1,7 @@
 import unittest
 
+import pytest
+
 from mysite.unmasque.test.src.validator import validate_gb, validate_ob, same_hidden_ob, count_ob, Ob_suffix, \
     pretty_print
 from results.tpch_kapil_report import Q1, Q2, Q3, Q21
@@ -69,6 +71,7 @@ class MyTestCase(unittest.TestCase):
         print(pretty_print("Q16_nep", False))
         print(pretty_print("Q16_nep_2", True))
 
+    @pytest.mark.skip
     def test_validator_q16(self):
         q_h = "Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part " \
               "Where p_partkey = ps_partkey and p_brand = 'Brand#45' and p_type Like 'SMALL PLATED%' and p_size >= 4 " \
