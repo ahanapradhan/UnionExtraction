@@ -3,6 +3,7 @@ from ..core.union import Union
 
 from ..util.constants import UNION, START, DONE, RUNNING, FROM_CLAUSE
 
+
 class UnionPipeLine(ExtractionPipeLine):
 
     def __init__(self, connectionHelper):
@@ -11,7 +12,6 @@ class UnionPipeLine(ExtractionPipeLine):
         self.name = "Union PipeLine"
         self.pipeLineError = False
         self.errorState = ""
-        # self.spjagoal_pipeline = ExtractionPipeLine(self.connectionHelper)
 
     def extract(self, query):
         # opening and closing connection actions are vital.
@@ -82,20 +82,25 @@ class UnionPipeLine(ExtractionPipeLine):
 
     def nullify_relations(self, relations):
         for tab in relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, self.connectionHelper.queries.get_tabname_un(tab)),
-                                               self.connectionHelper.queries.create_table_like(tab, self.connectionHelper.queries.get_tabname_un(tab))])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab,
+                                                                                                   self.connectionHelper.queries.get_tabname_un(
+                                                                                                       tab)),
+                                               self.connectionHelper.queries.create_table_like(tab,
+                                                                                               self.connectionHelper.queries.get_tabname_un(
+                                                                                                   tab))])
 
     def revert_nullifications(self, relations):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
-                                               self.connectionHelper.queries.alter_table_rename_to(self.connectionHelper.queries.get_tabname_un(tab), tab),
-                                               self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_un(tab))])
+                                               self.connectionHelper.queries.alter_table_rename_to(
+                                                   self.connectionHelper.queries.get_tabname_un(tab), tab),
+                                               self.connectionHelper.queries.drop_table(
+                                                   self.connectionHelper.queries.get_tabname_un(tab))])
 
     def revert_sideEffects(self, relations):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
-                                               self.connectionHelper.queries.alter_table_rename_to(self.connectionHelper.queries.get_restore_name(tab), tab),
-                                               self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_4(tab))])
-
-    # def get_state(self):
-    #    return super().get_state()
+                                               self.connectionHelper.queries.alter_table_rename_to(
+                                                   self.connectionHelper.queries.get_restore_name(tab), tab),
+                                               self.connectionHelper.queries.drop_table(
+                                                   self.connectionHelper.queries.get_tabname_4(tab))])

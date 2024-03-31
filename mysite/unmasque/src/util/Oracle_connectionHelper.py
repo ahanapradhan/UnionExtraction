@@ -5,7 +5,7 @@ from ...refactored.util.oracle_queries import OracleQueries
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 import oracledb as cx_Oracle
 
-from mysite.unmasque.src.util.constants import OK
+from ...src.util.constants import OK
 
 
 class OracleConnectionHelper(AbstractConnectionHelper):

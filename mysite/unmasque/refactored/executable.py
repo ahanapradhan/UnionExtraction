@@ -40,7 +40,6 @@ class Executable(Base):
             if res is not None:
                 result = get_result_as_tuple_1(res, result)
             if is_error(description):
-                self.method_call_count += 1
                 raise Exception(REL_ERROR)
 
         except Exception as error:

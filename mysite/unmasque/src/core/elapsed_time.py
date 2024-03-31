@@ -9,7 +9,7 @@ def create_zero_time_profile():
 
 class ElapsedTime:
     clause_keys = ["From Clause:",
-                   "Union Detection:",
+                   "Union:",
                    "Correlated Sampling:",
                    "View Minimization:",
                    "Where Clause:",
