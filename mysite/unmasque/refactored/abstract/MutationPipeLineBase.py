@@ -1,15 +1,13 @@
 import copy
 from _decimal import Decimal
 
-import psycopg2
-
 from .AppExtractorBase import AppExtractorBase
-from ...src.util.ConnectionHelper import ConnectionHelper
+from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 
 
 class MutationPipeLineBase(AppExtractorBase):
 
-    def __init__(self, connectionHelper: ConnectionHelper,
+    def __init__(self, connectionHelper: AbstractConnectionHelper,
                  core_relations: list[str],
                  global_min_instance_dict: dict,
                  name: str):
@@ -19,13 +17,6 @@ class MutationPipeLineBase(AppExtractorBase):
         # from view minimizer
         self.global_min_instance_dict = copy.deepcopy(global_min_instance_dict)
         self.mock = False
-
-    # def doJob(self, args):
-    #    super().doJob(args)
-    #    if not self.mock:
-    #        self.restore_d_min()
-    # self.see_d_min()
-    #    return self.result
 
     def see_d_min(self):
         self.logger.debug("======================")
@@ -52,7 +43,7 @@ class MutationPipeLineBase(AppExtractorBase):
         try:
             res, des = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.select_attribs_from_relation([attrib], tab))
             val = res[0][0]
-        except psycopg2.Error:
+        except ValueError:
             data_problem = True
             pass
         except IndexError:

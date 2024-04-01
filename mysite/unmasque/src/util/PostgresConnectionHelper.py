@@ -85,6 +85,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
                 logger.error(e)
                 logger.error(e.diag.message_detail)
             des = str(e)
+            raise ValueError
         return res, des
 
     def get_DictCursor(self):

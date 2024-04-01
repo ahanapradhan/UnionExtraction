@@ -108,25 +108,6 @@ class MyTestCase(BaseTestCase):
         self.global_min_instance_dict = None
         self.global_attrib_types_dict = {}
 
-    def get_dmin_val(self, attrib, tab):
-        values = self.global_min_instance_dict[tab]
-        attribs, vals = values[0], values[1]
-        attrib_idx = attribs.index(attrib)
-        val = vals[attrib_idx]
-        return val
-
-    def get_datatype(self, tab_attrib):
-        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer']):
-            return 'int'
-        elif 'date' in self.global_attrib_types_dict[tab_attrib]:
-            return 'date'
-        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit']):
-            return 'str'
-        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
-            return 'numeric'
-        else:
-            raise ValueError
-
     def setUp(self):
         super().setUp()
         self.conn.connectUsingParams()

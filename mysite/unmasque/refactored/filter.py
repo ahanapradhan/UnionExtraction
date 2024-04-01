@@ -4,7 +4,7 @@ import math
 from .abstract.MutationPipeLineBase import MutationPipeLineBase
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
     get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff, is_int
-from ..src.util.ConnectionHelper import ConnectionHelper
+from ..src.core.abstract.abstractConnection import AbstractConnectionHelper
 
 
 def parse_for_int(val):
@@ -30,7 +30,7 @@ def round_floor(num, places):
 
 class Filter(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: ConnectionHelper,
+    def __init__(self, connectionHelper: AbstractConnectionHelper,
                  core_relations: list[str],
                  global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Filter")

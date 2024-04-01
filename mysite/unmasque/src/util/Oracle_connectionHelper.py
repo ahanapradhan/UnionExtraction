@@ -64,6 +64,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
             if logger is not None:
                 logger.error(e)
             des = str(e)
+            raise ValueError
         return res, des
 
     def get_DictCursor(self):
