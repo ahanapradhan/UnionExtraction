@@ -2,7 +2,7 @@ import copy
 
 from .util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char, isQ_result_empty
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ..src.util.constants import COUNT, COUNT_STAR, NO_ORDER, SUM
+from ..src.util.constants import COUNT, NO_ORDER, SUM
 
 
 class CandidateAttribute:

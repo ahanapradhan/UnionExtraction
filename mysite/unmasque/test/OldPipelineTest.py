@@ -51,38 +51,6 @@ class MyTestCase(BaseTestCase):
             print(eq)
         # self.assertTrue(eq is not None)
 
-    def test_all_sample_queries(self):
-        '''
-        Q_keys = queries.queries_dict.keys()
-        f = open("experiment_results.txt", "w")
-        q_no = 1
-        for q_key in Q_keys:
-            self.conn.connectUsingParams()
-            from_rels = tpchSettings.from_rels[q_key]
-            query = queries.queries_dict[q_key]
-            app = Executable(self.conn)
-            result = app.doJob(query)
-            if isQ_result_empty(result):
-                print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                      "query!")
-                continue
-            f.write("\n" + str(q_no) + ":")
-            f.write("\tHidden Query:\n")
-            f.write(query)
-            eq, _ = self.pipeline.after_from_clause_extract(query, tpchSettings.relations, from_rels,
-                                                            tpchSettings.key_lists)
-            f.write("\n*** Extracted Query:\n")
-            if eq is None:
-                f.write("Extraction Failed!")
-            else:
-                f.write(eq)
-            f.write("\n---------------------------------------\n")
-            q_no += 1
-            self.conn.closeConnection()
-
-        f.close()
-        '''
-
 
 if __name__ == '__main__':
     # Create a test suite

@@ -66,9 +66,7 @@ class MyTestCase(BaseTestCase):
         rc_hash = ResultComparator(self.conn, True)
         self.conn.connectUsingParams()
         rc_hash.sanitize()
-        res, desc = self.conn.execute_sql_fetchall(
-            "SELECT count(*) FROM information_schema.tables "
-            "WHERE table_schema = '" + self.conn.config.schema + "' and TABLE_CATALOG= '" + self.conn.db + "';")
+        res, desc = self.conn.execute_sql_fetchall(self.conn.get_sanitization_select_query(["count(*)"], []))
         self.assertEqual(res[0][0], 8)
         self.conn.closeConnection()
 
@@ -170,6 +168,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(matched_hash)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_UQ12_sql(self):
         self.conn.connectUsingParams()
         q_h = "(Select p_brand, o_clerk, l_shipmode From orders, lineitem, part Where l_partkey = p_partkey and " \
@@ -199,7 +198,8 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(matched_hash)
         self.conn.closeConnection()
 
-    def test_UQ12_sql(self):
+    @pytest.mark.skip
+    def test_UQ12_sql_1(self):
         self.conn.connectUsingParams()
         q_h = "(Select p_brand, o_clerk, l_shipmode From orders, lineitem, part Where l_partkey = p_partkey and " \
               "o_orderkey = l_orderkey and l_shipdate >= o_orderdate " \

@@ -30,6 +30,16 @@ class MyTestCase(BaseTestCase):
         print(u_Q)
         self.pipeline.time_profile.print()
 
+    def test_main_cmd_query(self):
+        query = "SELECT c_custkey as order_id, COUNT(*) AS total FROM " \
+                "customer, orders where c_custkey = o_custkey and o_orderdate >= '1995-01-01' GROUP BY c_custkey " \
+                "ORDER BY total ASC LIMIT 10;"
+        u_Q = self.pipeline.doJob(query)
+        self.assertTrue(u_Q is not None)
+        self.assertTrue(self.pipeline.correct)
+        print(u_Q)
+        self.pipeline.time_profile.print()
+
     def test_nonUnion_queries(self):
         Q_keys = queries.queries_dict.keys()
         q_no = 1

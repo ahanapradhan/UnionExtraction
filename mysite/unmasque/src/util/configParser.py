@@ -16,6 +16,7 @@ class Config:
 
     def __init__(self):
         # default values
+        self.database = "postgres"
         self.index_maker = "create_indexes.sql"
         self.pkfk = "pkfkrelations.csv"
         self.schema = "public"
@@ -25,7 +26,7 @@ class Config:
         self.user = "postgres"
         self.host = "localhost"
         self.log_level = 'INFO'
-        self.base_path = None
+        self.base_path = Path(__file__).parent.parent.parent.parent
         self.config_loaded = False
         self.detect_union = False
         self.detect_nep = False
@@ -36,7 +37,6 @@ class Config:
             return
 
         try:
-            self.base_path = Path(__file__).parent.parent.parent.parent
             config_file = (self.base_path / "config.ini").resolve()
             config_object = configparser.ConfigParser()
             with open(config_file, "r") as file_object:

@@ -1,14 +1,14 @@
 import signal
 import sys
 
+from ..src.util.ConnectionFactory import ConnectionHelperFactory
 from .pipeline.PipeLineFactory import PipeLineFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
-from .util.ConnectionHelper import ConnectionHelper
 
 
 def signal_handler(signum, frame):
     print('You pressed Ctrl+C!')
-    sigconn = ConnectionHelper()
+    sigconn = ConnectionHelperFactory().createConnectionHelper()
     sigconn.connectUsingParams()
     sanitizer = TpchSanitizer(sigconn)
     sanitizer.sanitize()
@@ -31,12 +31,17 @@ if __name__ == '__main__':
     hq = "select l_orderkey, sum(l_extendedprice*(1 - l_discount) - o_totalprice) as revenue, o_orderdate, " \
          "o_shippriority  from customer, orders, " \
          "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate " \
-         "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
+         "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by " \
+         "revenue " \
          "desc, o_orderdate limit 10;"
+
+    hq = "SELECT c_custkey as order_id, COUNT(*) AS total FROM " \
+         "customer, orders where c_custkey = o_custkey and o_orderdate >= '1995-01-01' GROUP BY c_custkey " \
+         "ORDER BY total ASC LIMIT 10;"
 
     # hq = "select c_name from customer UNION ALL select s_name from supplier UNION ALL select n_name from nation;"
 
-    conn = ConnectionHelper()
+    conn = ConnectionHelperFactory().createConnectionHelper()
     conn.config.detect_union = False
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)

@@ -34,6 +34,8 @@ pr_max = 999
 
 max_str_len = 500
 
+OK = "OK"
+
 DATABASE_SECTION = "database"
 SUPPORT_SECTION = "support"
 LOGGING_SECTION = "logging"

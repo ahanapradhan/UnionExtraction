@@ -1,5 +1,6 @@
 import csv
 import os.path
+import pathlib
 
 from ..refactored.abstract.ExtractorBase import Base
 
@@ -8,17 +9,19 @@ class Initiator(Base):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Initiator")
-        self.resource_path = connectionHelper.config.base_path
+        # Ensure base_path is correctly set in the configuration
+        base_path = connectionHelper.config.base_path
+        if base_path is None:
+            raise ValueError("base_path in configuration cannot be None")
+        # Convert base_path to a Path object if it's not already one
+        self.resource_path = pathlib.Path(base_path) if not isinstance(base_path, pathlib.Path) else base_path
         self.pkfk_file_path = (self.resource_path / connectionHelper.config.pkfk).resolve()
-        self.create_index_filepath = (self.resource_path / connectionHelper.config.index_maker).resolve()
         self.schema = connectionHelper.config.schema
-        self.global_index_dict = {}
         self.global_key_lists = [[]]
         self.global_pk_dict = {}
         self.error = None
 
     def reset(self):
-        self.global_index_dict = {}
         self.global_key_lists = [[]]
         self.global_pk_dict = {}
         self.all_relations = []
@@ -26,45 +29,22 @@ class Initiator(Base):
 
     def verify_support_files(self):
         check_pkfk = os.path.isfile(self.pkfk_file_path)
-        check_idx = os.path.isfile(self.create_index_filepath)
-        if (not check_idx) or (not check_pkfk):
+        if not check_pkfk:
             self.logger.error("Unmasque Error: \n Support File Not Accessible. ")
-        return check_pkfk and check_idx
+        return check_pkfk
 
     def doActualJob(self, args):
-        self.logger.debug("inside -- initialization.initialization")
-        # self.sanitize()
-
-        self.logger.info("sanitized!")
         self.reset()
-
         check = self.verify_support_files()
         self.logger.info("support files verified..")
-
         if not check:
             return False
-
         all_pkfk = self.get_all_pkfk()
-
         self.make_pkfk_complete_graph(all_pkfk)
-
         self.do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
-
-        self.make_index_dict()
-        self.logger.info("index dict done..!")
-
         self.sanitize()
         return True
-
-    def make_index_dict(self):
-        # GET INDEXES
-        self.global_index_dict = {elt: [] for elt in self.all_relations}
-        with open(self.create_index_filepath, 'rt') as f:
-            for row in f:
-                for elt in self.all_relations:
-                    if str(row).find(str(elt.upper() + "_")) >= 0:
-                        self.global_index_dict[elt].append(str(row.split()[4]))
 
     def do_refinement(self):
         self.global_key_lists = [list(filter(lambda val: val[0] in self.all_relations, elt)) for elt in

@@ -1,4 +1,5 @@
-tpch_query1 = "select count(*) as count_order from lineitem where l_shipdate <= date '1998-12-01' - interval ':1' " \
+tpch_query1 = "select count(*) as count_order, l_returnflag, l_linestatus from lineitem where l_shipdate <= date " \
+              "'1998-12-01' - interval ':1' " \
               "day group by l_returnflag, l_linestatus;"
 
 tpch_query3 = "select c_mktsegment, l_orderkey, sum(l_extendedprice) as revenue, " \

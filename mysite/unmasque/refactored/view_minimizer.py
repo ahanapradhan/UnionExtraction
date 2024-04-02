@@ -1,12 +1,6 @@
-import copy
-
 import pandas as pd
 
 from .abstract.MinimizerBase import Minimizer
-from ..refactored.util.common_queries import alter_table_rename_to, get_min_max_ctid, \
-    drop_table, create_table_as_select_star_from, get_tabname_1, \
-    get_tabname_4, get_star, \
-    get_restore_name
 
 
 def extract_start_and_end_page(logger, rctid):
@@ -72,19 +66,19 @@ class ViewMinimizer(Minimizer):
         core_sizes = self.getCoreSizes()
 
         for tabname in self.core_relations:
-            view_name = get_tabname_1(tabname) if cs_pass else get_restore_name(tabname)
-            self.connectionHelper.execute_sql([alter_table_rename_to(tabname, view_name)])
-            rctid = self.connectionHelper.execute_sql_fetchone(get_min_max_ctid(view_name))
+            view_name = self.connectionHelper.queries.get_tabname_1(tabname) if cs_pass else self.connectionHelper.queries.get_restore_name(tabname)
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, view_name)])
+            rctid = self.connectionHelper.execute_sql_fetchone(self.connectionHelper.queries.get_min_max_ctid(view_name))
             core_sizes = self.do_binary_halving(core_sizes, query, tabname, rctid, view_name)
-            core_sizes = self.do_binary_halving_1(core_sizes, query, tabname, get_tabname_1(tabname))
+            core_sizes = self.do_binary_halving_1(core_sizes, query, tabname, self.connectionHelper.queries.get_tabname_1(tabname))
 
             if not self.sanity_check(query):
                 return False
 
         for tabname in self.core_relations:
-            self.connectionHelper.execute_sql([drop_table(get_tabname_4(tabname)),
-                                               create_table_as_select_star_from(get_tabname_4(tabname), tabname)])
-            res, desc = self.connectionHelper.execute_sql_fetchall(get_star(tabname))
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_4(tabname)),
+                                               self.connectionHelper.queries.create_table_as_select_star_from(self.connectionHelper.queries.get_tabname_4(tabname), tabname)])
+            res, desc = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(tabname))
             self.logger.debug(tabname, "==", res)
 
         if not self.sanity_check(query):
@@ -103,14 +97,8 @@ class ViewMinimizer(Minimizer):
         # POPULATE MIN INSTANCE DICT
         for tabname in self.core_relations:
             self.global_min_instance_dict[tabname] = []
-            sql_query = pd.read_sql_query(get_star(tabname), self.connectionHelper.conn)
+            sql_query = pd.read_sql_query(self.connectionHelper.queries.get_star(tabname), self.connectionHelper.conn)
             df = pd.DataFrame(sql_query)
             self.global_min_instance_dict[tabname].append(tuple(df.columns))
             for index, row in df.iterrows():
                 self.global_min_instance_dict[tabname].append(tuple(row))
-
-        # populate other data
-        new_result = self.app.doJob(query)
-        self.global_result_dict['min'] = copy.deepcopy(new_result)
-        self.local_other_info_dict['Result Cardinality'] = str(len(new_result) - 1)
-        self.global_other_info_dict['min'] = copy.deepcopy(self.local_other_info_dict)
