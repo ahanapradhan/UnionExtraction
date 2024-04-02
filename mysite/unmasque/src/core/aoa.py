@@ -20,6 +20,16 @@ from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab
     find_concrete_bound_from_filter_bounds
 
 
+def check_redundancy(fl_list, a_ineq):
+    for pred in fl_list:
+        if get_tab(a_ineq) == get_tab(pred) \
+                and get_attrib(a_ineq) == get_attrib(pred) \
+                and get_UB(a_ineq) == get_UB(pred) \
+                and get_LB(a_ineq) == get_LB(pred):
+            return True
+    return False
+
+
 class AlgebraicPredicate(MutationPipeLineBase):
     SUPPORTED_DATATYPES = ['int', 'date', 'numeric', 'NUMBER']
 
@@ -53,8 +63,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
         query = self.extract_params_from_args(args)
         self.init_constants()
         check = self.filter_extractor.doJob(query)
-        print(self.filter_extractor.filter_predicates)
         if check:
+            # self.restore_d_min_from_dict()
             self.extract_aoa(query)
         self.post_process_for_generation_pipeline(query)
         return True
@@ -403,8 +413,10 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 pred_op += f"LIKE {get_format(datatype, a_ineq[3])}"
             else:
                 pred_op = handle_range_preds(datatype, a_ineq, pred_op)
-            predicates.append(pred_op)
-            self.filter_predicates.append(a_ineq)
+            red = check_redundancy(self.filter_predicates, a_ineq)
+            if not red:
+                predicates.append(pred_op)
+                self.filter_predicates.append(a_ineq)
         for aoa in self.aoa_predicates:
             pred = []
             add_pred_for(aoa[0], pred)
@@ -555,7 +567,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
         prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
                                                            datatype)
-        print(filter_attribs)
         if len(filter_attribs) > 0:
             if get_op(filter_attribs[0]) in ['=', 'equal']:
                 return False

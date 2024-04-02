@@ -43,12 +43,12 @@ class MyTestCase(unittest.TestCase):
         self.conn.closeConnection()
 
     def test_oracle_connection_aoa(self):
-        query = 'SELECT n_name, r_name FROM tpch.nation NATURAL JOIN tpch.region WHERE n_nationkey = 1'
+        query = 'SELECT n_name, r_name FROM tpch.nation NATURAL JOIN tpch.region WHERE n_nationkey = 13'
         self.conn.connectUsingParams()
         self.conn.execute_sql(["ALTER SESSION SET CURRENT_SCHEMA = tpch"])
         res = self.conn.execute_sql_fetchall(query)
         self.assertTrue(res)
-        print(res)
+        #print(res)
         core_rels = ['nation', 'region']
         global_min_instance_dict = {'nation': [
             ('N_NATIONKEY', 'N_NAME', 'R_REGIONKEY', 'N_COMMENT'),
@@ -59,9 +59,10 @@ class MyTestCase(unittest.TestCase):
         aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
-        print(aoa.join_graph)
+        #print(aoa.join_graph)
         self.assertTrue(check)
         print(aoa.where_clause)
+        #print(aoa.filter_predicates)
         self.conn.closeConnection()
 
 

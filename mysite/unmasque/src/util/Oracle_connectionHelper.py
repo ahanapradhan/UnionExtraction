@@ -73,7 +73,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
     def cus_execute_sqls(self, cur, sqls, logger=None):
         # print(cur)
         for sql in sqls:
-            print("..cur execute.." + sql)
+            # print("..cur execute.." + sql)
             try:
                 cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
                 cur.execute(sql)

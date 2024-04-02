@@ -31,7 +31,7 @@ class OracleQueries(CommonQueries):
         return f"SELECT COUNT(*) FROM {tab}"
 
     def get_star(self, tab):
-        return f"SELECT * FROM {tab}"
+        return f"SELECT * FROM {self.schema}.{tab}"
 
     def get_star_from_except_all_get_star_from(self, tab1, tab2):
         return f"SELECT * FROM {tab1} MINUS SELECT * FROM {tab2}"
@@ -70,7 +70,6 @@ class OracleQueries(CommonQueries):
     def form_update_query_with_value(self, update_string, datatype, val):
         update_val = get_format(datatype, val)
         query = f"{update_string} {update_val}"
-        print(query)
         return query
 
     def update_tab_attrib_with_quoted_value(self, tab, attrib, value):
