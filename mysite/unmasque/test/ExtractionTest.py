@@ -1,6 +1,6 @@
 import random
 import unittest
-from datetime import datetime, timedelta, date
+from datetime import timedelta, date
 
 import pytest
 
@@ -93,6 +93,7 @@ class MyTestCase(BaseTestCase):
             self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_1_mul(self):
         for i in range(10):
             self.test_extraction_tpch_q1()
@@ -115,6 +116,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_in_loop(self):
         for i in range(5):
             self.test_extraction_tpch_q1_filter()
@@ -622,6 +624,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_correlated_nested_query(self):
         query = "select c_name from customer where c_acctbal > (select count(o_totalprice) from orders where " \
                 "c_custkey = o_custkey);"

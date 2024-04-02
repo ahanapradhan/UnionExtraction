@@ -63,6 +63,7 @@ class OracleQueries(CommonQueries):
         return f"INSERT INTO {tab} ({att_order}) VALUES ({esc_string})"
 
     def update_tab_attrib_with_value(self, attrib, tab, value):
+        print(f"UPDATE {tab} SET {attrib} = {value}")
         return f"UPDATE {tab} SET {attrib} = {value}"
 
     def update_tab_attrib_with_quoted_value(self, tab, attrib, value):
@@ -75,8 +76,9 @@ class OracleQueries(CommonQueries):
         return f"SELECT column_name, data_type, data_length FROM all_tab_columns WHERE table_name = UPPER('{tab}') AND owner = UPPER('{schema}')"
 
     def select_attribs_from_relation(self, tab_attribs, relation):
-        attribs = ", ".join(tab_attribs)
-        return f"SELECT {attribs} FROM {relation}"
+        upper_attribs = [attrib.upper() for attrib in tab_attribs]
+        attribs = ", ".join(upper_attribs)
+        return f"SELECT {attribs} FROM {relation.upper()}"
 
     def insert_into_tab_select_star_fromtab(self, tab, fromtab):
         return f"INSERT INTO {tab} SELECT * FROM {fromtab}"

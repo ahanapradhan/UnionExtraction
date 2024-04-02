@@ -1,10 +1,10 @@
 import unittest
 
-from mysite.unmasque.refactored.equi_join import EquiJoin
-from mysite.unmasque.refactored.filter import Filter
-from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
-from mysite.unmasque.test.util import queries, tpchSettings
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from ..refactored.equi_join import EquiJoin
+from ..refactored.filter import Filter
+from ..refactored.view_minimizer import ViewMinimizer
+from ..test.util import queries, tpchSettings
+from ..test.util.BaseTestCase import BaseTestCase
 
 
 class MyTestCase(BaseTestCase):

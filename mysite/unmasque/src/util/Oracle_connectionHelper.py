@@ -54,7 +54,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         res = None
         des = None
         cur = self.get_cursor()
-        # print("...", sql, "...")
+        cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         try:
             cur.execute(sql)
             res = cur.fetchall()
@@ -64,15 +64,17 @@ class OracleConnectionHelper(AbstractConnectionHelper):
             if logger is not None:
                 logger.error(e)
             des = str(e)
+            print(des)
         return res, des
 
     def get_DictCursor(self):
         return None
 
     def cus_execute_sqls(self, cur, sqls, logger=None):
+        cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         # print(cur)
         for sql in sqls:
-            # print("..cur execute.." + sql)
+            print("..cur execute.." + sql)
             try:
                 if isinstance(sql, str):
                     cur.execute(sql)
@@ -87,6 +89,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         cur.close()
 
     def cur_execute_sql_fetch_one_0(self, cur, sql, logger=None):
+        cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         prev = None
         try:
             cur.execute(sql)
@@ -99,6 +102,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         return prev
 
     def cur_execute_sql_fetch_one(self, cur, sql, logger=None):
+        cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         prev = None
         try:
             cur.execute(sql)

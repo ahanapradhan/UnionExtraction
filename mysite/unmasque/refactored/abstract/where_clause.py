@@ -40,9 +40,11 @@ class WhereClause(MutationPipeLineBase):
 
             self.global_attrib_max_length.update(
                 {(tabname, row[0]): int(str(row[2])) for row in res if is_int(str(row[2]))})
-
+            '''
             res, desc = self.connectionHelper.execute_sql_fetchall(
                 self.connectionHelper.queries.select_attribs_from_relation(tab_attribs, tabname))
             for row in res:
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
+            '''
+
