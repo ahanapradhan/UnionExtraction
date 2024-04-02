@@ -1,17 +1,15 @@
 import copy
 from datetime import date
+from decimal import Decimal
 from typing import Union
 
-from psycopg2._psycopg import Decimal
-
+from .abstract.abstractConnection import AbstractConnectionHelper
 from ...refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
 from ...refactored.filter import Filter, get_constants_for
-from ...refactored.util.common_queries import update_tab_attrib_with_value
 from ...refactored.util.utils import get_min_and_max_val, get_format, get_val_plus_delta, isQ_result_empty, \
     get_mid_val, add_two
 from .QueryStringGenerator import handle_range_preds
 from .dataclass.generation_pipeline_package import PackageForGenPipeline
-from ..util.ConnectionHelper import ConnectionHelper
 from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \
     get_delta, \
     merge_equivalent_paritions, get_all_two_combs, get_val_bound_for_chain, get_min_max_for_chain_bounds, \
@@ -23,9 +21,10 @@ from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab
 
 
 class AlgebraicPredicate(MutationPipeLineBase):
-    SUPPORTED_DATATYPES = ['int', 'date', 'numeric']
+    SUPPORTED_DATATYPES = ['int', 'date', 'numeric', 'NUMBER']
 
-    def __init__(self, connectionHelper: ConnectionHelper, core_relations: list[str], global_min_instance_dict: dict):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list[str],
+                 global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "AlgebraicPredicate")
         self.filter_extractor = Filter(self.connectionHelper, core_relations, global_min_instance_dict)
 
@@ -63,6 +62,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
     def extract_aoa(self, query):
         self.filter_extractor.logger.debug("Filters: ", self.filter_extractor.filter_predicates)
         partition_eq_dict, ineqaoa_preds = self.algo2_preprocessing()
+        self.logger.debug(partition_eq_dict)
         self.algo3_find_eq_joinGraph(query, partition_eq_dict, ineqaoa_preds)
         edge_set_dict = self.algo4_create_edgeSet_E(ineqaoa_preds)
         self.logger.debug("edge_set_dict:", edge_set_dict)
@@ -555,6 +555,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
                                                            datatype)
+        print(filter_attribs)
         if len(filter_attribs) > 0:
             if get_op(filter_attribs[0]) in ['=', 'equal']:
                 return False
@@ -616,9 +617,12 @@ class AlgebraicPredicate(MutationPipeLineBase):
         return val, dmin_val
 
     def mutate_dmin_with_val(self, datatype, t_a, val):
-        self.connectionHelper.execute_sql([update_tab_attrib_with_value(get_attrib(t_a),
-                                                                        get_tab(t_a),
-                                                                        get_format(datatype, val))], self.logger)
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.update_tab_attrib_with_value(get_tab(t_a),
+                                                                                                      get_attrib(t_a),
+                                                                                                      get_format(
+                                                                                                          datatype,
+                                                                                                          val))],
+                                          self.logger)
         self.mutate_filter_global_min_instance_dict(get_tab(t_a),
                                                     get_attrib(t_a), val)
         self.filter_extractor.global_d_plus_value[get_attrib(t_a)] = val

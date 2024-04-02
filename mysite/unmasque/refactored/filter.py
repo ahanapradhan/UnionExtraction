@@ -51,7 +51,8 @@ class Filter(MutationPipeLineBase):
         for tabname in self.core_relations:
 
             res, desc = self.connectionHelper.execute_sql_fetchall(
-                self.connectionHelper.queries.get_column_details_for_table(self.connectionHelper.config.schema, tabname))
+                self.connectionHelper.queries.get_column_details_for_table(self.connectionHelper.config.schema,
+                                                                           tabname))
 
             tab_attribs = []
             tab_attribs.extend(row[0] for row in res)
@@ -69,11 +70,11 @@ class Filter(MutationPipeLineBase):
                     self.global_d_plus_value[attrib] = value
 
     def get_datatype(self, tab_attrib: tuple[str, str]) -> str:
-        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer']):
+        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'INT', 'NUMBER']):
             return 'int'
         elif 'date' in self.global_attrib_types_dict[tab_attrib]:
             return 'date'
-        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit']):
+        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'VARCHAR2']):
             return 'str'
         elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
             return 'numeric'
@@ -84,7 +85,7 @@ class Filter(MutationPipeLineBase):
         query = self.extract_params_from_args(args)
         self.do_init()
         self.filter_predicates = self.get_filter_predicates(query)
-        # self.logger.debug(self.filter_predicates)
+        self.logger.debug(self.filter_predicates)
         return self.filter_predicates
 
     def prepare_attrib_set_for_bulk_mutation(self, attrib_list):
@@ -170,9 +171,9 @@ class Filter(MutationPipeLineBase):
 
     def handle_filter_for_nonTextTypes(self, attrib_list, datatype, filter_attribs,
                                        max_val_domain, min_val_domain, query):
-        if datatype == 'int' or datatype == 'date':
+        if datatype in ['int', 'INT', 'date', 'DATE', 'integer', 'NUMBER']:
             self.handle_point_filter(datatype, filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
-        elif datatype == 'numeric':
+        elif datatype in ['numeric','float']:
             self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         else:
             raise ValueError(" Not Handled! ")
@@ -181,7 +182,8 @@ class Filter(MutationPipeLineBase):
         prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
         for tab_attrib in attrib_list:
             tabname, attrib = tab_attrib[0], tab_attrib[1]
-            self.connectionHelper.execute_sql([f"update {tabname} set {attrib} = {str(val)};"])
+            self.connectionHelper.execute_sql(
+                [self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)])
         new_result = self.app.doJob(query)
         self.revert_filter_changes_in_tabset(attrib_list, prev_values)
         return not isQ_result_empty(new_result)
@@ -443,7 +445,7 @@ class Filter(MutationPipeLineBase):
 
 
 def get_constants_for(datatype):
-    if datatype in ('int', 'date'):
+    if datatype in ('int', 'date', 'NUMBER'):
         while_cut_off = 0
         delta = 1
     elif datatype in ('float', 'numeric'):

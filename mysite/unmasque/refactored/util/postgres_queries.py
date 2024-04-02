@@ -1,7 +1,12 @@
 from .abstract_queries import CommonQueries
+from .utils import get_format
 
 
 class PostgresQueries(CommonQueries):
+    def form_update_query_with_value(self, update_string, datatype, val):
+        update_val = get_format(datatype, val)
+        return f"{update_string} {update_val};"
+
     DEBUG_QUERY = "select pid, state, query from pg_stat_activity where datname = 'tpch';"
     TERMINATE_STUCK_QUERIES = "SELECT pg_terminate_backend(pid);"
 
@@ -63,7 +68,7 @@ class PostgresQueries(CommonQueries):
     def insert_into_tab_attribs_format(self, att_order, esc_string, tab):
         return f"INSERT INTO {tab} {att_order}  VALUES {esc_string}"
 
-    def update_tab_attrib_with_value(self, attrib, tab, value):
+    def update_tab_attrib_with_value(self, tab, attrib, value):
         str_value = str(value)
         return f"UPDATE {tab}  SET {attrib}={str_value};"
 

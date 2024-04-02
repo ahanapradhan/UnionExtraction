@@ -1,40 +1,69 @@
 import unittest
 
-from mysite.unmasque.src.util.Oracle_connectionHelper import OracleConnectionHelper
+from ..src.util.Oracle_connectionHelper import OracleConnectionHelper
 from ..src.core.aoa import AlgebraicPredicate
 
-from mysite.unmasque.src.util.configParser import Config
-
+from ..src.util.configParser import Config
 
 
 class MyTestCase(unittest.TestCase):
+    conn = OracleConnectionHelper(Config())
+
     def test_oracle_connection(self):
-        conn = OracleConnectionHelper(Config())
-        conn.config.database = "oracle"
-        conn.database = "oracle"
-        conn.config.password = "postgres"
-        conn.config.host = "HP-Z4-G4-Workstation"
-        conn.config.port = "1539"
-        conn.config.user = "TPCH"
-        conn.connectUsingParams()
-        res = conn.execute_sql_fetchall("SELECT n_name, r_name FROM tpch.nation, tpch.region WHERE n_nationkey = 1")
+        self.conn.connectUsingParams()
+        self.conn.execute_sql(["ALTER SESSION SET CURRENT_SCHEMA = tpch"])
+        res, des = self.conn.execute_sql_fetchall("""
+            SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH 
+            FROM ALL_TAB_COLUMNS 
+            WHERE TABLE_NAME = 'NATION' and OWNER = 'TPCH'
+        """)
+        self.assertTrue(res)
+
+        print("Columns and Data Types for 'nation' table:")
+        for row in res:
+            print(row)
+            self.assertTrue(row)
+
+        res, des = self.conn.execute_sql_fetchall("""
+                    SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH 
+                    FROM ALL_TAB_COLUMNS 
+                    WHERE TABLE_NAME = 'REGION' and OWNER = 'TPCH'
+                """)
+        self.assertTrue(res)
+
+        print("Columns and Data Types for 'region' table:")
+        for row in res:
+            print(row)
+            self.assertTrue(row)
+
+        query = "SELECT n_name, r_name FROM nation NATURAL JOIN region WHERE n_nationkey = 1"
+        res, _ = self.conn.execute_sql_fetchall(query)
+        print(res)
+        self.assertTrue(res)
+        self.conn.closeConnection()
+
+    def test_oracle_connection_aoa(self):
+        query = 'SELECT n_name, r_name FROM tpch.nation NATURAL JOIN tpch.region WHERE n_nationkey = 1'
+        self.conn.connectUsingParams()
+        self.conn.execute_sql(["ALTER SESSION SET CURRENT_SCHEMA = tpch"])
+        res = self.conn.execute_sql_fetchall(query)
         self.assertTrue(res)
         print(res)
-        query = 'SELECT n_name, r_name FROM tpch.nation, tpch.region WHERE n_nationkey = 1'
-        core_rels = ['tpch.nation', 'tpch.region']
-        global_min_instance_dict = {'tpch.nation': [
-            ('n_nationkey', 'n_name', 'r_regionkey', 'n_comment'),
-            (1, 'ALGERIA', 1, 'embark quickly. bold foxes adapt slyly')],
-            'tpch.region': [('r_regionkey', 'r_name', 'r_comment'),
+        core_rels = ['nation', 'region']
+        global_min_instance_dict = {'nation': [
+            ('N_NATIONKEY', 'N_NAME', 'R_REGIONKEY', 'N_COMMENT'),
+            (13, 'ALGERIA', 1, 'embark quickly. bold foxes adapt slyly')],
+            'region': [('R_REGIONKEY', 'R_NAME', 'R_COMMENT'),
                        (1, 'AFRICA', 'nag efully about the slyly bold instructions. quickly regular pinto beans wake '
                                      'blithely')]}
-        aoa = AlgebraicPredicate(conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         print(aoa.join_graph)
         self.assertTrue(check)
         print(aoa.where_clause)
-        conn.closeConnection()
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

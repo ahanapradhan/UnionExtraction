@@ -54,8 +54,8 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         res = None
         des = None
         cur = self.get_cursor()
-        # print("...", sql, "...")
         try:
+            cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
             cur.execute(sql)
             res = cur.fetchall()
             des = cur.description
@@ -73,23 +73,23 @@ class OracleConnectionHelper(AbstractConnectionHelper):
     def cus_execute_sqls(self, cur, sqls, logger=None):
         # print(cur)
         for sql in sqls:
-            # print("..cur execute.." + sql)
+            print("..cur execute.." + sql)
             try:
-                if isinstance(sql, str):
-                    cur.execute(sql)
-                else:
-                    func = getattr(self.queries, sql[0])
-                    sql_q = func(*sql[1:])
-                    cur.execute(sql_q)
+                cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
+                cur.execute(sql)
+                # cur.execute(f"COMMIT")
             except oracledb.Error as e:
                 if logger is not None:
                     logger.error(e)
+                print(e)
+                raise ValueError
             # print("..done")
         cur.close()
 
     def cur_execute_sql_fetch_one_0(self, cur, sql, logger=None):
         prev = None
         try:
+            cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
             cur.execute(sql)
             prev = cur.fetchone()
             prev = prev[0]
@@ -102,6 +102,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
     def cur_execute_sql_fetch_one(self, cur, sql, logger=None):
         prev = None
         try:
+            cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
             cur.execute(sql)
             prev = cur.fetchone()
             cur.close()

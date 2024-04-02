@@ -1,7 +1,9 @@
 from .abstract_queries import CommonQueries
+from .utils import get_format
 
 
 class OracleQueries(CommonQueries):
+    schema = 'TPCH'
 
     def get_explain_query(self, sql):
         sql = sql.replace(";", "")
@@ -62,21 +64,29 @@ class OracleQueries(CommonQueries):
     def insert_into_tab_attribs_format(self, att_order, esc_string, tab):
         return f"INSERT INTO {tab} ({att_order}) VALUES ({esc_string})"
 
-    def update_tab_attrib_with_value(self, attrib, tab, value):
-        return f"UPDATE {tab} SET {attrib} = {value}"
+    def update_tab_attrib_with_value(self, tab, attrib, value):
+        return f"UPDATE {self.schema}.{tab} SET {attrib} = {value}"
+
+    def form_update_query_with_value(self, update_string, datatype, val):
+        update_val = get_format(datatype, val)
+        query = f"{update_string} {update_val}"
+        print(query)
+        return query
 
     def update_tab_attrib_with_quoted_value(self, tab, attrib, value):
-        return f"UPDATE {tab} SET {attrib} = '{value}'"
+        if not len(value):
+            value = " "
+        return f"UPDATE {self.schema}.{tab} SET {attrib} = '{value}'"
 
     def update_sql_query_tab_attribs(self, tab, attrib):
-        return f"UPDATE {tab} SET {attrib} = "
+        return f"UPDATE {self.schema}.{tab} SET {attrib} = "
 
     def get_column_details_for_table(self, schema, tab):
-        return f"SELECT column_name, data_type, data_length FROM all_tab_columns WHERE table_name = UPPER('{tab}') AND owner = UPPER('{schema}')"
+        return f"SELECT column_name, data_type, data_length FROM all_tab_columns WHERE table_name = '{tab.upper()}' AND owner = '{schema.upper()}'"
 
     def select_attribs_from_relation(self, tab_attribs, relation):
         attribs = ", ".join(tab_attribs)
-        return f"SELECT {attribs} FROM {relation}"
+        return f"SELECT {attribs} FROM {self.schema}.{relation}"
 
     def insert_into_tab_select_star_fromtab(self, tab, fromtab):
         return f"INSERT INTO {tab} SELECT * FROM {fromtab}"

@@ -96,7 +96,7 @@ class CommonQueries(ABC):
         pass
 
     @abstractmethod
-    def update_tab_attrib_with_value(self, attrib, tab, value):
+    def update_tab_attrib_with_value(self, tab, attrib, value):
         pass
 
     @abstractmethod
@@ -107,9 +107,10 @@ class CommonQueries(ABC):
     def update_sql_query_tab_attribs(self, tab, attrib):
         pass
 
+    @abstractmethod
     def form_update_query_with_value(self, update_string, datatype, val):
-        update_val = get_format(datatype, val)
-        return f"{update_string} {update_val};"
+        pass
+
 
     @abstractmethod
     def get_column_details_for_table(self, schema, tab):
