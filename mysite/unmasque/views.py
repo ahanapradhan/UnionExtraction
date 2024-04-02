@@ -1,17 +1,15 @@
-import psycopg2
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
-from psycopg2 import OperationalError
 
 from .src.pipeline.PipeLineFactory import PipeLineFactory
-from .src.util.ConnectionHelper import ConnectionHelper
+from .src.util.ConnectionFactory import ConnectionHelperFactory
 from .src.util.configParser import Config
 from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, \
     FILTER, \
-    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE
+    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK
 
-l = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY,
-     LIMIT, RESULT_COMPARE, DONE]
+ALL_STATES = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION,
+              GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, DONE]
 
 
 # Create your views here.
@@ -24,27 +22,16 @@ def login_view(request):
         port = request.POST.get('port')
         database = request.POST.get('database')
         query = request.POST.get('query')
-        try:
-            c = Config()
-            c.parse_config()
-            print(c)
-            conn = connect_to_db(c.dbname, c.host, c.password, c.port, c.user)
-            print(conn)
-            cur = conn.cursor()
-            try:
-                cur.execute("EXPLAIN " + query)
-            except Exception as e:
-                er = str(e)
-                er = er.replace("\n", "<br/>")
-                error_message = f"Invalid query:\n {er}"
-                conn.close()
-                return render(request, 'unmasque/login.html', {'error_message': error_message})
-            conn.close()
-        except OperationalError:
-            error_message = 'Invalid credentials. Please try again.'
-            return render(request, 'unmasque/login.html', {'error_message': error_message})
+        connHelper = ConnectionHelperFactory().createConnectionHelper()
 
-        connHelper = ConnectionHelper()
+        msg = connHelper.test_connection()
+        if msg != OK:
+            return render(request, 'unmasque/login.html', {'error_message': msg})
+
+        msg = connHelper.validate_query(query)
+        if msg != OK:
+            return render(request, 'unmasque/login.html', {'error_message': msg})
+
         token = start_extraction_pipeline_async(connHelper, query, request)
         return redirect(f'progress/{token}')
 
@@ -133,21 +120,10 @@ def prepare_result_1(query, data, token):
         to_pass.append("Sorry! Could not extract hidden query!")
     print("Time info", tp.get_json_display_string())
     if tp is not None:
-        to_pass.append(tp.get_json_display_string())
+        to_pass.append(tp.get_table_display_string())
     else:
         to_pass.append("Nothing to show!")
     return to_pass
-
-
-def connect_to_db(database, host, password, port, username):
-    connection = psycopg2.connect(
-        database=database,
-        user=username,
-        password=password,
-        host=host,
-        port=port
-    )
-    return connection
 
 
 def result_page(request, token):
@@ -173,7 +149,8 @@ def progress_page(request, token):
     print("Partials", partials, str(token) + 'partials')
     return render(request, 'unmasque/progress.html', {'query': partials[0] if partials else "Not Valid Query",
                                                       'progress_message': partials[1] if partials else "_QNF_",
-                                                      'profiling': 'NA', 'token': token, 'states': l, "start": START,
+                                                      'profiling': 'NA', 'token': token, 'states': ALL_STATES,
+                                                      "start": START,
                                                       "running": RUNNING, "done": DONE})
 
 

@@ -15,7 +15,10 @@ def get_result_as_tuple_1(res, result):
 
 
 def is_error(msg):
-    return RELATION in msg and REL_ERROR in msg
+    if not isinstance(msg, str):
+        return False
+    l_msg = msg.lower()
+    return RELATION.lower() in l_msg and REL_ERROR.lower() in l_msg
 
 
 class Executable(Base):

@@ -121,7 +121,7 @@
             }
         }
         let k = (prev, data) =>{
-            for(let i of STATES.slice(1, STATES.indexOf(curr_state)+1)){
+            for(let i of STATES.slice(1, STATES.indexOf(data.progress_message))){
                 switch(i){
                     case STATES[1]:
 
@@ -214,10 +214,11 @@
             if(curr_state == STATES[0]) return ""
             if(curr_state == STATES[5] && data.state_info[curr_state] != null) return JSON.stringify(data.state_info[curr_state][0])
             if(curr_state == STATES[2]){
-                res = "TABLE\tSAMPLE\tORIGINAL\n"
+                res = "<table class=\"min_tab sample_table\"><tr><th>Table</th><th>Sample</th><th>Original</th></tr>"
                 for(let ele of data.state_info[STATES[1]]){
-                    res += (ele+"\t"+data.state_info[STATES[2]]["sample"][ele] + "\t" + data.state_info[STATES[2]]["size"][ele] + "\n")
+                    res += "<tr>"+("<td>"+ele+"</td><td>"+data.state_info[STATES[2]]["sample"][ele] + "</td><td>" + data.state_info[STATES[2]]["size"][ele] + "</td></tr>")
                 }
+                res += "</table>"
                 return res;
             }            
             return JSON.stringify(data.state_info[curr_state])
@@ -265,7 +266,7 @@
                                 if(i == STATES[3]){
                                     $(".actualInfo").append("<div class=\"innerContainer\"><button class=\"collapsible\">"+ i +"</button><div class=\"content dbmin\">" + getTables(data)+ "</textarea></div>")
                                 }
-                                else if(i == STATES[2]) $(".actualInfo").append("<div class=\"innerContainer\"><button class=\"collapsible\">"+ i +"</button><div class=\"content\"><textarea class=\"state_info\" readonly rows=\"5\" cols=\"100\">"+stateInfoRefine(data, i)+"</textarea></div>")   
+                                else if(i == STATES[2]) $(".actualInfo").append("<div class=\"innerContainer\"><button class=\"collapsible\">"+ i +"</button><div class=\"content\">"+stateInfoRefine(data, i)+"</div>")   
                             }
                             //f()
                             //g()

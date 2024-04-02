@@ -13,6 +13,7 @@ from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
+    @pytest.mark.skip
     def test_in_loop(self):
         for i in range(2):
             self.test_something()

@@ -2,7 +2,9 @@ import unittest
 
 from ..src.util.ConnectionHelper import ConnectionHelper
 from ..refactored.orderby_clause import check_sort_order
+from mysite.unmasque.src.util.configParser import Config
 from ..src.util import utils
+from ..src.util.PostgresConnectionHelper import PostgresConnectionHelper
 
 
 class MyTestCase(unittest.TestCase):
@@ -60,7 +62,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(maxnonNulls, {ab, ad, cd})
 
     def test_oracle_connection(self):
-        conn = ConnectionHelper()
+        conn = PostgresConnectionHelper(Config())
         conn.config.database = "oracle"
         conn.database = "oracle"
         conn.config.password = "postgres"

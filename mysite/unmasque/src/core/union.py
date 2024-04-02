@@ -1,8 +1,6 @@
-from ...refactored.abstract.AppExtractorBase import AppExtractorBase
-from ...refactored.abstract.ExtractorBase import Base
-from ...refactored.executable import Executable
 from . import algorithm1
 from .union_from_clause import UnionFromClause
+from ...refactored.abstract.AppExtractorBase import AppExtractorBase
 
 
 class Union(AppExtractorBase):

@@ -8,15 +8,15 @@ from ..util.common_queries import insert_into_tab_attribs_format, update_tab_att
     update_tab_attrib_with_quoted_value, drop_table, create_table_as_select_star_from_limit_1, alter_table_rename_to, \
     select_attribs_from_relation
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val
+from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
-from ...src.util.ConnectionHelper import ConnectionHelper
 
 NUMBER_TYPES = ['int', 'integer', 'numeric', 'float']
 
 
 class GenerationPipeLineBase(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: ConnectionHelper, name: str, delivery: PackageForGenPipeline):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, delivery: PackageForGenPipeline):
         super().__init__(connectionHelper, delivery.core_relations, delivery.global_min_instance_dict, name)
         self.global_all_attribs = delivery.global_all_attribs
         self.global_attrib_types = delivery.global_attrib_types

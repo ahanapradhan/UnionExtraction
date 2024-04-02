@@ -1,4 +1,3 @@
-from .util.common_queries import hashtext_query
 from ..src.pipeline.abstract.Comparator import Comparator
 
 
@@ -23,8 +22,8 @@ class ResultComparator(Comparator):
         return super().run_diff_queries()
 
     def run_hash_diff_queries(self):
-        len1 = self.connectionHelper.execute_sql_fetchone_0(hashtext_query(self.r_e))
-        len2 = self.connectionHelper.execute_sql_fetchone_0(hashtext_query(self.r_h))
+        len1 = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.hashtext_query(self.r_e))
+        len2 = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.hashtext_query(self.r_h))
         return len1, len2
 
     def insert_data_into_Qh_table(self, res_Qh):

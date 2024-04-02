@@ -1,14 +1,14 @@
 import signal
 import sys
 
+from ..src.util.ConnectionFactory import ConnectionHelperFactory
 from .pipeline.PipeLineFactory import PipeLineFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
-from .util.ConnectionHelper import ConnectionHelper
 
 
 def signal_handler(signum, frame):
     print('You pressed Ctrl+C!')
-    sigconn = ConnectionHelper()
+    sigconn = ConnectionHelperFactory().createConnectionHelper()
     sigconn.connectUsingParams()
     sanitizer = TpchSanitizer(sigconn)
     sanitizer.sanitize()
@@ -35,9 +35,13 @@ if __name__ == '__main__':
          "revenue " \
          "desc, o_orderdate limit 10;"
 
+    hq = "SELECT c_custkey as order_id, COUNT(*) AS total FROM " \
+         "customer, orders where c_custkey = o_custkey and o_orderdate >= '1995-01-01' GROUP BY c_custkey " \
+         "ORDER BY total ASC LIMIT 10;"
+
     # hq = "select c_name from customer UNION ALL select s_name from supplier UNION ALL select n_name from nation;"
 
-    conn = ConnectionHelper()
+    conn = ConnectionHelperFactory().createConnectionHelper()
     conn.config.detect_union = False
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)

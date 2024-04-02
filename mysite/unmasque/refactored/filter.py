@@ -2,12 +2,9 @@ import copy
 import math
 
 from .abstract.MutationPipeLineBase import MutationPipeLineBase
-from .util.common_queries import update_sql_query_tab_attribs, form_update_query_with_value, \
-    update_tab_attrib_with_quoted_value, \
-    select_attribs_from_relation, get_column_details_for_table
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
     get_min_and_max_val, get_format, get_mid_val, is_left_less_than_right_by_cutoff, is_int
-from ..src.util.ConnectionHelper import ConnectionHelper
+from ..src.core.abstract.abstractConnection import AbstractConnectionHelper
 
 
 def parse_for_int(val):
@@ -33,7 +30,7 @@ def round_floor(num, places):
 
 class Filter(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: ConnectionHelper,
+    def __init__(self, connectionHelper: AbstractConnectionHelper,
                  core_relations: list[str],
                  global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Filter")
@@ -54,7 +51,7 @@ class Filter(MutationPipeLineBase):
         for tabname in self.core_relations:
 
             res, desc = self.connectionHelper.execute_sql_fetchall(
-                get_column_details_for_table(self.connectionHelper.config.schema, tabname))
+                self.connectionHelper.queries.get_column_details_for_table(self.connectionHelper.config.schema, tabname))
 
             tab_attribs = []
             tab_attribs.extend(row[0] for row in res)
@@ -66,7 +63,7 @@ class Filter(MutationPipeLineBase):
                 {(tabname, row[0]): int(str(row[2])) for row in res if is_int(str(row[2]))})
 
             res, desc = self.connectionHelper.execute_sql_fetchall(
-                select_attribs_from_relation(tab_attribs, tabname))
+                self.connectionHelper.queries.select_attribs_from_relation(tab_attribs, tabname))
             for row in res:
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
@@ -248,7 +245,7 @@ class Filter(MutationPipeLineBase):
         query_front_set = set()
         for tab_attrib in attrib_list:
             tabname, attrib = tab_attrib[0], tab_attrib[1]
-            query_front = update_sql_query_tab_attribs(tabname, attrib)
+            query_front = self.connectionHelper.queries.update_sql_query_tab_attribs(tabname, attrib)
             query_front_set.add(query_front)
         delta, while_cut_off = get_constants_for(datatype)
 
@@ -289,7 +286,7 @@ class Filter(MutationPipeLineBase):
 
     def run_app_for_a_val(self, datatype, low, query, query_front_set):
         for query_front in query_front_set:
-            low_query = form_update_query_with_value(query_front, datatype, low)
+            low_query = self.connectionHelper.queries.form_update_query_with_value(query_front, datatype, low)
             self.connectionHelper.execute_sql([low_query])
         new_result = self.app.doJob(query)
         return not isQ_result_empty(new_result)
@@ -297,7 +294,7 @@ class Filter(MutationPipeLineBase):
     def run_app_with_mid_val(self, datatype, high, low, query, query_front_set):
         mid_val = get_mid_val(datatype, high, low)
         for q_front in query_front_set:
-            update_query = form_update_query_with_value(q_front, datatype, mid_val)
+            update_query = self.connectionHelper.queries.form_update_query_with_value(q_front, datatype, mid_val)
             self.connectionHelper.execute_sql([update_query])
         new_result = self.app.doJob(query)
         return mid_val, new_result
@@ -438,7 +435,7 @@ class Filter(MutationPipeLineBase):
 
     def run_updateQ_with_temp_str(self, attrib, query, tabname, temp):
         prev_values = self.get_dmin_val_of_attrib_list([(tabname, attrib)])
-        up_query = update_tab_attrib_with_quoted_value(tabname, attrib, temp)
+        up_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
         self.connectionHelper.execute_sql([up_query])
         new_result = self.app.doJob(query)
         self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)

@@ -1,9 +1,6 @@
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
-from .util.common_queries import alter_table_rename_to, create_view_as_select_star_where_ctid, \
-    get_tabname_1, drop_view, drop_table, get_restore_name, create_table_as_select_star_from, \
-    select_attribs_from_relation, select_row_count_from_query
 
 
 class NepComparator(ResultComparator):
@@ -80,21 +77,21 @@ class NEP(Minimizer, GenerationPipeLineBase):
             return nep_exists
 
     def restore_relation(self, table):
-        self.connectionHelper.execute_sql([drop_table(table),
-                                           alter_table_rename_to(get_restore_name(table), table)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(table),
+                                           self.connectionHelper.queries.alter_table_rename_to(self.connectionHelper.queries.get_restore_name(table), table)])
 
     def backup_relation(self, table):
-        self.connectionHelper.execute_sql([drop_table(get_restore_name(table)),
-                                           create_table_as_select_star_from(
-                                               get_restore_name(table), table)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_restore_name(table)),
+                                           self.connectionHelper.queries.create_table_as_select_star_from(
+                                               self.connectionHelper.queries.get_restore_name(table), table)])
 
     def get_nep(self, core_sizes, tabname, query, i, is_for_joined):
-        tabname1 = get_tabname_1(tabname)
+        tabname1 = self.connectionHelper.queries.get_tabname_1(tabname)
         while core_sizes[tabname] > 1:
-            self.connectionHelper.execute_sql([alter_table_rename_to(tabname, tabname1)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, tabname1)])
             end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
             if end_ctid is None:
-                self.connectionHelper.execute_sql([alter_table_rename_to(tabname1, tabname)])
+                self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname1, tabname)])
                 return  # no role on NEP
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
 
@@ -148,18 +145,18 @@ class NEP(Minimizer, GenerationPipeLineBase):
         else:
             self.logger.error("something is wrong!")
             return None, None
-        self.connectionHelper.execute_sql([drop_view(tabname)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
         return end_ctid, start_ctid
 
     def check_result_for_half(self, start_ctid, end_ctid, tab, view, query):
-        self.connectionHelper.execute_sql([drop_view(view),
-                                           create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(view),
+                                           self.connectionHelper.queries.create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
 
         found = self.nep_comparator.match(query, self.Q_E)
         if found:
             return False
-        query_result = self.connectionHelper.execute_sql_fetchone_0(select_row_count_from_query(query))
-        q_e_result = self.connectionHelper.execute_sql_fetchone_0(select_row_count_from_query(self.Q_E))
+        query_result = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_row_count_from_query(query))
+        q_e_result = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_row_count_from_query(self.Q_E))
         self.logger.debug(f"q_e result: {q_e_result}, query result: {query_result}")
         if q_e_result >= 1:
             return True
@@ -205,7 +202,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         single_attribs = [attrib for attrib in attrib_list if attrib not in self.joined_attribs]
         for attrib in single_attribs:
             self.logger.debug(tabname, attrib)
-            prev = self.connectionHelper.execute_sql_fetchone_0(select_attribs_from_relation([attrib], tabname))
+            prev = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
             val = self.get_different_s_val(attrib, tabname, prev)
             self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
             self.update_with_val(attrib, tabname, val)

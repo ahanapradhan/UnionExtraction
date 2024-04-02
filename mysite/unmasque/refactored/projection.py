@@ -7,9 +7,9 @@ from sympy import symbols, expand, collect, nsimplify
 from ..refactored.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ..refactored.util.utils import isQ_result_empty, find_diff_idx, \
     count_empty_lists_in
+from ..src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ..src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ..src.util import constants
-from ..src.util.ConnectionHelper import ConnectionHelper
 
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
@@ -21,7 +21,7 @@ def if_dependencies_found_incomplete(projection_names, projection_dep):
 
 
 class Projection(GenerationPipeLineBase):
-    def __init__(self, connectionHelper: ConnectionHelper, delivery: PackageForGenPipeline):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, delivery: PackageForGenPipeline):
         super().__init__(connectionHelper, "Projection", delivery)
         self.projection_names = None
         self.projected_attribs = None

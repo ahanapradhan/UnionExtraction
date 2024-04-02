@@ -1,8 +1,7 @@
 import time
 
-
+from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.pipeline.abstract.TpchSanitizer import TpchSanitizer
-from ...src.util.ConnectionHelper import ConnectionHelper
 from ...src.util.Log import Log
 
 
@@ -15,7 +14,7 @@ class Base(TpchSanitizer):
             cls._instance = super(Base, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, connectionHelper: ConnectionHelper, name: str):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str):
         super().__init__(connectionHelper)
         self.connectionHelper = connectionHelper
         self.extractor_name = name
@@ -28,12 +27,17 @@ class Base(TpchSanitizer):
 
     def doJob(self, *args):
         self.local_start_time = time.time()
-        self.result = self.doAppCountJob(args)
-        self.local_end_time = time.time()
-        self.local_elapsed_time = self.local_end_time - self.local_start_time
-        self.done = True
-        self.method_call_count += 1
-        return self.result
+        try:
+            self.result = self.doAppCountJob(args)
+        except Exception as e:
+            raise e
+        else:
+            self.done = True
+            return self.result
+        finally:
+            self.local_end_time = time.time()
+            self.local_elapsed_time = self.local_end_time - self.local_start_time
+            self.method_call_count += 1
 
     def doActualJob(self, args):
         pass
