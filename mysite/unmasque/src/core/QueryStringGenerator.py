@@ -2,15 +2,7 @@ import copy
 
 from ..util.constants import COUNT, SUM, max_str_len
 from ...refactored.abstract.AppExtractorBase import AppExtractorBase
-from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val, get_datatype_of_val
-
-
-def add_pred_for(aoa_l, pred):
-    if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
-        pred.append(aoa_l[1])
-    else:
-        pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
-    return aoa_l
+from ...refactored.util.utils import get_format, get_datatype, get_min_and_max_val
 
 
 def refine_aggregates(agg, wc):
@@ -41,9 +33,7 @@ def handle_range_preds(datatype, pred, pred_op):
     elif not min_present and max_present:
         pred_op += " >= " + get_format(datatype, pred[3])
     elif not min_present and not max_present:
-        pred_op += " >= " + get_format(datatype, pred[3]) + " and " + pred[1] + " <= " + get_format(
-            datatype,
-            pred[4])
+        pred_op += f" >= {get_format(datatype, pred[3])} and {pred[0]}.{pred[1]} <= {get_format(datatype,pred[4])}"
     return pred_op
 
 
@@ -402,12 +392,3 @@ class QueryStringGenerator(AppExtractorBase):
 
             index = index + 1
         return output
-
-    def add_aoa_predicates(self, aoa):
-        predicates = []
-        for _aoa in aoa.aoa_predicates:
-            pred = []
-            add_pred_for(_aoa[0], pred)
-            add_pred_for(_aoa[1], pred)
-            predicates.append(" <= ".join(pred))
-        self.where_op += " and ".join(predicates)

@@ -395,7 +395,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
     def generate_where_clause(self) -> None:
         predicates = []
         for eq_join in self.algebraic_eq_predicates:
-            join_edge = list(item[1] for item in eq_join if len(item) == 2)
+            join_edge = list(f"{item[0]}.{item[1]}" for item in eq_join if len(item) == 2)
             join_edge.sort()
             for i in range(0, len(join_edge) - 1):
                 join_e = f"{join_edge[i]} = {join_edge[i + 1]}"
@@ -403,12 +403,12 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 self.join_graph.append([join_edge[i], join_edge[i + 1]])
         for a_eq in self.arithmetic_eq_predicates:
             datatype = self.get_datatype((get_tab(a_eq), get_attrib(a_eq)))
-            pred = f"{get_attrib(a_eq)} = {get_format(datatype, get_LB(a_eq))}"
+            pred = f"{get_tab(a_eq)}.{get_attrib(a_eq)} = {get_format(datatype, get_LB(a_eq))}"
             predicates.append(pred)
             self.filter_predicates.append(a_eq)
         for a_ineq in self.arithmetic_ineq_predicates:
             datatype = self.get_datatype((get_tab(a_ineq), get_attrib(a_ineq)))
-            pred_op = get_attrib(a_ineq) + " "
+            pred_op = f"{get_tab(a_ineq)}.{get_attrib(a_ineq)} "
             if datatype == 'str':
                 pred_op += f"LIKE {get_format(datatype, a_ineq[3])}"
             else:

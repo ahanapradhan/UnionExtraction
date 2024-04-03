@@ -48,7 +48,7 @@ class MyTestCase(unittest.TestCase):
         self.conn.execute_sql(["ALTER SESSION SET CURRENT_SCHEMA = tpch"])
         res = self.conn.execute_sql_fetchall(query)
         self.assertTrue(res)
-        #print(res)
+        # print(res)
         core_rels = ['nation', 'region']
         global_min_instance_dict = {'nation': [
             ('N_NATIONKEY', 'N_NAME', 'R_REGIONKEY', 'N_COMMENT'),
@@ -59,10 +59,10 @@ class MyTestCase(unittest.TestCase):
         aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
-        #print(aoa.join_graph)
+        # print(aoa.join_graph)
         self.assertTrue(check)
         print(aoa.where_clause)
-        #print(aoa.filter_predicates)
+        # print(aoa.filter_predicates)
         self.conn.closeConnection()
 
 

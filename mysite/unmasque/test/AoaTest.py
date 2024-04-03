@@ -236,7 +236,7 @@ class MyTestCase(BaseTestCase):
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
-        print("=======================")
+        print("\n=======================")
         print(aoa.where_clause)
         print("=======================")
         self.assertEqual(len(aoa.algebraic_eq_predicates), 2)
@@ -253,7 +253,6 @@ class MyTestCase(BaseTestCase):
                 self.assertEqual(high, high_val)
         self.assertEqual(len(aoa.aoa_predicates), 1)
         self.assertTrue((('orders', 'o_totalprice'), ('customer', 'c_acctbal')) in aoa.aoa_predicates)
-
         self.conn.closeConnection()
 
     def test_aoa_dev_date_pred(self):

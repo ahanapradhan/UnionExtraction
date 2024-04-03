@@ -23,7 +23,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
     def get_all_tables_for_restore(self):
         res, desc = self.execute_sql_fetchall(
             self.get_sanitization_select_query(["SPLIT_PART(table_name, '_', 1) as original_name"],
-                                                                ["table_name like '%_restore'"]))
+                                               ["table_name like '%_restore'"]))
         tables = [row[0] for row in res]
         return tables
 
@@ -96,14 +96,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
         for sql in sqls:
             # print("..cur execute.." + sql)
             try:
-                if isinstance(sql, str):
-                    print("..cur execute.." + sql)
-                    cur.execute(sql)
-                else:
-                    func = getattr(self.queries, sql[0])
-                    sql_q = func(*sql[1:])
-                    print("..cur execute.." + sql_q)
-                    cur.execute(sql_q)
+                cur.execute(sql)
             except psycopg2.ProgrammingError as e:
                 if logger is not None:
                     logger.error(e)

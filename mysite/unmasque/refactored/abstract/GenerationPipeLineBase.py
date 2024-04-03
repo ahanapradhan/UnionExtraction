@@ -4,9 +4,6 @@ from datetime import date
 from typing import Union
 
 from .MutationPipeLineBase import MutationPipeLineBase
-from ..util.common_queries import insert_into_tab_attribs_format, update_tab_attrib_with_value, \
-    update_tab_attrib_with_quoted_value, drop_table, create_table_as_select_star_from_limit_1, alter_table_rename_to, \
-    select_attribs_from_relation
 from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_format, get_char, get_unused_dummy_val
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
@@ -47,8 +44,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def do_init(self) -> None:
         for tab in self.core_relations:
-            self.connectionHelper.execute_sql([create_table_as_select_star_from_limit_1(f"_{tab}_temp", tab),
-                                               drop_table(tab), alter_table_rename_to(f"_{tab}_temp", tab)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_as_select_star_from_limit_1(f"_{tab}_temp", tab),
+                                               self.connectionHelper.queries.drop_table(tab), self.connectionHelper.queries.alter_table_rename_to(f"_{tab}_temp", tab)])
         self.restore_d_min_from_dict()
         self.see_d_min()
 
@@ -61,14 +58,14 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def insert_attrib_vals_into_table(self, att_order, attrib_list_inner,
                                       insert_rows, tabname_inner, insert_logger=True) -> None:
         esc_string = get_escape_string(attrib_list_inner)
-        insert_query = insert_into_tab_attribs_format(att_order, esc_string, tabname_inner)
+        insert_query = self.connectionHelper.queries.insert_into_tab_attribs_format(att_order, esc_string, tabname_inner)
         if insert_logger:
             self.connectionHelper.execute_sql_with_params(insert_query, insert_rows, self.logger)
         else:
             self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
 
     def update_attrib_in_table(self, attrib, value, tabname) -> None:
-        update_query = update_tab_attrib_with_value(attrib, tabname, value)
+        update_query = self.connectionHelper.queries.update_tab_attrib_with_value(attrib, tabname, value)
         self.connectionHelper.execute_sql([update_query])
 
     def doExtractJob(self, query: str) -> bool:
@@ -91,7 +88,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def update_attrib_to_see_impact(self, attrib: str, tabname: str) \
             -> tuple[Union[int, float, date, str], Union[int, float, date, str]]:
-        prev = self.connectionHelper.execute_sql_fetchone_0(select_attribs_from_relation([attrib], tabname))
+        prev = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
         val = self.get_different_s_val(attrib, tabname, prev)
         self.logger.debug(f"update {tabname}.{ attrib} with value {val} that had previous value {prev}")
         self.update_with_val(attrib, tabname, val)
@@ -100,9 +97,9 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def update_with_val(self, attrib: str, tabname: str, val) -> None:
         datatype = self.get_datatype((tabname, attrib))
         if datatype == 'date' or datatype in NUMBER_TYPES:
-            update_q = update_tab_attrib_with_value(attrib, tabname, get_format(datatype, val))
+            update_q = self.connectionHelper.queries.update_tab_attrib_with_value(attrib, tabname, get_format(datatype, val))
         else:
-            update_q = update_tab_attrib_with_quoted_value(tabname, attrib, val)
+            update_q = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, val)
         self.connectionHelper.execute_sql([update_q])
 
     def get_s_val(self, attrib: str, tabname: str) -> Union[int, float, date, str]:

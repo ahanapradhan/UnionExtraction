@@ -276,7 +276,7 @@ def get_LB_of_next_attrib(ineq_group: list[tuple], c: tuple[str, str]):
 
 def add_pred_for(aoa_l, pred):
     if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
-        pred.append(aoa_l[1])
+        pred.append(f"{aoa_l[0]}.{aoa_l[1]}")
     else:
         pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
     return aoa_l
