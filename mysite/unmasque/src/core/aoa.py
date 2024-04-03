@@ -570,7 +570,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
                                                            datatype)
-        print(filter_attribs)
 
         if len(filter_attribs) > 0:
             if get_op(filter_attribs[0]) in ['=', 'equal']:
