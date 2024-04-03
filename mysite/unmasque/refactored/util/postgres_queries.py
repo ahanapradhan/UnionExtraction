@@ -3,6 +3,9 @@ from .utils import get_format
 
 
 class PostgresQueries(CommonQueries):
+    def create_table_as_select_star_from_limit_1(self, tab, fromtab):
+        return f"Create table {tab} as (Select * from {fromtab} limit 1);"
+
     def form_update_query_with_value(self, update_string, datatype, val):
         update_val = get_format(datatype, val)
         return f"{update_string} {update_val};"

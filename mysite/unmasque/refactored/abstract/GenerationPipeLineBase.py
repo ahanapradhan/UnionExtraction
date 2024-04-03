@@ -45,7 +45,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def do_init(self) -> None:
         for tab in self.core_relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_as_select_star_from_limit_1(f"_{tab}_temp", tab),
-                                               self.connectionHelper.queries.drop_table(tab), self.connectionHelper.queries.alter_table_rename_to(f"_{tab}_temp", tab)])
+                                               self.connectionHelper.queries.drop_table(tab),
+                                               self.connectionHelper.queries.alter_table_rename_to(f"_{tab}_temp", tab)])
         self.restore_d_min_from_dict()
         self.see_d_min()
 
@@ -97,7 +98,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def update_with_val(self, attrib: str, tabname: str, val) -> None:
         datatype = self.get_datatype((tabname, attrib))
         if datatype == 'date' or datatype in NUMBER_TYPES:
-            update_q = self.connectionHelper.queries.update_tab_attrib_with_value(attrib, tabname, get_format(datatype, val))
+            update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, get_format(datatype, val))
         else:
             update_q = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, val)
         self.connectionHelper.execute_sql([update_q])

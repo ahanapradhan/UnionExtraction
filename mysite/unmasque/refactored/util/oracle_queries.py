@@ -3,7 +3,14 @@ from .utils import get_format
 
 
 class OracleQueries(CommonQueries):
-    schema = 'TPCH'
+    schema = None
+
+    def set_schema(self, schema):
+        self.schema = schema
+
+    def create_table_as_select_star_from_limit_1(self, tab, fromtab):
+        pass
+
 
     def get_explain_query(self, sql):
         sql = sql.replace(";", "")

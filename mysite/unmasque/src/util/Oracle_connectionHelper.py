@@ -29,6 +29,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         self.paramString = f'{self.config.user}/{self.config.password}@{self.config.host}:{self.config.port}/{self.config.dbname}'
         self.queries = OracleQueries()
         self.config.config_loaded = True
+        self.queries.set_schema(self.config.schema)
 
     def form_query(self, selections, wheres):
         pass
