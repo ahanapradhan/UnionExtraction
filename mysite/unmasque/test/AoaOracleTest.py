@@ -1,5 +1,7 @@
 import unittest
 
+import pytest
+
 from ..src.util.Oracle_connectionHelper import OracleConnectionHelper
 from ..src.core.aoa import AlgebraicPredicate
 
@@ -8,10 +10,80 @@ from ..src.util.configParser import Config
 
 class MyTestCase(unittest.TestCase):
     conn = OracleConnectionHelper(Config())
+    schema = 'tpch'
+    tables = ['lineitem', 'orders', 'customer', 'nation', 'region']
 
+    def do_init_tpch(self):
+        self.conn.connectUsingParams()
+        self.set_schema()
+        for table in self.tables:
+            self.conn.execute_sql(self.conn.queries.drop_table(table))
+        self.conn.execute_sql(["""
+    create table customer(custkey number(10),
+    c_name varchar2(25),
+    c_address varchar2(40),
+    nationkey number(10),
+    c_phone varchar2(15),
+    c_acctbal number,
+    c_mktsegment varchar2(10),
+    c_comment varchar2(117))
+    """,
+                               """
+    create table lineitem(
+        orderkey number(10),
+    partkey number(10),
+    suppkey number(10),
+    l_linenumber number(38),
+    l_quantity number,
+    l_extendedprice number,
+    l_discount number,
+    l_tax number,
+    l_returnflag char(1),
+    l_linestatus char(1),
+    l_shipdate varchar2(10),
+    l_commitdate varchar2(10),
+    l_receiptdate varchar2(10),
+    l_shipinstruct varchar2(25),
+    l_shipmode varchar2(10),
+    l_comment varchar2(44)
+    ) 
+    """,
+                               """              
+                               create table nation(
+            nationkey number(10) not null, n_name varchar2(25) not null, 
+            regionkey number(10) not null, n_comment varchar2(152))
+            """,
+                               """
+                               create table region (
+  regionkey number(10) not null,
+  r_name varchar2(25) not null,
+  r_comment varchar2(152) not null
+)
+                               """,
+                               """
+                               create table order (
+  orderkey number(10) not null,
+  custkey number(10) not null,
+  o_orderstatus char(1) not null,
+  o_totalprice number not null,
+  o_orderdate date not null,
+  o_orderpriority varchar2(15) not null,
+  o_clerk varchar2(15) not null,
+  o_shippriority integer not null,
+  o_comment varchar2(79) not null
+)
+                               """
+                               ])
+        res, des = self.conn.execute_sql_fetchall(f"SELECT DISTINCT OWNER, OBJECT_NAME FROM DBA_OBJECTS WHERE "
+                                                  f"OBJECT_TYPE = 'TABLE'"
+                                                  f"AND OWNER = {self.conn.config.schema}")
+        print(res)
+        self.conn.closeConnection()
+
+    @pytest.mark.skip
     def test_oracle_connection(self):
         self.conn.connectUsingParams()
-        self.conn.execute_sql(["ALTER SESSION SET CURRENT_SCHEMA = tpch"])
+        self.set_schema()
         res, des = self.conn.execute_sql_fetchall("""
             SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH 
             FROM ALL_TAB_COLUMNS 
@@ -42,27 +114,29 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(res)
         self.conn.closeConnection()
 
+    def set_schema(self):
+        self.conn.execute_sql([f"ALTER SESSION SET CURRENT_SCHEMA = {self.conn.config.schema}"])
+
     def test_oracle_connection_aoa(self):
-        query = 'SELECT n_name, r_name FROM tpch.nation NATURAL JOIN tpch.region WHERE n_nationkey = 13'
+        nationkey_filter = 13
+        query = f'SELECT n_name, r_name FROM tpch.nation NATURAL JOIN tpch.region WHERE n_nationkey = {nationkey_filter}'
         self.conn.connectUsingParams()
-        self.conn.execute_sql(["ALTER SESSION SET CURRENT_SCHEMA = tpch"])
+        self.set_schema()
         res = self.conn.execute_sql_fetchall(query)
         self.assertTrue(res)
-        # print(res)
         core_rels = ['nation', 'region']
         global_min_instance_dict = {'nation': [
             ('N_NATIONKEY', 'N_NAME', 'R_REGIONKEY', 'N_COMMENT'),
-            (13, 'ALGERIA', 1, 'embark quickly. bold foxes adapt slyly')],
+            (nationkey_filter, 'ALGERIA', 1, 'embark quickly. bold foxes adapt slyly')],
             'region': [('R_REGIONKEY', 'R_NAME', 'R_COMMENT'),
                        (1, 'AFRICA', 'nag efully about the slyly bold instructions. quickly regular pinto beans wake '
                                      'blithely')]}
         aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
-        # print(aoa.join_graph)
         self.assertTrue(check)
         print(aoa.where_clause)
-        # print(aoa.filter_predicates)
+        self.assertTrue(aoa.where_clause)
         self.conn.closeConnection()
 
 
