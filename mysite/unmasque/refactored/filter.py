@@ -49,7 +49,6 @@ class Filter(MutationPipeLineBase):
 
     def do_init(self):
         for tabname in self.core_relations:
-
             res, desc = self.connectionHelper.execute_sql_fetchall(
                 self.connectionHelper.queries.get_column_details_for_table(self.connectionHelper.config.schema,
                                                                            tabname))
@@ -58,10 +57,21 @@ class Filter(MutationPipeLineBase):
             tab_attribs.extend(row[0] for row in res)
             self.global_all_attribs.append(copy.deepcopy(tab_attribs))
 
-            self.global_attrib_types.extend((tabname, row[0], row[1]) for row in res)
+            this_attribs = [(tabname, row[0], row[1]) for row in res]
+            self.global_attrib_types.extend(this_attribs)
+
+            for entry in this_attribs:
+                self.global_attrib_types_dict[(entry[0], entry[1])] = entry[2]
 
             self.global_attrib_max_length.update(
                 {(tabname, row[0]): int(str(row[2])) for row in res if is_int(str(row[2]))})
+
+            if self.mock:
+                values = self.global_min_instance_dict[tabname]
+                attribs, vals = values[0], values[1]
+                for i in range(len(attribs)):
+                    attrib, val = attribs[i], vals[i]
+                    self.mutate_dmin_with_val(self.get_datatype((tabname, attrib)), (tabname, attrib), val)
 
             res, desc = self.connectionHelper.execute_sql_fetchall(
                 self.connectionHelper.queries.select_attribs_from_relation(tab_attribs, tabname))
@@ -103,10 +113,6 @@ class Filter(MutationPipeLineBase):
         total_attribs = 0
         d_plus_value = copy.deepcopy(self.global_d_plus_value)
         attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
-
-        for entry in self.global_attrib_types:
-            # aoa change
-            self.global_attrib_types_dict[(entry[0], entry[1])] = entry[2]
 
         for i in range(len(self.core_relations)):
             tabname = self.core_relations[i]
