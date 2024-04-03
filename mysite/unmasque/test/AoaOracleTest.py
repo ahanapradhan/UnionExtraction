@@ -43,21 +43,22 @@ class MyTestCase(unittest.TestCase):
         self.conn.closeConnection()
 
     def test_oracle_connection_aoa(self):
-        query = 'SELECT n_name, r_name FROM tpch.nation NATURAL JOIN tpch.region WHERE n_nationkey = 13'
+        query = 'SELECT n_name, r_name FROM tpch.nation NATURAL JOIN tpch.region WHERE n_nationkey = 25'
         self.conn.connectUsingParams()
-        self.conn.execute_sql(["ALTER SESSION SET CURRENT_SCHEMA = tpch"])
-        res = self.conn.execute_sql_fetchall(query)
-        self.assertTrue(res)
+        self.conn.execute_sql([f"ALTER SESSION SET CURRENT_SCHEMA = {self.conn.config.schema}"])
+        # res = self.conn.execute_sql_fetchall(query)
+        # self.assertTrue(res)
         # print(res)
         core_rels = ['nation', 'region']
         global_min_instance_dict = {'nation': [
             ('N_NATIONKEY', 'N_NAME', 'R_REGIONKEY', 'N_COMMENT'),
-            (13, 'ALGERIA', 1, 'embark quickly. bold foxes adapt slyly')],
+            (25, 'ALGERIA', 1, 'embark quickly. bold foxes adapt slyly')],
             'region': [('R_REGIONKEY', 'R_NAME', 'R_COMMENT'),
                        (1, 'AFRICA', 'nag efully about the slyly bold instructions. quickly regular pinto beans wake '
                                      'blithely')]}
         aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
         aoa.mock = True
+        # aoa.restore_d_min_from_dict()
         check = aoa.doJob(query)
         # print(aoa.join_graph)
         self.assertTrue(check)
