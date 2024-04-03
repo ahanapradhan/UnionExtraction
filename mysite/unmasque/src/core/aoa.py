@@ -396,11 +396,13 @@ class AlgebraicPredicate(MutationPipeLineBase):
         predicates = []
         for eq_join in self.algebraic_eq_predicates:
             join_edge = list(f"{item[0]}.{item[1]}" for item in eq_join if len(item) == 2)
+            join_graph_edge = list(f"{item[1]}" for item in eq_join if len(item) == 2)
             join_edge.sort()
+            join_graph_edge.sort()
             for i in range(0, len(join_edge) - 1):
                 join_e = f"{join_edge[i]} = {join_edge[i + 1]}"
                 predicates.append(join_e)
-                self.join_graph.append([join_edge[i], join_edge[i + 1]])
+                self.join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
         for a_eq in self.arithmetic_eq_predicates:
             datatype = self.get_datatype((get_tab(a_eq), get_attrib(a_eq)))
             pred = f"{get_tab(a_eq)}.{get_attrib(a_eq)} = {get_format(datatype, get_LB(a_eq))}"

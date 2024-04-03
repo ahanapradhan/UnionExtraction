@@ -66,7 +66,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
 
     def update_attrib_in_table(self, attrib, value, tabname) -> None:
-        update_query = self.connectionHelper.queries.update_tab_attrib_with_value(attrib, tabname, value)
+        update_query = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, value)
         self.connectionHelper.execute_sql([update_query])
 
     def doExtractJob(self, query: str) -> bool:
