@@ -36,7 +36,7 @@ class MyTestCase(unittest.TestCase):
             print(row)
             self.assertTrue(row)
 
-        query = "SELECT n_name, r_name FROM nation NATURAL JOIN region WHERE n_nationkey = 1"
+        query = 'SELECT n_name, r_name FROM tpch.nation NATURAL JOIN tpch.region WHERE n_nationkey = 13'
         res, _ = self.conn.execute_sql_fetchall(query)
         print(res)
         self.assertTrue(res)
