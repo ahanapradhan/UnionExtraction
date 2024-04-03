@@ -54,17 +54,17 @@ class Filter(MutationPipeLineBase):
                                                                            tabname))
 
             tab_attribs = []
-            tab_attribs.extend(row[0] for row in res)
+            tab_attribs.extend(row[0].lower() for row in res)
             self.global_all_attribs.append(copy.deepcopy(tab_attribs))
 
-            this_attribs = [(tabname, row[0], row[1]) for row in res]
+            this_attribs = [(tabname, row[0].lower(), row[1].lower()) for row in res]
             self.global_attrib_types.extend(this_attribs)
 
             for entry in this_attribs:
                 self.global_attrib_types_dict[(entry[0], entry[1])] = entry[2]
 
             self.global_attrib_max_length.update(
-                {(tabname, row[0]): int(str(row[2])) for row in res if is_int(str(row[2]))})
+                {(tabname, row[0].lower()): int(str(row[2])) for row in res if is_int(str(row[2]))})
 
             if self.mock:
                 values = self.global_min_instance_dict[tabname]
@@ -80,11 +80,11 @@ class Filter(MutationPipeLineBase):
                     self.global_d_plus_value[attrib] = value
 
     def get_datatype(self, tab_attrib: tuple[str, str]) -> str:
-        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'INT', 'NUMBER']):
+        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
             return 'int'
         elif 'date' in self.global_attrib_types_dict[tab_attrib]:
             return 'date'
-        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'VARCHAR2']):
+        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'varchar2']):
             return 'str'
         elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
             return 'numeric'
