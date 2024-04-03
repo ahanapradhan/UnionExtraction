@@ -127,9 +127,9 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(res)
         core_rels = ['nation', 'region']
         global_min_instance_dict = {'nation': [
-            ('NATIONKEY', 'N_NAME', 'REGIONKEY', 'N_COMMENT'),
+            ('nationkey', 'n_name', 'regionkey', 'n_comment'),
             (nationkey_filter, 'ALGERIA', 1, 'embark quickly. bold foxes adapt slyly')],
-            'region': [('REGIONKEY', 'R_NAME', 'R_COMMENT'),
+            'region': [('regionkey', 'r_name', 'r_comment'),
                        (1, 'AFRICA', 'nag efully about the slyly bold instructions. quickly regular pinto beans wake '
                                      'blithely')]}
         aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
@@ -142,22 +142,20 @@ class MyTestCase(unittest.TestCase):
 
     def test_dormant_aoa(self):
         self.conn.connectUsingParams()
-        query = "Select l_shipmode From orders natural join lineitem " \
+        query = "Select o_orderstatus, l_shipmode From orders natural join lineitem " \
                 "Where " \
-                "o_orderdate <= '1995-01-01' "
+                "l_linenumber >= 6 "
 
         core_rels = ['orders', 'lineitem']
 
         global_min_instance_dict = {'orders': [
-            ('orderkey', 'custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority',
+            ('orderkey', 'custkey', 'o_orderstatus', 'o_totalprice', 'o_orderpriority',
              'o_clerk', 'o_shippriority', 'o_comment'),
-            (2999908, 23014, 'F', 168982.73, datetime.date(1994, 4, 30), '5-LOW', 'Clerk#000000061', 0,
+            (2999908, 23014, 'F', 168982.73, '5-LOW', 'Clerk#000000061', 0,
              'ost slyly around the blithely bold requests.')],
             'lineitem': [('orderkey', 'partkey', 'suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
-                          'l_discount', 'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate',
-                          'l_receiptdate', 'l_shipinstruct', 'l_shipmode', 'l_comment'),
-                         (2999908, 2997, 4248, 6, 19.00, 36099.81, 0.04, 0.08, 'R', 'F', datetime.date(1994, 7, 17),
-                          datetime.date(1994, 7, 18), datetime.date(1994, 8, 16),
+                          'l_discount', 'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipinstruct', 'l_shipmode', 'l_comment'),
+                         (2999908, 2997, 4248, 6, 19.00, 36099.81, 0.04, 0.08, 'R', 'F',
                           'NONE                     ', 'AIR       ',
                           're. unusual frets after the sl')]}
 

@@ -188,7 +188,12 @@ class Filter(MutationPipeLineBase):
         prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
         for tab_attrib in attrib_list:
             tabname, attrib = tab_attrib[0], tab_attrib[1]
-            self.connectionHelper.execute_sql(
+            datatype = self.get_datatype((tabname, attrib))
+            if datatype == 'date':
+                self.connectionHelper.execute_sql(
+                    [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(tabname, attrib, val)])
+            else:
+                self.connectionHelper.execute_sql(
                 [self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)])
         new_result = self.app.doJob(query)
         self.revert_filter_changes_in_tabset(attrib_list, prev_values)

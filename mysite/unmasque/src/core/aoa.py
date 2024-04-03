@@ -64,6 +64,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.init_constants()
         check = self.filter_extractor.doJob(query)
         if check:
+            self.see_d_min()
             self.extract_aoa(query)
         self.post_process_for_generation_pipeline(query)
         return True
@@ -566,8 +567,11 @@ class AlgebraicPredicate(MutationPipeLineBase):
         filter_attribs = []
         datatype = self.get_datatype(equi_join_group[0])
         prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
+
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
                                                            datatype)
+        print(filter_attribs)
+
         if len(filter_attribs) > 0:
             if get_op(filter_attribs[0]) in ['=', 'equal']:
                 return False
@@ -629,7 +633,15 @@ class AlgebraicPredicate(MutationPipeLineBase):
         return val, dmin_val
 
     def mutate_dmin_with_val(self, datatype, t_a, val):
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.update_tab_attrib_with_value(get_tab(t_a),
+        if datatype == 'date':
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(get_tab(t_a),
+                                                                                                          get_attrib(
+                                                                                                              t_a),
+                                                                                                          get_format(
+                                                                                                              datatype,
+                                                                                                              val))], self.logger)
+        else:
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.update_tab_attrib_with_value(get_tab(t_a),
                                                                                                       get_attrib(t_a),
                                                                                                       get_format(
                                                                                                           datatype,

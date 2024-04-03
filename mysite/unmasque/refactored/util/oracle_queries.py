@@ -87,6 +87,9 @@ class OracleQueries(CommonQueries):
     def update_sql_query_tab_attribs(self, tab, attrib):
         return f"UPDATE {self.schema}.{tab} SET {attrib} = "
 
+    def update_sql_query_tab_date_attrib_value(self, tab, attrib, value):
+        return f"UPDATE {self.schema}.{tab} SET {attrib} = TO_DATE({value}, 'YYYY-MM-DD')"
+
     def get_column_details_for_table(self, schema, tab):
         return f"SELECT column_name, data_type, data_length FROM all_tab_columns WHERE table_name = '{tab.upper()}' AND owner = '{schema.upper()}'"
 

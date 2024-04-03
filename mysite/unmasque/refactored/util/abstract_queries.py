@@ -105,6 +105,9 @@ class CommonQueries(ABC):
     def update_sql_query_tab_attribs(self, tab, attrib):
         pass
 
+    def update_sql_query_tab_date_attrib_value(self, tab, attrib, value):
+        return self.update_tab_attrib_with_value(tab, attrib, value)
+
     @abstractmethod
     def form_update_query_with_value(self, update_string, datatype, val):
         pass
