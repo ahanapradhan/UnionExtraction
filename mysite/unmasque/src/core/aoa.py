@@ -64,7 +64,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.init_constants()
         check = self.filter_extractor.doJob(query)
         if check:
-            # self.restore_d_min_from_dict()
             self.extract_aoa(query)
         self.post_process_for_generation_pipeline(query)
         return True
