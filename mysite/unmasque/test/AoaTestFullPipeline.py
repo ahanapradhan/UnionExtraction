@@ -4,12 +4,12 @@ import unittest
 
 import pytest
 
-from mysite.unmasque.refactored.cs2 import Cs2
-from mysite.unmasque.refactored.projection import Projection
-from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
-from mysite.unmasque.src.core.aoa import AlgebraicPredicate
-from mysite.unmasque.test.util import tpchSettings
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from ..refactored.cs2 import Cs2
+from ..refactored.projection import Projection
+from ..refactored.view_minimizer import ViewMinimizer
+from ..src.core.aoa import AlgebraicPredicate
+from ..test.util import tpchSettings
+from ..test.util.BaseTestCase import BaseTestCase
 
 
 def remove_transitive_relations(input_list):
@@ -345,6 +345,18 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(pj.projected_attribs), 2)
         self.assertEqual(pj.projected_attribs[0], 's_name')
         self.assertEqual(pj.projected_attribs[1], 'o_totalprice + s_acctbal')
+        self.conn.closeConnection()
+
+    def test_big_join_aoa(self):
+        self.conn.connectUsingParams()
+        query = f"Select o_orderstatus, l_shipmode From lineitem, orders, customer, nation " \
+                f"Where l_orderkey = o_orderkey and o_custkey = c_custkey and c_nationkey = n_nationkey and " \
+                 f"l_linenumber >= 4 and n_name LIKE 'IND%' " \
+                f"and c_acctbal < l_extendedprice and l_extendedprice < o_totalprice;"
+        aoa, check, pj = self.run_pipeline_till_projection(['orders', 'lineitem', 'customer', 'nation'], query)
+        self.assertTrue(check)
+        print(aoa.where_clause)
+        self.assertEqual(aoa.where_clause.count("and"), 6)
         self.conn.closeConnection()
 
 

@@ -456,7 +456,7 @@ class Filter(MutationPipeLineBase):
 
 
 def get_constants_for(datatype):
-    if datatype in ('int', 'date', 'NUMBER'):
+    if datatype in ('int', 'date', 'number'):
         while_cut_off = 0
         delta = 1
     elif datatype in ('float', 'numeric'):

@@ -257,15 +257,18 @@ def add_concrete_bounds_as_edge(pred_list, edge_set):
             edge_set.append([(get_tab(pred), get_attrib(pred)), get_UB(pred)])
 
 
-def add_concrete_bounds_as_edge2(pred_list, edge_set):
+def add_concrete_bounds_as_edge2(pred_list, edge_set, datatype):
     for pred in pred_list:
+        ub, lb = get_UB(pred), get_LB(pred)
+        # if datatype == 'numeric':
+        #    ub, lb = round(get_UB(pred), 2), round(get_LB(pred), 2)
         if pred[2] == '<=':
-            edge_set.append(((get_tab(pred), get_attrib(pred)), get_UB(pred)))
+            edge_set.append(((get_tab(pred), get_attrib(pred)), ub))
         elif pred[2] == '>=':
-            edge_set.append((get_LB(pred), (get_tab(pred), get_attrib(pred))))
+            edge_set.append((lb, (get_tab(pred), get_attrib(pred))))
         elif pred[2] == 'range':
-            edge_set.append((get_LB(pred), (get_tab(pred), get_attrib(pred))))
-            edge_set.append(((get_tab(pred), get_attrib(pred)), get_UB(pred)))
+            edge_set.append((lb, (get_tab(pred), get_attrib(pred))))
+            edge_set.append(((get_tab(pred), get_attrib(pred)), ub))
 
 
 def get_LB_of_next_attrib(ineq_group: list[tuple], c: tuple[str, str]):
@@ -403,7 +406,6 @@ def remove_absorbed_Bs(E, absorbed_LBs, absorbed_UBs, col_sink, col_src):
         remove_item_from_list((col_sink, absorbed_UBs[col_sink]), E)
 
 
-
 def remove_all_absorbed_Bs(E, absorbed_LBs, absorbed_UBs):
     for col_src in absorbed_UBs.keys():
         remove_item_from_list((col_src, absorbed_UBs[col_src]), E)
@@ -498,6 +500,15 @@ def do_numeric_drama(other_LB, datatype, my_val, delta, satisfied) -> bool:
                 alt_sat = alt_sat & (abs(bck_diff_1) <= delta)
         return alt_sat or satisfied
     return satisfied
+
+
+def is_equal(one, other, datatype):
+    if datatype == 'numeric':
+        diff = abs(one - other)
+        delta, _ = get_constants_for(datatype)
+        return diff <= delta
+    else:
+        return one == other
 
 
 def conseq(nums):

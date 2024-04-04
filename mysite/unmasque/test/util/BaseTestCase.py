@@ -3,8 +3,8 @@ import sys
 import unittest
 from _decimal import Decimal
 
-from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
-from mysite.unmasque.src.util.configParser import Config
+from ...src.util.ConnectionFactory import ConnectionHelperFactory
+from ...src.util.configParser import Config
 from ...src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 from ...src.util.PostgresConnectionHelper import PostgresConnectionHelper
 
