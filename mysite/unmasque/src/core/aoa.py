@@ -146,8 +146,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
         to_remove = []
         for eq in self.arithmetic_eq_predicates:
             tab, attrib, val = get_tab(eq), get_attrib(eq), eq[-1]
-            if (tab, attrib) in absorbed_LBs and absorbed_LBs[(tab, attrib)] == val \
-                    and (tab, attrib) in absorbed_UBs and absorbed_UBs[(tab, attrib)] == val:
+            if (tab, attrib) in absorbed_LBs and val in absorbed_LBs[(tab, attrib)]  \
+                    and (tab, attrib) in absorbed_UBs and val in absorbed_UBs[(tab, attrib)]:
                 to_remove.append(eq)
         for t_r in to_remove:
             self.arithmetic_eq_predicates.remove(t_r)
@@ -229,6 +229,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
                     add_item_to_dict(absorbed_UBs, _src, prev_ub)
                     # absorbed_UBs[_src] = prev_ub
                 if new_ub < val:
+                    print(new_ub, val)
                     remove_item_from_list((col_src, col_sink), E)
                     add_item_to_list((col_src, col_sink), L)
             else:
@@ -260,6 +261,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
                     add_item_to_dict(absorbed_LBs, _sink, prev_lb)
                     # absorbed_LBs[_sink] = prev_lb
                 if new_lb > val:
+                    print(new_lb, val)
                     remove_item_from_list((col_src, col_sink), E)
                     add_item_to_list((col_src, col_sink), L)
                 """
