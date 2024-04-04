@@ -328,13 +328,13 @@ def get_val_bound_for_chain(i_min, i_max, filter_attrib, is_UB):
 def get_min_max_for_chain_bounds(i_min, i_max, tab_attrib, a_b, is_UB):
     if is_UB:
         if tab_attrib in a_b.keys():
-            min_val = a_b[tab_attrib]
+            min_val = a_b[tab_attrib][0]
         else:
             min_val = i_min
         max_val = i_max
     else:
         if tab_attrib in a_b.keys():
-            max_val = a_b[tab_attrib]
+            max_val = a_b[tab_attrib][0]
         else:
             max_val = i_max
         min_val = i_min
@@ -395,15 +395,26 @@ def add_item_to_list(item, item_list):
         item_list.append(item)
 
 
+def add_item_to_dict(_dict: dict, key, item):
+    if key not in _dict.keys():
+        _dict[key] = [item]
+    else:
+        _dict[key].append(item)
+
+
 def remove_absorbed_Bs(E, absorbed_LBs, absorbed_UBs, col_sink, col_src):
     if col_src in absorbed_UBs.keys():
-        remove_item_from_list((col_src, absorbed_UBs[col_src]), E)
+        for item in absorbed_UBs[col_src]:
+            remove_item_from_list((col_src, item), E)
     if col_src in absorbed_LBs.keys():
-        remove_item_from_list((absorbed_LBs[col_src], col_src), E)
+        for item in absorbed_LBs[col_src]:
+            remove_item_from_list((item, col_src), E)
     if col_sink in absorbed_LBs.keys():
-        remove_item_from_list((absorbed_LBs[col_sink], col_sink), E)
+        for item in absorbed_LBs[col_sink]:
+            remove_item_from_list((item, col_sink), E)
     if col_sink in absorbed_UBs.keys():
-        remove_item_from_list((col_sink, absorbed_UBs[col_sink]), E)
+        for item in absorbed_UBs[col_sink]:
+            remove_item_from_list((col_sink, item), E)
 
 
 def remove_all_absorbed_Bs(E, absorbed_LBs, absorbed_UBs):

@@ -17,7 +17,7 @@ from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab
     add_concrete_bounds_as_edge2, get_op, remove_item_from_list, \
     find_le_attribs_from_edge_set, find_ge_attribs_from_edge_set, add_item_to_list, remove_absorbed_Bs, \
     find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, do_numeric_drama, need_permanent_mutation, \
-    find_concrete_bound_from_filter_bounds, is_equal
+    find_concrete_bound_from_filter_bounds, is_equal, add_item_to_dict
 
 
 def check_redundancy(fl_list, a_ineq):
@@ -132,8 +132,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 self.extract_dormant_LBs(E, absorbed_LBs, col_src, datatype, query, L)
                 self.logger.debug("E: ", E)
 
-            # self.remove_redundant_concrete_bounds(E, L)
-
         self.revert_mutation_on_filter_global_min_instance_dict()
         self.extract_dormant_UBs(E, absorbed_UBs, datatype, directed_paths, query, L)
         self.logger.debug("E: ", E)
@@ -219,7 +217,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.logger.debug("prev ub: ", col_src, prev_ub)
         if (col_src, col_sink) in E or (col_src, col_sink) in L:
             for _src in joined_src:
-                absorbed_UBs[_src] = prev_ub
+                add_item_to_dict(absorbed_UBs, _src, prev_ub)
+                # absorbed_UBs[_src] = prev_ub
         col_sink_lb = self.find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
         val, dmin_val = self.mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, False, query)
         if val != dmin_val:
@@ -227,7 +226,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
             new_ub = get_UB(new_ub_fe[0]) if len(new_ub_fe) else get_max(self.constants_dict[datatype])
             if prev_ub != new_ub:
                 for _src in joined_src:
-                    absorbed_UBs[_src] = prev_ub
+                    add_item_to_dict(absorbed_UBs, _src, prev_ub)
+                    # absorbed_UBs[_src] = prev_ub
                 if new_ub < val:
                     remove_item_from_list((col_src, col_sink), E)
                     add_item_to_list((col_src, col_sink), L)
@@ -248,7 +248,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
         prev_lb = self.find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
         if (col_src, col_sink) in E or (col_src, col_sink) in L:
             for _sink in joined_sink:
-                absorbed_LBs[_sink] = prev_lb
+                add_item_to_dict(absorbed_LBs, _sink, prev_lb)
+                # absorbed_LBs[_sink] = prev_lb
         col_src_ub = self.find_concrete_bound_from_edge_set(col_src, E, datatype, True)
         val, dmin_val = self.mutate_attrib_with_Bound_val(col_src, datatype, col_src_ub, True, query)
         if val != dmin_val:
@@ -256,7 +257,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
             new_lb = get_LB(new_lb_fe[0]) if len(new_lb_fe) else get_min(self.constants_dict[datatype])
             if prev_lb != new_lb:
                 for _sink in joined_sink:
-                    absorbed_LBs[_sink] = prev_lb
+                    add_item_to_dict(absorbed_LBs, _sink, prev_lb)
+                    # absorbed_LBs[_sink] = prev_lb
                 if new_lb > val:
                     remove_item_from_list((col_src, col_sink), E)
                     add_item_to_list((col_src, col_sink), L)
