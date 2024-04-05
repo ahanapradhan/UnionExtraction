@@ -39,8 +39,6 @@ class Executable(Base):
                 result.append(tuple(colnames))
             if res is not None:
                 result = get_result_as_tuple_1(res, result)
-            if is_error(description):
-                raise Exception(REL_ERROR)
 
         except Exception as error:
             self.logger.error("Executable could not be run. Error: " + str(error))

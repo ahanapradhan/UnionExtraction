@@ -77,6 +77,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.algo3_find_eq_joinGraph(query, partition_eq_dict, ineqaoa_preds)
         if self.aoa_enabled:
             self.extract_aoa_core(ineqaoa_preds, query)
+        else:
+            self.filter_predicates.extend(self.filter_extractor.filter_predicates)
         self.cleanup_predicates()
         self.generate_where_clause()
 
@@ -512,15 +514,9 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
 
     def restore_d_min_from_dict(self) -> None:
+        self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
         for tab in self.core_relations:
-            values = self.global_min_instance_dict[tab]
-            attribs, vals = values[0], values[1]
-            attrib_list = ", ".join(attribs)
-            value_list = str(vals)
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(tab)])
-            self.connectionHelper.execute_sql_with_params(
-                self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tab),
-                [f"{value_list}"])
+            self.filter_extractor.insert_into_dmin_dict_values(tab)
 
     def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str) -> list:
         filter_attribs = []

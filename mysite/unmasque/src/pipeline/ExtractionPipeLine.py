@@ -76,6 +76,7 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.update_state(DB_MINIMIZATION + START)
         vm = ViewMinimizer(self.connectionHelper, core_relations, cs2.sizes, cs2.passed)
+        vm.set_all_relations(all_relations)
         self.update_state(DB_MINIMIZATION + RUNNING)
         check = vm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)

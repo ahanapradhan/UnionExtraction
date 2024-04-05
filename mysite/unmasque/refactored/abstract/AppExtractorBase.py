@@ -16,5 +16,5 @@ class AppExtractorBase(Base):
             self.result = self.doActualJob(args)
             self.app_calls = self.app.method_call_count - self.app_calls
             return self.result
-        return False
+        return True
 

@@ -69,14 +69,23 @@ class PostgresQueries(CommonQueries):
         return f"Truncate Table {table};"
 
     def insert_into_tab_attribs_format(self, att_order, esc_string, tab):
-        return f"INSERT INTO {tab} {att_order}  VALUES {esc_string}"
+        if esc_string == "":
+            _count = att_order.count(",")
+            esc_list = [f"%s"] * (_count + 1)
+            esc_string = ",".join(esc_list)
+            esc_string = f"({esc_string})"
+        return f"INSERT INTO {tab} {att_order}  VALUES {esc_string};"
 
     def update_tab_attrib_with_value(self, tab, attrib, value):
         str_value = str(value)
-        return f"UPDATE {tab}  SET {attrib}={str_value};"
+        query = f"UPDATE {tab}  SET {attrib}={str_value};"
+        print(query)
+        return query
 
     def update_tab_attrib_with_quoted_value(self, tab, attrib, value):
-        return f"UPDATE {tab}  SET {attrib} = '{value}';"
+        query = f"UPDATE {tab}  SET {attrib}= '{value}';"
+        print(query)
+        return query
 
     def update_sql_query_tab_attribs(self, tab, attrib):
         tabname = str(tab)

@@ -4,7 +4,7 @@ import psycopg2
 import psycopg2.extras
 from psycopg2 import OperationalError
 
-from .constants import OK
+from .constants import OK, REL_ERROR
 from ..core.abstract.abstractConnection import AbstractConnectionHelper
 from ...refactored.util.postgres_queries import PostgresQueries
 
@@ -72,14 +72,15 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
         for param in params:
+            print(sql)
+            print(param)
+            print(sql.count(","), len(param))
             if logger is not None:
                 logger.debug(sql, param)
             cur.execute(sql, param)
         cur.close()
 
     def execute_sql_fetchall(self, sql, logger=None):
-        res = None
-        des = None
         cur = self.get_cursor()
         # print("...", sql, "...")
         try:
@@ -92,7 +93,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
                 logger.error(e)
                 logger.error(e.diag.message_detail)
             des = str(e)
-            raise ValueError
+            raise ValueError(des)
         return res, des
 
     def get_DictCursor(self):

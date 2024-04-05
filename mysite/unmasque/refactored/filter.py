@@ -67,20 +67,21 @@ class Filter(MutationPipeLineBase):
                 {(tabname, row[0].lower()): int(str(row[2])) for row in res if is_int(str(row[2]))})
 
             if self.mock:
-                values = self.global_min_instance_dict[tabname]
-                attribs, vals = values[0], values[1]
-                attrib_list = ", ".join(attribs)
-                value_list = str(vals)
-                self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(tabname)])
-                self.connectionHelper.execute_sql_with_params(
-                    self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tabname),
-                    [f"{value_list}"])
+                self.insert_into_dmin_dict_values(tabname)
 
             res, desc = self.connectionHelper.execute_sql_fetchall(
                 self.connectionHelper.queries.select_attribs_from_relation(tab_attribs, tabname))
             for row in res:
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
+
+    def insert_into_dmin_dict_values(self, tabname):
+        values = self.global_min_instance_dict[tabname]
+        attribs, vals = values[0], values[1]
+        attrib_list = ", ".join(attribs)
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(tabname)])
+        self.connectionHelper.execute_sql_with_params(
+            self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tabname), [vals])
 
     def get_datatype(self, tab_attrib: tuple[str, str]) -> str:
         if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
@@ -183,7 +184,7 @@ class Filter(MutationPipeLineBase):
         self.logger.debug("datatype", datatype)
         if datatype in ['int', 'date', 'integer', 'number']:
             self.handle_point_filter(datatype, filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
-        elif datatype in ['numeric','float']:
+        elif datatype in ['numeric', 'float']:
             self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         else:
             raise ValueError(" Not Handled! ")
@@ -198,7 +199,7 @@ class Filter(MutationPipeLineBase):
                     [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(tabname, attrib, val)])
             else:
                 self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)])
+                    [self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)])
         new_result = self.app.doJob(query)
         self.revert_filter_changes_in_tabset(attrib_list, prev_values)
         return not isQ_result_empty(new_result)

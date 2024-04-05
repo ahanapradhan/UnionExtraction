@@ -53,7 +53,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
 
     def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
         for param in params:
-            query = f"{sql} {param}"
+            query = f"{sql} {str(param)}"
             if logger is not None:
                 logger.debug(query)
             cur.execute(query)
@@ -75,7 +75,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
             print(sql)
             des = str(e)
             print(des)
-            raise ValueError
+            raise ValueError(des)
         return res, des
 
     def get_DictCursor(self):

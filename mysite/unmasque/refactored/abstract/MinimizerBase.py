@@ -17,11 +17,16 @@ class Minimizer(AppExtractorBase):
         self.all_sizes = all_sizes
         self.mock = False
 
+    def getSizes_cs(self):
+        if not self.all_sizes:
+            for table in self.all_relations:
+                self.all_sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(self.connectionHelper.queries.get_row_count(table))
+        return self.all_sizes
+
     def getCoreSizes(self):
-        core_sizes = {}
-        for table in self.core_relations:
-            core_sizes[table] = self.all_sizes[table]
-        return core_sizes
+        if not len(self.all_sizes.keys()):
+            self.getSizes_cs()
+        return self.all_sizes
 
     def extract_params_from_args(self, args):
         return args[0]

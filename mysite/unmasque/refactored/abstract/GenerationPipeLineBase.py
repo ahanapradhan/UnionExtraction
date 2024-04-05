@@ -8,7 +8,7 @@ from ...refactored.util.utils import get_escape_string, get_dummy_val_for, get_f
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
-NUMBER_TYPES = ['int', 'integer', 'numeric', 'float']
+NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number']
 
 
 class GenerationPipeLineBase(MutationPipeLineBase):

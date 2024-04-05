@@ -137,13 +137,13 @@ class Projection(GenerationPipeLineBase):
             self.logger.debug("Could not find other s-value! Cannot verify impact!")
             return
         new_result1 = self.app.doJob(query)
+        self.update_with_val(attrib, tabname, prev)
         if len(new_result1) > 1:
             new_result1 = list(new_result1[1])
             diff = find_diff_idx(new_result1, new_result)
             if diff:
                 for d in diff:
                     projection_dep[d].append((tabname, attrib))
-            self.update_with_val(attrib, tabname, prev)
         else:
             self.logger.debug("Got empty result!!!!")
         return val

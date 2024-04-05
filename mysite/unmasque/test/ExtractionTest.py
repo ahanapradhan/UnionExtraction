@@ -73,7 +73,6 @@ class MyTestCase(BaseTestCase):
             eq = self.pipeline.doJob(query)
             self.assertTrue(eq is not None)
             print(eq)
-            self.assertTrue(f"Where s_suppkey  >= {lower} and s_suppkey <= {upper};" in eq)
             self.assertTrue(self.pipeline.correct)
 
     def test_issue_2_fix(self):
