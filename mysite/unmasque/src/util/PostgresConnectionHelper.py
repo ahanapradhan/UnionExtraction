@@ -72,9 +72,9 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
         for param in params:
-            print(sql)
-            print(param)
-            print(sql.count(","), len(param))
+            # print(sql)
+            # print(param)
+            # print(sql.count(","), len(param))
             if logger is not None:
                 logger.debug(sql, param)
             cur.execute(sql, param)
