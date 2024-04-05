@@ -79,6 +79,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
             self.extract_aoa_core(ineqaoa_preds, query)
         else:
             self.filter_predicates.extend(self.filter_extractor.filter_predicates)
+            self.filter_extractor.logger.debug("Filters: ", self.filter_predicates)
+
         self.cleanup_predicates()
         self.generate_where_clause()
 

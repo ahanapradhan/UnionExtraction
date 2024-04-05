@@ -79,12 +79,12 @@ class PostgresQueries(CommonQueries):
     def update_tab_attrib_with_value(self, tab, attrib, value):
         str_value = str(value)
         query = f"UPDATE {tab}  SET {attrib}={str_value};"
-        print(query)
+        # print(query)
         return query
 
     def update_tab_attrib_with_quoted_value(self, tab, attrib, value):
         query = f"UPDATE {tab}  SET {attrib}= '{value}';"
-        print(query)
+        # print(query)
         return query
 
     def update_sql_query_tab_attribs(self, tab, attrib):
