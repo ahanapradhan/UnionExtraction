@@ -9,6 +9,7 @@ class Union(AppExtractorBase):
         super().__init__(connectionHelper, "Union")
         self.key_lists = None
         self.all_relations = None
+        self.enabled = self.connectionHelper.config.detect_union
 
     def extract_params_from_args(self, args):
         return args[0]

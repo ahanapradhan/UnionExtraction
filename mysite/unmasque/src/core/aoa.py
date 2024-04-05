@@ -55,6 +55,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.filter_predicates = []
 
         self.constants_dict = {}
+        self.aoa_enabled = False
 
     def doActualJob(self, args):
         self.filter_extractor.mock = self.mock
@@ -64,7 +65,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.init_constants()
         check = self.filter_extractor.doJob(query)
         if check:
-            self.see_d_min()
+            self.restore_d_min_from_dict()
             self.extract_aoa(query)
         self.post_process_for_generation_pipeline(query)
         return True
@@ -74,6 +75,12 @@ class AlgebraicPredicate(MutationPipeLineBase):
         partition_eq_dict, ineqaoa_preds = self.algo2_preprocessing()
         self.logger.debug(partition_eq_dict)
         self.algo3_find_eq_joinGraph(query, partition_eq_dict, ineqaoa_preds)
+        if self.aoa_enabled:
+            self.extract_aoa_core(ineqaoa_preds, query)
+        self.cleanup_predicates()
+        self.generate_where_clause()
+
+    def extract_aoa_core(self, ineqaoa_preds, query):
         edge_set_dict = self.algo4_create_edgeSet_E(ineqaoa_preds)
         self.logger.debug("edge_set_dict:", edge_set_dict)
         for datatype in edge_set_dict.keys():
@@ -82,8 +89,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
             self.logger.debug("L: ", L)
             self.aoa_predicates.extend(E)
             self.aoa_less_thans.extend(L)
-        self.cleanup_predicates()
-        self.generate_where_clause()
 
     def cleanup_predicates(self):
         self.optimize_edge_set(self.aoa_predicates)
@@ -146,7 +151,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         to_remove = []
         for eq in self.arithmetic_eq_predicates:
             tab, attrib, val = get_tab(eq), get_attrib(eq), eq[-1]
-            if (tab, attrib) in absorbed_LBs and val in absorbed_LBs[(tab, attrib)]  \
+            if (tab, attrib) in absorbed_LBs and val in absorbed_LBs[(tab, attrib)] \
                     and (tab, attrib) in absorbed_UBs and val in absorbed_UBs[(tab, attrib)]:
                 to_remove.append(eq)
         for t_r in to_remove:
@@ -364,9 +369,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
     def post_process_for_generation_pipeline(self, query) -> None:
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
         self.restore_d_min_from_dict()
-
-        self.do_permanent_mutation()
-
+        if self.aoa_enabled:
+            self.do_permanent_mutation()
         res = self.app.doJob(query)
         if isQ_result_empty(res):
             print("Mutation got wrong! %%%%%%")
@@ -511,9 +515,12 @@ class AlgebraicPredicate(MutationPipeLineBase):
         for tab in self.core_relations:
             values = self.global_min_instance_dict[tab]
             attribs, vals = values[0], values[1]
-            for i in range(len(attribs)):
-                attrib, val = attribs[i], vals[i]
-                self.mutate_dmin_with_val(self.get_datatype((tab, attrib)), (tab, attrib), val)
+            attrib_list = ", ".join(attribs)
+            value_list = str(vals)
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(tab)])
+            self.connectionHelper.execute_sql_with_params(
+                self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tab),
+                [f"{value_list}"])
 
     def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str) -> list:
         filter_attribs = []
@@ -573,7 +580,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         return filtered_dict
 
     def algo3_find_eq_joinGraph(self, query: str, partition_eq_dict: dict, ineqaoa_preds: list) -> None:
-        # self.logger.debug(partition_eq_dict)
+        self.logger.debug(partition_eq_dict)
         while partition_eq_dict:
             check_again_dict = {}
             for key in partition_eq_dict.keys():
@@ -598,7 +605,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
         self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
                                                            datatype)
-
+        self.logger.debug("join group check", equi_join_group, filter_attribs)
         if len(filter_attribs) > 0:
             if get_op(filter_attribs[0]) in ['=', 'equal']:
                 return False

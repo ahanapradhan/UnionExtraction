@@ -26,6 +26,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.query_generator = query_generator
         self.nep_comparator = NepComparator(self.connectionHelper)
         self.wrong = False
+        self.enabled = self.connectionHelper.config.detect_nep
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]

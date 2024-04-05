@@ -9,39 +9,38 @@ class OracleQueries(CommonQueries):
         self.schema = schema
 
     def create_table_as_select_star_from_limit_1(self, tab, fromtab):
-        pass
-
+        return f"Create table {self.schema}.{tab} as (select * from {self.schema}.{fromtab} where ROWNUM = 1)"
 
     def get_explain_query(self, sql):
         sql = sql.replace(";", "")
         return f"EXPLAIN PLAN {sql}"
 
     def drop_table(self, tab):
-        return f"DROP TABLE {tab} CASCADE CONSTRAINTS"
+        return f"DROP TABLE {self.schema}.{tab}"
 
     def drop_table_cascade(self, tab):
         return self.drop_table(tab)  # In Oracle, DROP TABLE already includes cascade.
 
     def alter_table_rename_to(self, tab, retab):
-        return f"ALTER TABLE {tab} RENAME TO {retab}"
+        return f"ALTER TABLE {self.schema}.{tab} RENAME TO {retab}"
 
     def alter_view_rename_to(self, tab, retab):
-        return f"ALTER VIEW {tab} RENAME TO {retab}"
+        return f"ALTER VIEW {self.schema}.{tab} RENAME TO {retab}"
 
     def create_table_like(self, tab, ctab):
-        return f"CREATE TABLE {tab} AS SELECT * FROM {ctab} WHERE 1=0"
+        return f"CREATE TABLE {self.schema}.{tab} AS SELECT * FROM {self.schema}.{ctab} WHERE 1=0"
 
     def create_table_as_select_star_from(self, tab, fromtab):
-        return f"CREATE TABLE {tab} AS SELECT * FROM {fromtab}"
+        return f"CREATE TABLE {self.schema}.{tab} AS SELECT * FROM {self.schema}.{fromtab}"
 
     def get_row_count(self, tab):
-        return f"SELECT COUNT(*) FROM {tab}"
+        return f"SELECT COUNT(*) FROM {self.schema}.{tab}"
 
     def get_star(self, tab):
         return f"SELECT * FROM {self.schema}.{tab}"
 
     def get_star_from_except_all_get_star_from(self, tab1, tab2):
-        return f"SELECT * FROM {tab1} MINUS SELECT * FROM {tab2}"
+        return f"SELECT * FROM {self.schema}.{tab1} MINUS SELECT * FROM {self.schema}.{tab2}"
 
     def get_min_max_ctid(self, tab):
         # Oracle uses ROWID instead of CTID. Adjust according to your requirements.
@@ -66,13 +65,14 @@ class OracleQueries(CommonQueries):
         return f"SELECT {min_or_max}(ROWID) FROM {tabname}"
 
     def truncate_table(self, table):
-        return f"TRUNCATE TABLE {table}"
+        return f"TRUNCATE TABLE {self.schema}.{table}"
 
     def insert_into_tab_attribs_format(self, att_order, esc_string, tab):
-        return f"INSERT INTO {tab} ({att_order}) VALUES ({esc_string})"
+        return f"INSERT INTO {self.schema}.{tab} {att_order} VALUES "
 
     def update_tab_attrib_with_value(self, tab, attrib, value):
-        return f"UPDATE {self.schema}.{tab} SET {attrib} = {value}"
+        update_query = f"UPDATE {self.schema}.{tab} SET {attrib} = {value}"
+        return update_query
 
     def form_update_query_with_value(self, update_string, datatype, val):
         update_val = get_format(datatype, val)

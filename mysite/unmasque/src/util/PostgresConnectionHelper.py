@@ -70,6 +70,13 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
     def connectUsingParams(self):
         self.conn = psycopg2.connect(self.paramString)
 
+    def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
+        for param in params:
+            if logger is not None:
+                logger.debug(sql, param)
+            cur.execute(sql, param)
+        cur.close()
+
     def execute_sql_fetchall(self, sql, logger=None):
         res = None
         des = None

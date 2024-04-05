@@ -44,9 +44,9 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def do_init(self) -> None:
         for tab in self.core_relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_as_select_star_from_limit_1(f"_{tab}_temp", tab),
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_as_select_star_from_limit_1(f"{tab}__temp", tab),
                                                self.connectionHelper.queries.drop_table(tab),
-                                               self.connectionHelper.queries.alter_table_rename_to(f"_{tab}_temp", tab)])
+                                               self.connectionHelper.queries.alter_table_rename_to(f"{tab}__temp", tab)])
         self.restore_d_min_from_dict()
         self.see_d_min()
 

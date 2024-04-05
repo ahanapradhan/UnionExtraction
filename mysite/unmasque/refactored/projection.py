@@ -35,6 +35,10 @@ class Projection(GenerationPipeLineBase):
         self.param_list = []
 
     def doExtractJob(self, query):
+        res = self.app.doJob(query)
+        if isQ_result_empty(res):
+            self.logger.error("Cannot do projection. Bye!")
+            return False
         # return False # test
         s_values = []
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
@@ -81,6 +85,7 @@ class Projection(GenerationPipeLineBase):
         for entry in self.global_attrib_types:
             tabname = entry[0]
             attrib = entry[1]
+            self.logger.debug("Joined attribs: ", self.joined_attribs)
             self.logger.debug("checking for ", tabname, attrib)
             if attrib in self.joined_attribs:
                 val, keys_to_skip = self.check_impact_of_bulk_attribs(attrib, new_result, projection_dep, query,
@@ -107,6 +112,7 @@ class Projection(GenerationPipeLineBase):
         other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
         val, prev = self.update_attrib_to_see_impact(attrib, tabname)
         self.update_attribs_bulk(join_tabnames, other_attribs, val)
+        self.see_d_min()
         new_result1 = self.app.doJob(query)
         self.update_with_val(attrib, tabname, prev)
         self.update_attribs_bulk(join_tabnames, other_attribs, prev)

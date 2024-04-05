@@ -122,12 +122,9 @@ class AbstractConnectionHelper:
     def cus_execute_sqls(self, cur, sqls, logger=None):
         pass
 
+    @abstractmethod
     def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
-        for param in params:
-            if logger is not None:
-                logger.debug(sql, param)
-            cur.execute(sql, param)
-        cur.close()
+        pass
 
     @abstractmethod
     def cur_execute_sql_fetch_one_0(self, cur, sql, logger=None):

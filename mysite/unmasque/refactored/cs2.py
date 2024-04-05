@@ -31,6 +31,7 @@ class Cs2(AppExtractorBase):
         self.core_relations = core_relations
         self.global_key_lists = global_key_lists
         self.sizes = {}
+        self.enabled = self.connectionHelper.config.use_cs2
 
     def getSizes_cs(self):
         if not self.sizes:

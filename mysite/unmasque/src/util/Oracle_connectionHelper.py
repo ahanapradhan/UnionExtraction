@@ -51,6 +51,14 @@ class OracleConnectionHelper(AbstractConnectionHelper):
     def connectUsingParams(self):
         self.conn = cx_Oracle.connect(self.paramString)
 
+    def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
+        for param in params:
+            query = f"{sql} {param}"
+            if logger is not None:
+                logger.debug(query)
+            cur.execute(query)
+        cur.close()
+
     def execute_sql_fetchall(self, sql, logger=None):
         res = None
         des = None
@@ -64,7 +72,9 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         except oracledb.Error as e:
             if logger is not None:
                 logger.error(e)
+            print(sql)
             des = str(e)
+            print(des)
             raise ValueError
         return res, des
 
@@ -74,7 +84,8 @@ class OracleConnectionHelper(AbstractConnectionHelper):
     def cus_execute_sqls(self, cur, sqls, logger=None):
         # print(cur)
         for sql in sqls:
-            # print("..cur execute.." + sql)
+            if logger is not None:
+                logger.debug(f"..cur execute..{sql}")
             try:
                 cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
                 cur.execute(sql)
@@ -82,6 +93,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
             except oracledb.Error as e:
                 if logger is not None:
                     logger.error(e)
+                print(sql)
                 print(e)
                 raise ValueError
             # print("..done")

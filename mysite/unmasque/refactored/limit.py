@@ -84,7 +84,7 @@ class Limit(GenerationPipeLineBase):
                     elif attrib_inner not in self.joined_attribs \
                             and (tabname_inner, attrib_inner) not in gb_tab_attribs:
                         insert_values.append(self.get_dmin_val(attrib_inner, tabname_inner))
-                    elif datatype in ['date', 'int', 'numeric']:
+                    elif datatype in ['date', 'int', 'numeric', 'number']:
                         self.insert_non_text_attrib(datatype, attrib_inner, insert_values, k, tabname_inner)
                     else:
                         self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
@@ -124,7 +124,7 @@ class Limit(GenerationPipeLineBase):
         return tot_values
 
     def insert_text_attrib(self, attrib_inner, insert_values, k, tabname_inner):
-        char_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), k))
+        char_val = 'x' # get_char(get_val_plus_delta('char', get_dummy_val_for('char'), k)) why need unique values?
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             s_val_text = self.get_s_val_for_textType(attrib_inner, tabname_inner)
             temp = copy.deepcopy(s_val_text)

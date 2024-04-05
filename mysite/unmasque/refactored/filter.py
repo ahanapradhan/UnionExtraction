@@ -69,9 +69,12 @@ class Filter(MutationPipeLineBase):
             if self.mock:
                 values = self.global_min_instance_dict[tabname]
                 attribs, vals = values[0], values[1]
-                for i in range(len(attribs)):
-                    attrib, val = attribs[i], vals[i]
-                    self.mutate_dmin_with_val(self.get_datatype((tabname, attrib)), (tabname, attrib), val)
+                attrib_list = ", ".join(attribs)
+                value_list = str(vals)
+                self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(tabname)])
+                self.connectionHelper.execute_sql_with_params(
+                    self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tabname),
+                    [f"{value_list}"])
 
             res, desc = self.connectionHelper.execute_sql_fetchall(
                 self.connectionHelper.queries.select_attribs_from_relation(tab_attribs, tabname))
@@ -177,7 +180,8 @@ class Filter(MutationPipeLineBase):
 
     def handle_filter_for_nonTextTypes(self, attrib_list, datatype, filter_attribs,
                                        max_val_domain, min_val_domain, query):
-        if datatype in ['int', 'INT', 'date', 'DATE', 'integer', 'NUMBER']:
+        self.logger.debug("datatype", datatype)
+        if datatype in ['int', 'date', 'integer', 'number']:
             self.handle_point_filter(datatype, filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         elif datatype in ['numeric','float']:
             self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
@@ -319,6 +323,7 @@ class Filter(MutationPipeLineBase):
         # PLEASE CONFIRM THAT DATE FORMAT IN DATABASE IS YYYY-MM-DD
         # min_val_domain, max_val_domain = get_min_and_max_val(datatype)
         # self.see_d_min()
+        self.logger.debug(min_val_domain, max_val_domain)
         min_present = self.checkAttribValueEffect(query, get_format(datatype, min_val_domain),
                                                   attrib_list)  # True implies row
         # was still present
