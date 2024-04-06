@@ -3,6 +3,7 @@ import sys
 import unittest
 from _decimal import Decimal
 
+from mysite.unmasque.test.util.TPCH_backup_restore import TPCHRestore
 from ...src.util.ConnectionFactory import ConnectionHelperFactory
 from ...src.util.configParser import Config
 from ...src.pipeline.abstract.TpchSanitizer import TpchSanitizer
@@ -23,7 +24,7 @@ def signal_handler(signum, frame):
 class BaseTestCase(unittest.TestCase):
     conn = ConnectionHelperFactory().createConnectionHelper()
     sigconn = ConnectionHelperFactory().createConnectionHelper()
-    sanitizer = TpchSanitizer(sigconn)
+    sanitizer = TPCHRestore(sigconn)
     global_attrib_types = []
     global_attrib_types_dict = {}
     global_min_instance_dict = {}
@@ -42,7 +43,7 @@ class BaseTestCase(unittest.TestCase):
             self.global_attrib_types_dict[(entry[0], entry[1])] = entry[2]
 
     def get_datatype(self, tab_attrib):
-        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer']):
+        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
             return 'int'
         elif 'date' in self.global_attrib_types_dict[tab_attrib]:
             return 'date'
@@ -60,7 +61,7 @@ class BaseTestCase(unittest.TestCase):
 
     def sanitize_db(self):
         self.sigconn.connectUsingParams()
-        self.sanitizer.sanitize()
+        self.sanitizer.doJob()
         self.sigconn.closeConnection()
 
     def tearDown(self):
