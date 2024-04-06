@@ -137,6 +137,8 @@ def get_val_plus_delta(datatype, min_val, delta):
             plus_delta = min_val + delta
         elif datatype == 'char':
             plus_delta = get_int(min_val) + delta
+            if get_char(plus_delta) == '\\':
+                plus_delta = plus_delta + 1
         return plus_delta
     except OverflowError:
         return min_val

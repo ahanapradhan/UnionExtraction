@@ -92,6 +92,7 @@ class Limit(GenerationPipeLineBase):
 
             self.insert_attrib_vals_into_table(att_order, attrib_list_inner,
                                                insert_rows, tabname_inner, insert_logger=False)
+            self.logger.debug("Inserted values of ", len(insert_rows), "rows")
 
         new_result = self.app.doJob(query)
         if isQ_result_empty(new_result):
@@ -124,7 +125,7 @@ class Limit(GenerationPipeLineBase):
         return tot_values
 
     def insert_text_attrib(self, attrib_inner, insert_values, k, tabname_inner):
-        char_val = 'x' # get_char(get_val_plus_delta('char', get_dummy_val_for('char'), k)) why need unique values?
+        char_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), k))  # why need unique values?
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             s_val_text = self.get_s_val_for_textType(attrib_inner, tabname_inner)
             temp = copy.deepcopy(s_val_text)
