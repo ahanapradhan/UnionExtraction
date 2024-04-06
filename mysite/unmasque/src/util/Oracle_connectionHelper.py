@@ -9,6 +9,7 @@ from ...src.util.constants import OK
 
 
 class OracleConnectionHelper(AbstractConnectionHelper):
+
     def rollback_transaction(self):
         self.execute_sql(["ROLLBACK"])
 
@@ -82,6 +83,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         return None
 
     def cus_execute_sqls(self, cur, sqls, logger=None):
+        cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         # print(cur)
         for sql in sqls:
             if logger is not None:
@@ -100,6 +102,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         cur.close()
 
     def cur_execute_sql_fetch_one_0(self, cur, sql, logger=None):
+        cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         prev = None
         try:
             cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
@@ -113,6 +116,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         return prev
 
     def cur_execute_sql_fetch_one(self, cur, sql, logger=None):
+        cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         prev = None
         try:
             cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")

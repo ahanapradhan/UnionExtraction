@@ -45,17 +45,12 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.info[FROM_CLAUSE] = fc.core_relations
 
-        eq, t = self.after_from_clause_extract(query, self.all_relations,
-                                               fc.core_relations,
-                                               fc.get_key_lists())
+        eq, t = self.after_from_clause_extract(query, fc.core_relations, fc.get_key_lists())
         self.connectionHelper.closeConnection()
         self.time_profile.update(t)
         return eq
 
-    def after_from_clause_extract(self,
-                                  query, all_relations,
-                                  core_relations,
-                                  key_lists):  # get core_relations, key_lists from from clause
+    def after_from_clause_extract(self, query, core_relations, key_lists):  # get core_relations, key_lists from from clause
 
         time_profile = create_zero_time_profile()
         q_generator = QueryStringGenerator(self.connectionHelper)
@@ -64,7 +59,7 @@ class ExtractionPipeLine(GenericPipeLine):
         Correlated Sampling
         '''
         self.update_state(SAMPLING + START)
-        cs2 = Cs2(self.connectionHelper, all_relations, core_relations, key_lists)
+        cs2 = Cs2(self.connectionHelper, self.all_relations, core_relations, key_lists)
         self.update_state(SAMPLING + RUNNING)
         check = cs2.doJob(query)
         self.update_state(SAMPLING + DONE)
