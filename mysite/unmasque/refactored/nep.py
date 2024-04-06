@@ -1,9 +1,6 @@
-import ast
-
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
-from .util.utils import get_dummy_val_for, get_format, get_char
 
 
 class NepComparator(ResultComparator):
@@ -13,38 +10,55 @@ class NepComparator(ResultComparator):
 
 
 class NEP(Minimizer, GenerationPipeLineBase):
-    loop_count_cutoff = 10
+    loop_count_cutoff = 1
     '''
     NEP extractor do not terminate if input Q_E is not correct. This cutoff is to prevent infinite looping
     It imposes on the user the following restriction: hidden query cannot have more than 10 NEPs.
     Of course we can set this cutoff to much higher value if needed.
     '''
 
-    def __init__(self, connectionHelper, core_relations, all_sizes, global_pk_dict, global_all_attribs,
-                 global_attrib_types, filter_predicates, global_key_attributes, query_generator,
-                 global_min_instance_dict):
+    def __init__(self, connectionHelper, core_relations, all_sizes, query_generator, delivery):
         Minimizer.__init__(self, connectionHelper, core_relations, all_sizes, "NEP")
-        GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", core_relations, global_all_attribs,
-                                        global_attrib_types, None, filter_predicates, global_min_instance_dict)
+        GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", delivery)
         self.filter_attrib_dict = {}
         self.attrib_types_dict = {}
         self.Q_E = ""
-        self.global_pk_dict = global_pk_dict  # from initialization
-        self.global_key_attributes = global_key_attributes
         self.query_generator = query_generator
-
         self.nep_comparator = NepComparator(self.connectionHelper)
+        self.wrong = False
+        self.enabled = self.connectionHelper.config.detect_nep
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
 
+    def do_one_round_nep(self, query, nep_exists, matched, is_for_joined):
+        loop_count = 0
+        while not matched and loop_count < self.loop_count_cutoff:
+            i = 0
+            loop_count += 1
+            for tabname in self.core_relations:
+                self.logger.debug(f"loop count {loop_count}")
+                self.logger.info("NEP may exists")
+                nep_exists = True
+                self.backup_relation(tabname)
+                core_sizes = self.getCoreSizes()
+                Q_E = self.get_nep(core_sizes, tabname, query, i, is_for_joined)
+                i += 1
+                self.restore_relation(tabname)
+                if Q_E is None:
+                    self.logger.error("Something is wrong")
+                    self.wrong = True
+                    break
+                self.Q_E = Q_E
+                matched = self.nep_comparator.doJob(query, self.Q_E)
+                if matched:
+                    break
+        return nep_exists, matched
+
     def doActualJob(self, args):
         query, Q_E = self.extract_params_from_args(args)
-
-        self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
-        self.filter_attrib_dict = self.construct_filter_attribs_dict()
+        super().do_init()
         nep_exists = False
-
         # Run the hidden query on the original database instance
         matched = self.nep_comparator.doJob(query, Q_E)
         if matched is None:
@@ -52,31 +66,16 @@ class NEP(Minimizer, GenerationPipeLineBase):
             return False
 
         self.Q_E = Q_E
-        loop_count = 0
-        while not matched and loop_count < self.loop_count_cutoff:
-            i = 0
-            for tabname in self.core_relations:
-                loop_count += 1
-                self.logger.debug(f"loop count {loop_count}")
-
-                # tabname = self.core_relations[i]
-                self.logger.info("NEP may exists")
-                nep_exists = True
-                self.backup_relation(tabname)
-
-                core_sizes = self.getCoreSizes()
-                self.Q_E = self.get_nep(core_sizes, tabname, query, i)
-
-                i += 1
-
-                if self.Q_E is None:
-                    self.logger.error("Something is wrong")
-                    return False
-                matched = self.nep_comparator.doJob(query, self.Q_E)
-                if matched:
-                    break
-
-        return nep_exists
+        nep_exists, matched = self.do_one_round_nep(query, nep_exists, matched, False)
+        if matched:
+            return nep_exists
+        if self.wrong:
+            return False
+        nep_exists, matched = self.do_one_round_nep(query, nep_exists, matched, True)
+        # if self.wrong:
+        #    return False
+        if matched:
+            return nep_exists
 
     def restore_relation(self, table):
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(table),
@@ -87,7 +86,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                                            self.connectionHelper.queries.create_table_as_select_star_from(
                                                self.connectionHelper.queries.get_restore_name(table), table)])
 
-    def get_nep(self, core_sizes, tabname, query, i):
+    def get_nep(self, core_sizes, tabname, query, i, is_for_joined):
         tabname1 = self.connectionHelper.queries.get_tabname_1(tabname)
         while core_sizes[tabname] > 1:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, tabname1)])
@@ -99,7 +98,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
 
         # self.see_d_min()
 
-        val = self.extract_NEP_value(query, tabname, i)
+        val = self.extract_NEP_value(query, tabname, i, is_for_joined)
         if val:
             self.logger.info("Extracting NEP value")
             return self.query_generator.updateExtractedQueryWithNEPVal(query, val)
@@ -109,8 +108,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
     def get_mid_ctids(self, core_sizes, tabname, tabname1):
         start_page, start_row = self.get_boundary("min", tabname1)
         end_page, end_row = self.get_boundary("max", tabname1)
-        start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
-        end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
+        start_ctid = f"({str(start_page)},{str(start_row)})"
+        end_ctid = f"({str(end_page)},{str(end_row)})"
         mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid
 
@@ -157,27 +156,15 @@ class NEP(Minimizer, GenerationPipeLineBase):
         found = self.nep_comparator.match(query, self.Q_E)
         if found:
             return False
-        query = query.replace(";", "")
-        q_e = self.Q_E.replace(";", "")
-        query_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({query}) as q_h;")
-        q_e_result = self.connectionHelper.execute_sql_fetchone_0(f"select count(*) from ({q_e}) as q_e;")
+        query_result = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_row_count_from_query(query))
+        q_e_result = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_row_count_from_query(self.Q_E))
         self.logger.debug(f"q_e result: {q_e_result}, query result: {query_result}")
-        '''
-        if q_e_result >= 1 and query_result >= 1:
-            return True
-        elif q_e_result == 1 and query_result == 0:
-            return True
-        elif q_e_result == 0 and query_result == 1:
-            return False
-        elif q_e_result == 0 and query_result == 0:
-            return False
-        '''
         if q_e_result >= 1:
             return True
         elif not q_e_result:
             return False
 
-    def extract_NEP_value(self, query, tabname, i):
+    def extract_NEP_value(self, query, tabname, i, is_for_joined):
         self.logger.debug("extract NEP val ", tabname, i)
         res = self.app.doJob(query)
         if len(res) > 1:
@@ -188,60 +175,43 @@ class NEP(Minimizer, GenerationPipeLineBase):
         filterAttribs = self.check_per_attrib(attrib_list,
                                               tabname,
                                               query,
-                                              filterAttribs)
+                                              filterAttribs, is_for_joined)
         if filterAttribs is not None and len(filterAttribs):
             return filterAttribs
         return False
 
-    def check_per_attrib(self, attrib_list, tabname, query, filterAttribs):
-        for attrib in attrib_list:
+    def check_per_attrib(self, attrib_list, tabname, query, filterAttribs, is_for_joined):
+        if is_for_joined:
+            self.check_per_joined_attrib(attrib_list, filterAttribs, query, tabname)
+        else:
+            self.check_per_single_attrib(attrib_list, filterAttribs, query, tabname)
+        return filterAttribs
+
+    def check_per_joined_attrib(self, attrib_list, filterAttribs, query, tabname):
+        joined_attribs = [attrib for attrib in attrib_list if attrib in self.joined_attribs]
+        for attrib in joined_attribs:
+            join_tabnames = []
+            other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
+            val, prev = self.update_attrib_to_see_impact(attrib, tabname)
+            self.update_attribs_bulk(join_tabnames, other_attribs, val)
+            new_result = self.app.doJob(query)
+            self.update_with_val(attrib, tabname, prev)
+            self.update_attribs_bulk(join_tabnames, other_attribs, prev)
+            self.update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
+
+    def check_per_single_attrib(self, attrib_list, filterAttribs, query, tabname):
+        single_attribs = [attrib for attrib in attrib_list if attrib not in self.joined_attribs]
+        for attrib in single_attribs:
             self.logger.debug(tabname, attrib)
-            if attrib not in self.global_key_attributes:
-                val = self.get_val(attrib, tabname)
+            prev = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
+            val = self.get_different_s_val(attrib, tabname, prev)
+            self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
+            self.update_with_val(attrib, tabname, val)
+            new_result = self.app.doJob(query)
+            self.update_with_val(attrib, tabname, prev)
+            self.update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
 
-                prev = self.connectionHelper.execute_sql_fetchone_0("SELECT " + attrib + " FROM " + tabname + ";")
-                self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
-                self.update_with_val(attrib, tabname, val)
-
-                new_result = self.app.doJob(query)
-
-                if len(new_result) > 1:
-                    filterAttribs.append((tabname, attrib, '<>', prev))
-                    self.logger.debug(filterAttribs, '++++++_______++++++')
-                    return filterAttribs
-
-    def update_with_val(self, attrib, tabname, val):
-        if 'date' in self.attrib_types_dict[(tabname, attrib)]:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + get_format('date', val) + ";"
-        elif 'int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
-            (tabname, attrib)]:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = " + str(val) + ";"
-        else:
-            update_q = "UPDATE " + tabname + " SET " + attrib + " = '" + val + "';"
-        self.connectionHelper.execute_sql([update_q])
-
-    def get_val(self, attrib, tabname):
-        if 'date' in self.attrib_types_dict[(tabname, attrib)]:
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
-            else:
-                val = get_dummy_val_for('date')
-            val = ast.literal_eval(get_format('date', val))
-
-        elif ('int' in self.attrib_types_dict[(tabname, attrib)] or 'numeric' in self.attrib_types_dict[
-            (tabname, attrib)]):
-            # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
-            else:
-                val = get_dummy_val_for('int')
-        else:
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = self.filter_attrib_dict[(tabname, attrib)]
-                self.logger.debug(val)
-                val = val.replace('%', '')
-            else:
-                val = get_char(get_dummy_val_for('char'))
-        return val
+    def update_filter_attribs_from_res(self, new_result, filterAttribs, tabname, attrib, prev):
+        if len(new_result) > 1:
+            filterAttribs.append((tabname, attrib, '<>', prev))
+            self.logger.debug(filterAttribs, '++++++_______++++++')

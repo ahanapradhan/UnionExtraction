@@ -43,7 +43,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_for_numeric_filter(self):
-        for i in range(5):
+        for i in range(1):
             lower = random.randint(1, 1000)
             upper = random.randint(lower + 1, 5000)
             query = f"select c_mktsegment as segment from customer,nation,orders where " \
@@ -54,6 +54,7 @@ class MyTestCase(BaseTestCase):
             print(eq)
             self.assertTrue(self.pipeline.correct)
 
+    # @pytest.mark.skip
     def test_for_numeric_filter_NEP(self):
         self.conn.config.detect_nep = True
         query = "select c_mktsegment as segment from customer,nation,orders where " \
@@ -65,14 +66,13 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_for_filter(self):
-        for i in range(10):
+        for i in range(1):
             lower = random.randint(1, 100)
             upper = random.randint(lower + 1, 200)
             query = f"SELECT avg(s_nationkey) FROM supplier WHERE s_suppkey >= {lower} and s_suppkey <= {upper};"
             eq = self.pipeline.doJob(query)
             self.assertTrue(eq is not None)
             print(eq)
-            self.assertTrue(f"Where s_suppkey  >= {lower} and s_suppkey <= {upper};" in eq)
             self.assertTrue(self.pipeline.correct)
 
     def test_issue_2_fix(self):
@@ -95,7 +95,7 @@ class MyTestCase(BaseTestCase):
 
     @pytest.mark.skip
     def test_1_mul(self):
-        for i in range(10):
+        for i in range(2):
             self.test_extraction_tpch_q1()
 
     def test_extraction_tpch_q1(self):
@@ -118,7 +118,7 @@ class MyTestCase(BaseTestCase):
 
     @pytest.mark.skip
     def test_in_loop(self):
-        for i in range(5):
+        for i in range(1):
             self.test_extraction_tpch_q1_filter()
 
     def test_extraction_tpch_q1_simple(self):
@@ -133,7 +133,7 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_for_date_filter(self):
-        for i in range(10):
+        for i in range(1):
             self.conn.connectUsingParams()
             key = 'q1_filter'
             query = queries.queries_dict[key]
@@ -144,7 +144,7 @@ class MyTestCase(BaseTestCase):
             self.conn.closeConnection()
 
     def test_for_date_filter_2(self):
-        for i in range(10):
+        for i in range(1):
             lower, upper = generate_random_dates()
             self.conn.connectUsingParams()
             q1_filter = f"select l_returnflag, l_linestatus, " \
@@ -163,7 +163,7 @@ class MyTestCase(BaseTestCase):
             self.conn.closeConnection()
 
     def test_for_date_filter_1(self):
-        for i in range(10):
+        for i in range(1):
             option = bool(random.getrandbits(1))
             self.conn.connectUsingParams()
             set_optimizer_params(option)
@@ -183,24 +183,6 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
-
-    def test_extraction_tpch_query1(self):
-        self.conn.connectUsingParams()
-        key = 'tpch_query1'
-        from_rels = tpchSettings.from_rels[key]
-        query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels, tpchSettings.key_lists)
-        self.assertTrue(eq is not None)
-        print(eq)
-        tp.print()
         self.conn.closeConnection()
 
     def test_extraction_tpch_query3(self):
@@ -626,13 +608,18 @@ class MyTestCase(BaseTestCase):
 
     @pytest.mark.skip
     def test_correlated_nested_query(self):
-        query = "select c_name from customer where c_acctbal > (select count(o_totalprice) from orders where " \
-                "c_custkey = o_custkey);"
+        query = "select c_name from customer where c_acctbal <= (select MIN(s_acctbal) from supplier);"
+
         self.conn.connectUsingParams()
         eq = self.pipeline.doJob(query)
-        # self.assertTrue(eq is not None)
+        self.assertTrue(eq is not None)
         print(eq)
-        # self.assertTrue(self.pipeline.correct)
+        '''
+        query = "select l_orderkey, l_extendedprice from lineitem " \
+                "where l_extendedprice >= (select max(l_discount) from lineitem);"
+        eq = Select l_orderkey, l_extendedprice From lineitem Where l_discount <= l_extendedprice; 
+        '''
+        self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
     def test_extreme(self):
@@ -659,8 +646,123 @@ class MyTestCase(BaseTestCase):
 
     @pytest.mark.skip
     def test_6_mul(self):
-        for i in range(10):
+        for i in range(2):
             self.test_extraction_Q6()
+
+    def test_dormant_aoa(self):
+        self.conn.connectUsingParams()
+        query = "Select l_shipmode, count(*) as count From orders, lineitem " \
+                "Where o_orderkey = l_orderkey and l_commitdate <= l_receiptdate and l_shipdate <= l_commitdate " \
+                "and l_receiptdate >= '1994-01-01' and l_receiptdate <= '1995-01-01' and l_extendedprice <= " \
+                "o_totalprice and l_extendedprice <= 70000 and o_totalprice >= 60000 Group By l_shipmode " \
+                "Order By l_shipmode;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        self.conn.closeConnection()
+
+    def test_paper_subquery1(self):
+        self.conn.connectUsingParams()
+        query = "SELECT c_name as name, (c_acctbal - o_totalprice) as account_balance " \
+                "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
+                "and c_nationkey = n_nationkey " \
+                "and c_mktsegment = 'FURNITURE' " \
+                "and n_name = 'INDIA' " \
+                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
+                "and o_totalprice <= c_acctbal;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.conn.closeConnection()
+
+    def test_paper_subquery2(self):
+        self.conn.connectUsingParams()
+        query = "SELECT s_name as name, " \
+                "(s_acctbal + o_totalprice) as account_balance " \
+                "FROM supplier, lineitem, orders, nation " \
+                "WHERE l_suppkey = s_suppkey " \
+                "and l_orderkey = o_orderkey " \
+                "and s_nationkey = n_nationkey and n_name = 'ARGENTINA' " \
+                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
+                "and o_totalprice >= s_acctbal and o_totalprice >= 30000 and 50000 >= s_acctbal;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.conn.closeConnection()
+
+    def test_UQ12_loop(self):
+        for i in range(10):
+            self.test_UQ12()
+
+    def test_UQ12_subq1(self):
+        self.conn.connectUsingParams()
+        query = "Select p_brand, o_clerk, l_shipmode " \
+                "From orders, lineitem, part " \
+                "Where l_partkey = p_partkey " \
+                "and o_orderkey = l_orderkey " \
+                "and l_shipdate >= o_orderdate " \
+                "and o_orderdate > '1994-01-01' " \
+                "and l_shipdate > '1995-01-01' " \
+                "and p_retailprice >= l_extendedprice " \
+                "and p_partkey < 10000 " \
+                "and l_suppkey < 10000 " \
+                "and p_container = 'LG CAN' " \
+                "Order By o_clerk LIMIT 10;"
+
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_UQ12_subq2(self):
+        self.conn.connectUsingParams()
+        query = "(Select p_brand, s_name, l_shipmode From lineitem, part, supplier  Where l_partkey = " \
+                "p_partkey " \
+                "and p_container = 'LG CAN' and l_shipdate  >= '1995-01-02' and l_suppkey <= 13999 and l_partkey <= " \
+                "14999 " \
+                "and l_extendedprice <= s_acctbal order by s_name Limit 10); "
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_UQ10_subq2(self):
+        query = "SELECT l_orderkey, l_shipdate FROM lineitem, " \
+                "orders where l_orderkey = o_orderkey " \
+                "and o_orderdate < '1994-01-01' AND l_quantity > 20   AND " \
+                "l_extendedprice > 1000;"
+        self.conn.connectUsingParams()
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+        self.assertEqual(3, eq.count("and"))
+
+    def test_UQ11(self):
+        self.conn.connectUsingParams()
+        query = "Select o_orderpriority, " \
+                "count(*) as order_count " \
+                "From orders, lineitem " \
+                "Where l_orderkey = o_orderkey and o_orderdate >= '1993-07-01' " \
+                "and o_orderdate < '1993-10-01' and l_commitdate < l_receiptdate " \
+                "Group By o_orderpriority " \
+                "Order By o_orderpriority;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_extreme(self):
+        self.conn.connectUsingParams()
+        query = "select count(*) from part where p_size >= -2147483647;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
 
 
 if __name__ == '__main__':

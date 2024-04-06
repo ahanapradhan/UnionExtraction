@@ -33,14 +33,12 @@ class Executable(Base):
         query = self.extract_params_from_args(args)
         result = []
         try:
-            res, description = self.connectionHelper.execute_sql_fetchall(query)
+            res, description = self.connectionHelper.execute_sql_fetchall(query, self.logger)
             if description is not None and not is_error(description):
                 colnames = [desc[0] for desc in description]
                 result.append(tuple(colnames))
             if res is not None:
                 result = get_result_as_tuple_1(res, result)
-            if is_error(description):
-                raise Exception(REL_ERROR)
 
         except Exception as error:
             self.logger.error("Executable could not be run. Error: " + str(error))

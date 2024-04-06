@@ -101,6 +101,59 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_paper_example(self):
+        query = "SELECT c_name as name, c_acctbal as account_balance " \
+                "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
+                "and c_nationkey = n_nationkey and c_mktsegment = 'FURNITURE' " \
+                "and n_name = 'INDIA' " \
+                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
+                "and o_totalprice <= c_acctbal " \
+                "UNION ALL SELECT s_name as name, " \
+                "s_acctbal as account_balance " \
+                "FROM supplier, lineitem, orders, nation " \
+                "WHERE l_suppkey = s_suppkey " \
+                "and l_orderkey = o_orderkey " \
+                "and s_nationkey = n_nationkey and n_name = 'ARGENTINA' " \
+                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
+                "and o_totalprice >= s_acctbal and o_totalprice >= 30000 and 50000 >= s_acctbal;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_UQ11(self):
+        self.conn.connectUsingParams()
+        query = "Select o_orderpriority, " \
+                "count(*) as order_count " \
+                "From orders, lineitem " \
+                "Where l_orderkey = o_orderkey and o_orderdate >= '1993-07-01' " \
+                "and o_orderdate < '1993-10-01' and l_commitdate < l_receiptdate " \
+                "Group By o_orderpriority " \
+                "Order By o_orderpriority;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_UQ10(self):
+        self.conn.connectUsingParams()
+        query = "Select l_shipmode, count(*) as count " \
+                "From orders, lineitem " \
+                "Where o_orderkey = l_orderkey and l_commitdate < l_receiptdate and l_shipdate < l_commitdate " \
+                "and l_receiptdate >= '1994-01-01' and l_receiptdate < '1995-01-01' " \
+                "and l_extendedprice <= o_totalprice " \
+                "and l_extendedprice <= 70000 " \
+                "and o_totalprice > 60000 " \
+                "Group By l_shipmode " \
+                "Order By l_shipmode;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
 
 if __name__ == '__main__':
     unittest.main()

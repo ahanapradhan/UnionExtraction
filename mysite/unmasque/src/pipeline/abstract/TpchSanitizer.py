@@ -1,10 +1,13 @@
+from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
+
+
 class TpchSanitizer:
 
-    def __init__(self, connectionHelper):
+    def __init__(self, connectionHelper: AbstractConnectionHelper):
         self.all_relations = []
         self.connectionHelper = connectionHelper
 
-    def set_all_relations(self, relations):
+    def set_all_relations(self, relations: list[str]):
         self.all_relations.extend(relations)
 
     def sanitize(self):
@@ -16,7 +19,6 @@ class TpchSanitizer:
             restore_name = self.connectionHelper.queries.get_restore_name(table)
             self.connectionHelper.execute_sql([drop_fn(table),
                                                self.connectionHelper.queries.alter_table_rename_to(restore_name, table)])
-
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table("temp"),
                                            self.connectionHelper.queries.drop_view("r_e"),
                                            self.connectionHelper.queries.drop_table("r_h")])

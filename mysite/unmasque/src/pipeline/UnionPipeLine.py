@@ -1,13 +1,11 @@
 from .ExtractionPipeLine import ExtractionPipeLine
 from ..core.union import Union
-
-from ..util.constants import UNION, START, DONE, RUNNING, FROM_CLAUSE, WRONG
+from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
 
 
 class UnionPipeLine(ExtractionPipeLine):
 
     def __init__(self, connectionHelper):
-
         super().__init__(connectionHelper)
         self.name = "Union PipeLine"
         self.pipeLineError = False
@@ -25,7 +23,6 @@ class UnionPipeLine(ExtractionPipeLine):
         self.all_relations = union.all_relations
         key_lists = union.key_lists
         self.connectionHelper.closeConnection()
-
         u_eq = []
 
         for rels in p:
@@ -64,8 +61,8 @@ class UnionPipeLine(ExtractionPipeLine):
                 u_Q = u_Q[1:-2] + ';'
         result = ""
         if self.pipeLineError:
-            result = ("Could not extract the query due to errors."
-                      "\nHere's what I have as a half-baked answer:\n") + pstr + "\n"
+            result = f"Could not extract the query due to errors {self.state}." \
+                     f"\nHere's what I have as a half-baked answer:\n{pstr}\n"
             self.update_state(WRONG)
         result += u_Q
         self.update_state(DONE)

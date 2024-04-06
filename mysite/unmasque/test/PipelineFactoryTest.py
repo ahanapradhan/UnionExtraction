@@ -57,7 +57,8 @@ def monitor_func(factory, timeout, observed):
 
 class MockRequest:
     session = {
-        'hq': "select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890 limit 3;",
+        'hq': "select o_orderkey as key from customer, orders where c_custkey = o_custkey "
+              "and o_totalprice <= 890 limit 3;",
         'token': '',
         'partials': ''}
 

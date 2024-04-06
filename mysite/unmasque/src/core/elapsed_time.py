@@ -19,9 +19,8 @@ class ElapsedTime:
                    "Order by:",
                    "Limit:",
                    "NEP: ",
-                   "Result Comparator:",
-                   "Total: "
-                   ]
+                   "Result\n Comparator:",
+                   "Total: "]
 
     def __init__(self):
         self.t_sampling = 0
@@ -149,7 +148,6 @@ class ElapsedTime:
             i += 1
 
         # print(self.display_string)
-
         pp_tab = zip(self.clause_keys, times, self.get_app_calls())
 
         table = list(pp_tab)

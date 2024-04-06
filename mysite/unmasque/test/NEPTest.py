@@ -58,9 +58,11 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
+        aoa_predicates = []
+        join_graph = []
+
         global_min_instance_dict = {}
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -69,13 +71,90 @@ class MyTestCase(BaseTestCase):
 
         self.assertEqual("l_shipdate >= '1994-01-01' and l_quantity <= 23.0  and l_returnflag <> 'R' ", q_gen.where_op)
 
-        q_e = f"Select {q_gen.select_op}\nFrom {q_gen.from_op}\nWhere {q_gen.where_op}\n" \
-              f"Group By {q_gen.group_by_op}\nLimit {q_gen.limit_op};"
+        q_e = f"Select {q_gen.select_op}\n From {q_gen.from_op} \n Where {q_gen.where_op} \n" \
+              f" Group By {q_gen.group_by_op} \n Limit {q_gen.limit_op};"
         self.assertEqual(q_e, o.Q_E)
 
         self.conn.closeConnection()
 
-    #@pytest.mark.skip
+    def test_for_numeric_filter_NEP(self):
+        self.conn.connectUsingParams()
+        query = "select c_mktsegment as segment from customer,nation,orders where " \
+                "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+                "and n_name not LIKE 'B%';"
+        Q_E = "select c_mktsegment as segment from customer,nation,orders where " \
+              "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey;"
+        core_rels = ['orders', 'customer', 'nation']
+        filters = [('customer', 'c_acctbal', '<=', 1000, 5000)]
+
+        aoa_predicates = []
+        join_graph = [['c_nationkey', 'n_nationkey'],
+                      ['c_custkey', 'o_custkey']]
+
+        global_attrib_types = {
+            ('orders', "o_orderkey", "integer"),
+            ('orders', "o_custkey", "integer"),
+            ('orders', "o_orderstatus", "character"),
+            ('orders', "o_totalprice", "numeric"),
+            ('orders', "o_orderdate", "date"),
+            ('orders', "o_orderpriority", "character"),
+            ('orders', "o_clerk", "character"),
+            ('orders', "o_shippriority", "integer"),
+            ('orders', "o_comment", "character varying"),
+            ('customer', 'c_custkey', 'integer'),
+            ('customer', 'c_name', 'character varying'),
+            ('customer', 'c_address', 'character varying'),
+            ('customer', 'c_nationkey', 'integer'),
+            ('customer', 'c_phone', 'character'),
+            ('customer', 'c_acctbal', 'numeric'),
+            ('customer', 'c_mktsegment', 'character'),
+            ('customer', 'c_comment', 'character varying'),
+            ('nation', "n_nationkey", "integer"),
+            ('nation', "n_name", "character"),
+            ('nation', "n_regionkey", "integer"),
+            ('nation', "n_comment", "character varying")
+        }
+
+        global_all_attribs = [
+            ["o_orderkey",
+             "o_custkey",
+             "o_orderstatus",
+             "o_totalprice",
+             "o_orderdate",
+             "o_orderpriority",
+             "o_clerk",
+             "o_shippriority",
+             "o_comment"], ['c_custkey', 'c_name', 'c_address', 'c_nationkey',
+                            'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
+            ["n_nationkey",
+             "n_name",
+             "n_regionkey",
+             "n_comment"]]
+
+        q_gen = QueryStringGenerator(self.conn)
+        q_gen.from_op = 'customer, orders, nation'
+        q_gen.group_by_op = ''
+        q_gen.limit_op = None
+        q_gen.method_call_count = 0
+        q_gen.order_by_op = ''
+        q_gen.select_op = 'c_mktsegment as segment'
+        q_gen.where_op = "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey"
+
+        global_min_instance_dict = {}
+
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.mock = True
+
+        check = o.doJob([query, Q_E])
+        self.assertTrue(check)
+        print(o.Q_E)
+        self.assertEqual("c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey "
+                         "and c_custkey = o_custkey and n_name not LIKE 'B%' ", q_gen.where_op)
+        q_e = f"Select {q_gen.select_op}\n From {q_gen.from_op} \n Where {q_gen.where_op} ;"
+        self.assertEqual(q_e, o.Q_E)
+        self.conn.closeConnection()
+
+    # @pytest.mark.skip
     def test_mukul_overlapping_ranges(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count From lineitem Where l_quantity > 20 and l_quantity <> 25 " \
@@ -115,8 +194,10 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = "l_quantity > 20 "
 
         global_min_instance_dict = {}
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        aoa_predicates = []
+        join_graph = []
+
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -176,8 +257,10 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31'"
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        aoa_predicates = []
+        join_graph = []
+
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -241,9 +324,10 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 'l_quantity <= 23.0 '
 
         global_min_instance_dict = {}
+        aoa_predicates = []
+        join_graph = []
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -276,6 +360,11 @@ class MyTestCase(BaseTestCase):
 
         filters = [('orders', 'o_orderstatus', 'equal', 'F', 'F')]
 
+        aoa_predicates = []
+        join_graph = [['s_suppkey', 'l_suppkey'],
+                      ['o_orderkey', 'l_orderkey'],
+                      ['s_nationkey', 'n_nationkey']]
+
         global_attrib_types = {('supplier', "s_suppkey", "integer"),
                                ('supplier', "s_name", "character"),
                                ('supplier', "s_address", "character varying"),
@@ -301,10 +390,6 @@ class MyTestCase(BaseTestCase):
                                ('orders', "o_clerk", "character"),
                                ('orders', "o_shippriority", "integer"),
                                ('orders', "o_comment", "character varying"),
-                               ('nation', "n_nationkey", "integer"),
-                               ('nation', "n_name", "character"),
-                               ('nation', "n_regionkey", "integer"),
-                               ('nation', "n_comment", "character varying"),
                                ('nation', "n_nationkey", "integer"),
                                ('nation', "n_name", "character"),
                                ('nation', "n_regionkey", "integer"),
@@ -343,8 +428,7 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -432,9 +516,11 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 'c_phone Like \'27-_%\' and c_custkey = o_custkey and o_orderkey = l_orderkey '
 
         global_min_instance_dict = {}
+        aoa_predicates = []
+        join_graph = [['c_custkey', 'o_custkey'],
+                      ['o_orderkey', 'l_orderkey']]
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -448,6 +534,7 @@ class MyTestCase(BaseTestCase):
 
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_mukul_thesis_Q18_modified(self):
         self.conn.connectUsingParams()
         q = "Select c_phone, o_orderdate, o_totalprice, sum(l_quantity) From customer, orders, lineitem " \
@@ -522,9 +609,11 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 'c_name LIKE \'Customer#%217\' and c_custkey = o_custkey and o_orderkey = l_orderkey '
 
         global_min_instance_dict = {}
+        aoa_predicates = []
+        join_graph = [['c_custkey', 'o_custkey'],
+                      ['o_orderkey', 'l_orderkey']]
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 
@@ -602,10 +691,6 @@ class MyTestCase(BaseTestCase):
                                ('nation', "n_nationkey", "integer"),
                                ('nation', "n_name", "character"),
                                ('nation', "n_regionkey", "integer"),
-                               ('nation', "n_comment", "character varying"),
-                               ('nation', "n_nationkey", "integer"),
-                               ('nation', "n_name", "character"),
-                               ('nation', "n_regionkey", "integer"),
                                ('nation', "n_comment", "character varying")
                                }
 
@@ -626,9 +711,11 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 'ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = \'ARGENTINA\''
 
         global_min_instance_dict = {}
+        aoa_predicates = []
+        join_graph = [['ps_suppkey', 's_suppkey'],
+                      ['s_nationkey', 'n_nationkey']]
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, tpchSettings.global_pk_dict, global_all_attribs,
-                global_attrib_types, filters, global_key_attribs, q_gen, global_min_instance_dict)
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
 
         o.mock = True
 

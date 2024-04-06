@@ -64,9 +64,11 @@ class ViewMinimizer(Minimizer):
 
         self.local_other_info_dict = {}
         core_sizes = self.getCoreSizes()
+        print("core_sizes:", core_sizes)
 
         for tabname in self.core_relations:
             view_name = self.connectionHelper.queries.get_tabname_1(tabname) if cs_pass else self.connectionHelper.queries.get_restore_name(tabname)
+            print("view_name:", view_name)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, view_name)])
             rctid = self.connectionHelper.execute_sql_fetchone(self.connectionHelper.queries.get_min_max_ctid(view_name))
             core_sizes = self.do_binary_halving(core_sizes, query, tabname, rctid, view_name)

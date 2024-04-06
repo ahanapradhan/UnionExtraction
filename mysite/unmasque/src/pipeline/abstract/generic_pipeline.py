@@ -11,7 +11,7 @@ from ....refactored.result_comparator import ResultComparator
 
 def synchronized(wrapped):
     lock = threading.Lock()
-    print(lock, id(lock))
+    # print(lock, id(lock))
 
     @functools.wraps(wrapped)
     def _wrap(*args, **kwargs):
@@ -83,7 +83,7 @@ class GenericPipeLine:
     def verify_correctness(self, query, result):
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams()
-        rc = ResultComparator(self.connectionHelper, True)
+        rc = ResultComparator(self.connectionHelper, False)
         rc.set_all_relations(self.all_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)

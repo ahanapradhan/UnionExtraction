@@ -1,6 +1,6 @@
 import time
 
-
+from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 from ...src.util.Log import Log
 
@@ -14,7 +14,7 @@ class Base(TpchSanitizer):
             cls._instance = super(Base, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, connectionHelper, name):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str):
         super().__init__(connectionHelper)
         self.connectionHelper = connectionHelper
         self.extractor_name = name

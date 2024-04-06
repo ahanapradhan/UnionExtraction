@@ -3,8 +3,23 @@ import datetime
 import itertools
 import math
 
+from dateutil.relativedelta import relativedelta
+
 from ...src.util import constants
 from ...src.util.constants import dummy_int, dummy_date, dummy_char
+
+
+def count_empty_lists_in(l):
+    return sum(x.count([]) for x in l)
+
+
+def find_diff_idx(list1, list2):
+    diffs = []
+    if len(list1) == len(list2):
+        for i in range(len(list1)):
+            if list1[i] != list2[i]:
+                diffs.append(i)
+    return diffs
 
 
 def isQ_result_empty(Res):
@@ -50,26 +65,45 @@ def is_number(s):
         return False
 
 
+def is_date(s):
+    return isinstance(s, datetime.date)
+
+
+def get_datatype_of_val(val):
+    if is_date(val):
+        return 'date'
+    elif is_int(val):
+        return 'int'
+    elif is_number(val):
+        return 'numeric'
+    else:
+        raise ValueError
+
+
 def get_unused_dummy_val(datatype, value_used):
-    if datatype == 'int':
+    if datatype in ['int', 'integer', 'numeric', 'float']:
         dint = constants.dummy_int
     elif datatype == 'date':
         dint = constants.dummy_date
-    elif datatype == 'char':
+    elif datatype in ['char', 'str']:
         if constants.dummy_char == 91:
             constants.dummy_char = 65
         dint = get_char(constants.dummy_char)
+    else:
+        raise ValueError
 
     while dint in value_used:
         dint = get_val_plus_delta(datatype, dint, 1)
 
-    if datatype == 'int':
+    if datatype in ['int', 'integer', 'numeric', 'float']:
         constants.dummy_int = dint
     elif datatype == 'date':
         constants.dummy_date = dint
-    elif datatype == 'char':
+    elif datatype in ['char', 'str']:
         dint = get_char(dint)
         constants.dummy_char = get_int(dint)
+    else:
+        raise ValueError
     return dint
 
 
@@ -96,13 +130,18 @@ def get_dummy_val_for(datatype):
 
 def get_val_plus_delta(datatype, min_val, delta):
     plus_delta = min_val
-    if datatype == 'date':
-        plus_delta = min_val + datetime.timedelta(days=delta)
-    elif datatype == 'int' or datatype == 'numeric':  # INT, NUMERIC
-        plus_delta = min_val + delta
-    elif datatype == 'char':
-        plus_delta = get_int(min_val) + delta
-    return plus_delta
+    try:
+        if datatype == 'date':
+            plus_delta = min_val + datetime.timedelta(days=delta)
+        elif datatype == 'int' or datatype == 'numeric':  # INT, NUMERIC
+            plus_delta = min_val + delta
+        elif datatype == 'char':
+            plus_delta = get_int(min_val) + delta
+            if get_char(plus_delta) == '\\':
+                plus_delta = plus_delta + 1
+        return plus_delta
+    except OverflowError:
+        return min_val
 
 
 def get_min_and_max_val(datatype):
@@ -127,20 +166,33 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
 def get_format(datatype, val):
     if datatype == 'date' or datatype == 'char' \
             or datatype == 'character' \
-            or datatype == 'character varying':
-        return "'" + str(val) + "'"
+            or datatype == 'character varying' or datatype == 'str':
+        return f"\'{str(val)}\'"
     elif datatype == 'float' or datatype == 'numeric':
         return str(round(val, 12))
     return str(val)
 
 
-def get_mid_val(datatype, high, low):
+def add_two(one, two, datatype):
     if datatype == 'date':
-        mid_val = low + datetime.timedelta(days=int(math.floor((high - low).days / 2)))
+        year = two.year
+        month = two.month
+        day = two.day
+        one_ = one + datetime.timedelta(days=day)
+        one__ = one_ + relativedelta(months=month)
+        one___ = one__ + relativedelta(years=year)
+        return one___
+    else:
+        return one + two
+
+
+def get_mid_val(datatype, high, low, div=2):
+    if datatype == 'date':
+        mid_val = low + datetime.timedelta(days=int(math.floor((high - low).days / div)))
     elif datatype == 'int':
-        mid_val = low + int((high - low)/2)
+        mid_val = low + int((high - low) / div)
     else:  # numeric
-        mid_val = (high + low) / 2
+        mid_val = (high + low) / div
         mid_val = round(mid_val, 3)
     return mid_val
 
@@ -187,14 +239,12 @@ def get_2_elems_sublists(l):
     return comb1
 
 
-def get_escape_string(att_order, attrib_list_inner):
+def get_escape_string(attrib_list_inner):
     esc_string = '(' + '%s'
     for k in range(1, len(attrib_list_inner)):
         esc_string = esc_string + ", " + '%s'
     esc_string = esc_string + ")"
-    att_order = att_order[:-1]
-    att_order += ')'
-    return att_order, esc_string
+    return esc_string
 
 
 def get_datatype(my_list, input_tuple):

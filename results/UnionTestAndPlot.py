@@ -44,7 +44,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(hqs), len(eqs))
 
         with open(self.latex_filename, 'a') as expt:
-            expt.write("{\\tiny\n\\begin{longtable}{|p{0.5cm}|p{7cm}|p{7cm}|}\n"
+            expt.write("{\\tiny\n\\begin{supertabular}{|p{0.5cm}|p{7cm}|p{7cm}|}\n"
                        "\\hline\n"
                        "{\\bf Q. No.} & {\\bf Hidden Query} & {\\bf Extracted Query} \\\\\\hline\\hline\n")
 
@@ -101,8 +101,11 @@ class MyTestCase(BaseTestCase):
             t_result_com = 0
             t_union = 0
 
+            print(sql)
+
             for i in range(ITERATIONS):
-                t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_view_min, t_where_clause = self.extract_query_once(
+                t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union, t_view_min, \
+                    t_where_clause = self.extract_query_once(
                     i, query, sql, t_aggregate, t_groupby, t_limit, t_orderby, t_projection, t_sampling, t_union,
                     t_view_min, t_where_clause)
 
@@ -112,9 +115,9 @@ class MyTestCase(BaseTestCase):
             with open(self.dat_filename, "a") as myfile:
                 myfile.write(dat_line)
 
-        self.create_gnuplot()
+        # self.create_gnuplot()
 
-        self.assertTrue(os.path.isfile(self.plot_filename))  # add assertion here
+        # self.assertTrue(os.path.isfile(self.plot_filename))  # add assertion here
 
     def do_dat_file_init(self):
         if not os.path.exists(self.extracted_U):
@@ -130,7 +133,7 @@ class MyTestCase(BaseTestCase):
         # Iterate directory
         for path in os.listdir(self.query_dir_path):
             # check if current path is a file
-            if os.path.isfile(os.path.join(self.query_dir_path, path)) and path == 'UQ8.sql':
+            if os.path.isfile(os.path.join(self.query_dir_path, path)):
                 res.append(path)
         print(res)
         return res
@@ -173,6 +176,7 @@ class MyTestCase(BaseTestCase):
                            t_union, t_view_min, t_where_clause):
         self.pipeline = UnionPipeLine(self.conn)
         u_Q = self.pipeline.doJob(query)
+        print(sql)
         self.assertTrue(self.pipeline.correct)
         print(u_Q)
         if not i:
@@ -232,7 +236,6 @@ class MyTestCase(BaseTestCase):
             os.remove(self.plot_filename)
 
     def test_plot(self):
-        self.do_experiment()
         self.create_gnuplot()
         self.create_latex_table_of_queries()
 

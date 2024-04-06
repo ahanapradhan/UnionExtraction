@@ -4,7 +4,7 @@ import psycopg2
 import psycopg2.extras
 from psycopg2 import OperationalError
 
-from .constants import OK
+from .constants import OK, REL_ERROR
 from ..core.abstract.abstractConnection import AbstractConnectionHelper
 from ...refactored.util.postgres_queries import PostgresQueries
 
@@ -23,7 +23,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
     def get_all_tables_for_restore(self):
         res, desc = self.execute_sql_fetchall(
             self.get_sanitization_select_query(["SPLIT_PART(table_name, '_', 1) as original_name"],
-                                                                ["table_name like '%_restore'"]))
+                                               ["table_name like '%_restore'"]))
         tables = [row[0] for row in res]
         return tables
 
@@ -70,9 +70,17 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
     def connectUsingParams(self):
         self.conn = psycopg2.connect(self.paramString)
 
+    def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
+        for param in params:
+            # print(sql)
+            # print(param)
+            # print(sql.count(","), len(param))
+            if logger is not None:
+                logger.debug(sql, param)
+            cur.execute(sql, param)
+        cur.close()
+
     def execute_sql_fetchall(self, sql, logger=None):
-        res = None
-        des = None
         cur = self.get_cursor()
         # print("...", sql, "...")
         try:
@@ -85,6 +93,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
                 logger.error(e)
                 logger.error(e.diag.message_detail)
             des = str(e)
+            raise ValueError(des)
         return res, des
 
     def get_DictCursor(self):
@@ -95,14 +104,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
         for sql in sqls:
             # print("..cur execute.." + sql)
             try:
-                if isinstance(sql, str):
-                    print("..cur execute.." + sql)
-                    cur.execute(sql)
-                else:
-                    func = getattr(self.queries, sql[0])
-                    sql_q = func(*sql[1:])
-                    print("..cur execute.." + sql_q)
-                    cur.execute(sql_q)
+                cur.execute(sql)
             except psycopg2.ProgrammingError as e:
                 if logger is not None:
                     logger.error(e)

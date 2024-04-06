@@ -171,20 +171,7 @@ class MyTestCase(BaseTestCase):
         check = minimizer.doJob(queries.Q18_test)
         self.assertTrue(check)
 
-        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
-                      minimizer.global_min_instance_dict)
-
-        wc.doJob(queries.Q18_test)
-        self.assertEqual(len(wc.global_all_attribs), 2)  # per table 1 attrib, Q17 has 2 tables
-
-        self.assertEqual(len(wc.global_join_graph), 1)
-        self.assertEqual(set(wc.global_join_graph[0]), {'p_partkey', 'ps_partkey'})
-        self.assertEqual(len(wc.global_key_attributes), 2)
-        self.assertTrue('p_partkey' in wc.global_key_attributes)
-        self.assertTrue('ps_partkey' in wc.global_key_attributes)
-
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+        wc = Filter(self.conn, from_rels, minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q18_test)
         # print(filters)
@@ -205,20 +192,7 @@ class MyTestCase(BaseTestCase):
         check = minimizer.doJob(queries.Q18_test1)
         self.assertTrue(check)
 
-        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
-                      minimizer.global_min_instance_dict)
-        wc.doJob(queries.Q18_test1)
-
-        self.assertEqual(len(wc.global_all_attribs), 2)  # per table 1 attrib, Q17 has 2 tables
-
-        self.assertEqual(len(wc.global_join_graph), 1)
-        self.assertEqual(set(wc.global_join_graph[0]), {'p_partkey', 'ps_partkey'})
-        self.assertEqual(len(wc.global_key_attributes), 2)
-        self.assertTrue('p_partkey' in wc.global_key_attributes)
-        self.assertTrue('ps_partkey' in wc.global_key_attributes)
-
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+        wc = Filter(self.conn, from_rels, minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q18_test1)
         print(filters)
@@ -247,24 +221,7 @@ class MyTestCase(BaseTestCase):
         check = minimizer.doJob(queries.Q3)
         self.assertTrue(check)
 
-        wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
-                      minimizer.global_min_instance_dict)
-        wc.doJob(queries.Q3)
-
-        self.assertEqual(len(wc.global_all_attribs), 3)  # per table 1 attrib, Q17 has 2 tables
-
-        self.assertEqual(len(wc.global_join_graph), 2)
-        join_edges = frozenset({frozenset({'o_custkey', 'c_custkey'}),
-                                frozenset({'o_orderkey', 'l_orderkey'})})
-        print(wc.global_join_graph)
-        for join_edge in wc.global_join_graph:
-            edge = frozenset({join_edge[0], join_edge[1]})
-            self.assertTrue(edge in join_edges)
-
-        self.assertEqual(len(wc.global_key_attributes), 4)
-
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+        wc = Filter(self.conn, from_rels, minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q3)
         print(filters)

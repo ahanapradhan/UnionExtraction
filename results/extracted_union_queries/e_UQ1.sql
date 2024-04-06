@@ -1,7 +1,9 @@
-(Select ps_suppkey as p_partkey, s_name as p_name
-From partsupp, supplier
-Where s_suppkey = ps_suppkey and ps_availqty  >= 202)
+(Select p_partkey, p_name
+ From part, partsupp 
+ Where p_partkey = ps_partkey
+ and ps_availqty  >= 101)
  UNION ALL 
-(Select ps_partkey as p_partkey, p_name
-From partsupp, part
-Where p_partkey = ps_partkey and ps_availqty  >= 101);
+(Select s_suppkey as p_partkey, s_name as p_name
+ From partsupp, supplier 
+ Where ps_suppkey = s_suppkey
+ and ps_availqty  >= 201);

@@ -69,6 +69,7 @@ class PipeLineFactory:
 
     def create_pipeline(self, connectionHelper):
         detect_union = connectionHelper.config.detect_union
+        pipe = None
         if detect_union:
             pipe = UnionPipeLine(connectionHelper)
             print("Union Pipeline")

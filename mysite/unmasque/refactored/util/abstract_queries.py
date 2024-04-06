@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-from ...refactored.util.utils import get_format
-
 
 class CommonQueries(ABC):
 
@@ -96,7 +94,7 @@ class CommonQueries(ABC):
         pass
 
     @abstractmethod
-    def update_tab_attrib_with_value(self, attrib, tab, value):
+    def update_tab_attrib_with_value(self, tab, attrib, value):
         pass
 
     @abstractmethod
@@ -107,9 +105,12 @@ class CommonQueries(ABC):
     def update_sql_query_tab_attribs(self, tab, attrib):
         pass
 
+    def update_sql_query_tab_date_attrib_value(self, tab, attrib, value):
+        return self.update_tab_attrib_with_value(tab, attrib, value)
+
+    @abstractmethod
     def form_update_query_with_value(self, update_string, datatype, val):
-        update_val = get_format(datatype, val)
-        return f"{update_string} {update_val};"
+        pass
 
     @abstractmethod
     def get_column_details_for_table(self, schema, tab):
@@ -129,7 +130,7 @@ class CommonQueries(ABC):
         return f"Insert into {tab} (Select * from {fromtab} Where ctid = {ctid});"
 
     @abstractmethod
-    def select_ctid_from_tabname_offset(self,tabname, offset):
+    def select_ctid_from_tabname_offset(self, tabname, offset):
         return f"Select ctid from {tabname} offset {offset} Limit 1;"
 
     @abstractmethod
@@ -150,4 +151,8 @@ class CommonQueries(ABC):
 
     @abstractmethod
     def hashtext_query(self, tab):
+        pass
+
+    @abstractmethod
+    def create_table_as_select_star_from_limit_1(self, tab, fromtab):
         pass

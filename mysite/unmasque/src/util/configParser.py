@@ -3,7 +3,7 @@ from pathlib import Path
 
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
-    SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP
+    SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE
 
 
 class Config:
@@ -30,7 +30,9 @@ class Config:
         self.config_loaded = False
         self.detect_union = False
         self.detect_nep = False
+        self.use_cs2 = False
         self.app_type = ApplicationType.SQL_ERR_FWD
+        self.database = "postgres"
 
     def parse_config(self):
         if self.config_loaded:
@@ -41,6 +43,7 @@ class Config:
             config_object = configparser.ConfigParser()
             with open(config_file, "r") as file_object:
                 config_object.read_file(file_object)
+                self.database = config_object.get(DATABASE_SECTION, DATABASE)
                 self.host = config_object.get(DATABASE_SECTION, HOST)
                 self.port = config_object.get(DATABASE_SECTION, PORT)
                 self.user = config_object.get(DATABASE_SECTION, USER)
@@ -52,17 +55,8 @@ class Config:
                 self.index_maker = config_object.get(SUPPORT_SECTION, "index_maker")
 
                 self.log_level = config_object.get(LOGGING_SECTION, LEVEL)
-                detect_union = config_object.get(FEATURE_SECTION, DETECT_UNION)
-                if detect_union.lower() == "no":
-                    self.detect_union = False
-                elif detect_union.lower() == "yes":
-                    self.detect_union = True
 
-                detect_nep = config_object.get(FEATURE_SECTION, DETECT_NEP)
-                if detect_nep.lower() == "no":
-                    self.detect_nep = False
-                elif detect_nep.lower() == "yes":
-                    self.detect_nep = True
+                self.config_optional_features(config_object)
 
         except FileNotFoundError:
             print("config.ini not found. Default configs loaded!")
@@ -70,3 +64,20 @@ class Config:
             print(" config not found. Using default config!")
 
         self.config_loaded = True
+
+    def config_optional_features(self, config_object):
+        detect_union = config_object.get(FEATURE_SECTION, DETECT_UNION)
+        if detect_union.lower() == "no":
+            self.detect_union = False
+        elif detect_union.lower() == "yes":
+            self.detect_union = True
+        detect_nep = config_object.get(FEATURE_SECTION, DETECT_NEP)
+        if detect_nep.lower() == "no":
+            self.detect_nep = False
+        elif detect_nep.lower() == "yes":
+            self.detect_nep = True
+        use_cs2 = config_object.get(FEATURE_SECTION, USE_CS2)
+        if use_cs2.lower() == "no":
+            self.use_cs2 = False
+        elif use_cs2.lower() == "yes":
+            self.use_cs2 = True

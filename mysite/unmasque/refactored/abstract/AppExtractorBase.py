@@ -8,10 +8,13 @@ class AppExtractorBase(Base):
         super().__init__(connectionHelper, name)
         self.app = Executable(connectionHelper)
         self.app_calls = 0
+        self.enabled = True
 
     def doAppCountJob(self, args):
-        self.app_calls = self.app.method_call_count
-        self.result = self.doActualJob(args)
-        self.app_calls = self.app.method_call_count - self.app_calls
-        return self.result
+        if self.enabled:
+            self.app_calls = self.app.method_call_count
+            self.result = self.doActualJob(args)
+            self.app_calls = self.app.method_call_count - self.app_calls
+            return self.result
+        return True
 

@@ -9,6 +9,7 @@ from ...src.util.constants import OK
 
 
 class OracleConnectionHelper(AbstractConnectionHelper):
+
     def rollback_transaction(self):
         self.execute_sql(["ROLLBACK"])
 
@@ -29,6 +30,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         self.paramString = f'{self.config.user}/{self.config.password}@{self.config.host}:{self.config.port}/{self.config.dbname}'
         self.queries = OracleQueries()
         self.config.config_loaded = True
+        self.queries.set_schema(self.config.schema)
 
     def form_query(self, selections, wheres):
         pass
@@ -50,12 +52,20 @@ class OracleConnectionHelper(AbstractConnectionHelper):
     def connectUsingParams(self):
         self.conn = cx_Oracle.connect(self.paramString)
 
+    def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
+        for param in params:
+            query = f"{sql} {str(param)}"
+            if logger is not None:
+                logger.debug(query)
+            cur.execute(query)
+        cur.close()
+
     def execute_sql_fetchall(self, sql, logger=None):
         res = None
         des = None
         cur = self.get_cursor()
-        cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         try:
+            cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
             cur.execute(sql)
             res = cur.fetchall()
             des = cur.description
@@ -63,8 +73,10 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         except oracledb.Error as e:
             if logger is not None:
                 logger.error(e)
+            print(sql)
             des = str(e)
             print(des)
+            raise ValueError(des)
         return res, des
 
     def get_DictCursor(self):
@@ -74,17 +86,18 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         # print(cur)
         for sql in sqls:
-            print("..cur execute.." + sql)
+            if logger is not None:
+                logger.debug(f"..cur execute..{sql}")
             try:
-                if isinstance(sql, str):
-                    cur.execute(sql)
-                else:
-                    func = getattr(self.queries, sql[0])
-                    sql_q = func(*sql[1:])
-                    cur.execute(sql_q)
+                cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
+                cur.execute(sql)
+                # cur.execute(f"COMMIT")
             except oracledb.Error as e:
                 if logger is not None:
                     logger.error(e)
+                print(sql)
+                print(e)
+                raise ValueError
             # print("..done")
         cur.close()
 
@@ -92,6 +105,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         prev = None
         try:
+            cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
             cur.execute(sql)
             prev = cur.fetchone()
             prev = prev[0]
@@ -105,6 +119,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
         prev = None
         try:
+            cur.execute(f"ALTER SESSION SET CURRENT_SCHEMA = {self.config.user}")
             cur.execute(sql)
             prev = cur.fetchone()
             cur.close()

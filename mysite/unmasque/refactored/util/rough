@@ -1,0 +1,46 @@
+dnf-data:
+python3-gpg:amd64
+liblua5.3-0:amd64
+librpmio9:amd64
+libmodulemd2:
+librepo0:amd64
+librpm9:amd64
+libsolv1:amd64
+libsolvext1:amd64
+libdnf2-common:
+libdnf2:amd64
+python3-libdnf:amd64
+python3-hawkey:amd64
+libcomps0:amd64
+python3-libcomps:amd64
+librpmbuild9:amd64
+libfsverity0:amd64
+librpmsign9:amd64
+rpm-common:amd64
+python3-rpm:amd64
+python3-dnf:
+sqlite3:amd64
+dnf: libevent-2.1-7:amd64
+libunbound8:amd64
+python3-unbound:amd64
+libssl-dev:amd64 triggers-pending install-info:amd64
+net-tools:amd64
+libdrm-amdgpu1:amd64
+libpciaccess0:amd64
+libdrm-intel1:amd64
+libdrm-nouveau2:amd64
+libdrm-radeon1:amd64
+libfontenc1:amd64
+libglapi-mesa:amd64
+libgl1-amber-dri:amd64
+libxcb-dri3-0:amd64
+libgl1-mesa-dri:amd64
+libx11-xcb1:amd64
+libxcb-dri2-0:amd64
+libxcb-glx0:amd64
+libxcb-present0:amd64
+libxcb-randr0:amd64
+libxcb-shm0:amd64
+libxcb-sync1:amd64
+libxcb-xfixes0:amd64
+libxfixes3:amd64 libxshmfence1:amd64 libxxf86vm1:amd64 libglx-mesa0:amd64 x11-common: libice6:amd64 libsm6:amd64 libxt6:amd64 libxmu6:amd64 libxaw7:amd64 libxcb-shape0:amd64 libxcomposite1:amd64 libxrender1:amd64 libxft2:amd64 libxi6:amd64 libxinerama1:amd64 libxkbfile1:amd64 libxrandr2:amd64 libxtst6:amd64 libxv1:amd64 libxxf86dga1:amd64 libglvnd0:amd64 libglx0:amd64 libgl1:amd64 x11-utils:amd64 debugedit:amd64 rpm2cpio:amd64 rpm:amd64 pigz:amd64 containerd.io:amd64 docker-buildx-plugin:amd64 docker-ce-cli:amd64 docker-ce:amd64 docker-ce-rootless-extras:amd64 docker-compose-plugin:amd64 libltdl7:amd64 libslirp0:amd64 slirp4netns:amd64 autotools-dev: m4:amd64 triggers-pending autoconf: automake: autopoint: libdebhelper-perl: libtool: dh-autoreconf: libarchive-zip-perl: libsub-override-perl: libfile-stripnondeterminism-perl: dh-strip-nondeterminism: dwz:amd64 gettext:amd64 intltool-debian: po-debconf: debhelper: alien: libarchive-cpio-perl: libltdl-dev:amd64 libsys-hostname-long-perl: libmail-sendmail-perl: install-info:amd64

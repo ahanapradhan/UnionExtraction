@@ -1,11 +1,17 @@
 import unittest
 
+from ..src.util.ConnectionHelper import ConnectionHelper
+from ..refactored.orderby_clause import check_sort_order
 from mysite.unmasque.src.util.configParser import Config
 from ..src.util import utils
 from ..src.util.PostgresConnectionHelper import PostgresConnectionHelper
 
 
 class MyTestCase(unittest.TestCase):
+    def test_check_order(self):
+        check = check_sort_order(['-1.09', '-2.99', '-3.01'])
+        print(check)
+
     def test_pairing(self):
         elems = {1, 2, 3}
         res = utils.get_pairs_from_set(elems)
