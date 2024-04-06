@@ -114,7 +114,6 @@ class AbstractConnectionHelper:
         cur = self.conn.cursor()
         return cur
 
-    @abstractmethod
     def get_DictCursor(self):
         pass
 
