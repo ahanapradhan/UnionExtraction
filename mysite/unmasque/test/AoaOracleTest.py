@@ -306,5 +306,6 @@ class MyTestCase(unittest.TestCase):
         self.conn.closeConnection()
         self.put_to_output(aoa, query)
 
+
 if __name__ == '__main__':
     unittest.main()

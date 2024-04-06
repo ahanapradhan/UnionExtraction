@@ -47,7 +47,8 @@ class FromClause(AppExtractorBase):
             finally:
                 # self.connectionHelper.rollback_transaction()
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to("temp", tabname)], self.logger)
+                    [self.connectionHelper.queries.drop_table(tabname),
+                     self.connectionHelper.queries.alter_table_rename_to("temp", tabname)], self.logger)
 
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
