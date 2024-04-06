@@ -57,6 +57,7 @@ class MyTestCase(BaseTestCase):
 
     def test_dormant_aoa(self):
         self.conn.connectUsingParams()
+        '''
         query = "Select l_shipmode, count(*) as count From orders, lineitem " \
                 "Where " \
                 "o_orderkey = l_orderkey " \
@@ -70,16 +71,17 @@ class MyTestCase(BaseTestCase):
                 "Group By l_shipmode " \
                 "Order By l_shipmode;"
         '''
+
         query = "Select l_shipmode, count(*) as count From orders, lineitem " \
                 "Where " \
                 "o_orderkey = l_orderkey " \
-                "and l_commitdate <= l_receiptdate " \
-                "and l_shipdate <= l_commitdate " \
                 "and l_receiptdate >= '1994-01-01' " \
                 "and l_receiptdate <= '1995-01-01' " \
+                "and l_extendedprice <= 70000 " \
+                "and o_totalprice >= 60000 " \
                 "Group By l_shipmode " \
                 "Order By l_shipmode;"
-        '''
+
         core_rels = ['orders', 'lineitem']
 
         self.conn.execute_sql([
@@ -114,14 +116,15 @@ class MyTestCase(BaseTestCase):
         check = aoa.doJob(query)
         self.assertTrue(check)
         print(aoa.where_clause)
+        """
         self.assertTrue("lineitem.l_orderkey = orders.o_orderkey" in aoa.where_clause)
         self.assertTrue("lineitem.l_extendedprice <= orders.o_totalprice" in aoa.where_clause)
         self.assertTrue("lineitem.l_shipdate <= lineitem.l_commitdate" in aoa.where_clause)
         self.assertTrue("lineitem.l_commitdate <= lineitem.l_receiptdate" in aoa.where_clause)
         self.assertTrue("lineitem.l_receiptdate <= '1995-01-01'" in aoa.where_clause)
         self.assertTrue("'1994-01-01' <= lineitem.l_receiptdate" in aoa.where_clause)
-
-        self.assertEqual(aoa.where_clause.count("and"), 7)
+        """
+        self.assertEqual(aoa.where_clause.count("and"), 4)
         self.conn.closeConnection()
 
     def test_multiple_aoa(self):

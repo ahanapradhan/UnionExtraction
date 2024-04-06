@@ -75,12 +75,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         partition_eq_dict, ineqaoa_preds = self.algo2_preprocessing()
         self.logger.debug(partition_eq_dict)
         self.algo3_find_eq_joinGraph(query, partition_eq_dict, ineqaoa_preds)
-        if self.aoa_enabled:
-            self.extract_aoa_core(ineqaoa_preds, query)
-        else:
-            self.filter_predicates.extend(self.filter_extractor.filter_predicates)
-            self.filter_extractor.logger.debug("Filters: ", self.filter_predicates)
-
+        self.extract_aoa_core(ineqaoa_preds, query)
         self.cleanup_predicates()
         self.generate_where_clause()
 
@@ -358,8 +353,9 @@ class AlgebraicPredicate(MutationPipeLineBase):
         for datatype in filtered_dict:
             edge_set = []
             ineq_group = filtered_dict[datatype]
-            self.create_dashed_edges(ineq_group, edge_set)
-            optimize_edge_set(edge_set)
+            if self.aoa_enabled:
+                self.create_dashed_edges(ineq_group, edge_set)
+                optimize_edge_set(edge_set)
             add_concrete_bounds_as_edge2(ineq_group, edge_set, datatype)
             edge_set_dict[datatype] = edge_set
         return edge_set_dict

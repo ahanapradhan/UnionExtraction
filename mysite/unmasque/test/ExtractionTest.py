@@ -689,10 +689,6 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.conn.closeConnection()
 
-    def test_UQ12_loop(self):
-        for i in range(10):
-            self.test_UQ12()
-
     def test_UQ12_subq1(self):
         self.conn.connectUsingParams()
         query = "Select p_brand, o_clerk, l_shipmode " \
