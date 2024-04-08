@@ -559,7 +559,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_NEP_mukul_thesis_Q1(self):
         query = "Select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as " \
                 "sum_base_price, " \
@@ -578,7 +578,7 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.conn.closeConnection()
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_Q21_mukul_thesis(self):
         self.conn.connectUsingParams()
         query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \

@@ -1,4 +1,4 @@
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
+from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 
 
 class TPCHRestore:
