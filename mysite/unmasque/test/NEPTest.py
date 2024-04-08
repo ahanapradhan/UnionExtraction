@@ -3,12 +3,12 @@ import unittest
 
 import pytest as pytest
 
-from mysite.unmasque.refactored.nep import NEP
-from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
-from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
-from mysite.unmasque.src.util.constants import max_numeric_val
-from mysite.unmasque.test.util import tpchSettings
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from ..refactored.nep import NEP
+from ..src.core.QueryStringGenerator import QueryStringGenerator
+from ..src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from ..src.util.constants import max_numeric_val
+from ..test.util import tpchSettings
+from ..test.util.BaseTestCase import BaseTestCase
 
 
 class MyTestCase(BaseTestCase):
