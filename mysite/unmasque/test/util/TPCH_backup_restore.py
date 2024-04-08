@@ -10,15 +10,23 @@ class TPCHRestore:
 
     def doJob(self):
         self.conn.connectUsingParams()
-        self.conn.execute_sql(["drop schema public cascade;",
-                               "create schema public;",
-                               "create table public.nation as select * from tpch_restore.nation;",
-                               "create table public.region as select * from tpch_restore.region;",
-                               "create table public.customer as select * from tpch_restore.customer;",
-                               "create table public.lineitem as select * from tpch_restore.lineitem;",
-                               "create table public.orders as select * from tpch_restore.orders;",
-                               "create table public.part as select * from tpch_restore.part;",
-                               "create table public.supplier as select * from tpch_restore.supplier;",
-                               "create table public.partsupp as select * from tpch_restore.partsupp;",
+        self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
+                               f"create schema {self.user_schema};",
+                               f"create table {self.user_schema}.nation "
+                               f"as select * from {self.backup_schema}.nation;",
+                               f"create table {self.user_schema}.region "
+                               f"as select * from {self.backup_schema}.region;",
+                               f"create table {self.user_schema}.customer "
+                               f"as select * from {self.backup_schema}.customer;",
+                               f"create table {self.user_schema}.lineitem "
+                               f"as select * from {self.backup_schema}.lineitem;",
+                               f"create table {self.user_schema}.orders "
+                               f"as select * from {self.backup_schema}.orders;",
+                               f"create table {self.user_schema}.part "
+                               f"as select * from {self.backup_schema}.part;",
+                               f"create table {self.user_schema}.supplier "
+                               f"as select * from {self.backup_schema}.supplier;",
+                               f"create table {self.user_schema}.partsupp "
+                               f"as select * from {self.backup_schema}.partsupp;",
                                "commit;"])
         self.conn.closeConnection()

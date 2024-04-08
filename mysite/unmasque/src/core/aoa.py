@@ -513,6 +513,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
     def restore_d_min_from_dict(self) -> None:
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
+        if not len(self.filter_extractor.global_min_instance_dict):
+            return
         for tab in self.core_relations:
             self.filter_extractor.insert_into_dmin_dict_values(tab)
 
