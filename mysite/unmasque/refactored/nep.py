@@ -72,8 +72,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         if self.wrong:
             return False
         nep_exists, matched = self.do_one_round_nep(query, nep_exists, matched, True)
-        # if self.wrong:
-        #    return False
         if matched:
             return nep_exists
 
