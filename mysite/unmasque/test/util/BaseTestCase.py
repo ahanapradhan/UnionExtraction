@@ -3,7 +3,7 @@ import sys
 import unittest
 from _decimal import Decimal
 
-from mysite.unmasque.test.util.TPCH_backup_restore import TPCHRestore
+from ...test.util.TPCH_backup_restore import TPCHRestore
 from ...src.util.ConnectionFactory import ConnectionHelperFactory
 from ...src.util.PostgresConnectionHelper import PostgresConnectionHelper
 from ...src.util.configParser import Config
