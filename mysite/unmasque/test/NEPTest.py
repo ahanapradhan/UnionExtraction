@@ -5,6 +5,7 @@ import pytest as pytest
 
 from mysite.unmasque.refactored.nep import NEP
 from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
+from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from mysite.unmasque.src.util.constants import max_numeric_val
 from mysite.unmasque.test.util import tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -49,6 +50,17 @@ class MyTestCase(BaseTestCase):
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
 
+        delivery = PackageForGenPipeline(['lineitem'],
+                                         global_all_attribs,
+                                         global_attrib_types,
+                                         filters,
+                                         [],
+                                         [],
+                                         [],
+                                         {},
+                                         self.get_dmin_val,
+                                         self.get_datatype)
+
         q_gen = QueryStringGenerator(self.conn)
         q_gen.from_op = 'lineitem'
         q_gen.group_by_op = 'l_shipmode'
@@ -58,11 +70,8 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
-        aoa_predicates = []
-        join_graph = []
-
-        global_min_instance_dict = {}
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.enabled = True
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -140,9 +149,19 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'c_mktsegment as segment'
         q_gen.where_op = "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey"
 
-        global_min_instance_dict = {}
+        delivery = PackageForGenPipeline(core_rels,
+                                         global_all_attribs,
+                                         global_attrib_types,
+                                         filters,
+                                         [],
+                                         join_graph,
+                                         [],
+                                         {},
+                                         self.get_dmin_val,
+                                         self.get_datatype)
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.enabled = True
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -197,7 +216,19 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         join_graph = []
 
+        delivery = PackageForGenPipeline(core_rels,
+                                         global_all_attribs,
+                                         global_attrib_types,
+                                         filters,
+                                         [],
+                                         join_graph,
+                                         [],
+                                         {},
+                                         self.get_dmin_val,
+                                         self.get_datatype)
+
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.enabled = True
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -260,8 +291,19 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         join_graph = []
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        delivery = PackageForGenPipeline(core_rels,
+                                         global_all_attribs,
+                                         global_attrib_types,
+                                         filters,
+                                         [],
+                                         join_graph,
+                                         [],
+                                         {},
+                                         self.get_dmin_val,
+                                         self.get_datatype)
 
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.enabled = True
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -327,8 +369,19 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         join_graph = []
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        delivery = PackageForGenPipeline(core_rels,
+                                         global_all_attribs,
+                                         global_attrib_types,
+                                         filters,
+                                         [],
+                                         join_graph,
+                                         [],
+                                         {},
+                                         self.get_dmin_val,
+                                         self.get_datatype)
 
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.enabled = True
         o.mock = True
 
         check = o.doJob([query, Q_E])
@@ -428,8 +481,19 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        delivery = PackageForGenPipeline(core_rels,
+                                         global_all_attribs,
+                                         global_attrib_types,
+                                         filters,
+                                         [],
+                                         join_graph,
+                                         [],
+                                         global_min_instance_dict,
+                                         self.get_dmin_val,
+                                         self.get_datatype)
 
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.enabled = True
         o.mock = True
 
         check = o.doJob([q, eq])
@@ -520,8 +584,18 @@ class MyTestCase(BaseTestCase):
         join_graph = [['c_custkey', 'o_custkey'],
                       ['o_orderkey', 'l_orderkey']]
 
+        delivery = PackageForGenPipeline(core_rels,
+                                         global_all_attribs,
+                                         global_attrib_types,
+                                         filters,
+                                         [],
+                                         join_graph,
+                                         [],
+                                         global_min_instance_dict,
+                                         self.get_dmin_val,
+                                         self.get_datatype)
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
-
+        o.enabled = True
         o.mock = True
 
         check = o.doJob([q, eq])
@@ -612,9 +686,18 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         join_graph = [['c_custkey', 'o_custkey'],
                       ['o_orderkey', 'l_orderkey']]
-
+        delivery = PackageForGenPipeline(core_rels,
+                                         global_all_attribs,
+                                         global_attrib_types,
+                                         filters,
+                                         [],
+                                         join_graph,
+                                         [],
+                                         global_min_instance_dict,
+                                         self.get_dmin_val,
+                                         self.get_datatype)
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
-
+        o.enabled = True
         o.mock = True
 
         check = o.doJob([q, eq])
@@ -715,8 +798,19 @@ class MyTestCase(BaseTestCase):
         join_graph = [['ps_suppkey', 's_suppkey'],
                       ['s_nationkey', 'n_nationkey']]
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        delivery = PackageForGenPipeline(core_rels,
+                                         global_all_attribs,
+                                         global_attrib_types,
+                                         filters,
+                                         [],
+                                         join_graph,
+                                         [],
+                                         global_min_instance_dict,
+                                         self.get_dmin_val,
+                                         self.get_datatype)
 
+        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.enabled = True
         o.mock = True
 
         check = o.doJob([q, eq])
