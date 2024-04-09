@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 
 class CommonQueries(ABC):
 
+    def select_row_count_from_query(self, query):
+        return f"select count(*) from ({query});"
+
     @abstractmethod
     def get_explain_query(self, sql):
         pass
@@ -53,6 +56,9 @@ class CommonQueries(ABC):
     @abstractmethod
     def drop_view(self, tab):
         pass
+
+    def get_tabname_nep_min(self, tab):
+        return f"{tab}_nep_min"
 
     def get_tabname_1(self, tab):
         return f"{tab}1"

@@ -8,6 +8,8 @@ class Comparator(AppExtractorBase):
     def __init__(self, connectionHelper, name, earlyExit):
         super().__init__(connectionHelper, name)
         self.earlyExit = earlyExit
+        self.row_count_r_e = 0
+        self.row_count_r_h = 0
 
     def extract_params_from_args(self, args):
         return args[0], args[1]
@@ -16,7 +18,7 @@ class Comparator(AppExtractorBase):
         Q_h, Q_E = self.extract_params_from_args(args)
         self.sanitize()
         if Q_E is None:
-            self.logger.info("Got None to compared. Cannot do anything...sorry!")
+            self.logger.info("Got None to compare. Cannot do anything...sorry!")
             return False
         matched = self.match(Q_h, Q_E)
         return matched
@@ -63,22 +65,22 @@ class Comparator(AppExtractorBase):
     def match(self, Q_h, Q_E):
         if Q_E is None:
             self.logger.debug("Q_E is none. Please see why.")
-        count_star_Q_E = self.create_view_from_Q_E(Q_E)
-        self.logger.debug(count_star_Q_E)
+        self.row_count_r_e = self.create_view_from_Q_E(Q_E)
+        self.logger.debug(self.row_count_r_e)
 
-        if count_star_Q_E is None:
+        if self.row_count_r_e is None:
             return None
 
-        if self.earlyExit and not count_star_Q_E:
+        if self.earlyExit and not self.row_count_r_e:
             return False
 
         self.create_table_from_Qh(Q_h)
 
         # Size of the table
-        count_star_Q_h = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(self.r_h))
-        self.logger.debug(self.r_h, count_star_Q_h)
+        self.row_count_r_h = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(self.r_h))
+        self.logger.debug(self.r_h, self.row_count_r_h)
 
-        if count_star_Q_E != count_star_Q_h:
+        if self.row_count_r_e != self.row_count_r_h:
             return False
 
         check = self.run_diff_query_match_and_dropViews()

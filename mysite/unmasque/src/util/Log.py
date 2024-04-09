@@ -15,7 +15,7 @@ def get_format_args(msg, args):
 
 class Log(logging.Logger):
     # creating a formatter
-    formatter = logging.Formatter('- %(name)s - %(levelname)-8s: %(message)s')
+    formatter = logging.Formatter('%(asctime)s- %(name)s - %(levelname)-8s: %(message)s')
 
     def __init__(self, name, level):
         super().__init__(name, level)

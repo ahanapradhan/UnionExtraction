@@ -105,8 +105,8 @@ class Minimizer(AppExtractorBase):
         self.logger.debug(start_ctid, end_ctid)
         self.connectionHelper.execute_sql(
             [self.connectionHelper.queries.create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname, tabname1),
-             self.connectionHelper.queries.drop_table(tabname1)])
-        core_sizes[tabname] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tabname))
+             self.connectionHelper.queries.drop_table(tabname1)], self.logger)
+        core_sizes[tabname] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tabname), self.logger)
         self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
         return core_sizes
 

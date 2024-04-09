@@ -34,7 +34,7 @@ class MyTestCase(BaseTestCase):
         filters = [('lineitem', 'l_quantity', '<=', -2147483648.88, 23.0),
                    ('lineitem', 'l_shipdate', '<=', datetime.date(1994, 1, 1), datetime.date(9999, 12, 31))]
 
-        global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
+        self.global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
                                ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
                                ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
                                ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
@@ -45,14 +45,14 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_comment', 'character varying')
                                }
 
-        global_all_attribs = [
+        self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
 
         delivery = PackageForGenPipeline(['lineitem'],
-                                         global_all_attribs,
-                                         global_attrib_types,
+                                         self.global_all_attribs,
+                                         self.global_attrib_types,
                                          filters,
                                          [],
                                          [],
@@ -60,6 +60,8 @@ class MyTestCase(BaseTestCase):
                                          {},
                                          self.get_dmin_val,
                                          self.get_datatype)
+        self.do_init()
+        delivery.doJob()
 
         q_gen = QueryStringGenerator(self.conn)
         q_gen.from_op = 'lineitem'
@@ -97,10 +99,10 @@ class MyTestCase(BaseTestCase):
         filters = [('customer', 'c_acctbal', '<=', 1000, 5000)]
 
         aoa_predicates = []
-        join_graph = [['c_nationkey', 'n_nationkey'],
+        self.join_graph = [['c_nationkey', 'n_nationkey'],
                       ['c_custkey', 'o_custkey']]
 
-        global_attrib_types = {
+        self.global_attrib_types = {
             ('orders', "o_orderkey", "integer"),
             ('orders', "o_custkey", "integer"),
             ('orders', "o_orderstatus", "character"),
@@ -124,7 +126,7 @@ class MyTestCase(BaseTestCase):
             ('nation', "n_comment", "character varying")
         }
 
-        global_all_attribs = [
+        self.global_all_attribs = [
             ["o_orderkey",
              "o_custkey",
              "o_orderstatus",
@@ -150,15 +152,17 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey"
 
         delivery = PackageForGenPipeline(core_rels,
-                                         global_all_attribs,
-                                         global_attrib_types,
+                                         self.global_all_attribs,
+                                         self.global_attrib_types,
                                          filters,
                                          [],
-                                         join_graph,
+                                         self.join_graph,
                                          [],
                                          {},
                                          self.get_dmin_val,
                                          self.get_datatype)
+        self.do_init()
+        delivery.doJob()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
@@ -185,7 +189,7 @@ class MyTestCase(BaseTestCase):
 
         filters = [('lineitem', 'l_quantity', '<=', 21.0, max_numeric_val)]
 
-        global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
+        self.global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
                                ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
                                ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
                                ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
@@ -196,7 +200,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_comment', 'character varying')
                                }
 
-        global_all_attribs = [
+        self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
@@ -212,20 +216,22 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, count(*) as count'
         q_gen.where_op = "l_quantity > 20 "
 
-        global_min_instance_dict = {}
+        self.global_min_instance_dict = {}
         aoa_predicates = []
         join_graph = []
 
         delivery = PackageForGenPipeline(core_rels,
-                                         global_all_attribs,
-                                         global_attrib_types,
+                                         self.global_all_attribs,
+                                         self.global_attrib_types,
                                          filters,
                                          [],
                                          join_graph,
                                          [],
-                                         {},
+                                         self.global_min_instance_dict,
                                          self.get_dmin_val,
                                          self.get_datatype)
+        self.do_init()
+        delivery.doJob()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
@@ -261,7 +267,7 @@ class MyTestCase(BaseTestCase):
         filters = [('lineitem', 'l_quantity', '<=', -2147483648.88, 23.0),
                    ('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1), datetime.date(1993, 12, 31))]
 
-        global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
+        self.global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
                                ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
                                ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
                                ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
@@ -272,7 +278,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_comment', 'character varying')
                                }
 
-        global_all_attribs = [
+        self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
@@ -289,18 +295,20 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = "l_quantity  <= 23.0 and l_shipdate  <= '1993-12-31'"
 
         aoa_predicates = []
-        join_graph = []
+        self.join_graph = []
 
         delivery = PackageForGenPipeline(core_rels,
-                                         global_all_attribs,
-                                         global_attrib_types,
+                                         self.global_all_attribs,
+                                         self.global_attrib_types,
                                          filters,
                                          [],
-                                         join_graph,
+                                         self.join_graph,
                                          [],
                                          {},
                                          self.get_dmin_val,
                                          self.get_datatype)
+        self.do_init()
+        delivery.doJob()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
@@ -340,7 +348,7 @@ class MyTestCase(BaseTestCase):
 
         # ('lineitem', 'l_shipdate', '<=', datetime.date(1994, 1, 1), datetime.date(9999, 12, 31))]
 
-        global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
+        self.global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
                                ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
                                ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
                                ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
@@ -351,7 +359,7 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_comment', 'character varying')
                                }
 
-        global_all_attribs = [
+        self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
@@ -367,18 +375,21 @@ class MyTestCase(BaseTestCase):
 
         global_min_instance_dict = {}
         aoa_predicates = []
-        join_graph = []
+        self.join_graph = []
 
         delivery = PackageForGenPipeline(core_rels,
-                                         global_all_attribs,
-                                         global_attrib_types,
+                                         self.global_all_attribs,
+                                         self.global_attrib_types,
                                          filters,
                                          [],
-                                         join_graph,
+                                         self.join_graph,
                                          [],
                                          {},
                                          self.get_dmin_val,
                                          self.get_datatype)
+        self.do_init()
+
+        delivery.doJob()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
@@ -414,11 +425,11 @@ class MyTestCase(BaseTestCase):
         filters = [('orders', 'o_orderstatus', 'equal', 'F', 'F')]
 
         aoa_predicates = []
-        join_graph = [['s_suppkey', 'l_suppkey'],
+        self.join_graph = [['s_suppkey', 'l_suppkey'],
                       ['o_orderkey', 'l_orderkey'],
                       ['s_nationkey', 'n_nationkey']]
 
-        global_attrib_types = {('supplier', "s_suppkey", "integer"),
+        self.global_attrib_types = {('supplier', "s_suppkey", "integer"),
                                ('supplier', "s_name", "character"),
                                ('supplier', "s_address", "character varying"),
                                ('supplier', "s_nationkey", "integer"),
@@ -449,7 +460,7 @@ class MyTestCase(BaseTestCase):
                                ('nation', "n_comment", "character varying")
                                }
 
-        global_all_attribs = [["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"],
+        self.global_all_attribs = [["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"],
                               ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
                                'l_discount',
                                'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate',
@@ -479,18 +490,21 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 's_suppkey = l_suppkey and o_orderkey = l_orderkey and s_nationkey = n_nationkey  and ' \
                          'o_orderstatus = \'F\''
 
-        global_min_instance_dict = {}
+        self.global_min_instance_dict = {}
 
         delivery = PackageForGenPipeline(core_rels,
-                                         global_all_attribs,
-                                         global_attrib_types,
+                                         self.global_all_attribs,
+                                         self.global_attrib_types,
                                          filters,
                                          [],
-                                         join_graph,
+                                         self.join_graph,
                                          [],
-                                         global_min_instance_dict,
+                                         self.global_min_instance_dict,
                                          self.get_dmin_val,
                                          self.get_datatype)
+        self.do_init()
+
+        delivery.doJob()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
@@ -524,7 +538,7 @@ class MyTestCase(BaseTestCase):
 
         filters = [('customer', 'c_phone', 'LIKE', '27-_%', '27-_%')]
 
-        global_attrib_types = {('customer', 'c_custkey', 'integer'),
+        self.global_attrib_types = {('customer', 'c_custkey', 'integer'),
                                ('customer', 'c_name', 'character varying'),
                                ('customer', 'c_address', 'character varying'),
                                ('customer', 'c_nationkey', 'integer'),
@@ -552,7 +566,7 @@ class MyTestCase(BaseTestCase):
                                ('orders', "o_comment", "character varying")
                                }
 
-        global_all_attribs = [['c_custkey', 'c_name', 'c_address', 'c_nationkey',
+        self.global_all_attribs = [['c_custkey', 'c_name', 'c_address', 'c_nationkey',
                                'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
                               ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
                                'l_discount',
@@ -579,21 +593,25 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'c_name, o_orderdate, o_totalprice, sum(l_quantity)'
         q_gen.where_op = 'c_phone Like \'27-_%\' and c_custkey = o_custkey and o_orderkey = l_orderkey '
 
-        global_min_instance_dict = {}
+        self.global_min_instance_dict = {}
         aoa_predicates = []
-        join_graph = [['c_custkey', 'o_custkey'],
+        self.join_graph = [['c_custkey', 'o_custkey'],
                       ['o_orderkey', 'l_orderkey']]
 
         delivery = PackageForGenPipeline(core_rels,
-                                         global_all_attribs,
-                                         global_attrib_types,
+                                         self.global_all_attribs,
+                                         self.global_attrib_types,
                                          filters,
                                          [],
-                                         join_graph,
+                                         self.join_graph,
                                          [],
-                                         global_min_instance_dict,
+                                         self.global_min_instance_dict,
                                          self.get_dmin_val,
                                          self.get_datatype)
+        self.do_init()
+
+        delivery.doJob()
+
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
@@ -627,7 +645,7 @@ class MyTestCase(BaseTestCase):
 
         filters = [('customer', 'c_name', 'LIKE', 'Customer#%217', 'Customer#%217')]
 
-        global_attrib_types = {('customer', 'c_custkey', 'integer'),
+        self.global_attrib_types = {('customer', 'c_custkey', 'integer'),
                                ('customer', 'c_name', 'character varying'),
                                ('customer', 'c_address', 'character varying'),
                                ('customer', 'c_nationkey', 'integer'),
@@ -655,7 +673,7 @@ class MyTestCase(BaseTestCase):
                                ('orders', "o_comment", "character varying")
                                }
 
-        global_all_attribs = [['c_custkey', 'c_name', 'c_address', 'c_nationkey',
+        self.global_all_attribs = [['c_custkey', 'c_name', 'c_address', 'c_nationkey',
                                'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
                               ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
                                'l_discount',
@@ -682,20 +700,24 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'c_phone, o_orderdate, o_totalprice, sum(l_quantity)'
         q_gen.where_op = 'c_name LIKE \'Customer#%217\' and c_custkey = o_custkey and o_orderkey = l_orderkey '
 
-        global_min_instance_dict = {}
+        self.global_min_instance_dict = {}
         aoa_predicates = []
-        join_graph = [['c_custkey', 'o_custkey'],
+        self.join_graph = [['c_custkey', 'o_custkey'],
                       ['o_orderkey', 'l_orderkey']]
         delivery = PackageForGenPipeline(core_rels,
-                                         global_all_attribs,
-                                         global_attrib_types,
+                                         self.global_all_attribs,
+                                         self.global_attrib_types,
                                          filters,
                                          [],
-                                         join_graph,
+                                         self.join_graph,
                                          [],
-                                         global_min_instance_dict,
+                                         self.global_min_instance_dict,
                                          self.get_dmin_val,
                                          self.get_datatype)
+        self.do_init()
+
+        delivery.doJob()
+
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
@@ -759,7 +781,7 @@ class MyTestCase(BaseTestCase):
 
         filters = [('nation', 'n_name', '=', 'ARGENTINA', 'ARGENTINA')]
 
-        global_attrib_types = {('partsupp', 'ps_partkey', 'integer'),
+        self.global_attrib_types = {('partsupp', 'ps_partkey', 'integer'),
                                ('partsupp', 'ps_suppkey', 'integer'),
                                ('partsupp', 'ps_availqty', 'integer'),
                                ('partsupp', 'ps_supplycost', 'numeric'),
@@ -777,7 +799,7 @@ class MyTestCase(BaseTestCase):
                                ('nation', "n_comment", "character varying")
                                }
 
-        global_all_attribs = [['ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment'],
+        self.global_all_attribs = [['ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment'],
                               ["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"],
                               ["n_nationkey",
                                "n_name",
@@ -793,22 +815,23 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'ps_COMMENT, sum(ps_supplycost * ps_availqty) as value'
         q_gen.where_op = 'ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = \'ARGENTINA\''
 
-        global_min_instance_dict = {}
+        self.global_min_instance_dict = {}
         aoa_predicates = []
-        join_graph = [['ps_suppkey', 's_suppkey'],
+        self.join_graph = [['ps_suppkey', 's_suppkey'],
                       ['s_nationkey', 'n_nationkey']]
 
         delivery = PackageForGenPipeline(core_rels,
-                                         global_all_attribs,
-                                         global_attrib_types,
+                                         self.global_all_attribs,
+                                         self.global_attrib_types,
                                          filters,
                                          [],
-                                         join_graph,
+                                         self.join_graph,
                                          [],
-                                         global_min_instance_dict,
+                                         self.global_min_instance_dict,
                                          self.get_dmin_val,
                                          self.get_datatype)
-
+        self.do_init()
+        delivery.doJob()
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
