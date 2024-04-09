@@ -15,7 +15,7 @@ class TPCHRestore:
         self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
                                f"create schema {self.user_schema};"])
         for tab in self.relations:
-            print(f"Recreating {tab}")
+            # print(f"Recreating {tab}")
             self.conn.execute_sql(
                 [f"create table {self.user_schema}.{tab} as select * from {self.backup_schema}.{tab};",
                  "commit;"])

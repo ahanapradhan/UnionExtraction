@@ -20,16 +20,16 @@ class MyTestCase(unittest.TestCase):
 
     def setUp(self):
         self.conn.connectUsingParams()
-        self.drop_tables()
-        self.create_tables()
-        self.insert_dmin_data()
+        #self.drop_tables()
+        #self.create_tables()
+        #self.insert_dmin_data()
         self.conn.closeConnection()
 
     def tearDown(self):
         self.conn.connectUsingParams()
-        self.drop_tables()
-        self.create_tables()
-        self.insert_dmin_data()
+        #self.drop_tables()
+        #self.create_tables()
+        #self.insert_dmin_data()
         self.conn.closeConnection()
 
     def test_print_ddls(self):
@@ -126,7 +126,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_oracle_connection_aoa(self):
         nationkey_filter = 13
-        query = f'SELECT count(n_name), r_name FROM {self.conn.config.schema}.nation NATURAL JOIN {self.conn.config.schema}.region WHERE nationkey = {nationkey_filter} group by r_name'
+        query = f'SELECT count(n_name) as total, r_name FROM {self.conn.config.schema}.nation NATURAL JOIN {self.conn.config.schema}.region WHERE nationkey = {nationkey_filter} group by r_name order by total, r_name desc FETCH FIRST 15 ROWS ONLY'
         self.conn.connectUsingParams()
         self.set_schema()
         res = self.conn.execute_sql_fetchall(query)
@@ -143,12 +143,14 @@ class MyTestCase(unittest.TestCase):
         self.put_to_output(aoa, query)
 
     def put_to_output(self, aoa, query):
+        print(query)
         with open(self.output, 'a') as f:
             f.write(query)
             f.write("\n")
             f.write("\n/* Extracted Query: */\n")
             f.write(aoa)
             f.write("\n\n\n")
+        print(aoa)
 
     def test_customer_orders_nation(self):
         global_min_instance_dict = {'orders': [
@@ -169,11 +171,11 @@ class MyTestCase(unittest.TestCase):
 
         relations = ['customer', 'nation', 'orders']
 
-        query = f"SELECT n_name as name, " \
-                f"c_acctbal as account_balance " \
+        query = f"SELECT n_name AS name, " \
+                f"c_acctbal AS account_balance " \
                 f"FROM {self.conn.config.schema}.orders NATURAL JOIN {self.conn.config.schema}.customer " \
                 f"NATURAL JOIN {self.conn.config.schema}.nation " \
-                f"WHERE o_totalprice <= 70000"
+                f"WHERE o_totalprice <= 70000 order by n_name, c_acctbal FETCH FIRST 5 ROW ONLY"
 
         aoa = self.run_pipeline(global_min_instance_dict, query, relations)
 

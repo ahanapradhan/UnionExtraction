@@ -35,14 +35,15 @@ def get_k_value_for_number(a, b):
 
 
 def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag, tabname):
-    if groupby_key_flag and ('int' in attrib_types_dict[(tabname, attrib)]
+    if groupby_key_flag and ('int' in attrib_types_dict[(tabname, attrib)] or 'number' in attrib_types_dict[(tabname, attrib)]
                              or 'numeric' in attrib_types_dict[(tabname, attrib)]):
         a = b = 3
         k_value = 1
         agg_array = [SUM, k_value * a + b, AVG, a, MIN, a, MAX, a, COUNT, k_value + 1]
     elif (tabname, attrib) in filter_attrib_dict.keys():
         if ('int' in attrib_types_dict[(tabname, attrib)]
-                or 'numeric' in attrib_types_dict[(tabname, attrib)]):
+                or 'numeric' in attrib_types_dict[(tabname, attrib)]
+        or 'number' in attrib_types_dict[(tabname, attrib)]):
             # PRECISION TO BE TAKEN CARE FOR NUMERIC
             a = filter_attrib_dict[(tabname, attrib)][0]
             b = min(filter_attrib_dict[(tabname, attrib)][0] + 1, filter_attrib_dict[(tabname, attrib)][1])
@@ -78,7 +79,7 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
             k_value = 1
             agg_array = [MIN, min(a, b), MAX, max(a, b)]
         elif ('int' in attrib_types_dict[(tabname, attrib)]
-              or 'numeric' in attrib_types_dict[(tabname, attrib)]):
+              or 'numeric' in attrib_types_dict[(tabname, attrib)] or 'number' in attrib_types_dict[(tabname, attrib)]):
             # Combination which gives all different results for aggregation
             a = 5
             b = 8
@@ -90,6 +91,7 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
             b = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 1))
             k_value = 1
             agg_array = [MIN, min(a, b), MAX, max(a, b)]
+    print(tabname, attrib, a, b)
     return a, agg_array, b, k_value
 
 
@@ -266,6 +268,8 @@ class Aggregation(GenerationPipeLineBase):
                 for attrib_inner in attrib_list_inner:
                     datatype = self.get_datatype((tabname_inner, attrib_inner))
 
+                    self.logger.debug(tabname_inner, attrib_inner, datatype, a, b)
+
                     if (attrib_inner == attrib or attrib_inner in key_list) and k == no_of_rows - 1:
                         insert_values.append(b)
                     elif attrib_inner == attrib or attrib_inner in key_list:
@@ -277,7 +281,7 @@ class Aggregation(GenerationPipeLineBase):
                         else:
                             date_val = get_val_plus_delta('date', get_dummy_val_for('date'), 2)
                         insert_values.append(ast.literal_eval(get_format('date', date_val)))
-                    elif datatype == 'int' or datatype == 'numeric':
+                    elif datatype in ['int', 'numeric', 'number']:
                         # check for filter
                         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                             number_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
