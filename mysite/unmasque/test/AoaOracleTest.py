@@ -20,16 +20,16 @@ class MyTestCase(unittest.TestCase):
 
     def setUp(self):
         self.conn.connectUsingParams()
-        #self.drop_tables()
-        #self.create_tables()
-        #self.insert_dmin_data()
+        # self.drop_tables()
+        # self.create_tables()
+        # self.insert_dmin_data()
         self.conn.closeConnection()
 
     def tearDown(self):
         self.conn.connectUsingParams()
-        #self.drop_tables()
-        #self.create_tables()
-        #self.insert_dmin_data()
+        # self.drop_tables()
+        # self.create_tables()
+        # self.insert_dmin_data()
         self.conn.closeConnection()
 
     def test_print_ddls(self):
@@ -172,10 +172,39 @@ class MyTestCase(unittest.TestCase):
         relations = ['customer', 'nation', 'orders']
 
         query = f"SELECT n_name AS name, " \
-                f"c_acctbal AS account_balance " \
+                f"SUM(c_acctbal) AS account_balance " \
                 f"FROM {self.conn.config.schema}.orders NATURAL JOIN {self.conn.config.schema}.customer " \
                 f"NATURAL JOIN {self.conn.config.schema}.nation " \
-                f"WHERE o_totalprice <= 70000 order by n_name, c_acctbal FETCH FIRST 5 ROW ONLY"
+                f"WHERE o_totalprice <= 70000 group by n_name order by account_balance desc FETCH FIRST 5 ROW ONLY"
+
+        aoa = self.run_pipeline(global_min_instance_dict, query, relations)
+
+        self.conn.closeConnection()
+        self.put_to_output(aoa, query)
+
+    def test_customer_orders_nation_aoa(self):
+        global_min_instance_dict = {'orders': [
+            ('orderkey', 'custkey', 'o_orderstatus', 'o_totalprice', 'o_orderpriority',
+             'o_clerk', 'o_shippriority', 'o_comment'),
+            (55620, 2900, 'O', 2590.94, '4-NOT SPECIFIED', 'Clerk#000000311', 0,
+             'usly. regular, regul')], 'customer': [
+            ('custkey', 'c_name', 'c_address', 'nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment',
+             'c_comment'),
+            (2900, 'Customer#000002900', 'xeicQEyv6I', 9, '19-292-999-1038', 4794.87, 'HOUSEHOLD',
+             ' ironic packages. pending, regular deposits cajole blithely. carefully even '
+             'instructions engage stealthily carefull')], 'nation': [
+            ('nationkey', 'n_name', 'regionkey', 'n_comment'),
+            (9, 'INDONESIA', 2, ' slyly express asymptotes. regular deposits haggle slyly. '
+                                'carefully ironic hockey players sleep blithely. carefull')]}
+        self.conn.connectUsingParams()
+        self.set_schema()
+
+        relations = ['customer', 'nation', 'orders']
+
+        query = f"SELECT n_name as name, AVG(c_acctbal) as avg_balance FROM " \
+                f"{self.conn.config.schema}.orders NATURAL JOIN {self.conn.config.schema}.customer " \
+                f"NATURAL JOIN {self.conn.config.schema}.nation WHERE o_totalprice <= c_acctbal GROUP BY n_name " \
+                f"ORDER BY avg_balance desc, n_name asc FETCH FIRST 23 ROWS ONLY"
 
         aoa = self.run_pipeline(global_min_instance_dict, query, relations)
 

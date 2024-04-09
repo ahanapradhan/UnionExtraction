@@ -32,6 +32,11 @@ def login_view(request):
         if msg != OK:
             return render(request, 'unmasque/login.html', {'error_message': msg})
 
+        # SET THE FOLLOWING PARAMS FROM UI CHECKBOX VALUES
+        connHelper.config.detect_nep = False
+        connHelper.config.detect_union = False
+        connHelper.config.use_cs2 = True
+
         token = start_extraction_pipeline_async(connHelper, query, request)
         return redirect(f'progress/{token}')
 
