@@ -16,7 +16,7 @@ class Comparator(AppExtractorBase):
 
     def doActualJob(self, args):
         Q_h, Q_E = self.extract_params_from_args(args)
-        self.sanitize()
+        self.sanitize_and_keep_backup()
         if Q_E is None:
             self.logger.info("Got None to compare. Cannot do anything...sorry!")
             return False
@@ -56,7 +56,6 @@ class Comparator(AppExtractorBase):
         return len1, len2
 
     def create_table_from_Qh(self, Q_h):
-        # Create an empty table with name temp2
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(self.r_h),
                                            f"Create unlogged table {self.r_h} (like {self.r_e});"])
         result = self.app.doJob(Q_h)

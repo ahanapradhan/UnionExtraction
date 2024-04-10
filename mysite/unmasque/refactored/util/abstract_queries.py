@@ -49,6 +49,9 @@ class CommonQueries(ABC):
     def get_restore_name(self, tab):
         return f"{tab}_restore"
 
+    def get_backup(self, tab):
+        return f"{tab}_backup"
+
     @abstractmethod
     def get_min_max_ctid(self, tab):
         pass

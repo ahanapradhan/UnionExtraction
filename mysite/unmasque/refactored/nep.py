@@ -40,12 +40,12 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 self.logger.debug(f"loop count {loop_count}")
                 self.logger.info("NEP may exists")
                 nep_exists = True
-                self.backup_relation(tabname)
+                self.backup_one_table(tabname)
                 core_sizes = self.getCoreSizes()
                 self.logger.debug(core_sizes)
                 Q_E = self.get_nep(core_sizes, tabname, query, i, is_for_joined)
                 i += 1
-                self.restore_relation(tabname)
+                self.backup_one_table(tabname)
                 if Q_E is None:
                     self.logger.error("Something is wrong")
                     self.wrong = True
@@ -83,7 +83,10 @@ class NEP(Minimizer, GenerationPipeLineBase):
     def backup_relation(self, table):
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_restore_name(table)),
                                            self.connectionHelper.queries.create_table_as_select_star_from(
-                                               self.connectionHelper.queries.get_restore_name(table), table)])
+                                               self.connectionHelper.queries.get_restore_name(table), self.connectionHelper.queries.get_backup(table)),
+                                           self.connectionHelper.queries.create_table_as_select_star_from(table,
+                                               self.connectionHelper.queries.get_restore_name(table))
+                                           ])
 
     def get_nep(self, core_sizes, tabname, query, i, is_for_joined):
         tabname1 = self.connectionHelper.queries.get_tabname_1(tabname)

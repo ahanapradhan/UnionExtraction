@@ -1,6 +1,5 @@
 import unittest
 
-from ..src.util.ConnectionHelper import ConnectionHelper
 from ..refactored.orderby_clause import check_sort_order
 from mysite.unmasque.src.util.configParser import Config
 from ..src.util import utils
@@ -24,6 +23,9 @@ class MyTestCase(unittest.TestCase):
         nonNulls = {one, two, three}
         res = utils.get_pairs_from_set(nonNulls)
         self.assertEqual(res, {frozenset({one, three}), frozenset({two, three}), frozenset({one, two})})
+
+    def test_char_len(self):
+        print(len(E'\\'))
 
     def test_construct_maxNonNulls(self):
         s = frozenset({'S'})

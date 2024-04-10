@@ -14,15 +14,39 @@ class TpchSanitizer:
         self.connectionHelper.begin_transaction()
         tables = self.connectionHelper.get_all_tables_for_restore()
         for table in tables:
-            self.drop_derived_relations(table)
-            drop_fn = self.get_drop_fn(table)
-            restore_name = self.connectionHelper.queries.get_restore_name(table)
-            self.connectionHelper.execute_sql([drop_fn(table),
-                                               self.connectionHelper.queries.alter_table_rename_to(restore_name, table)])
+            self.restore_one_table(table)
+        self.connectionHelper.commit_transaction()
+
+    def restore_one_table(self, table):
+        drop_fn, restore_name = self.cleanup(table)
+        self.connectionHelper.execute_sql([drop_fn(table),
+                                           self.connectionHelper.queries.alter_table_rename_to(restore_name, table)])
+
+    def cleanup(self, table):
+        self.drop_others(table)
+        drop_fn = self.get_drop_fn(table)
+        restore_name = self.connectionHelper.queries.get_backup(table)
+        return drop_fn, restore_name
+
+    def sanitize_and_keep_backup(self):
+        self.connectionHelper.begin_transaction()
+        tables = self.connectionHelper.get_all_tables_for_restore()
+        for table in tables:
+            self.backup_one_table(table)
+        self.connectionHelper.commit_transaction()
+
+    def backup_one_table(self, table):
+        drop_fn, restore_name = self.cleanup(table)
+        self.connectionHelper.execute_sql([drop_fn(table),
+                                           self.connectionHelper.queries.alter_table_rename_to(restore_name, table),
+                                           self.connectionHelper.queries.create_table_as_select_star_from(restore_name,
+                                                                                                          table)])
+
+    def drop_others(self, table):
+        self.drop_derived_relations(table)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table("temp"),
                                            self.connectionHelper.queries.drop_view("r_e"),
                                            self.connectionHelper.queries.drop_table("r_h")])
-        self.connectionHelper.commit_transaction()
 
     def get_drop_fn(self, table):
         return self.connectionHelper.queries.drop_table_cascade \
@@ -33,6 +57,7 @@ class TpchSanitizer:
                            self.connectionHelper.queries.get_tabname_4(table),
                            self.connectionHelper.queries.get_tabname_un(table),
                            self.connectionHelper.queries.get_tabname_nep(table),
+                           self.connectionHelper.queries.get_restore_name(table),
                            table + "2",
                            table + "3"]
         drop_fns = [self.get_drop_fn(tab) for tab in derived_objects]
