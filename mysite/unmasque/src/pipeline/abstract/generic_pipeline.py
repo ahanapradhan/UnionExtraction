@@ -83,7 +83,7 @@ class GenericPipeLine:
     def verify_correctness(self, query, result):
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams()
-        rc = ResultComparator(self.connectionHelper, False)
+        rc = ResultComparator(self.connectionHelper, True)
         rc.set_all_relations(self.all_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)

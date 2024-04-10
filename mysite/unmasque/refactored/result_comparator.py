@@ -8,6 +8,7 @@ class ResultComparator(Comparator):
         self.isHash = isHash
 
     def is_match(self, len1, len2):
+        self.logger.debug(f"{len1} len1, {len2} len2")
         if self.isHash:
             if len1 == len2:
                 return True
