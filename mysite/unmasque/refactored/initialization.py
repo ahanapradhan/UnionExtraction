@@ -43,7 +43,7 @@ class Initiator(Base):
         self.make_pkfk_complete_graph(all_pkfk)
         self.do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
-        self.sanitize()
+        self.take_backup()
         return True
 
     def do_refinement(self):

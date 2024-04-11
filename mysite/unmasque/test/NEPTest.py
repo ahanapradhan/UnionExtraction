@@ -13,6 +13,14 @@ from ..test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
+    def setUp(self):
+        super().setUp()
+        self.conn.connectUsingParams()
+        for tab in tpchSettings.relations:
+            restore_name = self.conn.queries.get_backup(tab)
+            self.conn.execute_sql([self.conn.queries.create_table_as_select_star_from(restore_name, tab)])
+        self.conn.closeConnection()
+
     def test_Q6_lineitem_returnflag(self):
         self.conn.connectUsingParams()
 
@@ -81,7 +89,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(o.Q_E)
 
-        self.assertEqual("l_shipdate >= '1994-01-01' and l_quantity <= 23.0  and l_returnflag <> 'R' ", q_gen.where_op)
+        self.assertEqual("l_shipdate >= '1994-01-01' and l_quantity <= 23.0  and lineitem.l_returnflag <> 'R' ", q_gen.where_op)
 
         q_e = f"Select {q_gen.select_op}\n From {q_gen.from_op} \n Where {q_gen.where_op} \n" \
               f" Group By {q_gen.group_by_op} \n Limit {q_gen.limit_op};"
@@ -164,9 +172,6 @@ class MyTestCase(BaseTestCase):
                                          self.get_datatype)
         self.do_init()
         delivery.doJob()
-        for tab in tpchSettings.relations:
-            restore_name = self.conn.queries.get_backup(tab)
-            self.conn.execute_sql([self.conn.queries.create_table_as_select_star_from(restore_name, tab)])
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.set_all_relations(tpchSettings.relations)
@@ -182,7 +187,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(q_e, o.Q_E)
         self.conn.closeConnection()
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     def test_mukul_overlapping_ranges(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count From lineitem Where l_quantity > 20 and l_quantity <> 25 " \

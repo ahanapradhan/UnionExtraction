@@ -33,11 +33,11 @@ class FromClause(AppExtractorBase):
 
     def get_core_relations_by_rename(self, query):
         for tabname in self.all_relations:
-            self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.alter_table_rename_to(tabname, "temp"),
-                 self.connectionHelper.queries.create_table_like(tabname, "temp")], self.logger)
             try:
-                # self.connectionHelper.begin_transaction()
+                self.connectionHelper.begin_transaction()
+                self.connectionHelper.execute_sql(
+                    [self.connectionHelper.queries.alter_table_rename_to(tabname, "temp"),
+                     self.connectionHelper.queries.create_table_like(tabname, "temp")], self.logger)
                 new_result = self.app.doJob(query)
                 if isQ_result_empty(new_result):
                     self.core_relations.append(tabname)
@@ -45,17 +45,18 @@ class FromClause(AppExtractorBase):
             except Exception as error:
                 self.logger.error("Error Occurred in table extraction. Error: " + str(error))
             finally:
-                # self.connectionHelper.rollback_transaction()
-                self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.drop_table(tabname),
-                     self.connectionHelper.queries.alter_table_rename_to("temp", tabname)], self.logger)
+                self.connectionHelper.rollback_transaction()
+                # self.connectionHelper.execute_sql(
+                #    [self.connectionHelper.queries.drop_table(tabname),
+                #     self.connectionHelper.queries.alter_table_rename_to("temp", tabname)], self.logger)
 
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
-            self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.alter_table_rename_to(tabname, "temp")], self.logger)
+
             try:
-                # self.connectionHelper.begin_transaction()
+                self.connectionHelper.begin_transaction()
+                self.connectionHelper.execute_sql(
+                    [self.connectionHelper.queries.alter_table_rename_to(tabname, "temp")], self.logger)
                 self.app.doJob(query)  # slow
             except Exception as error:
                 self.logger.info(str(error))
@@ -64,9 +65,9 @@ class FromClause(AppExtractorBase):
                 else:
                     self.logger.error("Error Occurred in table extraction. Error: " + str(error))
             finally:
-                # self.connectionHelper.rollback_transaction()
-                self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to("temp", tabname)], self.logger)
+                self.connectionHelper.rollback_transaction()
+                # self.connectionHelper.execute_sql(
+                #    [self.connectionHelper.queries.alter_table_rename_to("temp", tabname)], self.logger)
 
     def extract_params_from_args(self, args):
         if len(args) == 1:

@@ -32,7 +32,7 @@ class PostgresQueries(CommonQueries):
         return f"Create table {tab} (like {ctab});"
 
     def create_table_as_select_star_from(self, tab, fromtab):
-        return f"Create table {tab} as select * from {fromtab};"
+        return f"Create table if not exists {tab} as select * from {fromtab};"
 
     def get_row_count(self, tab):
         return f"select count(*) from {tab};"

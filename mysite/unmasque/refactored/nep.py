@@ -79,22 +79,6 @@ class NEP(Minimizer, GenerationPipeLineBase):
         if matched:
             return nep_exists
 
-    def restore_relation(self, table):
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(table),
-                                           self.connectionHelper.queries.alter_table_rename_to(
-                                               self.connectionHelper.queries.get_restore_name(table), table)])
-
-    def backup_relation(self, table):
-        self.connectionHelper.execute_sql(
-            [self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_restore_name(table)),
-             self.connectionHelper.queries.create_table_as_select_star_from(
-                 self.connectionHelper.queries.get_restore_name(table),
-                 self.connectionHelper.queries.get_backup(table)),
-             self.connectionHelper.queries.create_table_as_select_star_from(table,
-                                                                            self.connectionHelper.queries.get_restore_name(
-                                                                                table))
-             ])
-
     def get_nep(self, core_sizes, tabname, query, i, is_for_joined):
         self.logger.debug("Inside get nep")
         tabname1 = self.connectionHelper.queries.get_tabname_1(tabname)
@@ -112,7 +96,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 return  # no role on NEP
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
 
-        self.test_result(query)
+        # self.test_result(query)
         val = self.extract_NEP_value(query, tabname, i, is_for_joined)
         if val:
             self.logger.info("Extracting NEP value")
@@ -178,6 +162,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
             return False
         self.logger.debug(self.nep_comparator.row_count_r_e, self.nep_comparator.row_count_r_h)
         if self.nep_comparator.row_count_r_e == 1 and not self.nep_comparator.row_count_r_h:
+            return True
+        if self.nep_comparator.row_count_r_e > 1 and self.nep_comparator.row_count_r_h <= self.nep_comparator.row_count_r_e:
             return True
         elif not self.nep_comparator.row_count_r_e:
             return False
