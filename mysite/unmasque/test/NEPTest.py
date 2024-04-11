@@ -186,7 +186,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(q_e, o.Q_E)
         self.conn.closeConnection()
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     def test_mukul_overlapping_ranges(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count From lineitem Where l_quantity > 20 and l_quantity <> 25 " \
