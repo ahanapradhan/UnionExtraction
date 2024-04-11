@@ -14,6 +14,7 @@ from ..test.util.BaseTestCase import BaseTestCase
 class MyTestCase(BaseTestCase):
 
     def setUp(self):
+        super().setUp()
         self.conn.connectUsingParams()
         for tab in tpchSettings.relations:
             restore_name = self.conn.queries.get_backup(tab)
