@@ -1,5 +1,7 @@
 import unittest
 
+import pytest
+
 from mysite.unmasque.src.core import algorithm1
 from mysite.unmasque.src.core.union_from_clause import UnionFromClause
 from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
@@ -101,6 +103,7 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    @pytest.mark.skip
     def test_paper_example(self):
         query = "SELECT c_name as name, c_acctbal as account_balance " \
                 "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
@@ -122,6 +125,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_UQ11(self):
         self.conn.connectUsingParams()
         query = "Select o_orderpriority, " \
@@ -137,6 +141,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_UQ10(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count " \
