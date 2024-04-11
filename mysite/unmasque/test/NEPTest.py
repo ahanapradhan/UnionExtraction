@@ -25,7 +25,6 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_Q6_lineitem_returnflag(self):
-        self.conn.connectUsingParams()
 
         query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
                 "From lineitem Where l_shipdate >= " \
@@ -88,6 +87,7 @@ class MyTestCase(BaseTestCase):
         o.enabled = True
         o.mock = True
         self.backup_tables()
+        self.conn.connectUsingParams()
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
