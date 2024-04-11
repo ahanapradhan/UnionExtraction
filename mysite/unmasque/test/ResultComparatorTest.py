@@ -79,7 +79,7 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_for_some_query(self):
-        q = "SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100;"
+        q = "SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100 Limit 20;"
         self.conn.connectUsingParams()
         self.backup_tables()
         rc_hash = ResultComparator(self.conn, False)

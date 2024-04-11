@@ -72,7 +72,7 @@ class MyTestCase(unittest.TestCase):
         views.func_start(self.connHelper, MockRequest.session['hq'], req)
         done = (req.session['partials'][2] != 'NA')
         while not done:
-            sleep(70/1000)
+            sleep(70 / 1000)
             views.func_check_progress(req)
             done = (req.session['partials'][2] != 'NA')
         self.assertTrue(True)
@@ -103,7 +103,6 @@ class MyTestCase(unittest.TestCase):
         for i in range(len(observed)):
             # print(i, i % NUM_THREADS)
             self.assertEqual(observed[i], factory.pipeline.state_sequence[i % len(factory.pipeline.state_sequence)])
-
 
 
 if __name__ == '__main__':
