@@ -112,7 +112,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 return  # no role on NEP
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
 
-        self.see_d_min(tabname)
+        self.test_result(query)
         val = self.extract_NEP_value(query, tabname, i, is_for_joined)
         if val:
             self.logger.info("Extracting NEP value")
@@ -176,21 +176,19 @@ class NEP(Minimizer, GenerationPipeLineBase):
         found = self.nep_comparator.match(query, self.Q_E)
         if found:
             return False
-        if self.nep_comparator.row_count_r_e >= 1:
-            if self.nep_comparator.row_count_r_e == 1 and not self.nep_comparator.row_count_r_h:
-                #self.see_d_min(tab)
-                return True
+        self.logger.debug(self.nep_comparator.row_count_r_e, self.nep_comparator.row_count_r_h)
+        if self.nep_comparator.row_count_r_e == 1 and not self.nep_comparator.row_count_r_h:
+            return True
         elif not self.nep_comparator.row_count_r_e:
             return False
-        self.logger.debug(self.nep_comparator.row_count_r_e, self.nep_comparator.row_count_r_h)
         return True
 
     def extract_NEP_value(self, query, tabname, i, is_for_joined):
         self.logger.debug("extract NEP val ", tabname, i)
         res = self.app.doJob(query)
-        #if not isQ_result_empty(res):
-        #    self.logger.debug("Hidden query is not giving empty result")
-        #    return False
+        if not isQ_result_empty(res):
+            self.logger.debug(res)
+            return False
         attrib_list = self.global_all_attribs[i]
         self.logger.debug("attrib list: ", attrib_list)
         filterAttribs = []
@@ -243,3 +241,11 @@ class NEP(Minimizer, GenerationPipeLineBase):
         if not isQ_result_empty(new_result):
             filterAttribs.append((tabname, attrib, '<>', prev))
             self.logger.debug(filterAttribs, '++++++_______++++++')
+
+    def test_result(self, query):
+        self.logger.debug("-------------T E S T ---------------------------")
+        res_h = self.app.doJob(query)
+        self.logger.debug(res_h)
+        res_e = self.app.doJob(self.Q_E)
+        self.logger.debug(res_e)
+        self.logger.debug("-------------T E S T ---------------------------")
