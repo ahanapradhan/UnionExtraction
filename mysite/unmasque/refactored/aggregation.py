@@ -91,7 +91,7 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
             b = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 1))
             k_value = 1
             agg_array = [MIN, min(a, b), MAX, max(a, b)]
-    print(tabname, attrib, a, b)
+    # print(tabname, attrib, a, b)
     return a, agg_array, b, k_value
 
 
