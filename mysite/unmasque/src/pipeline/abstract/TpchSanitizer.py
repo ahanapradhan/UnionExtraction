@@ -27,11 +27,11 @@ class TpchSanitizer:
         for table in tables:
             self.sanitize_one_table(table)
         self.connectionHelper.commit_transaction()
-        all_sizes = {}
-        for table in tables:
-            all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(
-                self.connectionHelper.queries.get_row_count(table), self.logger)
-        print(all_sizes)
+        # all_sizes = {}
+        # for table in tables:
+        #    all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(
+        #        self.connectionHelper.queries.get_row_count(table), self.logger)
+        # print(all_sizes)
 
     def restore_one_table(self, table):
         self.drop_derived_relations(table)
@@ -59,7 +59,7 @@ class TpchSanitizer:
                                            self.connectionHelper.queries.drop_table("r_h")], self.logger)
 
     def get_drop_fn(self, table):
-        return self.connectionHelper.queries.drop_table_cascade \
+        return self.connectionHelper.queries.drop_table \
             if self.connectionHelper.is_view_or_table(table) == 'table' else self.connectionHelper.queries.drop_view
 
     def drop_derived_relations(self, table):

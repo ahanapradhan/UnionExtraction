@@ -92,7 +92,7 @@ class ViewMinimizer(Minimizer):
         if not self.sanity_check(query):
             return False
 
-        self.populate_dict_info(query)
+        self.populate_dict_info()
         return True
 
     def do_binary_halving_1(self, core_sizes, query, tabname, tabname1):
@@ -101,7 +101,7 @@ class ViewMinimizer(Minimizer):
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
 
-    def populate_dict_info(self, query):
+    def populate_dict_info(self):
         # POPULATE MIN INSTANCE DICT
         for tabname in self.core_relations:
             self.global_min_instance_dict[tabname] = []
