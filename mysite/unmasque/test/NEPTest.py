@@ -13,19 +13,15 @@ from ..test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.backup_tables()
-
     def backup_tables(self):
-        self.conn.connectUsingParams()
+        # self.conn.connectUsingParams()
         for tab in tpchSettings.relations:
             restore_name = self.conn.queries.get_backup(tab)
             self.conn.execute_sql([self.conn.queries.create_table_as_select_star_from(restore_name, tab)])
-        self.conn.closeConnection()
+        # self.conn.closeConnection()
 
     def test_Q6_lineitem_returnflag(self):
-
+        self.conn.connectUsingParams()
         query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
                 "From lineitem Where l_shipdate >= " \
                 "'1994-01-01' and l_quantity < 24 " \
@@ -87,7 +83,6 @@ class MyTestCase(BaseTestCase):
         o.enabled = True
         o.mock = True
         self.backup_tables()
-        self.conn.connectUsingParams()
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
