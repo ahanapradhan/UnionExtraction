@@ -22,13 +22,13 @@ class TpchSanitizer:
         self.backup_done = True
 
     def sanitize(self):
-        self.connectionHelper.connectUsingParams()
+        # self.connectionHelper.connectUsingParams()
         self.connectionHelper.begin_transaction()
         tables = self.all_relations  # self.connectionHelper.get_all_tables_for_restore()
         for table in tables:
             self.sanitize_one_table(table)
         self.connectionHelper.commit_transaction()
-        self.connectionHelper.closeConnection()
+        # self.connectionHelper.closeConnection()
         # all_sizes = {}
         # for table in tables:
         #    all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(
