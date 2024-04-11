@@ -16,7 +16,7 @@ class Comparator(AppExtractorBase):
 
     def doActualJob(self, args):
         Q_h, Q_E = self.extract_params_from_args(args)
-        self.sanitize_and_keep_backup()
+        self.sanitize()
         if Q_E is None:
             self.logger.info("Got None to compare. Cannot do anything...sorry!")
             return False
@@ -91,7 +91,7 @@ class Comparator(AppExtractorBase):
         str_values = str(values)
         str_values = str_values.replace(",)", ")")
         if not str_values.startswith('('):
-            str_values = f"({str_values})"
+            str_values = f"('{str_values}')"
         self.connectionHelper.execute_sql([f"INSERT INTO {self.r_h}{header_} VALUES {str_values};"], self.logger)
 
     def insert_data_into_Qh_table(self, res_Qh):

@@ -35,15 +35,16 @@ class MyTestCase(BaseTestCase):
                    ('lineitem', 'l_shipdate', '<=', datetime.date(1994, 1, 1), datetime.date(9999, 12, 31))]
 
         self.global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
-                               ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
-                               ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
-                               ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
-                               ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
-                               ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
-                               ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
-                               ('lineitem', 'l_shipmode', 'character'),
-                               ('lineitem', 'l_comment', 'character varying')
-                               }
+                                    ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
+                                    ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
+                                    ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
+                                    ('lineitem', 'l_returnflag', 'character'),
+                                    ('lineitem', 'l_linestatus', 'character'),
+                                    ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
+                                    ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
+                                    ('lineitem', 'l_shipmode', 'character'),
+                                    ('lineitem', 'l_comment', 'character varying')
+                                    }
 
         self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
@@ -92,15 +93,15 @@ class MyTestCase(BaseTestCase):
         self.conn.connectUsingParams()
         query = "select c_mktsegment as segment from customer,nation,orders where " \
                 "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
-                "and n_name not LIKE 'B%';"
+                "and n_name not LIKE 'B%' limit 10;"
         Q_E = "select c_mktsegment as segment from customer,nation,orders where " \
               "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey;"
-        core_rels = ['orders', 'customer', 'nation']
+        core_rels = ['orders', 'nation','customer']
         filters = [('customer', 'c_acctbal', '<=', 1000, 5000)]
 
         aoa_predicates = []
         self.join_graph = [['c_nationkey', 'n_nationkey'],
-                      ['c_custkey', 'o_custkey']]
+                           ['c_custkey', 'o_custkey']]
 
         self.global_attrib_types = {
             ('orders', "o_orderkey", "integer"),
@@ -112,6 +113,10 @@ class MyTestCase(BaseTestCase):
             ('orders', "o_clerk", "character"),
             ('orders', "o_shippriority", "integer"),
             ('orders', "o_comment", "character varying"),
+            ('nation', "n_nationkey", "integer"),
+            ('nation', "n_name", "character"),
+            ('nation', "n_regionkey", "integer"),
+            ('nation', "n_comment", "character varying"),
             ('customer', 'c_custkey', 'integer'),
             ('customer', 'c_name', 'character varying'),
             ('customer', 'c_address', 'character varying'),
@@ -119,11 +124,7 @@ class MyTestCase(BaseTestCase):
             ('customer', 'c_phone', 'character'),
             ('customer', 'c_acctbal', 'numeric'),
             ('customer', 'c_mktsegment', 'character'),
-            ('customer', 'c_comment', 'character varying'),
-            ('nation', "n_nationkey", "integer"),
-            ('nation', "n_name", "character"),
-            ('nation', "n_regionkey", "integer"),
-            ('nation', "n_comment", "character varying")
+            ('customer', 'c_comment', 'character varying')
         }
 
         self.global_all_attribs = [
@@ -135,17 +136,17 @@ class MyTestCase(BaseTestCase):
              "o_orderpriority",
              "o_clerk",
              "o_shippriority",
-             "o_comment"], ['c_custkey', 'c_name', 'c_address', 'c_nationkey',
-                            'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
+             "o_comment"],
             ["n_nationkey",
              "n_name",
              "n_regionkey",
-             "n_comment"]]
+             "n_comment"],['c_custkey', 'c_name', 'c_address', 'c_nationkey',
+                            'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment']]
 
         q_gen = QueryStringGenerator(self.conn)
         q_gen.from_op = 'customer, orders, nation'
         q_gen.group_by_op = ''
-        q_gen.limit_op = None
+        q_gen.limit_op = 10
         q_gen.method_call_count = 0
         q_gen.order_by_op = ''
         q_gen.select_op = 'c_mktsegment as segment'
@@ -163,8 +164,12 @@ class MyTestCase(BaseTestCase):
                                          self.get_datatype)
         self.do_init()
         delivery.doJob()
+        for tab in tpchSettings.relations:
+            restore_name = self.conn.queries.get_backup(tab)
+            self.conn.execute_sql([self.conn.queries.create_table_as_select_star_from(restore_name, tab)])
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.set_all_relations(tpchSettings.relations)
         o.enabled = True
         o.mock = True
 
@@ -172,7 +177,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(o.Q_E)
         self.assertEqual("c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey "
-                         "and c_custkey = o_custkey and n_name not LIKE 'B%' ", q_gen.where_op)
+                         "and c_custkey = o_custkey and nation.n_name not LIKE 'B%' ", q_gen.where_op)
         q_e = f"Select {q_gen.select_op}\n From {q_gen.from_op} \n Where {q_gen.where_op} ;"
         self.assertEqual(q_e, o.Q_E)
         self.conn.closeConnection()
@@ -190,15 +195,16 @@ class MyTestCase(BaseTestCase):
         filters = [('lineitem', 'l_quantity', '<=', 21.0, max_numeric_val)]
 
         self.global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
-                               ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
-                               ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
-                               ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
-                               ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
-                               ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
-                               ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
-                               ('lineitem', 'l_shipmode', 'character'),
-                               ('lineitem', 'l_comment', 'character varying')
-                               }
+                                    ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
+                                    ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
+                                    ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
+                                    ('lineitem', 'l_returnflag', 'character'),
+                                    ('lineitem', 'l_linestatus', 'character'),
+                                    ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
+                                    ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
+                                    ('lineitem', 'l_shipmode', 'character'),
+                                    ('lineitem', 'l_comment', 'character varying')
+                                    }
 
         self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
@@ -268,15 +274,16 @@ class MyTestCase(BaseTestCase):
                    ('lineitem', 'l_shipdate', '<=', datetime.date(1, 1, 1), datetime.date(1993, 12, 31))]
 
         self.global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
-                               ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
-                               ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
-                               ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
-                               ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
-                               ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
-                               ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
-                               ('lineitem', 'l_shipmode', 'character'),
-                               ('lineitem', 'l_comment', 'character varying')
-                               }
+                                    ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
+                                    ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
+                                    ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
+                                    ('lineitem', 'l_returnflag', 'character'),
+                                    ('lineitem', 'l_linestatus', 'character'),
+                                    ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
+                                    ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
+                                    ('lineitem', 'l_shipmode', 'character'),
+                                    ('lineitem', 'l_comment', 'character varying')
+                                    }
 
         self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
@@ -349,15 +356,16 @@ class MyTestCase(BaseTestCase):
         # ('lineitem', 'l_shipdate', '<=', datetime.date(1994, 1, 1), datetime.date(9999, 12, 31))]
 
         self.global_attrib_types = {('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
-                               ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
-                               ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
-                               ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
-                               ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
-                               ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
-                               ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
-                               ('lineitem', 'l_shipmode', 'character'),
-                               ('lineitem', 'l_comment', 'character varying')
-                               }
+                                    ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
+                                    ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
+                                    ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
+                                    ('lineitem', 'l_returnflag', 'character'),
+                                    ('lineitem', 'l_linestatus', 'character'),
+                                    ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
+                                    ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
+                                    ('lineitem', 'l_shipmode', 'character'),
+                                    ('lineitem', 'l_comment', 'character varying')
+                                    }
 
         self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
@@ -426,59 +434,61 @@ class MyTestCase(BaseTestCase):
 
         aoa_predicates = []
         self.join_graph = [['s_suppkey', 'l_suppkey'],
-                      ['o_orderkey', 'l_orderkey'],
-                      ['s_nationkey', 'n_nationkey']]
+                           ['o_orderkey', 'l_orderkey'],
+                           ['s_nationkey', 'n_nationkey']]
 
         self.global_attrib_types = {('supplier', "s_suppkey", "integer"),
-                               ('supplier', "s_name", "character"),
-                               ('supplier', "s_address", "character varying"),
-                               ('supplier', "s_nationkey", "integer"),
-                               ('supplier', "s_phone", "character"),
-                               ('supplier', "s_acctbal", "numeric"),
-                               ('supplier', "s_comment", "character varying"),
-                               ('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
-                               ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
-                               ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
-                               ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
-                               ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
-                               ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
-                               ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
-                               ('lineitem', 'l_shipmode', 'character'),
-                               ('lineitem', 'l_comment', 'character varying'),
-                               ('orders', "o_orderkey", "integer"),
-                               ('orders', "o_custkey", "integer"),
-                               ('orders', "o_orderstatus", "character"),
-                               ('orders', "o_totalprice", "numeric"),
-                               ('orders', "o_orderdate", "date"),
-                               ('orders', "o_orderpriority", "character"),
-                               ('orders', "o_clerk", "character"),
-                               ('orders', "o_shippriority", "integer"),
-                               ('orders', "o_comment", "character varying"),
-                               ('nation', "n_nationkey", "integer"),
-                               ('nation', "n_name", "character"),
-                               ('nation', "n_regionkey", "integer"),
-                               ('nation', "n_comment", "character varying")
-                               }
+                                    ('supplier', "s_name", "character"),
+                                    ('supplier', "s_address", "character varying"),
+                                    ('supplier', "s_nationkey", "integer"),
+                                    ('supplier', "s_phone", "character"),
+                                    ('supplier', "s_acctbal", "numeric"),
+                                    ('supplier', "s_comment", "character varying"),
+                                    ('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
+                                    ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
+                                    ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
+                                    ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
+                                    ('lineitem', 'l_returnflag', 'character'),
+                                    ('lineitem', 'l_linestatus', 'character'),
+                                    ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
+                                    ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
+                                    ('lineitem', 'l_shipmode', 'character'),
+                                    ('lineitem', 'l_comment', 'character varying'),
+                                    ('orders', "o_orderkey", "integer"),
+                                    ('orders', "o_custkey", "integer"),
+                                    ('orders', "o_orderstatus", "character"),
+                                    ('orders', "o_totalprice", "numeric"),
+                                    ('orders', "o_orderdate", "date"),
+                                    ('orders', "o_orderpriority", "character"),
+                                    ('orders', "o_clerk", "character"),
+                                    ('orders', "o_shippriority", "integer"),
+                                    ('orders', "o_comment", "character varying"),
+                                    ('nation', "n_nationkey", "integer"),
+                                    ('nation', "n_name", "character"),
+                                    ('nation', "n_regionkey", "integer"),
+                                    ('nation', "n_comment", "character varying")
+                                    }
 
-        self.global_all_attribs = [["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"],
-                              ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
-                               'l_discount',
-                               'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate',
-                               'l_shipinstruct',
-                               'l_shipmode', 'l_comment'],
-                              ["o_orderkey",
-                               "o_custkey",
-                               "o_orderstatus",
-                               "o_totalprice",
-                               "o_orderdate",
-                               "o_orderpriority",
-                               "o_clerk",
-                               "o_shippriority",
-                               "o_comment"],
-                              ["n_nationkey",
-                               "n_name",
-                               "n_regionkey",
-                               "n_comment"]]
+        self.global_all_attribs = [
+            ["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"],
+            ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
+             'l_discount',
+             'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate',
+             'l_shipinstruct',
+             'l_shipmode', 'l_comment'],
+            ["o_orderkey",
+             "o_custkey",
+             "o_orderstatus",
+             "o_totalprice",
+             "o_orderdate",
+             "o_orderpriority",
+             "o_clerk",
+             "o_shippriority",
+             "o_comment"],
+            ["n_nationkey",
+             "n_name",
+             "n_regionkey",
+             "n_comment"]]
 
         q_gen = QueryStringGenerator(self.conn)
         q_gen.from_op = 'supplier, lineitem, orders, nation'
@@ -539,50 +549,53 @@ class MyTestCase(BaseTestCase):
         filters = [('customer', 'c_phone', 'LIKE', '27-_%', '27-_%')]
 
         self.global_attrib_types = {('customer', 'c_custkey', 'integer'),
-                               ('customer', 'c_name', 'character varying'),
-                               ('customer', 'c_address', 'character varying'),
-                               ('customer', 'c_nationkey', 'integer'),
-                               ('customer', 'c_phone', 'character'),
-                               ('customer', 'c_acctbal', 'numeric'),
-                               ('customer', 'c_mktsegment', 'character'),
-                               ('customer', 'c_comment', 'character varying'),
-                               ('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
-                               ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
-                               ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
-                               ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
-                               ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
-                               ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
-                               ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
-                               ('lineitem', 'l_shipmode', 'character'),
-                               ('lineitem', 'l_comment', 'character varying'),
-                               ('orders', "o_orderkey", "integer"),
-                               ('orders', "o_custkey", "integer"),
-                               ('orders', "o_orderstatus", "character"),
-                               ('orders', "o_totalprice", "numeric"),
-                               ('orders', "o_orderdate", "date"),
-                               ('orders', "o_orderpriority", "character"),
-                               ('orders', "o_clerk", "character"),
-                               ('orders', "o_shippriority", "integer"),
-                               ('orders', "o_comment", "character varying")
-                               }
+                                    ('customer', 'c_name', 'character varying'),
+                                    ('customer', 'c_address', 'character varying'),
+                                    ('customer', 'c_nationkey', 'integer'),
+                                    ('customer', 'c_phone', 'character'),
+                                    ('customer', 'c_acctbal', 'numeric'),
+                                    ('customer', 'c_mktsegment', 'character'),
+                                    ('customer', 'c_comment', 'character varying'),
+                                    ('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
+                                    ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
+                                    ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
+                                    ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
+                                    ('lineitem', 'l_returnflag', 'character'),
+                                    ('lineitem', 'l_linestatus', 'character'),
+                                    ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
+                                    ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
+                                    ('lineitem', 'l_shipmode', 'character'),
+                                    ('lineitem', 'l_comment', 'character varying'),
+                                    ('orders', "o_orderkey", "integer"),
+                                    ('orders', "o_custkey", "integer"),
+                                    ('orders', "o_orderstatus", "character"),
+                                    ('orders', "o_totalprice", "numeric"),
+                                    ('orders', "o_orderdate", "date"),
+                                    ('orders', "o_orderpriority", "character"),
+                                    ('orders', "o_clerk", "character"),
+                                    ('orders', "o_shippriority", "integer"),
+                                    ('orders', "o_comment", "character varying")
+                                    }
 
         self.global_all_attribs = [['c_custkey', 'c_name', 'c_address', 'c_nationkey',
-                               'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
-                              ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
-                               'l_discount',
-                               'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate',
-                               'l_shipinstruct',
-                               'l_shipmode', 'l_comment'],
-                              ["o_orderkey",
-                               "o_custkey",
-                               "o_orderstatus",
-                               "o_totalprice",
-                               "o_orderdate",
-                               "o_orderpriority",
-                               "o_clerk",
-                               "o_shippriority",
-                               "o_comment"]
-                              ]
+                                    'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
+                                   ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity',
+                                    'l_extendedprice',
+                                    'l_discount',
+                                    'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate',
+                                    'l_receiptdate',
+                                    'l_shipinstruct',
+                                    'l_shipmode', 'l_comment'],
+                                   ["o_orderkey",
+                                    "o_custkey",
+                                    "o_orderstatus",
+                                    "o_totalprice",
+                                    "o_orderdate",
+                                    "o_orderpriority",
+                                    "o_clerk",
+                                    "o_shippriority",
+                                    "o_comment"]
+                                   ]
 
         q_gen = QueryStringGenerator(self.conn)
         q_gen.from_op = 'customer, lineitem, orders'
@@ -596,7 +609,7 @@ class MyTestCase(BaseTestCase):
         self.global_min_instance_dict = {}
         aoa_predicates = []
         self.join_graph = [['c_custkey', 'o_custkey'],
-                      ['o_orderkey', 'l_orderkey']]
+                           ['o_orderkey', 'l_orderkey']]
 
         delivery = PackageForGenPipeline(core_rels,
                                          self.global_all_attribs,
@@ -646,50 +659,53 @@ class MyTestCase(BaseTestCase):
         filters = [('customer', 'c_name', 'LIKE', 'Customer#%217', 'Customer#%217')]
 
         self.global_attrib_types = {('customer', 'c_custkey', 'integer'),
-                               ('customer', 'c_name', 'character varying'),
-                               ('customer', 'c_address', 'character varying'),
-                               ('customer', 'c_nationkey', 'integer'),
-                               ('customer', 'c_phone', 'character'),
-                               ('customer', 'c_acctbal', 'numeric'),
-                               ('customer', 'c_mktsegment', 'character'),
-                               ('customer', 'c_comment', 'character varying'),
-                               ('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
-                               ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
-                               ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
-                               ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
-                               ('lineitem', 'l_returnflag', 'character'), ('lineitem', 'l_linestatus', 'character'),
-                               ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
-                               ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
-                               ('lineitem', 'l_shipmode', 'character'),
-                               ('lineitem', 'l_comment', 'character varying'),
-                               ('orders', "o_orderkey", "integer"),
-                               ('orders', "o_custkey", "integer"),
-                               ('orders', "o_orderstatus", "character"),
-                               ('orders', "o_totalprice", "numeric"),
-                               ('orders', "o_orderdate", "date"),
-                               ('orders', "o_orderpriority", "character"),
-                               ('orders', "o_clerk", "character"),
-                               ('orders', "o_shippriority", "integer"),
-                               ('orders', "o_comment", "character varying")
-                               }
+                                    ('customer', 'c_name', 'character varying'),
+                                    ('customer', 'c_address', 'character varying'),
+                                    ('customer', 'c_nationkey', 'integer'),
+                                    ('customer', 'c_phone', 'character'),
+                                    ('customer', 'c_acctbal', 'numeric'),
+                                    ('customer', 'c_mktsegment', 'character'),
+                                    ('customer', 'c_comment', 'character varying'),
+                                    ('lineitem', 'l_orderkey', 'integer'), ('lineitem', 'l_partkey', 'integer'),
+                                    ('lineitem', 'l_suppkey', 'integer'), ('lineitem', 'l_linenumber', 'integer'),
+                                    ('lineitem', 'l_quantity', 'numeric'), ('lineitem', 'l_extendedprice', 'numeric'),
+                                    ('lineitem', 'l_discount', 'numeric'), ('lineitem', 'l_tax', 'numeric'),
+                                    ('lineitem', 'l_returnflag', 'character'),
+                                    ('lineitem', 'l_linestatus', 'character'),
+                                    ('lineitem', 'l_shipdate', 'date'), ('lineitem', 'l_commitdate', 'date'),
+                                    ('lineitem', 'l_receiptdate', 'date'), ('lineitem', 'l_shipinstruct', 'character'),
+                                    ('lineitem', 'l_shipmode', 'character'),
+                                    ('lineitem', 'l_comment', 'character varying'),
+                                    ('orders', "o_orderkey", "integer"),
+                                    ('orders', "o_custkey", "integer"),
+                                    ('orders', "o_orderstatus", "character"),
+                                    ('orders', "o_totalprice", "numeric"),
+                                    ('orders', "o_orderdate", "date"),
+                                    ('orders', "o_orderpriority", "character"),
+                                    ('orders', "o_clerk", "character"),
+                                    ('orders', "o_shippriority", "integer"),
+                                    ('orders', "o_comment", "character varying")
+                                    }
 
         self.global_all_attribs = [['c_custkey', 'c_name', 'c_address', 'c_nationkey',
-                               'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
-                              ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
-                               'l_discount',
-                               'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate',
-                               'l_shipinstruct',
-                               'l_shipmode', 'l_comment'],
-                              ["o_orderkey",
-                               "o_custkey",
-                               "o_orderstatus",
-                               "o_totalprice",
-                               "o_orderdate",
-                               "o_orderpriority",
-                               "o_clerk",
-                               "o_shippriority",
-                               "o_comment"]
-                              ]
+                                    'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
+                                   ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity',
+                                    'l_extendedprice',
+                                    'l_discount',
+                                    'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate',
+                                    'l_receiptdate',
+                                    'l_shipinstruct',
+                                    'l_shipmode', 'l_comment'],
+                                   ["o_orderkey",
+                                    "o_custkey",
+                                    "o_orderstatus",
+                                    "o_totalprice",
+                                    "o_orderdate",
+                                    "o_orderpriority",
+                                    "o_clerk",
+                                    "o_shippriority",
+                                    "o_comment"]
+                                   ]
 
         q_gen = QueryStringGenerator(self.conn)
         q_gen.from_op = 'customer, lineitem, orders'
@@ -703,7 +719,7 @@ class MyTestCase(BaseTestCase):
         self.global_min_instance_dict = {}
         aoa_predicates = []
         self.join_graph = [['c_custkey', 'o_custkey'],
-                      ['o_orderkey', 'l_orderkey']]
+                           ['o_orderkey', 'l_orderkey']]
         delivery = PackageForGenPipeline(core_rels,
                                          self.global_all_attribs,
                                          self.global_attrib_types,
@@ -782,29 +798,30 @@ class MyTestCase(BaseTestCase):
         filters = [('nation', 'n_name', '=', 'ARGENTINA', 'ARGENTINA')]
 
         self.global_attrib_types = {('partsupp', 'ps_partkey', 'integer'),
-                               ('partsupp', 'ps_suppkey', 'integer'),
-                               ('partsupp', 'ps_availqty', 'integer'),
-                               ('partsupp', 'ps_supplycost', 'numeric'),
-                               ('partsupp', 'ps_comment', 'character varying'),
-                               ('supplier', "s_suppkey", "integer"),
-                               ('supplier', "s_name", "character"),
-                               ('supplier', "s_address", "character varying"),
-                               ('supplier', "s_nationkey", "integer"),
-                               ('supplier', "s_phone", "character"),
-                               ('supplier', "s_acctbal", "numeric"),
-                               ('supplier', "s_comment", "character varying"),
-                               ('nation', "n_nationkey", "integer"),
-                               ('nation', "n_name", "character"),
-                               ('nation', "n_regionkey", "integer"),
-                               ('nation', "n_comment", "character varying")
-                               }
+                                    ('partsupp', 'ps_suppkey', 'integer'),
+                                    ('partsupp', 'ps_availqty', 'integer'),
+                                    ('partsupp', 'ps_supplycost', 'numeric'),
+                                    ('partsupp', 'ps_comment', 'character varying'),
+                                    ('supplier', "s_suppkey", "integer"),
+                                    ('supplier', "s_name", "character"),
+                                    ('supplier', "s_address", "character varying"),
+                                    ('supplier', "s_nationkey", "integer"),
+                                    ('supplier', "s_phone", "character"),
+                                    ('supplier', "s_acctbal", "numeric"),
+                                    ('supplier', "s_comment", "character varying"),
+                                    ('nation', "n_nationkey", "integer"),
+                                    ('nation', "n_name", "character"),
+                                    ('nation', "n_regionkey", "integer"),
+                                    ('nation', "n_comment", "character varying")
+                                    }
 
         self.global_all_attribs = [['ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment'],
-                              ["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"],
-                              ["n_nationkey",
-                               "n_name",
-                               "n_regionkey",
-                               "n_comment"]]
+                                   ["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal",
+                                    "s_comment"],
+                                   ["n_nationkey",
+                                    "n_name",
+                                    "n_regionkey",
+                                    "n_comment"]]
 
         q_gen = QueryStringGenerator(self.conn)
         q_gen.from_op = 'partsupp, supplier, nation'
@@ -818,7 +835,7 @@ class MyTestCase(BaseTestCase):
         self.global_min_instance_dict = {}
         aoa_predicates = []
         self.join_graph = [['ps_suppkey', 's_suppkey'],
-                      ['s_nationkey', 'n_nationkey']]
+                           ['s_nationkey', 'n_nationkey']]
 
         delivery = PackageForGenPipeline(core_rels,
                                          self.global_all_attribs,

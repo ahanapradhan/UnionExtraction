@@ -23,7 +23,7 @@ class PostgresQueries(CommonQueries):
         return f"drop table if exists {tab} CASCADE;"
 
     def alter_table_rename_to(self, tab, retab):
-        return f"Alter table {tab} rename to {retab};"
+        return f"Alter table if exists {tab} rename to {retab};"
 
     def alter_view_rename_to(self, tab, retab):
         return f"Alter view {tab} rename to {retab};"

@@ -20,7 +20,7 @@ class Minimizer(AppExtractorBase):
     def getSizes_cs(self):
         if not self.all_sizes:
             for table in self.all_relations:
-                self.all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(table))
+                self.all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(table), self.logger)
         return self.all_sizes
 
     def getCoreSizes(self):
@@ -131,9 +131,13 @@ class Minimizer(AppExtractorBase):
         '''
         return self.result
 
-    def see_d_min(self):
+    def see_d_min(self, table):
         pass
         '''
+        res, des = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(table))
+        for row in res:
+            self.logger.debug(row)
+        
         for tab in self.core_relations:
             res, des = self.connectionHelper.execute_sql_fetchall(get_star(tab))
             for row in res:

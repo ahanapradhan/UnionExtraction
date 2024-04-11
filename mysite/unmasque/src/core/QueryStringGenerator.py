@@ -38,7 +38,7 @@ def handle_range_preds(datatype, pred, pred_op):
 
 
 def get_exact_NE_string_predicate(elt, output):
-    return elt[1] + " " + str(elt[2]) + " '" + str(output) + "' "
+    return f"{elt[0]}.{elt[1]} {str(elt[2])} \'{str(output)}\' "
 
 
 class QueryStringGenerator(AppExtractorBase):
@@ -226,12 +226,12 @@ class QueryStringGenerator(AppExtractorBase):
             elif isinstance(elt[3], str):
                 output = self.getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
                 if '%' in output or '_' in output:
-                    predicate = elt[1] + " NOT LIKE '" + str(output) + "' "
+                    predicate = f"{elt[0]}.{elt[1]} NOT LIKE '{str(output)}' "
                     self.remove_exact_NE_string_predicate(elt)
                 else:
                     predicate = get_exact_NE_string_predicate(elt, output)
             else:
-                predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
+                predicate = f"{elt[0]}.{elt[1]} {str(elt[2])} {str(elt[3])}"
 
             if self.where_op and predicate not in self.where_op:
                 self.where_op = f'{self.where_op} and {predicate}'

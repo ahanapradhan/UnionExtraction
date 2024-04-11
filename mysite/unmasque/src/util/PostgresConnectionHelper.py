@@ -25,6 +25,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
             self.get_sanitization_select_query(["SPLIT_PART(table_name, '_', 1) as original_name"],
                                                ["table_name like '%_backup'"]))
         tables = [row[0] for row in res]
+        print(tables)
         return tables
 
     def is_view_or_table(self, tab):
@@ -102,7 +103,8 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
     def cus_execute_sqls(self, cur, sqls, logger=None):
         # print(cur)
         for sql in sqls:
-            print("..cur execute.." + sql)
+            if logger is not None:
+                logger.debug("..cur execute.." + sql)
             try:
                 cur.execute(sql)
             except psycopg2.ProgrammingError as e:
@@ -118,6 +120,8 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def cur_execute_sql_fetch_one_0(self, cur, sql, logger=None):
         prev = None
+        if logger is not None:
+            logger.debug(sql)
         try:
             cur.execute(sql)
             prev = cur.fetchone()
