@@ -15,6 +15,9 @@ class MyTestCase(BaseTestCase):
 
     def setUp(self):
         super().setUp()
+        self.backup_tables()
+
+    def backup_tables(self):
         self.conn.connectUsingParams()
         for tab in tpchSettings.relations:
             restore_name = self.conn.queries.get_backup(tab)
@@ -22,7 +25,6 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_Q6_lineitem_returnflag(self):
-        self.conn.connectUsingParams()
 
         query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
                 "From lineitem Where l_shipdate >= " \
@@ -84,7 +86,8 @@ class MyTestCase(BaseTestCase):
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
-
+        self.backup_tables()
+        self.conn.connectUsingParams()
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
@@ -177,6 +180,7 @@ class MyTestCase(BaseTestCase):
         o.set_all_relations(tpchSettings.relations)
         o.enabled = True
         o.mock = True
+        self.backup_tables()
 
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
@@ -247,6 +251,7 @@ class MyTestCase(BaseTestCase):
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
+        self.backup_tables()
 
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
@@ -325,6 +330,7 @@ class MyTestCase(BaseTestCase):
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
+        self.backup_tables()
 
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
@@ -403,6 +409,7 @@ class MyTestCase(BaseTestCase):
         self.do_init()
 
         delivery.doJob()
+        self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
@@ -518,6 +525,7 @@ class MyTestCase(BaseTestCase):
                                          self.get_dmin_val,
                                          self.get_datatype)
         self.do_init()
+        self.backup_tables()
 
         delivery.doJob()
 
@@ -629,6 +637,7 @@ class MyTestCase(BaseTestCase):
         self.do_init()
 
         delivery.doJob()
+        self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
@@ -857,6 +866,7 @@ class MyTestCase(BaseTestCase):
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
+        self.backup_tables()
 
         check = o.doJob([q, eq])
         print(q_gen.where_op)
