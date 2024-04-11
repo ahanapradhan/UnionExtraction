@@ -61,13 +61,6 @@ class ViewMinimizer(Minimizer):
         core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
 
-    def take_backup(self):
-        for table in self.core_relations:
-            self.connectionHelper.execute_sqls_with_DictCursor(
-                [self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_backup(table)),
-                 self.connectionHelper.queries.create_table_as_select_star_from(
-                     self.connectionHelper.queries.get_backup(table), table)])
-
     def reduce_Database_Instance(self, query, cs_pass):
 
         self.local_other_info_dict = {}

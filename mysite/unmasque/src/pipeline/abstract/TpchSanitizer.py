@@ -12,6 +12,11 @@ class TpchSanitizer:
     def set_all_relations(self, relations: list[str]):
         self.all_relations.extend(relations)
 
+    def take_backup(self):
+        tables = self.all_relations  # self.connectionHelper.get_all_tables_for_restore()
+        for table in tables:
+            self.backup_one_table(table)
+
     def sanitize(self):
         self.connectionHelper.begin_transaction()
         tables = self.all_relations  # self.connectionHelper.get_all_tables_for_restore()
@@ -32,6 +37,16 @@ class TpchSanitizer:
                                            self.connectionHelper.queries.create_table_as_select_star_from(table,
                                                                                                           backup_name)],
                                           self.logger)
+
+    def backup_one_table(self, table):
+        self.logger.debug(f"Backing up {table}...")
+        self.drop_derived_relations(table)
+        backup_name = self.connectionHelper.queries.get_backup(table)
+        self.connectionHelper.execute_sqls_with_DictCursor([self.connectionHelper.queries.create_table_as_select_star_from(backup_name,
+                                                                                                          table)],
+                                          self.logger)
+        self.logger.debug(f"... done")
+
 
     def sanitize_one_table(self, table):
         self.restore_one_table(table)
