@@ -18,18 +18,11 @@ class TpchSanitizer:
             self.backup_one_table(table)
 
     def sanitize(self):
-        self.connectionHelper.connectUsingParams()
         self.connectionHelper.begin_transaction()
         tables = self.all_relations  # self.connectionHelper.get_all_tables_for_restore()
         for table in tables:
             self.sanitize_one_table(table)
         self.connectionHelper.commit_transaction()
-        self.connectionHelper.closeConnection()
-        # all_sizes = {}
-        # for table in tables:
-        #    all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(
-        #        self.connectionHelper.queries.get_row_count(table), self.logger)
-        # print(all_sizes)
 
     def restore_one_table(self, table):
         self.drop_derived_relations(table)
