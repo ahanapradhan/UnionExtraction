@@ -8,32 +8,21 @@ class TpchSanitizer:
         self.all_relations = []
         self.connectionHelper = connectionHelper
         self.logger = Log("TpchSanitizer", connectionHelper.config.log_level)
-        self.backup_done = False
 
     def set_all_relations(self, relations: list[str]):
         self.all_relations.extend(relations)
 
     def take_backup(self):
-        if self.backup_done:
-            return
         tables = self.all_relations  # self.connectionHelper.get_all_tables_for_restore()
         for table in tables:
             self.backup_one_table(table)
-        self.backup_done = True
 
     def sanitize(self):
-        # self.connectionHelper.connectUsingParams()
         self.connectionHelper.begin_transaction()
         tables = self.all_relations  # self.connectionHelper.get_all_tables_for_restore()
         for table in tables:
             self.sanitize_one_table(table)
         self.connectionHelper.commit_transaction()
-        # self.connectionHelper.closeConnection()
-        # all_sizes = {}
-        # for table in tables:
-        #    all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(
-        #        self.connectionHelper.queries.get_row_count(table), self.logger)
-        # print(all_sizes)
 
     def restore_one_table(self, table):
         self.drop_derived_relations(table)
@@ -48,10 +37,12 @@ class TpchSanitizer:
         self.logger.debug(f"Backing up {table}...")
         self.drop_derived_relations(table)
         backup_name = self.connectionHelper.queries.get_backup(table)
+        self.connectionHelper.begin_transaction()
         self.connectionHelper.execute_sqls_with_DictCursor(
             [self.connectionHelper.queries.create_table_as_select_star_from(backup_name,
                                                                             table)],
             self.logger)
+        self.connectionHelper.commit_transaction()
         self.logger.debug(f"... done")
 
     def sanitize_one_table(self, table):

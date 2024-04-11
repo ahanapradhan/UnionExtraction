@@ -2,12 +2,18 @@ import unittest
 
 import pytest
 
+from mysite.unmasque.test.util import tpchSettings
 from ..refactored.result_comparator import ResultComparator
 from ..test.util import queries
 from ..test.util.BaseTestCase import BaseTestCase
 
 
 class MyTestCase(BaseTestCase):
+
+    def backup_tables(self):
+        for tab in tpchSettings.relations:
+            restore_name = self.conn.queries.get_backup(tab)
+            self.conn.execute_sql([self.conn.queries.create_table_as_select_star_from(restore_name, tab)])
 
     def test_all_same_hash_match_takes_less_time(self):
         hash_times = {}
@@ -75,6 +81,7 @@ class MyTestCase(BaseTestCase):
     def test_for_some_query(self):
         q = "SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100;"
         self.conn.connectUsingParams()
+        self.backup_tables()
         rc_hash = ResultComparator(self.conn, False)
         matched_hash = rc_hash.doJob(q, q)
         self.assertTrue(matched_hash)
