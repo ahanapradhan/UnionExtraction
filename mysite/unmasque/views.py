@@ -6,7 +6,7 @@ from .src.util.ConnectionFactory import ConnectionHelperFactory
 from .src.util.configParser import Config
 from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, \
     FILTER, \
-    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK
+    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK, WRONG
 
 ALL_STATES = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION,
               GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, DONE]
@@ -68,21 +68,20 @@ def check_progress(request, token):
 
 
 def func_check_progress(request, token):
-    print("...HIT...HIT...HIT...")
     state_changed = False
     factory = PipeLineFactory()
     p = factory.get_pipeline_obj(token)
     print("TOKEN: ", token)
     state_msg = factory.get_pipeline_state(token)
-    print("...got...", state_msg, factory.get_pipeline_query(token))
-    if state_msg == DONE:
-        print("...done...")
+    print("Current state: ", state_msg, factory.get_pipeline_query(token))
+    if state_msg in [DONE, WRONG]:
+        print("...done!")
         state_changed = True
-        to_pass = prepare_result(factory.get_pipeline_query(token))
+        # to_pass = prepare_result(factory.get_pipeline_query(token))
     else:
         print("... still doing...", state_msg)
-        to_pass = [factory.get_pipeline_query(token), state_msg, 'NA']
-    request.session[str(token) + 'partials'] = to_pass
+        # to_pass = [factory.get_pipeline_query(token), state_msg, 'NA']
+    # request.session[str(token) + 'partials'] = to_pass
     return state_changed, state_msg, p.info if p else None
 
 

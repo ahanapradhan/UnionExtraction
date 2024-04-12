@@ -81,20 +81,10 @@ class UnionPipeLine(ExtractionPipeLine):
                                                                                                        tab)),
                                                self.connectionHelper.queries.create_table_like(tab,
                                                                                                self.connectionHelper.queries.get_tabname_un(
-                                                                                                   tab))])
+                                                                                                   tab))], self.logger)
 
     def revert_nullifications(self, relations):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
                                                self.connectionHelper.queries.alter_table_rename_to(
-                                                   self.connectionHelper.queries.get_tabname_un(tab), tab),
-                                               self.connectionHelper.queries.drop_table(
-                                                   self.connectionHelper.queries.get_tabname_un(tab))])
-
-    def revert_sideEffects(self, relations):
-        for tab in relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
-                                               self.connectionHelper.queries.alter_table_rename_to(
-                                                   self.connectionHelper.queries.get_restore_name(tab), tab),
-                                               self.connectionHelper.queries.drop_table(
-                                                   self.connectionHelper.queries.get_tabname_4(tab))])
+                                                   self.connectionHelper.queries.get_tabname_un(tab), tab)], self.logger)
