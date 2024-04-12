@@ -3,12 +3,11 @@ from django.shortcuts import render, redirect
 
 from .src.pipeline.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionFactory import ConnectionHelperFactory
-from .src.util.configParser import Config
 from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, \
     FILTER, \
-    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK, WRONG
+    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK, WRONG, UNION
 
-ALL_STATES = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION,
+ALL_STATES = [WAITING, UNION, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION,
               GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, DONE]
 
 
@@ -77,11 +76,11 @@ def func_check_progress(request, token):
     if state_msg in [DONE, WRONG]:
         print("...done!")
         state_changed = True
-        # to_pass = prepare_result(factory.get_pipeline_query(token))
+        to_pass = prepare_result(factory.get_pipeline_query(token))
     else:
         print("... still doing...", state_msg)
-        # to_pass = [factory.get_pipeline_query(token), state_msg, 'NA']
-    # request.session[str(token) + 'partials'] = to_pass
+        to_pass = [factory.get_pipeline_query(token), state_msg, 'NA']
+    request.session[str(token) + 'partials'] = to_pass
     return state_changed, state_msg, p.info if p else None
 
 
