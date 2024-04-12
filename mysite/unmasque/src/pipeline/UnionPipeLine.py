@@ -19,6 +19,7 @@ class UnionPipeLine(ExtractionPipeLine):
         self.update_state(UNION + RUNNING)
         p, pstr, union_profile = union.doJob(query)
         self.update_state(UNION + DONE)
+        self.info[UNION] = p
         self.update_time_profile(union, union_profile)
         self.all_relations = union.all_relations
         key_lists = union.key_lists
@@ -80,20 +81,10 @@ class UnionPipeLine(ExtractionPipeLine):
                                                                                                        tab)),
                                                self.connectionHelper.queries.create_table_like(tab,
                                                                                                self.connectionHelper.queries.get_tabname_un(
-                                                                                                   tab))])
+                                                                                                   tab))], self.logger)
 
     def revert_nullifications(self, relations):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
                                                self.connectionHelper.queries.alter_table_rename_to(
-                                                   self.connectionHelper.queries.get_tabname_un(tab), tab),
-                                               self.connectionHelper.queries.drop_table(
-                                                   self.connectionHelper.queries.get_tabname_un(tab))])
-
-    def revert_sideEffects(self, relations):
-        for tab in relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
-                                               self.connectionHelper.queries.alter_table_rename_to(
-                                                   self.connectionHelper.queries.get_restore_name(tab), tab),
-                                               self.connectionHelper.queries.drop_table(
-                                                   self.connectionHelper.queries.get_tabname_4(tab))])
+                                                   self.connectionHelper.queries.get_tabname_un(tab), tab)], self.logger)

@@ -7,7 +7,8 @@ from mysite.unmasque.src.pipeline.PipeLineFactory import PipeLineFactory
 from mysite.unmasque.src.pipeline.abstract.generic_pipeline import GenericPipeLine
 from mysite.unmasque.src.util.PostgresConnectionHelper import PostgresConnectionHelper
 from mysite.unmasque.src.util.configParser import Config
-from mysite.unmasque.src.util.constants import START, WAITING, RUNNING, DONE
+from mysite.unmasque.src.util.constants import START, WAITING, RUNNING, DONE, WRONG, DB_MINIMIZATION
+from mysite.unmasque.test.util import queries
 
 EXTRACTION_TIME = 10
 NUM_THREADS = 5
@@ -48,11 +49,29 @@ def thread_func(factory, name, bucket):
     print("bye")
 
 
+def thread_func_union(union_pip, query):
+    print(query)
+    u_Q = union_pip.doJob(query)
+    print(u_Q)
+    print("bye")
+
+
 def monitor_func(factory, timeout, observed):
     for i in range(timeout):
         print("Monitor: ", factory.get_pipeline_state())
         observed.append(factory.get_pipeline_state())
         sleep(1)
+
+
+def monitor_func_union(factory, token, observed):
+    while True:
+        state = factory.get_pipeline_state(token)
+        print("Monitor: ", state)
+        if state not in observed:
+            observed.append(state)
+        sleep(1)
+        if state in [DONE, WRONG]:
+            break
 
 
 class MockRequest:
@@ -67,12 +86,29 @@ class MyTestCase(unittest.TestCase):
     timeout = EXTRACTION_TIME * NUM_THREADS + 1
     connHelper = PostgresConnectionHelper(Config())
 
+    def test_union_pipeline_state(self):
+        self.connHelper.config.detect_union = True
+        factory = PipeLineFactory()
+        key = 'Q3'
+        query = queries.queries_dict[key]
+        '''
+        query = "(SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100) " \
+                "UNION ALL (SELECT s_suppkey, s_name FROM supplier, partsupp where s_suppkey = ps_suppkey " \
+                "and ps_availqty > 200);"
+        '''
+        token = factory.doJobAsync(query, self.connHelper)
+        observed = []
+        monitor_func_union(factory, token, observed)
+        self.assertTrue(len(observed))
+        print(observed)
+        self.assertTrue(DB_MINIMIZATION + RUNNING in observed)
+
     def test_state_changes(self):
         req = MockRequest()
         views.func_start(self.connHelper, MockRequest.session['hq'], req)
         done = (req.session['partials'][2] != 'NA')
         while not done:
-            sleep(70/1000)
+            sleep(70 / 1000)
             views.func_check_progress(req)
             done = (req.session['partials'][2] != 'NA')
         self.assertTrue(True)
@@ -103,7 +139,6 @@ class MyTestCase(unittest.TestCase):
         for i in range(len(observed)):
             # print(i, i % NUM_THREADS)
             self.assertEqual(observed[i], factory.pipeline.state_sequence[i % len(factory.pipeline.state_sequence)])
-
 
 
 if __name__ == '__main__':

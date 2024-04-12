@@ -31,6 +31,7 @@ class TPCH(Schema):
     db = DbMock()
     parser = DbParser()
     relations = ["orders", "lineitem", "customer", "supplier", "part", "partsupp", "nation", "region"]
+    app_calls = 0
 
     def get_relations(self):
         return self.relations
@@ -40,6 +41,7 @@ class TPCH(Schema):
         return self.ddot
 
     def run_query(self, QH):
+        self.app_calls += 1
         self.parser.parse(QH)
         for form in self.parser.fromtabs_qi:
             if form.issubset(self.ddot):

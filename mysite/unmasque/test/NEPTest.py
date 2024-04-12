@@ -13,17 +13,15 @@ from ..test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.conn.connectUsingParams()
+    def backup_tables(self):
+        # self.conn.connectUsingParams()
         for tab in tpchSettings.relations:
             restore_name = self.conn.queries.get_backup(tab)
             self.conn.execute_sql([self.conn.queries.create_table_as_select_star_from(restore_name, tab)])
-        self.conn.closeConnection()
+        # self.conn.closeConnection()
 
     def test_Q6_lineitem_returnflag(self):
         self.conn.connectUsingParams()
-
         query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
                 "From lineitem Where l_shipdate >= " \
                 "'1994-01-01' and l_quantity < 24 " \
@@ -84,7 +82,7 @@ class MyTestCase(BaseTestCase):
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
-
+        self.backup_tables()
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
@@ -177,6 +175,7 @@ class MyTestCase(BaseTestCase):
         o.set_all_relations(tpchSettings.relations)
         o.enabled = True
         o.mock = True
+        self.backup_tables()
 
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
@@ -247,11 +246,12 @@ class MyTestCase(BaseTestCase):
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
+        self.backup_tables()
 
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertEqual("l_quantity > 20  and l_quantity <> 25.00", q_gen.where_op)
+        self.assertEqual("l_quantity > 20  and lineitem.l_quantity <> 25.00", q_gen.where_op)
 
         self.conn.closeConnection()
 
@@ -325,6 +325,7 @@ class MyTestCase(BaseTestCase):
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
+        self.backup_tables()
 
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
@@ -403,6 +404,7 @@ class MyTestCase(BaseTestCase):
         self.do_init()
 
         delivery.doJob()
+        self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
@@ -411,8 +413,8 @@ class MyTestCase(BaseTestCase):
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertTrue("and l_shipmode NOT LIKE '%AIR%'" in q_gen.where_op)
-        self.assertTrue("and l_shipdate <> '1994-01-02'" in q_gen.where_op)
+        self.assertTrue("and lineitem.l_shipmode NOT LIKE '%AIR%'" in q_gen.where_op)
+        self.assertTrue("and lineitem.l_shipdate <> '1994-01-02'" in q_gen.where_op)
         terms = o.Q_E.split(" ")
         and_count = terms.count("and")
         self.assertEqual(and_count, 2)
@@ -518,6 +520,7 @@ class MyTestCase(BaseTestCase):
                                          self.get_dmin_val,
                                          self.get_datatype)
         self.do_init()
+        self.backup_tables()
 
         delivery.doJob()
 
@@ -528,7 +531,7 @@ class MyTestCase(BaseTestCase):
         check = o.doJob([q, eq])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertTrue("and n_name <> 'GERMANY" in q_gen.where_op)
+        self.assertTrue("and nation.n_name <> 'GERMANY" in q_gen.where_op)
         terms = o.Q_E.split(" ")
         and_count = terms.count("and")
         self.assertEqual(and_count, 4)
@@ -629,6 +632,7 @@ class MyTestCase(BaseTestCase):
         self.do_init()
 
         delivery.doJob()
+        self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
@@ -637,7 +641,7 @@ class MyTestCase(BaseTestCase):
         check = o.doJob([q, eq])
         self.assertTrue(check)
         print(o.Q_E)
-        self.assertTrue("c_name <> 'Customer#000060217'" in q_gen.where_op)
+        self.assertTrue("customer.c_name <> 'Customer#000060217'" in q_gen.where_op)
         terms = o.Q_E.split(" ")
         and_count = terms.count("and")
         self.assertEqual(and_count, 3)
@@ -857,6 +861,7 @@ class MyTestCase(BaseTestCase):
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.enabled = True
         o.mock = True
+        self.backup_tables()
 
         check = o.doJob([q, eq])
         print(q_gen.where_op)

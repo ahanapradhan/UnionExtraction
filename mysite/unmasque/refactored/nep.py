@@ -11,7 +11,7 @@ class NepComparator(ResultComparator):
 
 
 class NEP(Minimizer, GenerationPipeLineBase):
-    loop_count_cutoff = 1
+    loop_count_cutoff = 10
     '''
     NEP extractor do not terminate if input Q_E is not correct. This cutoff is to prevent infinite looping
     It imposes on the user the following restriction: hidden query cannot have more than 10 NEPs.
@@ -60,8 +60,13 @@ class NEP(Minimizer, GenerationPipeLineBase):
         return nep_exists, matched
 
     def doActualJob(self, args):
+        # self.connectionHelper.connectUsingParams()
+        result = self.doNepJob(args)
+        # self.connectionHelper.closeConnection()
+        return result
+
+    def doNepJob(self, args):
         query, Q_E = self.extract_params_from_args(args)
-        # super().do_init()
         nep_exists = False
         # Run the hidden query on the original database instance
         matched = self.nep_comparator.doJob(query, Q_E)
