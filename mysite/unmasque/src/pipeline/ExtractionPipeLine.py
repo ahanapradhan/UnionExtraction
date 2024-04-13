@@ -244,6 +244,7 @@ class ExtractionPipeLine(GenericPipeLine):
         return eq, time_profile
 
     def extract_disjunction(self, aoa, core_relations, key_lists, query, time_profile):  # for once
+        get_datatype_func = aoa.get_datatype
         old_preds = copy.deepcopy(aoa.arithmetic_eq_predicates)
         all_preds = [old_preds]
         max_or_count = len(old_preds)
@@ -256,7 +257,7 @@ class ExtractionPipeLine(GenericPipeLine):
                     self.logger.debug("Checking OR predicate of ", in_candidates)
                     for tab in core_relations:
                         aoa.app.sanitize_one_table(tab)
-                    self.nullify_predicates(in_candidates, aoa.get_datatype)
+                    self.nullify_predicates(in_candidates, get_datatype_func)
                     aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
                     if aoa is None or not aoa.arithmetic_eq_predicates:
                         or_predicates.append(())
@@ -272,7 +273,7 @@ class ExtractionPipeLine(GenericPipeLine):
         and_preds = []
         for p in all_ors:
             tab, attrib = p[0][0], p[0][1]
-            datatype = aoa.get_datatype((tab, attrib))
+            datatype = get_datatype_func((tab, attrib))
             values = [get_format(datatype, v[3]) for v in p]
             all_vals_str = ", ".join(values)
             one_pred = f"{tab}.{attrib} IN ({all_vals_str})"
