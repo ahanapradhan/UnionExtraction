@@ -56,7 +56,7 @@ class MyTestCase(BaseTestCase):
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
-
+        self.backup_tables()
         delivery = PackageForGenPipeline(['lineitem'],
                                          self.global_all_attribs,
                                          self.global_attrib_types,
@@ -83,7 +83,6 @@ class MyTestCase(BaseTestCase):
         o.set_all_relations(tpchSettings.relations)
         o.enabled = True
         o.mock = True
-        self.backup_tables()
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
         print(o.Q_E)
@@ -172,12 +171,12 @@ class MyTestCase(BaseTestCase):
                                          self.get_datatype)
         self.do_init()
         delivery.doJob()
+        self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.set_all_relations(tpchSettings.relations)
         o.enabled = True
         o.mock = True
-        self.backup_tables()
 
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
@@ -244,13 +243,13 @@ class MyTestCase(BaseTestCase):
                                          self.get_datatype)
         self.do_init()
         delivery.doJob()
+        self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.set_all_relations(tpchSettings.relations)
 
         o.enabled = True
         o.mock = True
-        self.backup_tables()
 
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
@@ -325,13 +324,13 @@ class MyTestCase(BaseTestCase):
                                          self.get_datatype)
         self.do_init()
         delivery.doJob()
+        self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.set_all_relations(tpchSettings.relations)
 
         o.enabled = True
         o.mock = True
-        self.backup_tables()
 
         check = o.doJob([query, Q_E])
         self.assertTrue(check)
@@ -754,6 +753,7 @@ class MyTestCase(BaseTestCase):
         self.do_init()
 
         delivery.doJob()
+        self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.set_all_relations(tpchSettings.relations)
@@ -872,12 +872,13 @@ class MyTestCase(BaseTestCase):
                                          self.get_datatype)
         self.do_init()
         delivery.doJob()
+        self.backup_tables()
+
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.set_all_relations(tpchSettings.relations)
 
         o.enabled = True
         o.mock = True
-        self.backup_tables()
 
         check = o.doJob([q, eq])
         print(q_gen.where_op)
