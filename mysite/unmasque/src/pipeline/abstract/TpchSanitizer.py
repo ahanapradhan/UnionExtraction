@@ -52,7 +52,7 @@ class TpchSanitizer:
                                            self.connectionHelper.queries.drop_table("r_h")], self.logger)
 
     def get_drop_fn(self, table):
-        return self.connectionHelper.queries.drop_table \
+        return self.connectionHelper.queries.drop_table_cascade \
             if self.connectionHelper.is_view_or_table(table) == 'table' else self.connectionHelper.queries.drop_view
 
     def drop_derived_relations(self, table):
