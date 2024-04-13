@@ -1,3 +1,4 @@
+from ...util.Log import Log
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 
 
@@ -6,47 +7,49 @@ class TpchSanitizer:
     def __init__(self, connectionHelper: AbstractConnectionHelper):
         self.all_relations = []
         self.connectionHelper = connectionHelper
+        self.logger = Log("TpchSanitizer", connectionHelper.config.log_level)
 
     def set_all_relations(self, relations: list[str]):
         self.all_relations.extend(relations)
 
+    def take_backup(self):
+        tables = self.all_relations  # self.connectionHelper.get_all_tables_for_restore()
+        for table in tables:
+            self.backup_one_table(table)
+
     def sanitize(self):
         self.connectionHelper.begin_transaction()
-        tables = self.connectionHelper.get_all_tables_for_restore()
+        tables = self.all_relations  # self.connectionHelper.get_all_tables_for_restore()
         for table in tables:
-            self.restore_one_table(table)
+            self.sanitize_one_table(table)
         self.connectionHelper.commit_transaction()
 
     def restore_one_table(self, table):
-        drop_fn, restore_name = self.cleanup(table)
-        self.connectionHelper.execute_sql([drop_fn(table),
-                                           self.connectionHelper.queries.alter_table_rename_to(restore_name, table)])
-
-    def cleanup(self, table):
-        self.drop_others(table)
+        self.drop_derived_relations(table)
         drop_fn = self.get_drop_fn(table)
-        restore_name = self.connectionHelper.queries.get_backup(table)
-        return drop_fn, restore_name
-
-    def sanitize_and_keep_backup(self):
-        self.connectionHelper.begin_transaction()
-        tables = self.connectionHelper.get_all_tables_for_restore()
-        for table in tables:
-            self.backup_one_table(table)
-        self.connectionHelper.commit_transaction()
+        backup_name = self.connectionHelper.queries.get_backup(table)
+        self.connectionHelper.execute_sql([drop_fn(table),
+                                           self.connectionHelper.queries.create_table_as_select_star_from(table,
+                                                                                                          backup_name)],
+                                          self.logger)
 
     def backup_one_table(self, table):
-        drop_fn, restore_name = self.cleanup(table)
-        self.connectionHelper.execute_sql([drop_fn(table),
-                                           self.connectionHelper.queries.alter_table_rename_to(restore_name, table),
-                                           self.connectionHelper.queries.create_table_as_select_star_from(restore_name,
-                                                                                                          table)])
-
-    def drop_others(self, table):
+        self.logger.debug(f"Backing up {table}...")
         self.drop_derived_relations(table)
+        backup_name = self.connectionHelper.queries.get_backup(table)
+        self.connectionHelper.begin_transaction()
+        self.connectionHelper.execute_sqls_with_DictCursor(
+            [self.connectionHelper.queries.create_table_as_select_star_from(backup_name,
+                                                                            table)],
+            self.logger)
+        self.connectionHelper.commit_transaction()
+        self.logger.debug(f"... done")
+
+    def sanitize_one_table(self, table):
+        self.restore_one_table(table)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table("temp"),
                                            self.connectionHelper.queries.drop_view("r_e"),
-                                           self.connectionHelper.queries.drop_table("r_h")])
+                                           self.connectionHelper.queries.drop_table("r_h")], self.logger)
 
     def get_drop_fn(self, table):
         return self.connectionHelper.queries.drop_table_cascade \

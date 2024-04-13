@@ -23,7 +23,7 @@ class PostgresQueries(CommonQueries):
         return f"drop table if exists {tab} CASCADE;"
 
     def alter_table_rename_to(self, tab, retab):
-        return f"Alter table {tab} rename to {retab};"
+        return f"Alter table if exists {tab} rename to {retab};"
 
     def alter_view_rename_to(self, tab, retab):
         return f"Alter view {tab} rename to {retab};"
@@ -32,7 +32,7 @@ class PostgresQueries(CommonQueries):
         return f"Create table {tab} (like {ctab});"
 
     def create_table_as_select_star_from(self, tab, fromtab):
-        return f"Create table {tab} as select * from {fromtab};"
+        return f"Create table if not exists {tab} as select * from {fromtab};"
 
     def get_row_count(self, tab):
         return f"select count(*) from {tab};"

@@ -3,12 +3,11 @@ from django.shortcuts import render, redirect
 
 from .src.pipeline.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionFactory import ConnectionHelperFactory
-from .src.util.configParser import Config
 from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, \
     FILTER, \
-    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK
+    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK, WRONG, UNION
 
-ALL_STATES = [WAITING, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION,
+ALL_STATES = [WAITING, UNION, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUI_JOIN, FILTER, PROJECTION,
               GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, DONE]
 
 
@@ -34,7 +33,7 @@ def login_view(request):
 
         # SET THE FOLLOWING PARAMS FROM UI CHECKBOX VALUES
         connHelper.config.detect_nep = False
-        connHelper.config.detect_union = False
+        connHelper.config.detect_union = True
         connHelper.config.use_cs2 = True
 
         token = start_extraction_pipeline_async(connHelper, query, request)
@@ -68,15 +67,14 @@ def check_progress(request, token):
 
 
 def func_check_progress(request, token):
-    print("...HIT...HIT...HIT...")
     state_changed = False
     factory = PipeLineFactory()
     p = factory.get_pipeline_obj(token)
     print("TOKEN: ", token)
     state_msg = factory.get_pipeline_state(token)
-    print("...got...", state_msg, factory.get_pipeline_query(token))
-    if state_msg == DONE:
-        print("...done...")
+    print("Current state: ", state_msg, factory.get_pipeline_query(token))
+    if state_msg in [DONE, WRONG]:
+        print("...done!")
         state_changed = True
         to_pass = prepare_result(factory.get_pipeline_query(token))
     else:

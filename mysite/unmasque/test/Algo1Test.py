@@ -98,6 +98,20 @@ class MyTestCase(BaseTestCase):
         MaxNonNulls = utils.construct_maxNonNulls(MaxNonNulls, NonNulls)
         self.assertEqual(NonNulls, MaxNonNulls)
 
+    def test_algo_another_query(self):
+        query = "(SELECT l_orderkey as key, l_quantity as dummy, " \
+                "l_partkey as s_key FROM lineitem WHERE l_shipdate >= DATE '1994-01-01'" \
+                " AND l_shipdate < DATE '1995-01-01' " \
+                "AND l_quantity > 30) UNION ALL (SELECT " \
+                "ps_partkey as key, ps_supplycost as dummy, " \
+                "ps_suppkey as s_key FROM partsupp, orders WHERE" \
+                " partsupp.ps_suppkey = orders.o_custkey " \
+                "AND orders.o_orderdate >= DATE '1994-01-01' AND orders.o_orderdate < DATE '1995-01-01' " \
+                "AND partsupp.ps_supplycost < 100);"
+        db = TPCH()
+        p, pstr, _ = algorithm1.algo(db, query)
+        self.assertEqual(p, frozenset({frozenset({'lineitem'}), frozenset({'partsupp', 'orders'})}))
+
     def test_algo(self):
         query = "(SELECT * FROM lineitem,nation,region) union all " \
                 "(SELECT * FROM customer,nation,region) union all " \

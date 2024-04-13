@@ -35,7 +35,7 @@ class ViewMinimizer(Minimizer):
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
-        self.take_backup()
+        # self.take_backup()
         return self.reduce_Database_Instance(query,
                                              True) if self.cs2_passed else self.reduce_Database_Instance(query, False)
 
@@ -61,12 +61,6 @@ class ViewMinimizer(Minimizer):
         core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
 
-    def take_backup(self):
-        for table in self.core_relations:
-            self.connectionHelper.execute_sqls_with_DictCursor([self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_backup(table)),
-                                                                self.connectionHelper.queries.create_table_as_select_star_from(self.connectionHelper.queries.get_backup(table), table)])
-
-
     def reduce_Database_Instance(self, query, cs_pass):
 
         self.local_other_info_dict = {}
@@ -74,26 +68,31 @@ class ViewMinimizer(Minimizer):
         print("core_sizes:", core_sizes)
 
         for tabname in self.core_relations:
-            view_name = self.connectionHelper.queries.get_tabname_1(tabname) if cs_pass else self.connectionHelper.queries.get_restore_name(tabname)
+            view_name = self.connectionHelper.queries.get_tabname_1(
+                tabname) if cs_pass else self.connectionHelper.queries.get_restore_name(tabname)
             print("view_name:", view_name)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, view_name)])
-            rctid = self.connectionHelper.execute_sql_fetchone(self.connectionHelper.queries.get_min_max_ctid(view_name))
+            rctid = self.connectionHelper.execute_sql_fetchone(
+                self.connectionHelper.queries.get_min_max_ctid(view_name))
             core_sizes = self.do_binary_halving(core_sizes, query, tabname, rctid, view_name)
-            core_sizes = self.do_binary_halving_1(core_sizes, query, tabname, self.connectionHelper.queries.get_tabname_1(tabname))
+            core_sizes = self.do_binary_halving_1(core_sizes, query, tabname,
+                                                  self.connectionHelper.queries.get_tabname_1(tabname))
 
             if not self.sanity_check(query):
                 return False
 
         for tabname in self.core_relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_4(tabname)),
-                                               self.connectionHelper.queries.create_table_as_select_star_from(self.connectionHelper.queries.get_tabname_4(tabname), tabname)])
+            self.connectionHelper.execute_sql(
+                [self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_4(tabname)),
+                 self.connectionHelper.queries.create_table_as_select_star_from(
+                     self.connectionHelper.queries.get_tabname_4(tabname), tabname)])
             res, desc = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(tabname))
             self.logger.debug(tabname, "==", res)
 
         if not self.sanity_check(query):
             return False
 
-        self.populate_dict_info(query)
+        self.populate_dict_info()
         return True
 
     def do_binary_halving_1(self, core_sizes, query, tabname, tabname1):
@@ -102,7 +101,7 @@ class ViewMinimizer(Minimizer):
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
         return core_sizes
 
-    def populate_dict_info(self, query):
+    def populate_dict_info(self):
         # POPULATE MIN INSTANCE DICT
         for tabname in self.core_relations:
             self.global_min_instance_dict[tabname] = []
