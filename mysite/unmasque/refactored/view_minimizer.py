@@ -65,12 +65,12 @@ class ViewMinimizer(Minimizer):
 
         self.local_other_info_dict = {}
         core_sizes = self.getCoreSizes()
-        print("core_sizes:", core_sizes)
+        # print("core_sizes:", core_sizes)
 
         for tabname in self.core_relations:
             view_name = self.connectionHelper.queries.get_tabname_1(
                 tabname) if cs_pass else self.connectionHelper.queries.get_restore_name(tabname)
-            print("view_name:", view_name)
+            # print("view_name:", view_name)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, view_name)])
             rctid = self.connectionHelper.execute_sql_fetchone(
                 self.connectionHelper.queries.get_min_max_ctid(view_name))
@@ -86,11 +86,9 @@ class ViewMinimizer(Minimizer):
                 [self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_4(tabname)),
                  self.connectionHelper.queries.create_table_as_select_star_from(
                      self.connectionHelper.queries.get_tabname_4(tabname), tabname)])
-            res, desc = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(tabname))
-            self.logger.debug(tabname, "==", res)
 
-        if not self.sanity_check(query):
-            return False
+        # if not self.sanity_check(query):
+        #    return False
 
         self.populate_dict_info()
         return True

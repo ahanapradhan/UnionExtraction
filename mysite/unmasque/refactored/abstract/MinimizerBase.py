@@ -20,7 +20,8 @@ class Minimizer(AppExtractorBase):
     def getSizes_cs(self):
         if not self.all_sizes:
             for table in self.all_relations:
-                self.all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(table), self.logger)
+                self.all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(table))
+        self.logger.debug(self.all_sizes)
         return self.all_sizes
 
     def getCoreSizes(self):
@@ -108,6 +109,9 @@ class Minimizer(AppExtractorBase):
              self.connectionHelper.queries.drop_table(tabname1)], self.logger)
         core_sizes[tabname] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tabname), self.logger)
         self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
+        if core_sizes[tabname] == 1:
+            res, _ = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(tabname))
+            self.logger.debug(res)
         return core_sizes
 
     def determine_mid_ctid_from_db(self, tabname):

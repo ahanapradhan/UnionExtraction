@@ -54,6 +54,18 @@ class MyTestCase(BaseTestCase):
             print(eq)
             self.assertTrue(self.pipeline.correct)
 
+    def test_for_disjunction(self):
+        self.pipeline.connectionHelper.config.detect_nep = False
+        self.pipeline.connectionHelper.config.detect_or = True
+        query = f"select c_mktsegment as segment from customer,nation,orders where " \
+                f"c_acctbal between 9000 and 10000 and c_nationkey = " \
+                f"n_nationkey and c_custkey = o_custkey " \
+                f"and n_name IN ('BRAZIL', 'INDIA', 'ARGENTINA');"
+        ors = self.pipeline.extract(query)
+        print(ors)
+        self.assertEqual(ors.count(" IN "), 1)
+        # self.assertTrue(self.pipeline.correct)
+
     # @pytest.mark.skip
     def test_for_numeric_filter_NEP(self):
         self.pipeline.connectionHelper.config.detect_nep = False

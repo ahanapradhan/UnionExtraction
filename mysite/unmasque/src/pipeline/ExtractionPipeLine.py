@@ -14,6 +14,7 @@ from ...refactored.limit import Limit
 from ...refactored.nep import NEP
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
+from ...refactored.util.utils import get_format
 from ...refactored.view_minimizer import ViewMinimizer
 
 
@@ -50,17 +51,23 @@ class ExtractionPipeLine(GenericPipeLine):
         self.time_profile.update(t)
         return eq
 
-    def nullify_predicates(self, pred):
-        tab, attrib = pred[0], pred[1]
-        lb, ub = pred[3], pred[4]
-        mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} >= {lb} and {attrib} <= {ub}"
-        self.connectionHelper.execute_sql([mutatation_query], self.logger)
+    def nullify_predicates(self, preds, get_datatype):
+        for pred in preds:
+            tab, attrib, op = pred[0], pred[1], pred[2]
+            lb, ub = pred[3], pred[4]
+            if op in ['equal', '=']:
+                datatype = get_datatype((tab, attrib))
+                val = f"\'{lb}\'" if datatype in ['str', 'date'] else lb
+                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} = {val};"
+            else:
+                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} >= {lb} and {attrib} <= {ub};"
+            self.connectionHelper.execute_sql([mutatation_query], self.logger)
 
-    def mutation_pipeline(self, core_relations, key_lists, query, time_profile):
+    def mutation_pipeline(self, core_relations, key_lists, query, time_profile, aoa=None):
 
         """
-                Correlated Sampling
-                """
+        Correlated Sampling
+        """
         self.update_state(SAMPLING + START)
         cs2 = Cs2(self.connectionHelper, self.all_relations, core_relations, key_lists)
         self.update_state(SAMPLING + RUNNING)
@@ -72,6 +79,9 @@ class ExtractionPipeLine(GenericPipeLine):
             self.info[SAMPLING] = None
             self.logger.info("Sampling failed!")
 
+        """
+        View based Database Minimization
+        """
         self.update_state(DB_MINIMIZATION + START)
         vm = ViewMinimizer(self.connectionHelper, core_relations, cs2.sizes, cs2.passed)
         vm.set_all_relations(self.all_relations)
@@ -94,7 +104,11 @@ class ExtractionPipeLine(GenericPipeLine):
         '''
         self.update_state(AOA + START)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
-        aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
+        if aoa is None:
+            aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
+        else:
+            aoa.set_global_min_instance_dict(self.global_min_instance_dict)
+            aoa.reset()
         self.update_state(AOA + RUNNING)
         check = aoa.doJob(query)
         self.update_state(AOA + DONE)
@@ -106,7 +120,7 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.info("Cannot find Algebraic Predicates.")
         if not aoa.done:
             self.info[AOA] = None
-            self.logger.error("Some error while Filter Predicate extraction. Aborting extraction!")
+            self.logger.error("Some error while Where Clause extraction. Aborting extraction!")
             return None, time_profile
 
         return aoa, time_profile
@@ -116,14 +130,14 @@ class ExtractionPipeLine(GenericPipeLine):
         time_profile = create_zero_time_profile()
         q_generator = QueryStringGenerator(self.connectionHelper)
 
-        aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile)
+        aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, None)
         if aoa is None:
             return None, time_profile
         delivery = aoa.pipeline_delivery
 
-        aoa, time_profile, ors = self.disjunction_loop(aoa, core_relations, key_lists, query, time_profile)
-        print(ors)
-        return None, time_profile
+        aoa, time_profile, ors = self.extract_disjunction(aoa, core_relations, key_lists, query, time_profile)
+        if ors:
+            return ors, time_profile
 
         '''
         Projection Extraction
@@ -229,20 +243,43 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(DONE)
         return eq, time_profile
 
-    def disjunction_loop(self, aoa, core_relations, key_lists, query, time_profile):  # for once
-        if self.connectionHelper.config.detect_or:
-            self.logger.debug(aoa.arithmetic_eq_predicates)
-            in_candidates = [copy.deepcopy(aoa.arithmetic_eq_predicates)]
-            or_predicates = []
-            for i in range(len(in_candidates)):
-                aoa.sanitize_and_keep_backup()
-                self.nullify_predicates(in_candidates[i])
-                aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile)
-                if aoa is None or not aoa.arithmetic_eq_predicates:
-                    or_predicates.append(())
-                else:
-                    or_predicates.append(aoa.arithmetic_eq_predicates[i])
-        return aoa, time_profile, or_predicates
+    def extract_disjunction(self, aoa, core_relations, key_lists, query, time_profile):  # for once
+        old_preds = copy.deepcopy(aoa.arithmetic_eq_predicates)
+        all_preds = [old_preds]
+        max_or_count = len(old_preds)
+        while True:
+            if self.connectionHelper.config.detect_or:
+                or_predicates = []
+                aoa.equi_join_enabled = False
+                for i in range(max_or_count):
+                    in_candidates = [copy.deepcopy(em[i]) for em in all_preds]
+                    self.logger.debug("Checking OR predicate of ", in_candidates)
+                    for tab in core_relations:
+                        aoa.app.sanitize_one_table(tab)
+                    self.nullify_predicates(in_candidates, aoa.get_datatype)
+                    aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
+                    if aoa is None or not aoa.arithmetic_eq_predicates:
+                        or_predicates.append(())
+                    else:
+                        or_predicates.append(aoa.arithmetic_eq_predicates[i])
+                    self.logger.debug("new or predicates...", all_preds, or_predicates)
+                if all(element == () for element in or_predicates):
+                    break
+                all_preds.append(or_predicates)
+            else:
+                break
+        all_ors = list(zip(*all_preds))
+        and_preds = []
+        for p in all_ors:
+            tab, attrib = p[0][0], p[0][1]
+            datatype = aoa.get_datatype((tab, attrib))
+            values = [get_format(datatype, v[3]) for v in p]
+            all_vals_str = ", ".join(values)
+            one_pred = f"{tab}.{attrib} IN ({all_vals_str})"
+            and_preds.append(one_pred)
+        eq_where_clause = " and ".join(and_preds)
+        self.logger.debug(eq_where_clause)
+        return aoa, time_profile, eq_where_clause
 
     def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
         if self.connectionHelper.config.detect_nep:

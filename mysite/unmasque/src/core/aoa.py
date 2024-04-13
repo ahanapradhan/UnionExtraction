@@ -37,34 +37,51 @@ class AlgebraicPredicate(MutationPipeLineBase):
                  global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "AlgebraicPredicate")
         self.filter_extractor = Filter(self.connectionHelper, core_relations, global_min_instance_dict)
-
         self.get_datatype = self.filter_extractor.get_datatype  # method
-
+        self.global_min_instance_dict_bkp = copy.deepcopy(global_min_instance_dict)
         self.pipeline_delivery = None
-
         self.aoa_predicates = []
         self.arithmetic_eq_predicates = []
         self.algebraic_eq_predicates = []
         self.arithmetic_ineq_predicates = []
         self.aoa_less_thans = []
-        self.global_min_instance_dict_bkp = copy.deepcopy(global_min_instance_dict)
-
         self.where_clause = ""
-
         self.join_graph = []
         self.filter_predicates = []
-
         self.constants_dict = {}
         self.aoa_enabled = False
+        self.equi_join_enabled = True
+        self.init_done = False
+
+    def reset(self):
+        self.pipeline_delivery = None
+        self.aoa_predicates = []
+        self.arithmetic_eq_predicates = []
+        self.algebraic_eq_predicates = []
+        self.arithmetic_ineq_predicates = []
+        self.aoa_less_thans = []
+        self.where_clause = ""
+        self.join_graph = []
+        self.filter_predicates = []
+        self.constants_dict = {}
+        self.aoa_enabled = False
+        self.equi_join_enabled = True
+        self.init_done = True
+
+    def set_global_min_instance_dict(self, min_db):
+        self.global_min_instance_dict_bkp = copy.deepcopy(min_db)
+        self.filter_extractor.global_min_instance_dict = copy.deepcopy(min_db)
+        self.global_min_instance_dict = copy.deepcopy(min_db)
 
     def doActualJob(self, args):
-        self.filter_extractor.mock = self.mock
-        self.filter_extractor.mutate_dmin_with_val = self.mutate_dmin_with_val
-
         query = self.extract_params_from_args(args)
-        self.init_constants()
+        if not self.init_done:
+            self.filter_extractor.mock = self.mock
+            self.filter_extractor.mutate_dmin_with_val = self.mutate_dmin_with_val
+            self.init_constants()
+            self.init_done = True
         check = self.filter_extractor.doJob(query)
-        if check:
+        if check and self.equi_join_enabled:
             self.restore_d_min_from_dict()
             self.extract_aoa(query)
         self.post_process_for_generation_pipeline(query)
