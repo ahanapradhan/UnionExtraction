@@ -50,14 +50,17 @@ class ExtractionPipeLine(GenericPipeLine):
         self.time_profile.update(t)
         return eq
 
-    def after_from_clause_extract(self, query, core_relations, key_lists):  # get core_relations, key_lists from from clause
+    def nullify_predicates(self, pred):
+        tab, attrib = pred[0], pred[1]
+        lb, ub = pred[3], pred[4]
+        mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} >= {lb} and {attrib} <= {ub}"
+        self.connectionHelper.execute_sql([mutatation_query], self.logger)
 
-        time_profile = create_zero_time_profile()
-        q_generator = QueryStringGenerator(self.connectionHelper)
+    def mutation_pipeline(self, core_relations, key_lists, query, time_profile):
 
-        '''
-        Correlated Sampling
-        '''
+        """
+                Correlated Sampling
+                """
         self.update_state(SAMPLING + START)
         cs2 = Cs2(self.connectionHelper, self.all_relations, core_relations, key_lists)
         self.update_state(SAMPLING + RUNNING)
@@ -106,7 +109,21 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while Filter Predicate extraction. Aborting extraction!")
             return None, time_profile
 
+        return aoa, time_profile
+
+    def after_from_clause_extract(self, query, core_relations, key_lists):
+
+        time_profile = create_zero_time_profile()
+        q_generator = QueryStringGenerator(self.connectionHelper)
+
+        aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile)
+        if aoa is None:
+            return None, time_profile
         delivery = aoa.pipeline_delivery
+
+        aoa, time_profile, ors = self.disjunction_loop(aoa, core_relations, key_lists, query, time_profile)
+        print(ors)
+        return None, time_profile
 
         '''
         Projection Extraction
@@ -204,7 +221,7 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self.extract_NEP(core_relations, cs2.sizes, eq, q_generator, query, time_profile, delivery)
+        eq = self.extract_NEP(core_relations, {}, eq, q_generator, query, time_profile, delivery)
 
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
@@ -212,10 +229,25 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(DONE)
         return eq, time_profile
 
+    def disjunction_loop(self, aoa, core_relations, key_lists, query, time_profile):  # for once
+        if self.connectionHelper.config.detect_or:
+            self.logger.debug(aoa.arithmetic_eq_predicates)
+            in_candidates = [copy.deepcopy(aoa.arithmetic_eq_predicates)]
+            or_predicates = []
+            for i in range(len(in_candidates)):
+                aoa.sanitize_and_keep_backup()
+                self.nullify_predicates(in_candidates[i])
+                aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile)
+                if aoa is None or not aoa.arithmetic_eq_predicates:
+                    or_predicates.append(())
+                else:
+                    or_predicates.append(aoa.arithmetic_eq_predicates[i])
+        return aoa, time_profile, or_predicates
+
     def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
         if self.connectionHelper.config.detect_nep:
             self.update_state(NEP_ + START)
-            nep = NEP(self.connectionHelper, core_relations, sizes, q_generator, delivery)
+            nep = NEP(self.connectionHelper, core_relations, q_generator, delivery, sizes)
             self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
             if nep.Q_E:

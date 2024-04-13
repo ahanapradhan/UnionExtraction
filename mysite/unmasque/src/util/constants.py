@@ -54,6 +54,7 @@ LEVEL = "level"
 DETECT_UNION = "union"
 DETECT_NEP = "nep"
 USE_CS2 = "cs2"
+DETECT_OR = "or"
 
 WAITING = "_WAITING"
 DONE = "_DONE"

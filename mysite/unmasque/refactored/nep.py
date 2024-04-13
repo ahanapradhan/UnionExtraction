@@ -17,7 +17,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
     Of course we can set this cutoff to much higher value if needed.
     '''
 
-    def __init__(self, connectionHelper, core_relations, all_sizes, query_generator, delivery):
+    def __init__(self, connectionHelper, core_relations, query_generator, delivery, all_sizes={}):
         Minimizer.__init__(self, connectionHelper, core_relations, all_sizes, "NEP")
         GenerationPipeLineBase.__init__(self, connectionHelper, "NEP", delivery)
         self.filter_attrib_dict = {}

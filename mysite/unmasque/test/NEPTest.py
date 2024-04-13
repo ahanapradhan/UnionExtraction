@@ -72,7 +72,7 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.enabled = True
         o.mock = True
 
@@ -164,7 +164,7 @@ class MyTestCase(BaseTestCase):
         self.do_init()
         delivery.doJob()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.enabled = True
         o.mock = True
 
@@ -233,7 +233,7 @@ class MyTestCase(BaseTestCase):
         self.do_init()
         delivery.doJob()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.enabled = True
         o.mock = True
 
@@ -310,7 +310,7 @@ class MyTestCase(BaseTestCase):
         self.do_init()
         delivery.doJob()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.enabled = True
         o.mock = True
 
@@ -391,7 +391,7 @@ class MyTestCase(BaseTestCase):
 
         delivery.doJob()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.enabled = True
         o.mock = True
 
@@ -506,7 +506,7 @@ class MyTestCase(BaseTestCase):
 
         delivery.doJob()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.enabled = True
         o.mock = True
 
@@ -612,7 +612,7 @@ class MyTestCase(BaseTestCase):
 
         delivery.doJob()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.enabled = True
         o.mock = True
 
@@ -718,7 +718,7 @@ class MyTestCase(BaseTestCase):
 
         delivery.doJob()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.enabled = True
         o.mock = True
 
@@ -832,7 +832,7 @@ class MyTestCase(BaseTestCase):
                                          self.get_datatype)
         self.do_init()
         delivery.doJob()
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.enabled = True
         o.mock = True
 
