@@ -1,3 +1,5 @@
+from time import sleep
+
 from .ExtractionPipeLine import ExtractionPipeLine
 from ..core.union import Union
 from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
@@ -78,8 +80,9 @@ class UnionPipeLine(ExtractionPipeLine):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab,
                                                                                                    self.connectionHelper.queries.get_tabname_un(
-                                                                                                       tab)),
-                                               self.connectionHelper.queries.create_table_like(tab,
+                                                                                                       tab)), "commit;"], self.logger)
+            sleep(1)
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_like(tab,
                                                                                                self.connectionHelper.queries.get_tabname_un(
                                                                                                    tab))], self.logger)
 
