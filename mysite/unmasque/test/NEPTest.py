@@ -80,6 +80,7 @@ class MyTestCase(BaseTestCase):
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.set_all_relations(tpchSettings.relations)
         o.enabled = True
         o.mock = True
         self.backup_tables()
@@ -87,7 +88,8 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(o.Q_E)
 
-        self.assertEqual("l_shipdate >= '1994-01-01' and l_quantity <= 23.0  and lineitem.l_returnflag <> 'R' ", q_gen.where_op)
+        self.assertEqual("l_shipdate >= '1994-01-01' and l_quantity <= 23.0  and lineitem.l_returnflag <> 'R' ",
+                         q_gen.where_op)
 
         q_e = f"Select {q_gen.select_op}\n From {q_gen.from_op} \n Where {q_gen.where_op} \n" \
               f" Group By {q_gen.group_by_op} \n Limit {q_gen.limit_op};"
@@ -102,7 +104,7 @@ class MyTestCase(BaseTestCase):
                 "and n_name not LIKE 'B%' limit 10;"
         Q_E = "select c_mktsegment as segment from customer,nation,orders where " \
               "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey;"
-        core_rels = ['orders', 'nation','customer']
+        core_rels = ['orders', 'nation', 'customer']
         filters = [('customer', 'c_acctbal', '<=', 1000, 5000)]
 
         aoa_predicates = []
@@ -146,7 +148,7 @@ class MyTestCase(BaseTestCase):
             ["n_nationkey",
              "n_name",
              "n_regionkey",
-             "n_comment"],['c_custkey', 'c_name', 'c_address', 'c_nationkey',
+             "n_comment"], ['c_custkey', 'c_name', 'c_address', 'c_nationkey',
                             'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment']]
 
         q_gen = QueryStringGenerator(self.conn)
@@ -244,6 +246,8 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.set_all_relations(tpchSettings.relations)
+
         o.enabled = True
         o.mock = True
         self.backup_tables()
@@ -323,6 +327,8 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.set_all_relations(tpchSettings.relations)
+
         o.enabled = True
         o.mock = True
         self.backup_tables()
@@ -407,6 +413,8 @@ class MyTestCase(BaseTestCase):
         self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.set_all_relations(tpchSettings.relations)
+
         o.enabled = True
         o.mock = True
 
@@ -525,6 +533,8 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.set_all_relations(tpchSettings.relations)
+
         o.enabled = True
         o.mock = True
 
@@ -635,6 +645,8 @@ class MyTestCase(BaseTestCase):
         self.backup_tables()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.set_all_relations(tpchSettings.relations)
+
         o.enabled = True
         o.mock = True
 
@@ -744,6 +756,8 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
 
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.set_all_relations(tpchSettings.relations)
+
         o.enabled = True
         o.mock = True
 
@@ -859,6 +873,8 @@ class MyTestCase(BaseTestCase):
         self.do_init()
         delivery.doJob()
         o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o.set_all_relations(tpchSettings.relations)
+
         o.enabled = True
         o.mock = True
         self.backup_tables()
