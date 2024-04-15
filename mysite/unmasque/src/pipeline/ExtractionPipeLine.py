@@ -135,7 +135,7 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
         if not aoa.done:
             return None, time_profile
-        delivery = aoa.pipeline_delivery
+        delivery = copy.deepcopy(aoa.pipeline_delivery)
 
         aoa, time_profile, ors = self.extract_disjunction(aoa, core_relations, key_lists, query, time_profile)
         aoa.generate_where_clause(ors)

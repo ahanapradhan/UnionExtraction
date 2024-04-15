@@ -318,7 +318,7 @@ class MyTestCase(BaseTestCase):
                                          [],
                                          self.join_graph,
                                          [],
-                                         {},
+                                         global_min_instance_dict,
                                          self.get_dmin_val,
                                          self.get_datatype)
         self.do_init()
