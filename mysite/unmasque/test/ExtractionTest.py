@@ -54,6 +54,16 @@ class MyTestCase(BaseTestCase):
             print(eq)
             self.assertTrue(self.pipeline.correct)
 
+    def test_sumang_thesis_Q2(self):
+        query = "select c_mktsegment,MAX(c_acctbal) from customer where c_nationkey IN (1,5,9,10) group by " \
+                "c_mktsegment;"
+        self.pipeline.connectionHelper.config.detect_nep = False
+        self.pipeline.connectionHelper.config.detect_or = True
+        eq = self.pipeline.extract(query)
+        print(eq)
+        self.assertEqual(eq.count(" IN "), 1)
+        # self.assertTrue(self.pipeline.correct)
+
     def test_sumang_thesis_Q3(self):
         query = "select l_shipmode,sum(l_extendedprice) as revenue " \
                 "from lineitem " \

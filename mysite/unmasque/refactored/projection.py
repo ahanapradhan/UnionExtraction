@@ -348,12 +348,7 @@ class Projection(GenerationPipeLineBase):
         return final_lis
 
     def construct_value_used_with_dmin(self):
-        used_val = []
-        for tab_name in self.global_min_instance_dict:
-            vals = self.global_min_instance_dict[tab_name]
-            for idx in range(len(vals[0])):
-                used_val.append(vals[0][idx])
-                used_val.append(vals[1][idx])
+        used_val = [val for data in self.global_min_instance_dict.values() for pair in zip(*data) for val in pair]
         return used_val
 
 

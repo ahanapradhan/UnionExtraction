@@ -14,6 +14,7 @@ from ...refactored.limit import Limit
 from ...refactored.nep import NEP
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
+from ...refactored.util.utils import get_format
 from ...refactored.view_minimizer import ViewMinimizer
 
 
@@ -54,14 +55,15 @@ class ExtractionPipeLine(GenericPipeLine):
         for pred in preds:
             if not len(pred):
                 return False
-            tab, attrib, op = pred[0], pred[1], pred[2]
-            lb, ub = pred[3], pred[4]
-            if op in ['equal', '=']:
-                datatype = get_datatype((tab, attrib))
-                val = f"\'{lb}\'" if datatype in ['str', 'date'] else lb
-                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} = {val};"
+            tab, attrib, op, lb, ub = pred[0], pred[1], pred[2], pred[3], pred[4]
+            datatype = get_datatype((tab, attrib))
+            val_lb, val_ub = get_format(datatype, lb), get_format(datatype, ub)
+            if op.lower() in ['equal', '=']:
+                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} = {val_lb};"
+            elif op.lower() == 'like':
+                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} LIKE {val_lb};"
             else:
-                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} >= {lb} and {attrib} <= {ub};"
+                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} >= {val_lb} and {attrib} <= {val_ub};"
             self.connectionHelper.execute_sql([mutatation_query], self.logger)
         return True
 
@@ -135,12 +137,13 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
         if not aoa.done:
             return None, time_profile
-        delivery = copy.copy(aoa.pipeline_delivery)
 
         aoa, time_profile, ors = self.extract_disjunction(aoa, core_relations, key_lists, query, time_profile)
         aoa.generate_where_clause(ors)
         if self.connectionHelper.config.detect_or:
             return aoa.where_clause, time_profile
+        aoa.pipeline_delivery.doJob(query)
+        delivery = copy.copy(aoa.pipeline_delivery)
 
         '''
         Projection Extraction
@@ -276,6 +279,14 @@ class ExtractionPipeLine(GenericPipeLine):
             else:
                 break
         all_ors = list(zip(*all_preds))
+
+        '''
+        gaining sanity back from nullified attributes
+        '''
+        for tab in core_relations:
+            aoa.app.sanitize_one_table(tab)
+        aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, None)
+
         return aoa, time_profile, all_ors
 
     def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):

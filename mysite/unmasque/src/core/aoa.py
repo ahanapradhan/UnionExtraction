@@ -52,6 +52,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.aoa_enabled = False
         self.equi_join_enabled = True
         self.init_done = False
+        self.filter_in_predicates = []
 
     def reset(self):
         self.pipeline_delivery = None
@@ -67,6 +68,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.aoa_enabled = False
         self.equi_join_enabled = True
         self.init_done = True
+        self.filter_in_predicates = []
 
     def set_global_min_instance_dict(self, min_db):
         self.global_min_instance_dict_bkp = copy.deepcopy(min_db)
@@ -84,7 +86,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         if check and self.equi_join_enabled:
             self.restore_d_min_from_dict()
             self.extract_aoa(query)
-        self.post_process_for_generation_pipeline(query)
+        # self.post_process_for_generation_pipeline(query)
         return True
 
     def extract_aoa(self, query):
@@ -392,6 +394,11 @@ class AlgebraicPredicate(MutationPipeLineBase):
         if isQ_result_empty(res):
             print("Mutation got wrong! %%%%%%")
 
+        for i, pred in enumerate(self.filter_predicates):
+            for in_pred in self.filter_in_predicates:
+                if pred[:2] == in_pred[:2]:
+                    self.filter_predicates[i] = in_pred
+
         self.pipeline_delivery = PackageForGenPipeline(self.core_relations,
                                                        self.filter_extractor.global_all_attribs,
                                                        self.filter_extractor.global_attrib_types,
@@ -508,14 +515,15 @@ class AlgebraicPredicate(MutationPipeLineBase):
         for p in all_ors:
             non_empty_indices = [i for i, t_a in enumerate(p) if t_a]
             tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
+            ops = [p[i][2] for i in non_empty_indices]
             datatypes = [self.get_datatype(tab_attribs[i]) for i in non_empty_indices]
             values = [get_format(datatypes[i], p[i][3]) for i in non_empty_indices]
-            uniq = set(tab_attribs)
-            if len(uniq) == 1:
-                tab, attrib = next(iter(uniq))
+            uniq_tab_attribs = set(tab_attribs)
+            if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
+                tab, attrib = next(iter(uniq_tab_attribs))
+                self.filter_in_predicates.extend((tab, attrib, 'IN', values, values))
                 all_vals_str = ", ".join(values)
-                one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(
-                    values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
+                one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
             else:
                 preds = [handle_range_preds(f'{tab_attribs[i][0]}.{tab_attribs[i][1]} ', datatypes[i], p[i]) for i in
                          range(len(p))]

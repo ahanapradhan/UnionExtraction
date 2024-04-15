@@ -32,6 +32,8 @@ def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):
     for attrib in filter_attrib_dict:
         if not isinstance(filter_attrib_dict[attrib], tuple):
             continue
+        if len(filter_attrib_dict[attrib]) > 2:  # IN
+            continue
         if attrib in LB_dict.keys() and filter_attrib_dict[attrib][0] < LB_dict[attrib]:
             filter_attrib_dict[attrib] = (LB_dict[attrib], filter_attrib_dict[attrib][1])
             del LB_dict[attrib]
@@ -112,12 +114,13 @@ class PackageForGenPipeline:
 
     def add_arithmetic_filters(self, filter_attrib_dict: dict):
         for entry in self.global_filter_predicates:
-            if len(entry) > 4 and \
-                    'like' not in entry[2].lower() and \
-                    'equal' not in entry[2].lower():
-                filter_attrib_dict[(entry[0], entry[1])] = (entry[3], entry[4])
-            else:
-                filter_attrib_dict[(entry[0], entry[1])] = entry[3]
+            if len(entry) > 4:
+                if entry[2].lower() not in ['like', 'equal', 'in']:  # <=, >=, =
+                    filter_attrib_dict[(entry[0], entry[1])] = (entry[3], entry[4])
+                if entry[2].lower() in ['like', 'equal']:
+                    filter_attrib_dict[(entry[0], entry[1])] = entry[3]
+                if entry[2].lower() == 'in':
+                    filter_attrib_dict[(entry[0], entry[1])] = tuple(entry[3].sort())
 
     def make_dmin_dict_from_aoa_le(self) -> tuple[dict, dict]:
         LB_dict, UB_dict = {}, {}
@@ -172,7 +175,7 @@ class PackageForGenPipeline:
 
     def make_dmin_dict_from_aoa_l(self, LB_dict: dict, UB_dict: dict) -> tuple[dict, dict]:
         for entry in self.global_aoa_l_predicates:
-            datatype = self.get_datatype(entry[0])
+            datatype = self.get_datatype((entry[0], entry[1]))
             delta, _ = get_constants_for(datatype)
 
             l_attrib, r_attrib = entry[0], entry[1]
