@@ -17,15 +17,11 @@ class Minimizer(AppExtractorBase):
         self.all_sizes = all_sizes
         self.mock = False
 
-    def getSizes_cs(self):
-        if not self.all_sizes:
-            for table in self.all_relations:
-                self.all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(table), self.logger)
-        return self.all_sizes
-
     def getCoreSizes(self):
-        if not len(self.all_sizes.keys()):
-            self.getSizes_cs()
+        for table in self.all_relations:
+            self.all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(
+                self.connectionHelper.queries.get_row_count(table))
+        self.logger.debug(self.all_sizes)
         return self.all_sizes
 
     def extract_params_from_args(self, args):
@@ -85,7 +81,8 @@ class Minimizer(AppExtractorBase):
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid
 
     def get_boundary(self, min_or_max, tabname):
-        m_ctid = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_ctid_from(min_or_max, tabname))
+        m_ctid = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.get_ctid_from(min_or_max, tabname))
         m_ctid = m_ctid[1:-1]
         m_ctid2 = m_ctid.split(",")
         row = int(m_ctid2[1])
@@ -104,10 +101,15 @@ class Minimizer(AppExtractorBase):
     def update_with_remaining_size(self, core_sizes, end_ctid, start_ctid, tabname, tabname1):
         self.logger.debug(start_ctid, end_ctid)
         self.connectionHelper.execute_sql(
-            [self.connectionHelper.queries.create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname, tabname1),
+            [self.connectionHelper.queries.create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname,
+                                                                                 tabname1),
              self.connectionHelper.queries.drop_table(tabname1)], self.logger)
-        core_sizes[tabname] = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tabname), self.logger)
+        core_sizes[tabname] = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.get_row_count(tabname), self.logger)
         self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
+        if core_sizes[tabname] == 1:
+            res, _ = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(tabname))
+            self.logger.debug(res)
         return core_sizes
 
     def determine_mid_ctid_from_db(self, tabname):
@@ -116,9 +118,11 @@ class Minimizer(AppExtractorBase):
         if not mid_idx:
             return None, None
         offset = str(mid_idx - 1)
-        mid_ctid1 = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_ctid_from_tabname_offset(tabname, offset))
+        mid_ctid1 = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.select_ctid_from_tabname_offset(tabname, offset))
         self.logger.debug(mid_ctid1)
-        mid_ctid2 = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_next_ctid(tabname, mid_ctid1))
+        mid_ctid2 = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.select_next_ctid(tabname, mid_ctid1))
         self.logger.debug(mid_ctid2)
         return mid_ctid1, mid_ctid2
 
@@ -142,7 +146,7 @@ class Minimizer(AppExtractorBase):
     def restore_d_min(self):
         for tab in self.core_relations:
             drop_fn = self.get_drop_fn(tab)
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_as_select_star_from(self.connectionHelper.queries.get_tabname_4(tab), tab),
-                                               drop_fn(tab), self.connectionHelper.queries.alter_table_rename_to(self.connectionHelper.queries.get_tabname_4(tab), tab)])
-
-
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_as_select_star_from(
+                self.connectionHelper.queries.get_tabname_4(tab), tab),
+                                               drop_fn(tab), self.connectionHelper.queries.alter_table_rename_to(
+                    self.connectionHelper.queries.get_tabname_4(tab), tab)])
