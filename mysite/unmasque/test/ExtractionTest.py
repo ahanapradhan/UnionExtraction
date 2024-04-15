@@ -57,13 +57,14 @@ class MyTestCase(BaseTestCase):
     def test_for_disjunction(self):
         self.pipeline.connectionHelper.config.detect_nep = False
         self.pipeline.connectionHelper.config.detect_or = True
-        query = f"select c_mktsegment as segment from customer,nation,orders where " \
+        query = f"select c_mktsegment as segment from customer,nation,orders, lineitem where " \
                 f"c_acctbal between 9000 and 10000 and c_nationkey = " \
-                f"n_nationkey and c_custkey = o_custkey " \
-                f"and n_name IN ('BRAZIL', 'INDIA', 'ARGENTINA');"
+                f"n_nationkey and c_custkey = o_custkey and l_orderkey = o_orderkey " \
+                f"and n_name IN ('BRAZIL', 'INDIA', 'ARGENTINA') " \
+                f"and l_shipdate IN (DATE '1994-12-13', DATE '1998-03-15')"
         ors = self.pipeline.extract(query)
         print(ors)
-        self.assertEqual(ors.count(" IN "), 1)
+        self.assertEqual(ors.count(" IN "), 2)
         # self.assertTrue(self.pipeline.correct)
 
     # @pytest.mark.skip

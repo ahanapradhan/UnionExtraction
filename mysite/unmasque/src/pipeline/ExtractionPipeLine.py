@@ -14,7 +14,6 @@ from ...refactored.limit import Limit
 from ...refactored.nep import NEP
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
-from ...refactored.util.utils import get_format
 from ...refactored.view_minimizer import ViewMinimizer
 
 
@@ -53,6 +52,8 @@ class ExtractionPipeLine(GenericPipeLine):
 
     def nullify_predicates(self, preds, get_datatype):
         for pred in preds:
+            if not len(pred):
+                return False
             tab, attrib, op = pred[0], pred[1], pred[2]
             lb, ub = pred[3], pred[4]
             if op in ['equal', '=']:
@@ -62,6 +63,7 @@ class ExtractionPipeLine(GenericPipeLine):
             else:
                 mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} >= {lb} and {attrib} <= {ub};"
             self.connectionHelper.execute_sql([mutatation_query], self.logger)
+        return True
 
     def mutation_pipeline(self, core_relations, key_lists, query, time_profile, aoa=None):
 
@@ -93,11 +95,11 @@ class ExtractionPipeLine(GenericPipeLine):
         if not check:
             self.logger.error("Cannot do database minimization. ")
             self.info[DB_MINIMIZATION] = None
-            return None, time_profile
+            return aoa, time_profile
         if not vm.done:
             self.info[DB_MINIMIZATION] = None
             self.logger.error("Some problem while view minimization. Aborting extraction!")
-            return None, time_profile
+            return aoa, time_profile
 
         '''
         AOA Extraction
@@ -121,8 +123,6 @@ class ExtractionPipeLine(GenericPipeLine):
         if not aoa.done:
             self.info[AOA] = None
             self.logger.error("Some error while Where Clause extraction. Aborting extraction!")
-            return None, time_profile
-
         return aoa, time_profile
 
     def after_from_clause_extract(self, query, core_relations, key_lists):
@@ -131,13 +131,16 @@ class ExtractionPipeLine(GenericPipeLine):
         q_generator = QueryStringGenerator(self.connectionHelper)
 
         aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, None)
-        if aoa is None:
+        if self.info[DB_MINIMIZATION] is None:
+            return None, time_profile
+        if not aoa.done:
             return None, time_profile
         delivery = aoa.pipeline_delivery
 
         aoa, time_profile, ors = self.extract_disjunction(aoa, core_relations, key_lists, query, time_profile)
-        if ors:
-            return ors, time_profile
+        aoa.generate_where_clause(ors)
+        if self.connectionHelper.config.detect_or:
+            return aoa.where_clause, time_profile
 
         '''
         Projection Extraction
@@ -244,7 +247,6 @@ class ExtractionPipeLine(GenericPipeLine):
         return eq, time_profile
 
     def extract_disjunction(self, aoa, core_relations, key_lists, query, time_profile):  # for once
-        get_datatype_func = aoa.get_datatype
         old_preds = copy.deepcopy(aoa.arithmetic_eq_predicates)
         all_preds = [old_preds]
         max_or_count = len(old_preds)
@@ -257,9 +259,13 @@ class ExtractionPipeLine(GenericPipeLine):
                     self.logger.debug("Checking OR predicate of ", in_candidates)
                     for tab in core_relations:
                         aoa.app.sanitize_one_table(tab)
-                    self.nullify_predicates(in_candidates, get_datatype_func)
+                    nullified = self.nullify_predicates(in_candidates, aoa.get_datatype)
+                    if not nullified:
+                        or_predicates.append(())
+                        break
                     aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
-                    if aoa is None or not aoa.arithmetic_eq_predicates:
+                    if self.info[DB_MINIMIZATION] is None or \
+                            self.info[AOA] is None or not aoa.arithmetic_eq_predicates:
                         or_predicates.append(())
                     else:
                         or_predicates.append(aoa.arithmetic_eq_predicates[i])
@@ -270,17 +276,7 @@ class ExtractionPipeLine(GenericPipeLine):
             else:
                 break
         all_ors = list(zip(*all_preds))
-        and_preds = []
-        for p in all_ors:
-            tab, attrib = p[0][0], p[0][1]
-            datatype = get_datatype_func((tab, attrib))
-            values = [get_format(datatype, v[3]) for v in p]
-            all_vals_str = ", ".join(values)
-            one_pred = f"{tab}.{attrib} IN ({all_vals_str})"
-            and_preds.append(one_pred)
-        eq_where_clause = " and ".join(and_preds)
-        self.logger.debug(eq_where_clause)
-        return aoa, time_profile, eq_where_clause
+        return aoa, time_profile, all_ors
 
     def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
         if self.connectionHelper.config.detect_nep:
