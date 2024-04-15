@@ -54,6 +54,29 @@ class MyTestCase(BaseTestCase):
             print(eq)
             self.assertTrue(self.pipeline.correct)
 
+    def test_sumang_thesis_Q3(self):
+        query = "select l_shipmode,sum(l_extendedprice) as revenue " \
+                "from lineitem " \
+                "where l_shipdate >= date '1994-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
+                "and (l_quantity =42 or l_quantity =50 or l_quantity=24) group by l_shipmode limit 100;"
+        self.pipeline.connectionHelper.config.detect_nep = False
+        self.pipeline.connectionHelper.config.detect_or = True
+        eq = self.pipeline.extract(query)
+        print(eq)
+        self.assertEqual(eq.count(" IN "), 1)
+        # self.assertTrue(self.pipeline.correct)
+
+    def test_sumang_thesis_Q4(self):
+        query = "select AVG(l_extendedprice) as avgTOTAL from lineitem,part " \
+                "where p_partkey = l_partkey and (p_brand = 'Brand#52' or p_brand = 'Brand#12') and " \
+                "(p_container = 'LG CAN' or p_container = 'LG CASE');"
+        self.pipeline.connectionHelper.config.detect_nep = False
+        self.pipeline.connectionHelper.config.detect_or = True
+        eq = self.pipeline.extract(query)
+        print(eq)
+        self.assertEqual(eq.count(" IN "), 2)
+        # self.assertTrue(self.pipeline.correct)
+
     def test_for_disjunction(self):
         self.pipeline.connectionHelper.config.detect_nep = False
         self.pipeline.connectionHelper.config.detect_or = True

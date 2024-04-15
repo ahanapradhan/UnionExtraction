@@ -135,7 +135,7 @@ class ExtractionPipeLine(GenericPipeLine):
             return None, time_profile
         if not aoa.done:
             return None, time_profile
-        delivery = copy.deepcopy(aoa.pipeline_delivery)
+        delivery = copy.copy(aoa.pipeline_delivery)
 
         aoa, time_profile, ors = self.extract_disjunction(aoa, core_relations, key_lists, query, time_profile)
         aoa.generate_where_clause(ors)
@@ -247,7 +247,7 @@ class ExtractionPipeLine(GenericPipeLine):
         return eq, time_profile
 
     def extract_disjunction(self, aoa, core_relations, key_lists, query, time_profile):  # for once
-        old_preds = copy.deepcopy(aoa.arithmetic_eq_predicates)
+        old_preds = copy.deepcopy(aoa.filter_predicates)
         all_preds = [old_preds]
         max_or_count = len(old_preds)
         while True:
@@ -265,10 +265,10 @@ class ExtractionPipeLine(GenericPipeLine):
                         break
                     aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
                     if self.info[DB_MINIMIZATION] is None or \
-                            self.info[AOA] is None or not aoa.arithmetic_eq_predicates:
+                            self.info[AOA] is None or not aoa.filter_predicates:
                         or_predicates.append(())
                     else:
-                        or_predicates.append(aoa.arithmetic_eq_predicates[i])
+                        or_predicates.append(aoa.filter_predicates[i])
                     self.logger.debug("new or predicates...", all_preds, or_predicates)
                 if all(element == () for element in or_predicates):
                     break
