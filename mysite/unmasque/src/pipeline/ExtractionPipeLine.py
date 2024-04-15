@@ -140,8 +140,8 @@ class ExtractionPipeLine(GenericPipeLine):
 
         aoa, time_profile, ors = self.extract_disjunction(aoa, core_relations, key_lists, query, time_profile)
         aoa.generate_where_clause(ors)
-        if self.connectionHelper.config.detect_or:
-            return aoa.where_clause, time_profile
+        # if self.connectionHelper.config.detect_or:
+        #    return aoa.where_clause, time_profile
         aoa.pipeline_delivery.doJob(query)
         delivery = copy.copy(aoa.pipeline_delivery)
 
@@ -260,6 +260,8 @@ class ExtractionPipeLine(GenericPipeLine):
                 for i in range(max_or_count):
                     in_candidates = [copy.deepcopy(em[i]) for em in all_preds]
                     self.logger.debug("Checking OR predicate of ", in_candidates)
+                    if in_candidates[-1] == set():
+                        continue
                     for tab in core_relations:
                         aoa.app.sanitize_one_table(tab)
                     nullified = self.nullify_predicates(in_candidates, aoa.get_datatype)
