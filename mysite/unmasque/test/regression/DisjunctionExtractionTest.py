@@ -16,7 +16,7 @@ class DisjunctionTestCase(BaseTestCase):
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_sumang_thesis_Q2(self):
-        query = "select c_mktsegment,MAX(c_acctbal) from customer where c_nationkey IN (1,5,9,10) group by " \
+        query = "select c_mktsegment,MAX(c_acctbal) from customer where c_nationkey IN (1, 2, 9) group by " \
                 "c_mktsegment;"
 
         eq = self.pipeline.extract(query)

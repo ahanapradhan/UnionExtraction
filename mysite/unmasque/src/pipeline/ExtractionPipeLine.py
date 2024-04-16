@@ -287,20 +287,17 @@ class ExtractionPipeLine(GenericPipeLine):
         all_preds = [old_preds]
         ids = list(range(len(old_preds)))
         if self.connectionHelper.config.detect_or:
-            while len(ids):
+            while True:
                 or_predicates = []
-                remove_ids = []
                 aoa.equi_join_enabled = False
                 for i in ids:
                     in_candidates = [copy.deepcopy(em[i]) for em in all_preds]
                     self.logger.debug("Checking OR predicate of ", in_candidates)
                     if not len(in_candidates[-1]):
-                        remove_ids.append(i)
-                        continue
-                    non_zero = self.restore_alternate_db(aoa, core_relations, in_candidates)
-                    if not non_zero:
                         or_predicates.append(tuple())
-                        break
+                        continue
+
+                    self.restore_alternate_db(aoa, core_relations, in_candidates)
                     aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
                     if self.info[DB_MINIMIZATION] is None or \
                             self.info[AOA] is None or not aoa.filter_predicates:
@@ -308,8 +305,6 @@ class ExtractionPipeLine(GenericPipeLine):
                     else:
                         or_predicates.append(aoa.filter_predicates[i])
                     self.logger.debug("new or predicates...", all_preds, or_predicates)
-                leftover_ids = list(set(ids) - set(remove_ids))
-                ids = leftover_ids
                 if all(element == tuple() for element in or_predicates):
                     break
                 all_preds.append(or_predicates)
@@ -335,7 +330,6 @@ class ExtractionPipeLine(GenericPipeLine):
             row_count = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tab))
             row_counts.append(row_count)
             self.logger.debug(f"tab {tab} of {row_count} created.")
-        return any(em != 0 for em in row_counts)
 
     def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
         if self.connectionHelper.config.detect_nep:
