@@ -18,5 +18,6 @@ class TPCHRestore:
             # print(f"Recreating {tab}")
             self.conn.execute_sql(
                 [f"create table {self.user_schema}.{tab} as select * from {self.backup_schema}.{tab};",
+                 f"ALTER TABLE {self.user_schema}.{tab} SET (autovacuum_enabled = false);"
                  "commit;"])
         self.conn.closeConnection()

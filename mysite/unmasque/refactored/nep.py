@@ -29,6 +29,10 @@ class NEP(Minimizer, GenerationPipeLineBase):
         self.wrong = False
         self.enabled = self.connectionHelper.config.detect_nep
 
+    def set_all_relations(self, relations: list[str]):
+        super().set_all_relations(relations)
+        self.nep_comparator.set_all_relations(relations)
+
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
 
@@ -43,9 +47,8 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 self.logger.info("NEP may exists")
                 nep_exists = True
                 self.sanitize_one_table(tabname)
-                core_sizes = self.getCoreSizes()
-                self.logger.debug(core_sizes)
-                Q_E = self.get_nep(core_sizes, tabname, query, i, is_for_joined)
+                self.getCoreSizes()
+                Q_E = self.get_nep(tabname, query, i, is_for_joined)
                 i += 1
                 self.sanitize_one_table(tabname)
                 # self.sanitize_and_keep_backup()
@@ -84,14 +87,14 @@ class NEP(Minimizer, GenerationPipeLineBase):
         if matched:
             return nep_exists
 
-    def get_nep(self, core_sizes, tabname, query, i, is_for_joined):
+    def get_nep(self, tabname, query, i, is_for_joined):
         self.logger.debug("Inside get nep")
         tabname1 = self.connectionHelper.queries.get_tabname_1(tabname)
-        while core_sizes[tabname] > 1:
+        while self.all_sizes[tabname] > 1:
             self.logger.debug("Inside minimization loop")
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, tabname1)],
                                               self.logger)
-            end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
+            end_ctid, start_ctid = self.get_start_and_end_ctids(self.all_sizes, query, tabname, tabname1)
             self.logger.debug(end_ctid, start_ctid)
             # drop_fn = self.get_drop_fn(tabname)
             # self.connectionHelper.execute_sql([drop_fn(tabname)])
@@ -99,7 +102,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                 self.connectionHelper.execute_sql(
                     [self.connectionHelper.queries.alter_table_rename_to(tabname1, tabname)], self.logger)
                 return  # no role on NEP
-            core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
+            self.all_sizes = self.update_with_remaining_size(self.all_sizes, end_ctid, start_ctid, tabname, tabname1)
 
         # self.test_result(query)
         val = self.extract_NEP_value(query, tabname, i, is_for_joined)

@@ -35,7 +35,7 @@ class ViewMinimizer(Minimizer):
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
-        self.take_backup()
+        # self.take_backup()
         return self.reduce_Database_Instance(query,
                                              True) if self.cs2_passed else self.reduce_Database_Instance(query, False)
 
