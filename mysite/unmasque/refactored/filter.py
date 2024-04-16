@@ -1,5 +1,6 @@
 import copy
 import math
+from typing import List, Tuple
 
 from .abstract.MutationPipeLineBase import MutationPipeLineBase
 from .util.utils import isQ_result_empty, get_val_plus_delta, get_cast_value, \
@@ -31,7 +32,7 @@ def round_floor(num, places):
 class Filter(MutationPipeLineBase):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 core_relations: list[str],
+                 core_relations: List[str],
                  global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Filter")
         # init data
@@ -83,7 +84,7 @@ class Filter(MutationPipeLineBase):
         self.connectionHelper.execute_sql_with_params(
             self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tabname), [vals])
 
-    def get_datatype(self, tab_attrib: tuple[str, str]) -> str:
+    def get_datatype(self, tab_attrib: Tuple[str, str]) -> str:
         if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
             return 'int'
         elif 'date' in self.global_attrib_types_dict[tab_attrib]:

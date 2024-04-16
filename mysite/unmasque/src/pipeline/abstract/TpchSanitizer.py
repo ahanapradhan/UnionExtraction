@@ -1,5 +1,6 @@
 from ...util.Log import Log
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
+from typing import List
 
 
 class TpchSanitizer:
@@ -9,7 +10,7 @@ class TpchSanitizer:
         self.connectionHelper = connectionHelper
         self.logger = Log("TpchSanitizer", connectionHelper.config.log_level)
 
-    def set_all_relations(self, relations: list[str]):
+    def set_all_relations(self, relations: List[str]):
         self.all_relations.extend(relations)
 
     def take_backup(self):
