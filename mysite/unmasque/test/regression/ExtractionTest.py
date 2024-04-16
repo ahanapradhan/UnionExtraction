@@ -30,6 +30,8 @@ class ExtractionTestCase(BaseTestCase):
 
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_or = False
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_for_filter_1(self):
@@ -43,7 +45,6 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_for_numeric_filter(self):
         for i in range(1):
-            self.pipeline.connectionHelper.config.detect_nep = False
             lower = random.randint(1, 1000)
             upper = random.randint(lower + 1, 5000)
             query = f"select c_mktsegment as segment from customer,nation,orders where " \
@@ -56,7 +57,6 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_for_filter(self):
         for i in range(1):
-            self.pipeline.connectionHelper.config.detect_nep = False
             lower = random.randint(1, 100)
             upper = random.randint(lower + 1, 200)
             query = f"SELECT avg(s_nationkey) FROM supplier WHERE s_suppkey >= {lower} and s_suppkey <= {upper};"
@@ -66,7 +66,6 @@ class ExtractionTestCase(BaseTestCase):
             self.assertTrue(self.pipeline.correct)
 
     def test_issue_2_fix(self):
-        self.pipeline.connectionHelper.config.detect_nep = False
         query = "select l_orderkey, " \
                 "sum(l_extendedprice - l_discount + l_tax) as revenue, o_orderdate, " \
                 "o_shippriority from customer, orders, lineitem " \
@@ -82,13 +81,7 @@ class ExtractionTestCase(BaseTestCase):
             print(eq)
             self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
-    def test_1_mul(self):
-        for i in range(2):
-            self.test_extraction_tpch_q1()
-
     def test_extraction_tpch_q1(self):
-        self.pipeline.connectionHelper.config.detect_nep = False
         key = 'q1'
         query = queries.queries_dict[key]
         app = Executable(self.conn)
@@ -104,13 +97,7 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
-    def test_in_loop(self):
-        for i in range(1):
-            self.test_extraction_tpch_q1_filter()
-
     def test_extraction_tpch_q1_simple(self):
-        self.pipeline.connectionHelper.config.detect_nep = False
         key = 'q1_simple'
         query = queries.queries_dict[key]
         eq = self.pipeline.doJob(query)
@@ -121,7 +108,6 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_for_date_filter(self):
         for i in range(1):
-            self.pipeline.connectionHelper.config.detect_nep = False
             key = 'q1_filter'
             query = queries.queries_dict[key]
             eq = self.pipeline.doJob(query)
@@ -132,7 +118,6 @@ class ExtractionTestCase(BaseTestCase):
     def test_for_date_filter_2(self):
         for i in range(1):
             lower, upper = generate_random_dates()
-            self.pipeline.connectionHelper.config.detect_nep = False
             q1_filter = f"select l_returnflag, l_linestatus, " \
                         f"count(*) as count_order " \
                         f"from lineitem where l_shipdate >= date {lower} and l_shipdate < date {upper} group " \
@@ -147,17 +132,7 @@ class ExtractionTestCase(BaseTestCase):
             print(eq)
             self.assertTrue(self.pipeline.correct)
 
-    def test_for_date_filter_1(self):
-        for i in range(1):
-            self.pipeline.connectionHelper.config.detect_nep = False
-            query = Q6
-            eq = self.pipeline.doJob(query)
-            print(eq)
-            self.pipeline.time_profile.print()
-            self.assertTrue(self.pipeline.correct)
-
     def test_extraction_tpch_q1_filter(self):
-        self.pipeline.connectionHelper.config.detect_nep = False
         key = 'q1_filter'
         query = queries.queries_dict[key]
         eq = self.pipeline.doJob(query)
@@ -167,7 +142,6 @@ class ExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_extraction_tpch_query3(self):
-        self.pipeline.connectionHelper.config.detect_nep = False
         self.pipeline.connectionHelper.connectUsingParams()
         key = 'tpch_query3'
         from_rels = tpchSettings.from_rels[key]
@@ -186,7 +160,6 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q1(self):
-        self.pipeline.connectionHelper.config.detect_nep = False
         self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q1'
         from_rels = tpchSettings.from_rels[key]
@@ -229,7 +202,6 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_extraction_Q3(self):
-        self.pipeline.connectionHelper.config.detect_nep = False
         self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q3'
         from_rels = tpchSettings.from_rels[key]
@@ -248,7 +220,6 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q3_1(self):
-        self.pipeline.connectionHelper.config.detect_nep = False
         key = 'Q3_1'
         query = queries.queries_dict[key]
         print(query)
@@ -260,7 +231,6 @@ class ExtractionTestCase(BaseTestCase):
 
     # @pytest.mark.skip
     def test_extraction_Q18_test1(self):
-        self.pipeline.connectionHelper.config.detect_nep = False
         key = 'Q18_test'
         query = queries.queries_dict[key]
         print(query)
@@ -273,7 +243,6 @@ class ExtractionTestCase(BaseTestCase):
     def test_filter(self):
         lower = 10
         upper = 16
-        self.pipeline.connectionHelper.config.detect_nep = False
         query = f"SELECT avg(s_nationkey) FROM supplier WHERE s_suppkey >= {lower} and s_suppkey <= {upper};"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
@@ -530,6 +499,7 @@ class ExtractionTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         print(eq)
         self.assertTrue(self.pipeline.correct)
+
     @pytest.mark.skip
     def test_Q21(self):  # enable it after fixing order by
         query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \
@@ -579,11 +549,6 @@ class ExtractionTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         print(eq)
         self.assertTrue(self.pipeline.correct)
-
-    @pytest.mark.skip
-    def test_6_mul(self):
-        for i in range(2):
-            self.test_extraction_Q6()
 
     @pytest.mark.skip
     def test_extreme_1(self):

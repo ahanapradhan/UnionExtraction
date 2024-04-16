@@ -181,7 +181,7 @@ class Filter(MutationPipeLineBase):
 
     def handle_filter_for_nonTextTypes(self, attrib_list, datatype, filter_attribs,
                                        max_val_domain, min_val_domain, query):
-        self.logger.debug("datatype", datatype)
+        # self.logger.debug("datatype", datatype)
         if datatype == 'int' and self.connectionHelper.config.detect_or:
             self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
             return
@@ -363,7 +363,7 @@ class Filter(MutationPipeLineBase):
         # PLEASE CONFIRM THAT DATE FORMAT IN DATABASE IS YYYY-MM-DD
         # min_val_domain, max_val_domain = get_min_and_max_val(datatype)
         # self.see_d_min()
-        self.logger.debug(min_val_domain, max_val_domain)
+        # self.logger.debug(min_val_domain, max_val_domain)
         min_present = self.checkAttribValueEffect(query, get_format(datatype, min_val_domain),
                                                   attrib_list)  # True implies row
         # was still present

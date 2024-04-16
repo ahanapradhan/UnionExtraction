@@ -253,8 +253,8 @@ class ExtractionPipeLine(GenericPipeLine):
         old_preds = copy.deepcopy(aoa.filter_predicates)
         all_preds = [old_preds]
         max_or_count = len(old_preds)
-        while True:
-            if self.connectionHelper.config.detect_or:
+        if self.connectionHelper.config.detect_or:
+            while True:
                 or_predicates = []
                 aoa.equi_join_enabled = False
                 for i in range(max_or_count):
@@ -278,18 +278,17 @@ class ExtractionPipeLine(GenericPipeLine):
                 if all(element == () for element in or_predicates):
                     break
                 all_preds.append(or_predicates)
-            else:
-                break
+
+            '''
+            gaining sanity back from nullified attributes
+            '''
+            for tab in core_relations:
+                aoa.app.sanitize_one_table(tab)
+            # self.logger.debug("All tables restored to get a valid Dmin so that generation pipeline works.")
+            aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, None)
         all_ors = list(zip(*all_preds))
 
-        '''
-        gaining sanity back from nullified attributes
-        '''
-        for tab in core_relations:
-            aoa.app.sanitize_one_table(tab)
-        #self.logger.debug("All tables restored to get a valid Dmin so that generation pipeline works.")
-        aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, None)
-        #self.logger.debug("Last aoa after extracting disjunctions.")
+        # self.logger.debug("Last aoa after extracting disjunctions.")
         aoa.post_process_for_generation_pipeline(query)
 
         return aoa, time_profile, all_ors
