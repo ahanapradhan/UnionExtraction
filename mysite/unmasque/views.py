@@ -32,10 +32,11 @@ def login_view(request):
             return render(request, 'unmasque/login.html', {'error_message': msg})
 
         # SET THE FOLLOWING PARAMS FROM UI CHECKBOX VALUES
-        print("Checkbox", request.POST.get('sampling'), request.POST.get('union'), request.POST.get('nep'))
+        
         connHelper.config.detect_nep = (request.POST.get("NEP") == "NEP")
         connHelper.config.detect_union = (request.POST.get("union") == "Union")
         connHelper.config.use_cs2 = (request.POST.get("sampling") == "Sampling")
+        print("Checkbox", connHelper.config.detect_nep, connHelper.config.detect_union, connHelper.config.use_cs2)
 
         token = start_extraction_pipeline_async(connHelper, query, request)
         return redirect(f'progress/{token}')
