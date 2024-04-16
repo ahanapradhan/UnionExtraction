@@ -525,6 +525,9 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 self.filter_in_predicates.extend((tab, attrib, 'IN', values, values))
                 all_vals_str = ", ".join(values)
                 one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
+            elif all(op in ['equal', '='] for op in ops):
+                preds = [f"{tab_attribs[i][0]}.{tab_attribs[i][1]} = {values[i]}" for i in non_empty_indices]
+                one_pred = " OR ".join(preds)
             else:
                 preds = [handle_range_preds(datatypes[i], p[i], f'{tab_attribs[i][0]}.{tab_attribs[i][1]} ') for i in
                          non_empty_indices]

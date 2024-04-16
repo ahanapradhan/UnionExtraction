@@ -4,17 +4,19 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.aoa import AlgebraicPredicate
 from ..core.elapsed_time import create_zero_time_profile
+from ..util.aoa_utils import get_delta
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, AOA, PROJECTION, \
     GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
 from ...refactored.aggregation import Aggregation
 from ...refactored.cs2 import Cs2
+from ...refactored.filter import get_constants_for
 from ...refactored.from_clause import FromClause
 from ...refactored.groupby_clause import GroupBy
 from ...refactored.limit import Limit
 from ...refactored.nep import NEP
 from ...refactored.orderby_clause import OrderBy
 from ...refactored.projection import Projection
-from ...refactored.util.utils import get_format
+from ...refactored.util.utils import get_format, get_val_plus_delta
 from ...refactored.view_minimizer import ViewMinimizer
 
 
@@ -79,14 +81,19 @@ class ExtractionPipeLine(GenericPipeLine):
                 continue
             datatype = get_datatype((tab, attrib))
             val_lb, val_ub = get_format(datatype, lb), get_format(datatype, ub)
+
             if op.lower() in ['equal', '=']:
                 where_condition = f"{attrib} != {val_lb}"
             elif op.lower() == 'like':
                 where_condition = f"{attrib} NOT LIKE {val_lb}"
             else:
-                where_condition = f"({attrib} < {val_lb} or {attrib} > {val_ub})"
+                delta, _ = get_constants_for(datatype)
+                val_lb_minus_one = get_format(datatype, get_val_plus_delta(datatype, lb, -1 * delta))
+                val_ub_plus_one = get_format(datatype, get_val_plus_delta(datatype, ub, 1 * delta))
+                where_condition = f"({attrib} < {val_lb_minus_one} or {attrib} > {val_ub_plus_one})"
             wheres.append(where_condition)
         where_condition = " and ".join(wheres) if len(wheres) else always
+        self.logger.debug(where_condition)
         return where_condition
 
     def mutation_pipeline(self, core_relations, key_lists, query, time_profile, aoa=None):
@@ -278,28 +285,32 @@ class ExtractionPipeLine(GenericPipeLine):
     def extract_disjunction(self, aoa, core_relations, key_lists, query, time_profile):  # for once
         old_preds = copy.deepcopy(aoa.filter_predicates)
         all_preds = [old_preds]
-        max_or_count = len(old_preds)
+        ids = list(range(len(old_preds)))
         if self.connectionHelper.config.detect_or:
-            while True:
+            while len(ids):
                 or_predicates = []
+                remove_ids = []
                 aoa.equi_join_enabled = False
-                for i in range(max_or_count):
+                for i in ids:
                     in_candidates = [copy.deepcopy(em[i]) for em in all_preds]
                     self.logger.debug("Checking OR predicate of ", in_candidates)
-                    if in_candidates[-1] == set():
+                    if not len(in_candidates[-1]):
+                        remove_ids.append(i)
                         continue
                     non_zero = self.restore_alternate_db(aoa, core_relations, in_candidates)
                     if not non_zero:
-                        or_predicates.append(())
+                        or_predicates.append(tuple())
                         break
                     aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
                     if self.info[DB_MINIMIZATION] is None or \
                             self.info[AOA] is None or not aoa.filter_predicates:
-                        or_predicates.append(())
+                        or_predicates.append(tuple())
                     else:
                         or_predicates.append(aoa.filter_predicates[i])
                     self.logger.debug("new or predicates...", all_preds, or_predicates)
-                if all(element == () for element in or_predicates):
+                leftover_ids = list(set(ids) - set(remove_ids))
+                ids = leftover_ids
+                if all(element == tuple() for element in or_predicates):
                     break
                 all_preds.append(or_predicates)
 
@@ -311,9 +322,6 @@ class ExtractionPipeLine(GenericPipeLine):
             # self.logger.debug("All tables restored to get a valid Dmin so that generation pipeline works.")
             aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, None)
         all_ors = list(zip(*all_preds))
-
-        # self.logger.debug("Last aoa after extracting disjunctions.")
-
         return aoa, time_profile, all_ors
 
     def restore_alternate_db(self, aoa, core_relations, in_candidates):

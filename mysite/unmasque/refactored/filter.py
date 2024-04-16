@@ -185,9 +185,9 @@ class Filter(MutationPipeLineBase):
         # if datatype == 'int' and self.connectionHelper.config.detect_or:
         # self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         #    return
-        if datatype in ['int', 'date']:
+        if datatype in ['int', 'date', 'integer', 'number']:
             self.handle_point_filter(datatype, filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
-        elif datatype == 'numeric':
+        elif datatype in ['numeric', 'float']:
             self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         else:
             raise ValueError("Datatype is Not Handled by Current UNMASQUE...sorry! ")
@@ -220,22 +220,22 @@ class Filter(MutationPipeLineBase):
         datatype = self.get_datatype((tab, attrib))
         i_min, i_max = get_min_and_max_val(datatype)
         if op == '=':
-            if datatype == 'numeric':
+            if datatype in ['numeric', 'float']:
                 filterAttribs.append((tab, attrib, '=', float(lb), float(ub)))
             if datatype == 'int':
                 filterAttribs.append((tab, attrib, '=', int(lb), int(ub)))
         elif op == '>=':
-            if datatype == 'numeric':
+            if datatype in ['numeric', 'float']:
                 filterAttribs.append((tab, attrib, '>=', float(lb), i_max))
             if datatype == 'int':
                 filterAttribs.append((tab, attrib, '>=', int(lb), i_max))
         elif op == '<=':
-            if datatype == 'numeric':
+            if datatype in ['numeric', 'float']:
                 filterAttribs.append((tab, attrib, '<=', i_min, float(ub)))
             if datatype == 'int':
                 filterAttribs.append((tab, attrib, '<=', i_min, int(ub)))
         elif op == 'range':
-            if datatype == 'numeric':
+            if datatype in ['numeric', 'float']:
                 filterAttribs.append((tab, attrib, 'range', float(lb), float(ub)))
             if datatype == 'int':
                 if int(lb) == int(ub):
@@ -257,7 +257,6 @@ class Filter(MutationPipeLineBase):
         mandatory_attrib = attrib_list[0]
         tabname, attrib, attrib_max_length, d_plus_value = mandatory_attrib[0], mandatory_attrib[1], mandatory_attrib[
             2], mandatory_attrib[3]
-        is_int_type = self.get_datatype((tabname, attrib))
         # inference based on flag_min and flag_max
         if not min_present and not max_present:
             equalto_flag = self.get_filter_value(query, 'int', float(d_plus_value[attrib]) - .01,
