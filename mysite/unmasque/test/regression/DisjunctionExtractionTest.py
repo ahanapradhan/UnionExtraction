@@ -23,6 +23,14 @@ class DisjunctionTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_sumang_thesis_Q2_1(self):
+        query = "select c_mktsegment,MAX(c_acctbal) from customer where c_nationkey IN (1, 2, 5, 10) group by " \
+                "c_mktsegment;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
     def test_sumang_thesis_Q3(self):
         query = "select l_shipmode,sum(l_extendedprice) as revenue " \
                 "from lineitem " \
