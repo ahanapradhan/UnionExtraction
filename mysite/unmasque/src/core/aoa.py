@@ -1,7 +1,7 @@
 import copy
 from datetime import date
 from decimal import Decimal
-from typing import Union
+from typing import Union, List, Tuple
 
 from .abstract.abstractConnection import AbstractConnectionHelper
 from ...refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
@@ -33,7 +33,7 @@ def check_redundancy(fl_list, a_ineq):
 class AlgebraicPredicate(MutationPipeLineBase):
     SUPPORTED_DATATYPES = ['int', 'date', 'numeric', 'number']
 
-    def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list[str],
+    def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: List[str],
                  global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "AlgebraicPredicate")
         self.filter_extractor = Filter(self.connectionHelper, core_relations, global_min_instance_dict)
@@ -117,7 +117,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         for e in eq_set:
             add_item_to_list(e, self.arithmetic_eq_predicates)
 
-    def algo7_find_aoa(self, edge_set_dict: dict, datatype: str, query: str) -> tuple[list, list]:
+    def algo7_find_aoa(self, edge_set_dict: dict, datatype: str, query: str) -> Tuple[List, List]:
         edge_set = edge_set_dict[datatype]
         # self.optimize_edge_set(edge_set)
         E, L, absorbed_UBs, absorbed_LBs = edge_set, [], {}, {}
@@ -185,7 +185,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         for t_r in to_remove:
             remove_item_from_list(t_r, E)
 
-    def find_transitive_concrete_L_Bounds(self, L: list[tuple], cb_list: list, to_remove: list, is_UB: bool) -> None:
+    def find_transitive_concrete_L_Bounds(self, L: List[Tuple], cb_list: list, to_remove: list, is_UB: bool) -> None:
         if not len(L) or not len(cb_list):
             return
         for edge in L:
@@ -464,7 +464,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
         self.where_clause = "\n and ".join(predicates)
 
-    def get_equi_join_group(self, tab_attrib: tuple[str, str]) -> list[tuple[str, str]]:
+    def get_equi_join_group(self, tab_attrib: Tuple[str, str]) -> List[Tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:
             if tab_attrib in eq:
                 var_eq = [e for e in eq if len(e) == 2]
@@ -518,7 +518,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         for tab in self.core_relations:
             self.filter_extractor.insert_into_dmin_dict_values(tab)
 
-    def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str) -> list:
+    def do_bound_check_again(self, tab_attrib: Tuple[str, str], datatype: str, query: str) -> list:
         filter_attribs = []
         d_plus_value = copy.deepcopy(self.filter_extractor.global_d_plus_value)
         attrib_max_length = copy.deepcopy(self.filter_extractor.global_attrib_max_length)
@@ -552,7 +552,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
             edge_set.append(tuple([next_tab_attrib, tab_attrib]))
 
     def isolate_ineq_aoa_preds_per_datatype(self,
-                                            ineqaoa_preds: list[tuple[str, str, str,
+                                            ineqaoa_preds: List[Tuple[str, str, str,
                                             Union[int, date, Decimal],
                                             Union[int, date, Decimal]]]) -> dict:
         datatype_dict = {}
@@ -609,7 +609,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.algebraic_eq_predicates.append(equi_join_group)
         return True
 
-    def algo2_preprocessing(self) -> tuple[dict, list]:
+    def algo2_preprocessing(self) -> Tuple[dict, list]:
         eq_groups_dict = {}
         ineq_filter_predicates = []
         for pred in self.filter_extractor.filter_predicates:
@@ -645,9 +645,9 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 break
         return done
 
-    def mutate_attrib_with_Bound_val(self, tab_attrib: tuple[str, str], datatype: str, val: any,
+    def mutate_attrib_with_Bound_val(self, tab_attrib: Tuple[str, str], datatype: str, val: any,
                                      with_UB: bool, query: str) \
-            -> tuple[Union[int, Decimal, date], Union[int, Decimal, date]]:
+            -> Tuple[Union[int, Decimal, date], Union[int, Decimal, date]]:
         dmin_val = self.get_dmin_val(get_attrib(tab_attrib), get_tab(tab_attrib))
         factor = -1 if with_UB else 1
         if dmin_val == val:

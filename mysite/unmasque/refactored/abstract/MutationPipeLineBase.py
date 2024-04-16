@@ -3,12 +3,12 @@ from _decimal import Decimal
 
 from .AppExtractorBase import AppExtractorBase
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-
+from typing import List
 
 class MutationPipeLineBase(AppExtractorBase):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 core_relations: list[str],
+                 core_relations: List[str],
                  global_min_instance_dict: dict,
                  name: str):
         super().__init__(connectionHelper, name)
