@@ -35,6 +35,10 @@ class CommonQueries(ABC):
         pass
 
     @abstractmethod
+    def create_table_as_select_star_from_where(self, tab, fromtab, where):
+        pass
+
+    @abstractmethod
     def get_row_count(self, tab):
         pass
 

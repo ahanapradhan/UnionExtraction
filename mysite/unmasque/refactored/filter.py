@@ -182,9 +182,9 @@ class Filter(MutationPipeLineBase):
     def handle_filter_for_nonTextTypes(self, attrib_list, datatype, filter_attribs,
                                        max_val_domain, min_val_domain, query):
         # self.logger.debug("datatype", datatype)
-        if datatype == 'int' and self.connectionHelper.config.detect_or:
-            self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
-            return
+        # if datatype == 'int' and self.connectionHelper.config.detect_or:
+        # self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
+        #    return
         if datatype in ['int', 'date']:
             self.handle_point_filter(datatype, filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         elif datatype == 'numeric':

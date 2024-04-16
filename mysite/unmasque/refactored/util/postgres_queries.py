@@ -3,6 +3,9 @@ from .utils import get_format
 
 
 class PostgresQueries(CommonQueries):
+    def create_table_as_select_star_from_where(self, tab, fromtab, where):
+        return f"Create table {tab} as (Select * from {fromtab} where {where});"
+
     def create_table_as_select_star_from_limit_1(self, tab, fromtab):
         return f"Create table {tab} as (Select * from {fromtab} limit 1);"
 

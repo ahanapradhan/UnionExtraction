@@ -67,6 +67,24 @@ class ExtractionPipeLine(GenericPipeLine):
             self.connectionHelper.execute_sql([mutatation_query], self.logger)
         return True
 
+    def nullify_predicates1(self, preds, get_datatype):
+        where_condition = "true"
+        wheres = []
+        for pred in preds:
+            if not len(pred):
+                return where_condition
+            tab, attrib, op, lb, ub = pred[0], pred[1], pred[2], pred[3], pred[4]
+            datatype = get_datatype((tab, attrib))
+            val_lb, val_ub = get_format(datatype, lb), get_format(datatype, ub)
+            if op.lower() in ['equal', '=']:
+                where_condition = f"{attrib} != {val_lb}"
+            elif op.lower() == 'like':
+                where_condition = f"{attrib} NOT LIKE {val_lb}"
+            else:
+                where_condition = f"({attrib} < {val_lb} or {attrib} > {val_ub})"
+            wheres.append(where_condition)
+        return " and ".join(wheres)
+
     def mutation_pipeline(self, core_relations, key_lists, query, time_profile, aoa=None):
 
         """
@@ -138,12 +156,8 @@ class ExtractionPipeLine(GenericPipeLine):
         if not aoa.done:
             return None, time_profile
 
-        aoa, time_profile, ors = self.extract_disjunction(aoa, core_relations, key_lists, query, time_profile)
-        aoa.generate_where_clause(ors)
-        # if self.connectionHelper.config.detect_or:
-        #    return aoa.where_clause, time_profile
-        aoa.pipeline_delivery.doJob()
-        delivery = copy.copy(aoa.pipeline_delivery)
+        aoa, delivery, time_profile = self.extract_non_neg_where_clause(aoa, core_relations, key_lists, query,
+                                                                        time_profile)
 
         '''
         Projection Extraction
@@ -249,6 +263,14 @@ class ExtractionPipeLine(GenericPipeLine):
         self.update_state(DONE)
         return eq, time_profile
 
+    def extract_non_neg_where_clause(self, aoa, core_relations, key_lists, query, time_profile):
+        aoa, time_profile, ors = self.extract_disjunction(aoa, core_relations, key_lists, query, time_profile)
+        aoa.generate_where_clause(ors)
+        aoa.post_process_for_generation_pipeline(query)
+        aoa.pipeline_delivery.doJob()
+        delivery = copy.copy(aoa.pipeline_delivery)
+        return aoa, delivery, time_profile
+
     def extract_disjunction(self, aoa, core_relations, key_lists, query, time_profile):  # for once
         old_preds = copy.deepcopy(aoa.filter_predicates)
         all_preds = [old_preds]
@@ -262,10 +284,8 @@ class ExtractionPipeLine(GenericPipeLine):
                     self.logger.debug("Checking OR predicate of ", in_candidates)
                     if in_candidates[-1] == set():
                         continue
-                    for tab in core_relations:
-                        aoa.app.sanitize_one_table(tab)
-                    nullified = self.nullify_predicates(in_candidates, aoa.get_datatype)
-                    if not nullified:
+                    non_zero = self.restore_alternate_db(aoa, core_relations, in_candidates)
+                    if not non_zero:
                         or_predicates.append(())
                         break
                     aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
@@ -289,9 +309,22 @@ class ExtractionPipeLine(GenericPipeLine):
         all_ors = list(zip(*all_preds))
 
         # self.logger.debug("Last aoa after extracting disjunctions.")
-        aoa.post_process_for_generation_pipeline(query)
 
         return aoa, time_profile, all_ors
+
+    def restore_alternate_db(self, aoa, core_relations, in_candidates):
+        row_counts = []
+        for tab in core_relations:
+            backup_tab = self.connectionHelper.queries.get_backup(tab)
+            where_condition = self.nullify_predicates(in_candidates, aoa.get_datatype)
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
+                                               self.connectionHelper.queries.create_table_as_select_star_from_where(
+                                                   tab),
+                                               backup_tab, where_condition])
+            row_count = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tab))
+            row_counts.append(row_count)
+            self.logger.debug(f"tab {tab} of {row_count} created.")
+        return any(em != 0 for em in row_counts)
 
     def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
         if self.connectionHelper.config.detect_nep:

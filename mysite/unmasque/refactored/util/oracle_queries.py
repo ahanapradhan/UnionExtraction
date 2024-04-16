@@ -5,6 +5,9 @@ from .utils import get_format
 class OracleQueries(CommonQueries):
     schema = None
 
+    def create_table_as_select_star_from_where(self, tab, fromtab, where):
+        return f"Create table {self.schema}.{tab} as (Select * from {self.schema}.{fromtab} where {where})"
+
     def set_schema(self, schema):
         self.schema = schema
 
