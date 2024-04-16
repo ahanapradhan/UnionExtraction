@@ -519,18 +519,21 @@ class AlgebraicPredicate(MutationPipeLineBase):
             ops = [p[i][2] for i in non_empty_indices]
             datatypes = [self.get_datatype(tab_attribs[i]) for i in non_empty_indices]
             values = [get_format(datatypes[i], p[i][3]) for i in non_empty_indices]
+            values.sort()
             uniq_tab_attribs = set(tab_attribs)
             if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
                 tab, attrib = next(iter(uniq_tab_attribs))
                 self.filter_in_predicates.extend((tab, attrib, 'IN', values, values))
                 all_vals_str = ", ".join(values)
                 one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
-            elif all(op in ['equal', '='] for op in ops):
-                preds = [f"{tab_attribs[i][0]}.{tab_attribs[i][1]} = {values[i]}" for i in non_empty_indices]
-                one_pred = " OR ".join(preds)
             else:
-                preds = [handle_range_preds(datatypes[i], p[i], f'{tab_attribs[i][0]}.{tab_attribs[i][1]} ') for i in
-                         non_empty_indices]
+                pred_str, preds = "", []
+                for i in non_empty_indices:
+                    if p[i][2] in ['equal', '=']:
+                        pred_str = f"{tab_attribs[i][0]}.{tab_attribs[i][1]} = {get_format(datatypes[i], p[i][3])}"
+                    else:
+                        pred_str = handle_range_preds(datatypes[i], p[i], f'{tab_attribs[i][0]}.{tab_attribs[i][1]} ')
+                    preds.append(pred_str)
                 one_pred = " OR ".join(preds)
             predicates.append(one_pred)
 
