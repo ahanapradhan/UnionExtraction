@@ -67,13 +67,16 @@ class ExtractionPipeLine(GenericPipeLine):
             self.connectionHelper.execute_sql([mutatation_query], self.logger)
         return True
 
-    def nullify_predicates1(self, preds, get_datatype):
-        where_condition = "true"
+    def nullify_predicates1(self, tabname, preds, get_datatype):
+        always = "true"
+        where_condition = always
         wheres = []
         for pred in preds:
             if not len(pred):
                 return where_condition
             tab, attrib, op, lb, ub = pred[0], pred[1], pred[2], pred[3], pred[4]
+            if tab != tabname:
+                continue
             datatype = get_datatype((tab, attrib))
             val_lb, val_ub = get_format(datatype, lb), get_format(datatype, ub)
             if op.lower() in ['equal', '=']:
@@ -83,7 +86,8 @@ class ExtractionPipeLine(GenericPipeLine):
             else:
                 where_condition = f"({attrib} < {val_lb} or {attrib} > {val_ub})"
             wheres.append(where_condition)
-        return " and ".join(wheres)
+        where_condition = " and ".join(wheres) if len(wheres) else always
+        return where_condition
 
     def mutation_pipeline(self, core_relations, key_lists, query, time_profile, aoa=None):
 
@@ -316,11 +320,10 @@ class ExtractionPipeLine(GenericPipeLine):
         row_counts = []
         for tab in core_relations:
             backup_tab = self.connectionHelper.queries.get_backup(tab)
-            where_condition = self.nullify_predicates(in_candidates, aoa.get_datatype)
+            where_condition = self.nullify_predicates1(tab, in_candidates, aoa.get_datatype)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
                                                self.connectionHelper.queries.create_table_as_select_star_from_where(
-                                                   tab),
-                                               backup_tab, where_condition])
+                                                   tab, backup_tab, where_condition)])
             row_count = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tab))
             row_counts.append(row_count)
             self.logger.debug(f"tab {tab} of {row_count} created.")
