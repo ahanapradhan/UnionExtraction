@@ -386,6 +386,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
             self.constants_dict[datatype] = (i_min, i_max, delta)
 
     def post_process_for_generation_pipeline(self, query) -> None:
+        self.logger.debug("aoa post-process.")
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
         self.restore_d_min_from_dict()
         if self.aoa_enabled:

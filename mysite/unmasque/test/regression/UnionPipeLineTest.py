@@ -2,11 +2,11 @@ import unittest
 
 import pytest
 
-from mysite.unmasque.src.core import algorithm1
-from mysite.unmasque.src.core.union_from_clause import UnionFromClause
-from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
-from mysite.unmasque.test.util import queries
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from ...src.core import algorithm1
+from ...src.core.union_from_clause import UnionFromClause
+from ...src.pipeline.UnionPipeLine import UnionPipeLine
+from ...test.util import queries
+from ...test.util.BaseTestCase import BaseTestCase
 
 
 class MyTestCase(BaseTestCase):

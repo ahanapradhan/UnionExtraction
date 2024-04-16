@@ -142,7 +142,7 @@ class ExtractionPipeLine(GenericPipeLine):
         aoa.generate_where_clause(ors)
         # if self.connectionHelper.config.detect_or:
         #    return aoa.where_clause, time_profile
-        aoa.pipeline_delivery.doJob(query)
+        aoa.pipeline_delivery.doJob()
         delivery = copy.copy(aoa.pipeline_delivery)
 
         '''
@@ -287,7 +287,10 @@ class ExtractionPipeLine(GenericPipeLine):
         '''
         for tab in core_relations:
             aoa.app.sanitize_one_table(tab)
+        #self.logger.debug("All tables restored to get a valid Dmin so that generation pipeline works.")
         aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, None)
+        #self.logger.debug("Last aoa after extracting disjunctions.")
+        aoa.post_process_for_generation_pipeline(query)
 
         return aoa, time_profile, all_ors
 
