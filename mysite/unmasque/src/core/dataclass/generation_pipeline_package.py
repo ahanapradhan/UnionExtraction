@@ -1,6 +1,6 @@
 import copy
 from datetime import date
-from typing import Callable, Union
+from typing import Callable, Union, List, Tuple
 
 from ....refactored.filter import get_constants_for
 from ....refactored.util.utils import get_min_and_max_val, get_val_plus_delta
@@ -43,17 +43,17 @@ def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):
 
 
 class PackageForGenPipeline:
-    def __init__(self, core_relations: list[str],
+    def __init__(self, core_relations: List[str],
                  global_all_attribs,
                  global_attrib_types,
                  global_filter_predicates: list,
-                 global_aoa_le_predicates: list[tuple[str, str], tuple[str, str]],
+                 global_aoa_le_predicates: List[Tuple[str, str]],
                  global_join_graph,
-                 global_aoa_l_predicates: list[tuple[str, str], tuple[str, str]],
+                 global_aoa_l_predicates: List[Tuple[str, str]],
                  global_min_instance_dict: dict,
 
                  get_dmin_val: Callable[[str, str], any],
-                 get_datatype: Callable[[tuple[str, str]], str]):
+                 get_datatype: Callable[[Tuple[str, str]], str]):
 
         self.core_relations = core_relations
         self.global_all_attribs = global_all_attribs
@@ -119,7 +119,7 @@ class PackageForGenPipeline:
             else:
                 filter_attrib_dict[(entry[0], entry[1])] = entry[3]
 
-    def make_dmin_dict_from_aoa_le(self) -> tuple[dict, dict]:
+    def make_dmin_dict_from_aoa_le(self) -> Tuple[dict, dict]:
         LB_dict, UB_dict = {}, {}
         for entry in self.global_aoa_le_predicates:
             l_attrib, r_attrib = entry[0], entry[1]
@@ -170,7 +170,7 @@ class PackageForGenPipeline:
                     to_add.add((key[0], key[1], 'range', bounds[0], bounds[1]))
         self.global_filter_predicates.extend(list(to_add))
 
-    def make_dmin_dict_from_aoa_l(self, LB_dict: dict, UB_dict: dict) -> tuple[dict, dict]:
+    def make_dmin_dict_from_aoa_l(self, LB_dict: dict, UB_dict: dict) -> Tuple[dict, dict]:
         for entry in self.global_aoa_l_predicates:
             datatype = self.get_datatype(entry[0])
             delta, _ = get_constants_for(datatype)

@@ -21,7 +21,10 @@ class UnionPipeLine(ExtractionPipeLine):
         self.update_state(UNION + RUNNING)
         p, pstr, union_profile = union.doJob(query)
         self.update_state(UNION + DONE)
-        self.info[UNION] = p
+        l = []
+        for ele in p:
+            l.append(list(ele))
+        self.info[UNION] = l
         self.update_time_profile(union, union_profile)
         self.all_relations = union.all_relations
         key_lists = union.key_lists

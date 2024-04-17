@@ -66,8 +66,11 @@ class ExtractionPipeLine(GenericPipeLine):
         time_profile.update_for_cs2(cs2.local_elapsed_time, cs2.app_calls)
         self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
         if not check or not cs2.done:
-            self.info[SAMPLING] = None
+            self.info[SAMPLING] = SAMPLING + "FAILED"
             self.logger.info("Sampling failed!")
+        if not self.connectionHelper.config.use_cs2:
+            self.info[SAMPLING] = SAMPLING + "DISABLED"
+            self.logger.info("Sampling is disabled!")
 
         self.update_state(DB_MINIMIZATION + START)
         vm = ViewMinimizer(self.connectionHelper, core_relations, cs2.sizes, cs2.passed)
