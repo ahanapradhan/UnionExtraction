@@ -46,9 +46,6 @@ class FromClause(AppExtractorBase):
                 self.logger.error("Error Occurred in table extraction. Error: " + str(error))
             finally:
                 self.connectionHelper.rollback_transaction()
-                # self.connectionHelper.execute_sql(
-                #    [self.connectionHelper.queries.drop_table(tabname),
-                #     self.connectionHelper.queries.alter_table_rename_to("temp", tabname)], self.logger)
 
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
@@ -66,8 +63,6 @@ class FromClause(AppExtractorBase):
                     self.logger.error("Error Occurred in table extraction. Error: " + str(error))
             finally:
                 self.connectionHelper.rollback_transaction()
-                # self.connectionHelper.execute_sql(
-                #    [self.connectionHelper.queries.alter_table_rename_to("temp", tabname)], self.logger)
 
     def extract_params_from_args(self, args):
         if len(args) == 1:

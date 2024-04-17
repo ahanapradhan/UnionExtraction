@@ -4,9 +4,10 @@ import mysite.unmasque.src.util.utils
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.aoa import AlgebraicPredicate
+from ..core.db_restorer import DbRestorer
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, AOA, PROJECTION, \
-    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESTORE_DB
 from mysite.unmasque.src.core.aggregation import Aggregation
 from mysite.unmasque.src.core.cs2 import Cs2
 from mysite.unmasque.src.core.filter import get_constants_for
@@ -42,32 +43,15 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some problem while extracting from clause. Aborting!")
             self.info[FROM_CLAUSE] = None
             return None, self.time_profile
-
-        self.all_relations = fc.all_relations
-        self.global_pk_dict = fc.init.global_pk_dict
-
         self.info[FROM_CLAUSE] = fc.core_relations
+
+        self.all_sizes = fc.init.all_sizes
+        self.global_pk_dict = fc.init.global_pk_dict
 
         eq, t = self.after_from_clause_extract(query, fc.core_relations, fc.get_key_lists())
         self.connectionHelper.closeConnection()
         self.time_profile.update(t)
         return eq
-
-    def nullify_predicates(self, preds, get_datatype):
-        for pred in preds:
-            if not len(pred):
-                return False
-            tab, attrib, op, lb, ub = pred[0], pred[1], pred[2], pred[3], pred[4]
-            datatype = get_datatype((tab, attrib))
-            val_lb, val_ub = get_format(datatype, lb), get_format(datatype, ub)
-            if op.lower() in ['equal', '=']:
-                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} = {val_lb};"
-            elif op.lower() == 'like':
-                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} LIKE {val_lb};"
-            else:
-                mutatation_query = f"UPDATE {tab} SET {attrib} = NULL WHERE {attrib} >= {val_lb} and {attrib} <= {val_ub};"
-            self.connectionHelper.execute_sql([mutatation_query], self.logger)
-        return True
 
     def nullify_predicates1(self, tabname, preds, get_datatype):
         always = "true"
@@ -97,32 +81,43 @@ class ExtractionPipeLine(GenericPipeLine):
         return where_condition
 
     def mutation_pipeline(self, core_relations, key_lists, query, time_profile, aoa=None):
+        self.update_state(RESTORE_DB + START)
+        dbRestorer = DbRestorer(self.connectionHelper, core_relations)
+        dbRestorer.set_all_sizes(self.all_sizes)
+        self.update_state(RESTORE_DB + RUNNING)
+        check = dbRestorer.doJob()
+        self.update_state(RESTORE_DB + DONE)
+        time_profile.update_for_db_restore(dbRestorer.local_elapsed_time, dbRestorer.app_calls)
+        if not check or not dbRestorer.done:
+            self.info[RESTORE_DB] = None
+            self.logger.info("DB restore failed!")
+            return None, time_profile
+        self.info[RESTORE_DB] = {'size': dbRestorer.last_restored_size}
 
         """
         Correlated Sampling
         """
         self.update_state(SAMPLING + START)
-        cs2 = Cs2(self.connectionHelper, self.all_relations, core_relations, key_lists)
+        cs2 = Cs2(self.connectionHelper, dbRestorer.all_relations, core_relations, key_lists)
         self.update_state(SAMPLING + RUNNING)
         check = cs2.doJob(query)
         self.update_state(SAMPLING + DONE)
         time_profile.update_for_cs2(cs2.local_elapsed_time, cs2.app_calls)
-        self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
         if not check or not cs2.done:
             self.info[SAMPLING] = None
             self.logger.info("Sampling failed!")
+        self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
 
         """
         View based Database Minimization
         """
         self.update_state(DB_MINIMIZATION + START)
         vm = ViewMinimizer(self.connectionHelper, core_relations, cs2.sizes, cs2.passed)
-        vm.set_all_relations(self.all_relations)
+        vm.set_all_relations(dbRestorer.all_relations)
         self.update_state(DB_MINIMIZATION + RUNNING)
         check = vm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
-        self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
         if not check:
             self.logger.error("Cannot do database minimization. ")
             self.info[DB_MINIMIZATION] = None
@@ -131,6 +126,7 @@ class ExtractionPipeLine(GenericPipeLine):
             self.info[DB_MINIMIZATION] = None
             self.logger.error("Some problem while view minimization. Aborting extraction!")
             return aoa, time_profile
+        self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
 
         '''
         AOA Extraction
@@ -297,7 +293,7 @@ class ExtractionPipeLine(GenericPipeLine):
                         or_predicates.append(tuple())
                         continue
 
-                    self.restore_alternate_db(aoa, core_relations, in_candidates)
+                    self.restore_alternate_db(core_relations, in_candidates)
                     aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
                     if self.info[DB_MINIMIZATION] is None or \
                             self.info[AOA] is None or not aoa.filter_predicates:
@@ -319,7 +315,7 @@ class ExtractionPipeLine(GenericPipeLine):
         all_ors = list(zip(*all_preds))
         return aoa, time_profile, all_ors
 
-    def restore_alternate_db(self, aoa, core_relations, in_candidates):
+    def restore_alternate_db(self, core_relations, in_candidates):
         row_counts = []
         for tab in core_relations:
             backup_tab = self.connectionHelper.queries.get_backup(tab)

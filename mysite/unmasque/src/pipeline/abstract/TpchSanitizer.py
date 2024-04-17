@@ -1,3 +1,5 @@
+import copy
+
 from ...util.Log import Log
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 
@@ -5,12 +7,13 @@ from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 class TpchSanitizer:
 
     def __init__(self, connectionHelper: AbstractConnectionHelper):
+        self.all_sizes = {}
         self.all_relations = []
         self.connectionHelper = connectionHelper
         self.logger = Log("TpchSanitizer", connectionHelper.config.log_level)
 
     def set_all_relations(self, relations: list[str]):
-        self.all_relations.extend(relations)
+        self.all_relations.extend(copy.copy(relations))
 
     def take_backup(self):
         tables = self.all_relations  # self.connectionHelper.get_all_tables_for_restore()
@@ -49,7 +52,7 @@ class TpchSanitizer:
         self.restore_one_table(table)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table("temp"),
                                            self.connectionHelper.queries.drop_view("r_e"),
-                                           self.connectionHelper.queries.drop_table("r_h")], self.logger)
+                                           self.connectionHelper.queries.drop_table("r_h")])
 
     def get_drop_fn(self, table):
         return self.connectionHelper.queries.drop_table_cascade \
@@ -68,3 +71,9 @@ class TpchSanitizer:
             drop_object = derived_objects[n]
             drop_command = drop_fns[n]
             self.connectionHelper.execute_sql([drop_command(drop_object)])
+
+    def get_all_sizes(self):
+        for tab in self.all_relations:
+            row_count = self.connectionHelper.execute_sql_fetchone_0(
+                self.connectionHelper.queries.get_row_count(tab))
+            self.all_sizes[tab] = row_count

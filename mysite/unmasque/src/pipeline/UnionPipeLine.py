@@ -9,6 +9,7 @@ class UnionPipeLine(ExtractionPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper)
+        self.all_relations = None
         self.name = "Union PipeLine"
         self.pipeLineError = False
 

@@ -34,11 +34,6 @@ class GenericPipeLine:
     _instance = None
     state = WAITING
 
-    # def __new__(cls, *args, **kwargs):
-    #     if cls._instance is None:
-    #         cls._instance = super(GenericPipeLine, cls).__new__(cls)
-    #     return cls._instance
-
     def __init__(self, connectionHelper, name):
         self.update_state(WAITING)
         self.info = {}
@@ -48,7 +43,7 @@ class GenericPipeLine:
         self.token = None
         self.logger = Log(name, connectionHelper.config.log_level)
         self.correct = False
-        self.all_relations = []
+        self.all_sizes = {}
         self.error = None
 
     def process(self, query: str):
@@ -84,7 +79,7 @@ class GenericPipeLine:
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams()
         rc = ResultComparator(self.connectionHelper, True)
-        rc.set_all_relations(self.all_relations)
+        rc.set_all_relations(list(self.all_sizes.keys()))
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
         self.info[RESULT_COMPARE] = matched

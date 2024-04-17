@@ -44,6 +44,7 @@ class Initiator(Base):
         self.do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
         self.take_backup()
+        self.get_all_sizes()
         return True
 
     def do_refinement(self):
