@@ -1,23 +1,23 @@
 import copy
 
+import mysite.unmasque.src.util.utils
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.aoa import AlgebraicPredicate
 from ..core.elapsed_time import create_zero_time_profile
-from ..util.aoa_utils import get_delta
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, AOA, PROJECTION, \
     GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
-from ...refactored.aggregation import Aggregation
-from ...refactored.cs2 import Cs2
-from ...refactored.filter import get_constants_for
-from ...refactored.from_clause import FromClause
-from ...refactored.groupby_clause import GroupBy
-from ...refactored.limit import Limit
-from ...refactored.nep import NEP
-from ...refactored.orderby_clause import OrderBy
-from ...refactored.projection import Projection
-from ...refactored.util.utils import get_format, get_val_plus_delta
-from ...refactored.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.core.aggregation import Aggregation
+from mysite.unmasque.src.core.cs2 import Cs2
+from mysite.unmasque.src.core.filter import get_constants_for
+from mysite.unmasque.src.core.from_clause import FromClause
+from mysite.unmasque.src.core.groupby_clause import GroupBy
+from mysite.unmasque.src.core.limit import Limit
+from mysite.unmasque.src.core.nep import NEP
+from mysite.unmasque.src.core.orderby_clause import OrderBy
+from mysite.unmasque.src.core.projection import Projection
+from ..util.utils import get_val_plus_delta, get_format
+from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
 
 
 class ExtractionPipeLine(GenericPipeLine):
@@ -323,7 +323,7 @@ class ExtractionPipeLine(GenericPipeLine):
         row_counts = []
         for tab in core_relations:
             backup_tab = self.connectionHelper.queries.get_backup(tab)
-            where_condition = self.nullify_predicates1(tab, in_candidates, aoa.get_datatype)
+            where_condition = self.nullify_predicates1(tab, in_candidates, mysite.unmasque.src.util.utils.get_datatype)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
                                                self.connectionHelper.queries.create_table_as_select_star_from_where(
                                                    tab, backup_tab, where_condition)])

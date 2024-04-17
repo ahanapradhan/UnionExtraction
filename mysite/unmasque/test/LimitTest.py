@@ -1,7 +1,7 @@
 import datetime
 import unittest
 
-from ..refactored.limit import Limit
+from mysite.unmasque.src.core.limit import Limit
 from ..src.core.aoa import AlgebraicPredicate
 from ..test.util import tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase

@@ -3,8 +3,8 @@ import datetime
 import sys
 import unittest
 
-from mysite.unmasque.refactored.executable import Executable
-from mysite.unmasque.refactored.util.utils import get_unused_dummy_val, get_format, get_char
+from mysite.unmasque.src.core.executable import Executable
+from mysite.unmasque.src.util.utils import get_unused_dummy_val, get_format, get_char
 from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
 from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from mysite.unmasque.src.util import constants
@@ -12,7 +12,7 @@ from mysite.unmasque.src.util.constants import IDENTICAL_EXPR
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 sys.path.append("../../../")
-from mysite.unmasque.refactored.aggregation import Aggregation
+from mysite.unmasque.src.core.aggregation import Aggregation
 from mysite.unmasque.test.util import tpchSettings, queries
 
 

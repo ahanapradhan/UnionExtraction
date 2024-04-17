@@ -4,9 +4,9 @@ import psycopg2
 import psycopg2.extras
 from psycopg2 import OperationalError
 
-from .constants import OK, REL_ERROR
+from .constants import OK
 from ..core.abstract.abstractConnection import AbstractConnectionHelper
-from ...refactored.util.postgres_queries import PostgresQueries
+from mysite.unmasque.src.util.postgres_queries import PostgresQueries
 
 
 class PostgresConnectionHelper(AbstractConnectionHelper):

@@ -3,7 +3,7 @@ import unittest
 import pytest
 
 from mysite.unmasque.test.util import tpchSettings
-from ..refactored.result_comparator import ResultComparator
+from mysite.unmasque.src.core.result_comparator import ResultComparator
 from ..test.util import queries
 from ..test.util.BaseTestCase import BaseTestCase
 

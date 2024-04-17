@@ -4,9 +4,9 @@ import unittest
 
 import pytest
 
-from ..refactored.cs2 import Cs2
-from ..refactored.projection import Projection
-from ..refactored.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.core.cs2 import Cs2
+from mysite.unmasque.src.core.projection import Projection
+from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
 from ..src.core.aoa import AlgebraicPredicate
 from ..test.util import tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase

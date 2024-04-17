@@ -2,7 +2,7 @@ import sys
 import unittest
 
 sys.path.append("../../../")
-from mysite.unmasque.refactored.initialization import Initiator
+from mysite.unmasque.src.core.initialization import Initiator
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 

@@ -1,11 +1,11 @@
 import unittest
 
-from ..refactored.limit import Limit
-from ..refactored.orderby_clause import OrderBy
+from mysite.unmasque.src.core.limit import Limit
+from mysite.unmasque.src.core.orderby_clause import OrderBy
 from ..src.core.QueryStringGenerator import QueryStringGenerator
-from ..refactored.aggregation import Aggregation
-from ..refactored.groupby_clause import GroupBy
-from ..refactored.projection import Projection
+from mysite.unmasque.src.core.aggregation import Aggregation
+from mysite.unmasque.src.core.groupby_clause import GroupBy
+from mysite.unmasque.src.core.projection import Projection
 from ..src.core.aoa import AlgebraicPredicate
 from ..src.util.Oracle_connectionHelper import OracleConnectionHelper
 from ..src.util.configParser import Config

@@ -4,7 +4,7 @@ import unittest
 
 sys.path.append("../../../")
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-from mysite.unmasque.refactored.projection import Projection
+from mysite.unmasque.src.core.projection import Projection
 
 
 class MyTestCase(BaseTestCase):

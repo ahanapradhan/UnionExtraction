@@ -1,6 +1,6 @@
 import unittest
 
-from ..refactored.orderby_clause import check_sort_order
+from mysite.unmasque.src.core.orderby_clause import check_sort_order
 from mysite.unmasque.src.util.configParser import Config
 from ..src.util import utils
 from ..src.util.PostgresConnectionHelper import PostgresConnectionHelper

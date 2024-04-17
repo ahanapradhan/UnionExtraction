@@ -4,10 +4,9 @@ from decimal import Decimal
 from typing import Union
 
 from .abstract.abstractConnection import AbstractConnectionHelper
-from ...refactored.abstract.MutationPipeLineBase import MutationPipeLineBase
-from ...refactored.filter import Filter, get_constants_for
-from ...refactored.util.utils import get_min_and_max_val, get_format, get_val_plus_delta, isQ_result_empty, \
-    get_mid_val, add_two
+from mysite.unmasque.src.core.abstract.MutationPipeLineBase import MutationPipeLineBase
+from mysite.unmasque.src.core.filter import Filter, get_constants_for
+from ..util.utils import isQ_result_empty, get_val_plus_delta, get_min_and_max_val, get_format, add_two, get_mid_val
 from .QueryStringGenerator import handle_range_preds
 from .dataclass.generation_pipeline_package import PackageForGenPipeline
 from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \

@@ -4,7 +4,7 @@ import pytest
 
 from mysite.unmasque.test.src.validator import validate_gb, validate_ob, same_hidden_ob, count_ob, Ob_suffix, \
     pretty_print
-from results.tpch_kapil_report import Q1, Q2, Q3, Q21
+from mysite.unmasque.test.results.tpch_kapil_report import Q1, Q2, Q3, Q21
 
 
 class MyTestCase(unittest.TestCase):

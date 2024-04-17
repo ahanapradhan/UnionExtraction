@@ -1,8 +1,8 @@
 import unittest
 
-from ..refactored.equi_join import EquiJoin
-from ..refactored.filter import Filter
-from ..refactored.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.core.equi_join import EquiJoin
+from mysite.unmasque.src.core.filter import Filter
+from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
 from ..test.util import queries, tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase
 

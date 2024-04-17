@@ -4,13 +4,13 @@ from datetime import timedelta, date
 
 import pytest
 
-from ...refactored.executable import Executable
-from ...refactored.util.utils import isQ_result_empty
+from mysite.unmasque.src.core.executable import Executable
+from mysite.unmasque.src.util.utils import isQ_result_empty
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.src.Optimizer_config import set_optimizer_params
 from ...test.util import tpchSettings, queries
 from ...test.util.BaseTestCase import BaseTestCase
-from ...test.util.queries import Q3, Q6
+from ...test.util.queries import Q3
 
 
 def generate_random_dates():

@@ -1,7 +1,7 @@
 import unittest
 
-from mysite.unmasque.refactored.from_clause import FromClause
-from mysite.unmasque.refactored.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.core.from_clause import FromClause
+from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
 from mysite.unmasque.src.core.aoa import AlgebraicPredicate
 from mysite.unmasque.test.util import tpchSettings
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine

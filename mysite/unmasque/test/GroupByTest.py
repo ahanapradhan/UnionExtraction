@@ -3,7 +3,7 @@ import unittest
 import sys
 
 sys.path.append("../../../")
-from mysite.unmasque.refactored.groupby_clause import GroupBy
+from mysite.unmasque.src.core.groupby_clause import GroupBy
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 

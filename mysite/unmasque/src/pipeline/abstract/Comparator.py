@@ -1,4 +1,4 @@
-from ....refactored.abstract.AppExtractorBase import AppExtractorBase
+from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
 
 
 class Comparator(AppExtractorBase):

@@ -3,9 +3,9 @@ import unittest
 
 import pytest
 
-from mysite.unmasque.refactored.aggregation import Aggregation
-from mysite.unmasque.refactored.groupby_clause import GroupBy
-from mysite.unmasque.refactored.projection import Projection
+from mysite.unmasque.src.core.aggregation import Aggregation
+from mysite.unmasque.src.core.groupby_clause import GroupBy
+from mysite.unmasque.src.core.projection import Projection
 from mysite.unmasque.src.util.constants import IDENTICAL_EXPR, SUM, AVG, MIN, MAX, COUNT
 from mysite.unmasque.test.util import queries, tpchSettings
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase

@@ -5,13 +5,13 @@ import unittest
 
 import pytest
 
-from mysite.unmasque.refactored.util.utils import get_unused_dummy_val, get_format, get_char
+from mysite.unmasque.src.util.utils import get_unused_dummy_val, get_format, get_char
 from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from mysite.unmasque.src.util import constants
 
 sys.path.append("../../../")
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-from mysite.unmasque.refactored.projection import Projection
+from mysite.unmasque.src.core.projection import Projection
 from mysite.unmasque.test.util import tpchSettings, queries
 
 

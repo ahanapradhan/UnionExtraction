@@ -3,7 +3,7 @@ import unittest
 
 import pytest as pytest
 
-from ..refactored.nep import NEP
+from mysite.unmasque.src.core.nep import NEP
 from ..src.core.QueryStringGenerator import QueryStringGenerator
 from ..src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ..src.util.constants import max_numeric_val
