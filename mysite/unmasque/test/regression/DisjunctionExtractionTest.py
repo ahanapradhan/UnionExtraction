@@ -23,6 +23,13 @@ class DisjunctionTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_one_table_duplicate_value_columns(self):
+        query = "select max(l_extendedprice) from lineitem where l_linenumber IN (1, 4);"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
     def test_sumang_thesis_Q2_1(self):
         query = "select c_mktsegment,MAX(c_acctbal) from customer where c_nationkey IN (1, 2, 5, 10) group by " \
                 "c_mktsegment;"
@@ -64,7 +71,7 @@ class DisjunctionTestCase(BaseTestCase):
     def test_sumang_thesis_Q6(self):
         query = "select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
                 "s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) and (s_acctbal > 2000 or " \
-                "ps_supplycost < 500) group by n_name ORDER BY n_name LIMIT 10;"
+                "s_acctbal < 700) group by n_name ORDER BY n_name LIMIT 10;"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
