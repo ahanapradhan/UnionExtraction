@@ -91,7 +91,8 @@ class DisjunctionTestCase(BaseTestCase):
         check = minimizer.doJob(query)
         self.assertTrue(check)
 
-        wc = AlgebraicPredicate(self.conn, fc.core_relations, minimizer.global_min_instance_dict)
+        wc = AlgebraicPredicate(self.conn, fc.core_relations, pending_predicates, filter_extractor,
+                                minimizer.global_min_instance_dict)
         wc.equi_join_enabled = False
 
         filters = wc.doJob(query)

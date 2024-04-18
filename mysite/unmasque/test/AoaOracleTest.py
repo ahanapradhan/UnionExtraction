@@ -213,7 +213,7 @@ class MyTestCase(unittest.TestCase):
 
     def run_pipeline(self, global_min_instance_dict, query, relations):
         print(global_min_instance_dict)
-        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, relations, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)

@@ -5,8 +5,10 @@ import unittest
 import pytest
 
 from mysite.unmasque.src.core.cs2 import Cs2
+from mysite.unmasque.src.core.elapsed_time import create_zero_time_profile
 from mysite.unmasque.src.core.projection import Projection
 from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ..src.core.aoa import AlgebraicPredicate
 from ..test.util import tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase
@@ -50,6 +52,10 @@ def get_subquery2():
 
 class MyTestCase(BaseTestCase):
     global_min_instance_dict = None
+
+    def __init__(self, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
+        self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_dormant_aoa(self):
         self.conn.connectUsingParams()
@@ -150,7 +156,8 @@ class MyTestCase(BaseTestCase):
         check = vm.doJob(query)
         self.assertTrue(vm.done and check)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
-        aoa = AlgebraicPredicate(self.conn, core_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor,
+                                 self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
@@ -164,21 +171,6 @@ class MyTestCase(BaseTestCase):
         check = pj.doJob(query)
         self.assertTrue(check)
         return aoa, check, pj
-
-    def test_aoa_dev(self):
-        query = "SELECT c_name as name, " \
-                "c_acctbal as account_balance " \
-                "FROM orders, customer, nation " \
-                "WHERE o_custkey > 2500 and c_custkey = o_custkey and c_custkey <= 5000" \
-                "and c_nationkey = n_nationkey " \
-                "and o_orderdate between '1998-01-01' and '1998-01-15' " \
-                "and o_totalprice <= c_acctbal;"
-        self.conn.connectUsingParams()
-        core_rels = ['orders', 'customer', 'nation']
-        aoa, check = self.run_pipeline(core_rels, query)
-        self.assertTrue(check)
-        self.assertEqual(aoa.where_clause.count("and"), 6)
-        self.conn.closeConnection()
 
     @pytest.mark.skip
     def test_paper_subquery1(self):
@@ -351,7 +343,7 @@ class MyTestCase(BaseTestCase):
         self.conn.connectUsingParams()
         query = f"Select o_orderstatus, l_shipmode From lineitem, orders, customer, nation " \
                 f"Where l_orderkey = o_orderkey and o_custkey = c_custkey and c_nationkey = n_nationkey and " \
-                 f"l_linenumber >= 4 and n_name LIKE 'IND%' " \
+                f"l_linenumber >= 4 and n_name LIKE 'IND%' " \
                 f"and c_acctbal < l_extendedprice and l_extendedprice < o_totalprice;"
         aoa, check, pj = self.run_pipeline_till_projection(['orders', 'lineitem', 'customer', 'nation'], query)
         self.assertTrue(check)

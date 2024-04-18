@@ -8,8 +8,8 @@ from ..core.db_restorer import DbRestorer
 from ..core.elapsed_time import create_zero_time_profile
 from ..core.equi_join import U2EquiJoin
 from ..core.filter import Filter
-from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, AOA, PROJECTION, \
-    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESTORE_DB, FILTER, EQUI_JOIN
+from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, INEQUALITY, PROJECTION, \
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESTORE_DB, FILTER, EQUALITY
 from mysite.unmasque.src.core.aggregation import Aggregation
 from mysite.unmasque.src.core.cs2 import Cs2
 from ..util.aoa_utils import get_constants_for
@@ -93,7 +93,7 @@ class ExtractionPipeLine(GenericPipeLine):
         if not check or not dbRestorer.done:
             self.info[RESTORE_DB] = None
             self.logger.info("DB restore failed!")
-            return None, time_profile
+            return aoa, time_profile
         self.info[RESTORE_DB] = {'size': dbRestorer.last_restored_size}
 
         """
@@ -148,43 +148,44 @@ class ExtractionPipeLine(GenericPipeLine):
         '''
         Equality Relations (Equi-join + Constant Equality filters) Extraction
         '''
-        self.update_state(EQUI_JOIN + START)
+        self.update_state(EQUALITY + START)
         ej = U2EquiJoin(self.connectionHelper, core_relations, fl.filter_predicates, fl, self.global_min_instance_dict)
-        self.update_state(EQUI_JOIN + RUNNING)
+        self.update_state(EQUALITY + RUNNING)
         check = ej.doJob(query)
-        self.update_state(EQUI_JOIN + DONE)
+        self.update_state(EQUALITY + DONE)
         time_profile.update_for_where_clause(ej.local_elapsed_time, ej.app_calls)
         if not ej.done:
-            self.info[EQUI_JOIN] = None
-            self.logger.error("Some problem in Equi Join extraction!")
+            self.info[EQUALITY] = None
+            self.logger.error("Some problem in Equality predicate extraction!")
             return aoa, time_profile
         if not check:
-            self.info[EQUI_JOIN] = None
-            self.logger.info("No Equi-Join found")
+            self.info[EQUALITY] = None
+            self.logger.info("No Equality predicate found")
         combined_eq_predicates = ej.algebraic_eq_predicates + ej.arithmetic_eq_predicates
-        self.info[EQUI_JOIN] = combined_eq_predicates
+        self.info[EQUALITY] = combined_eq_predicates
 
         '''
         AOA Extraction
         '''
-        self.update_state(AOA + START)
-        if aoa is None:
-            aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
-        else:
-            aoa.set_global_min_instance_dict(self.global_min_instance_dict)
-            aoa.reset()
-        self.update_state(AOA + RUNNING)
+        self.update_state(INEQUALITY + START)
+        aoa = AlgebraicPredicate(self.connectionHelper, core_relations,
+                                 ej.pending_predicates,
+                                 ej.arithmetic_eq_predicates,
+                                 ej.algebraic_eq_predicates,
+                                 fl, self.global_min_instance_dict)
+        aoa.arithmetic_eq_predicates = ej.arithmetic_eq_predicates
+        self.update_state(INEQUALITY + RUNNING)
         check = aoa.doJob(query)
-        self.update_state(AOA + DONE)
+        self.update_state(INEQUALITY + DONE)
         time_profile.update_for_where_clause(aoa.local_elapsed_time, aoa.app_calls)
-        self.info[AOA] = aoa.where_clause
-
+        self.info[INEQUALITY] = aoa.where_clause
         if not check:
-            self.info[AOA] = None
-            self.logger.info("Cannot find Algebraic Predicates.")
+            self.info[INEQUALITY] = None
+            self.logger.info("Cannot find inequality Predicates.")
         if not aoa.done:
-            self.info[AOA] = None
-            self.logger.error("Some error while Where Clause extraction. Aborting extraction!")
+            self.info[INEQUALITY] = None
+            self.logger.error("Some error while Inequality Predicates extraction. Aborting extraction!")
+            return None, time_profile
         return aoa, time_profile
 
     def after_from_clause_extract(self, query, core_relations, key_lists):
@@ -331,7 +332,7 @@ class ExtractionPipeLine(GenericPipeLine):
                     self.restore_alternate_db(core_relations, in_candidates)
                     aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
                     if self.info[DB_MINIMIZATION] is None or \
-                            self.info[AOA] is None or not aoa.filter_predicates:
+                            self.info[INEQUALITY] is None or not aoa.filter_predicates:
                         or_predicates.append(tuple())
                     else:
                         or_predicates.append(aoa.filter_predicates[i])

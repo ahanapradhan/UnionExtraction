@@ -111,7 +111,7 @@ class MyTestCase(BaseTestCase):
                           'NONE                     ', 'AIR       ',
                           're. unusual frets after the sl')]}
 
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -179,7 +179,7 @@ class MyTestCase(BaseTestCase):
                           'riously final instructions. pinto beans cajole. idly even packages haggle doggedly '
                           'furiously regular ')]}
 
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -235,7 +235,7 @@ class MyTestCase(BaseTestCase):
                 f"and o_orderdate between '1998-01-01' and '1998-01-15' " \
                 f"and o_totalprice <= c_acctbal;"
 
-        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, relations, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -296,7 +296,7 @@ class MyTestCase(BaseTestCase):
                 "and o_orderdate >= '1993-07-01' and o_orderdate < '1993-10-01'" \
                 " and l_commitdate <= l_receiptdate Group By o_orderpriority Order By o_orderpriority;"
 
-        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, relations, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -364,7 +364,7 @@ class MyTestCase(BaseTestCase):
                 f"and o_orderdate between '1998-01-01' and '1998-01-15' " \
                 f"and o_totalprice <= c_acctbal;"
 
-        aoa = AlgebraicPredicate(self.conn, relations, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, relations, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -463,7 +463,8 @@ class MyTestCase(BaseTestCase):
 
         query, from_rels = get_subquery1()
         self.assertTrue(self.conn.conn is not None)
-        aoa = AlgebraicPredicate(self.conn, from_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, from_rels, pending_predicates, filter_extractor,
+                                 self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -519,7 +520,8 @@ class MyTestCase(BaseTestCase):
         from_rels = list(self.global_min_instance_dict.keys())
         print("from_rels: ", from_rels)
         self.assertTrue(self.conn.conn is not None)
-        aoa = AlgebraicPredicate(self.conn, from_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, from_rels, pending_predicates, filter_extractor,
+                                 self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -584,7 +586,8 @@ class MyTestCase(BaseTestCase):
 
         query, from_rels = get_subquery2()
         self.assertTrue(self.conn.conn is not None)
-        aoa = AlgebraicPredicate(self.conn, from_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, from_rels, pending_predicates, filter_extractor,
+                                 self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -635,7 +638,7 @@ class MyTestCase(BaseTestCase):
                            datetime.date(1995, 7, 25), datetime.date(1995, 7, 26),
                            datetime.date(1995, 7, 27), 'NONE                     ', 'TRUCK     ',
                            'ecial packages haggle furious')]}
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -696,7 +699,7 @@ class MyTestCase(BaseTestCase):
                                                        'NONE                     ', 'TRUCK     ',
                                                        'ecial packages haggle furious')]}
 
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
 
         res = aoa.app.doJob(query)
@@ -754,7 +757,7 @@ class MyTestCase(BaseTestCase):
                                                        'NONE                     ', 'TRUCK     ',
                                                        'ecial packages haggle furious')]}
 
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -822,7 +825,7 @@ class MyTestCase(BaseTestCase):
             'partsupp': [('ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment'),
                          (24707, 4708, 2, 788.97, 'ounts. blithely express platelets according to the ')]}
 
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -907,7 +910,7 @@ class MyTestCase(BaseTestCase):
                 "and p_container = 'LG CAN' " \
                 "Order By o_clerk LIMIT 10;"
 
-        aoa = AlgebraicPredicate(self.conn, core_rels, global_min_instant_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor, global_min_instant_dict)
         aoa.mock = True
         res = aoa.app.doJob(query)
         self.assertFalse(isQ_result_empty(res))

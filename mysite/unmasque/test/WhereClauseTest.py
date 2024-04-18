@@ -207,10 +207,13 @@ class MyTestCase(BaseTestCase):
         filter_pred = ('part', 'p_size', '>=', 4, max_int_val)
         self.assertTrue(filter_pred in filters)
         cfilters = copy.deepcopy(filters)
-        other_pred = cfilters.remove(filter_pred)
-        pred = other_pred[0]
+        cfilters.remove(filter_pred)
+        to_remove = [f for f in cfilters if f[2] == '=']
+        cfilters = list(set(cfilters) - set(to_remove))
+        print(cfilters)
+        pred = cfilters[0]
         self.assertEqual(pred[0], 'part')
-        self.assertEqual(pred[1], 'p_reailprice')
+        self.assertEqual(pred[1], 'p_retailprice')
         self.assertEqual(pred[2], 'range')
         self.assertTrue(pred[3] > 800)
         self.assertTrue(pred[4] < 1000)
@@ -220,7 +223,7 @@ class MyTestCase(BaseTestCase):
         print(equi)
         self.assertEqual(len(equi), 1)
         self.assertFalse(len(ej.arithmetic_eq_predicates))
-        self.assertEqual(len(equi.pending_predicates), 2)
+        self.assertEqual(len(ej.pending_predicates), 2)
 
         self.conn.closeConnection()
 

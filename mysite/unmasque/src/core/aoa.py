@@ -3,10 +3,9 @@ from datetime import date
 from decimal import Decimal
 from typing import Union
 
-from mysite.unmasque.src.core.filter import Filter
 from .QueryStringGenerator import handle_range_preds
 from .abstract.abstractConnection import AbstractConnectionHelper
-from .abstract.un2_where_clause import UN2WhereClause
+from .abstract.filter_holder import FilterHolder
 from .dataclass.generation_pipeline_package import PackageForGenPipeline
 from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \
     get_delta, \
@@ -29,39 +28,29 @@ def check_redundancy(fl_list, a_ineq):
     return False
 
 
-class AlgebraicPredicate(UN2WhereClause):
-    def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list[str],
-                 global_min_instance_dict: dict):
-        super().__init__(connectionHelper, core_relations, global_min_instance_dict, "AlgebraicPredicate")
-        self.filter_extractor = Filter(self.connectionHelper, core_relations, global_min_instance_dict)
-        self.pipeline_delivery = None
-        self.aoa_predicates = []
-        self.arithmetic_eq_predicates = []
-        self.algebraic_eq_predicates = []
+class AlgebraicPredicate(FilterHolder):
+    def __init__(self, connectionHelper: AbstractConnectionHelper,
+                 core_relations: list[str],
+                 pending_predicates, arithmetic_eq_predicates, algebraic_eq_predicates,
+                 filter_extractor, global_min_instance_dict: dict):
+        super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor,
+                         "AlgebraicPredicate")
+        self.pending_predicates = pending_predicates
+        self.arithmetic_eq_predicates = arithmetic_eq_predicates
+        self.algebraic_eq_predicates = algebraic_eq_predicates
         self.arithmetic_ineq_predicates = []
+        self.aoa_predicates = []
         self.aoa_less_thans = []
-        self.where_clause = ""
         self.join_graph = []
         self.filter_predicates = []
-        self.aoa_enabled = False
-        self.equi_join_enabled = True
-        self.filter_in_predicates = []
 
-    def reset(self):
-        self.pipeline_delivery = None
-        self.aoa_predicates = []
-        self.arithmetic_eq_predicates = []
-        self.algebraic_eq_predicates = []
-        self.arithmetic_ineq_predicates = []
-        self.aoa_less_thans = []
-        self.where_clause = ""
-        self.join_graph = []
-        self.filter_predicates = []
-        self.constants_dict = {}
-        self.aoa_enabled = False
-        self.equi_join_enabled = True
-        self.init_done = True
         self.filter_in_predicates = []
+        self.pipeline_delivery = None
+        self.where_clause = ""
+
+        self.prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
+        self.extract_filter_on_attrib_set = self.filter_extractor.extract_filter_on_attrib_set
+        self.handle_filter_for_subrange = self.filter_extractor.handle_filter_for_subrange
 
     def set_global_min_instance_dict(self, min_db):
         self.global_min_instance_dict_bkp = copy.deepcopy(min_db)
@@ -70,18 +59,12 @@ class AlgebraicPredicate(UN2WhereClause):
 
     def doActualJob(self, args):
         query = super().doActualJob(args)
-        check = self.filter_extractor.doJob(query)
-        if check and self.equi_join_enabled:
-            self.restore_d_min_from_dict()
-            self.extract_aoa(query)
-        # self.post_process_for_generation_pipeline(query)
-        return True
-
-    def extract_aoa(self, query):
-        self.filter_extractor.logger.debug("Filters: ", self.filter_extractor.filter_predicates)
-        self.extract_aoa_core(ineqaoa_preds, query)
+        self.restore_d_min_from_dict()
+        self.logger.debug("Filters: ", self.pending_predicates)
+        self.extract_aoa_core(self.pending_predicates, query)
         self.cleanup_predicates()
         self.fill_in_internal_predicates()
+        return True
 
     def extract_aoa_core(self, ineqaoa_preds, query):
         edge_set_dict = self.algo4_create_edgeSet_E(ineqaoa_preds)
@@ -357,9 +340,8 @@ class AlgebraicPredicate(UN2WhereClause):
         for datatype in filtered_dict:
             edge_set = []
             ineq_group = filtered_dict[datatype]
-            if self.aoa_enabled:
-                self.create_dashed_edges(ineq_group, edge_set)
-                optimize_edge_set(edge_set)
+            self.create_dashed_edges(ineq_group, edge_set)
+            optimize_edge_set(edge_set)
             add_concrete_bounds_as_edge2(ineq_group, edge_set, datatype)
             edge_set_dict[datatype] = edge_set
         return edge_set_dict
@@ -368,8 +350,7 @@ class AlgebraicPredicate(UN2WhereClause):
         self.logger.debug("aoa post-process.")
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
         self.restore_d_min_from_dict()
-        if self.aoa_enabled:
-            self.do_permanent_mutation()
+        self.do_permanent_mutation()
         res = self.app.doJob(query)
         if isQ_result_empty(res):
             print("Mutation got wrong! %%%%%%")
@@ -504,7 +485,8 @@ class AlgebraicPredicate(UN2WhereClause):
                 tab, attrib = next(iter(uniq_tab_attribs))
                 self.filter_in_predicates.extend((tab, attrib, 'IN', values, values))
                 all_vals_str = ", ".join(values)
-                one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
+                one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(
+                    values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
             else:
                 pred_str, preds = "", []
                 for i in non_empty_indices:
@@ -532,8 +514,8 @@ class AlgebraicPredicate(UN2WhereClause):
                                                         get_max(self.constants_dict[datatype]),
                                                         tab_attrib, a_Bs, is_UB)
 
-        prep = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(joined_tab_attrib)
-        self.filter_extractor.handle_filter_for_subrange(prep, datatype, filter_attribs, max_val, min_val,
+        prep = self.prepare_attrib_list(joined_tab_attrib)
+        self.handle_filter_for_subrange(prep, datatype, filter_attribs, max_val, min_val,
                                                          query)
         val = get_val_bound_for_chain(get_min(self.constants_dict[datatype]),
                                       get_max(self.constants_dict[datatype]),
@@ -560,7 +542,7 @@ class AlgebraicPredicate(UN2WhereClause):
         for attrib in joined_attribs:
             one_attrib = (get_tab(attrib), get_attrib(attrib), attrib_max_length, d_plus_value)
             candidates.append(one_attrib)
-        self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, candidates, datatype)
+        self.extract_filter_on_attrib_set(filter_attribs, query, candidates, datatype)
         return filter_attribs
 
     def is_dmin_val_leq_LB(self, myself, other) -> bool:

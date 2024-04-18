@@ -14,9 +14,9 @@ class DbRestorer(AppExtractorBase):
         self.relations.sort()
 
     def extract_params_from_args(self, args=None):
-        if args is not None:
+        if args is not None and len(args):
             return args[0], args[1]
-        return args
+        return None, None
 
     def restore_one_table_where(self, table, where):
         self.drop_derived_relations(table)
