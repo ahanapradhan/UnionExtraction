@@ -7,6 +7,8 @@ from mysite.unmasque.src.util.utils import get_format, get_min_and_max_val
 
 class UN2WhereClause(MutationPipeLineBase):
     SUPPORTED_DATATYPES = ['int', 'date', 'numeric', 'number']
+    TEXT_EQUALITY_OP = 'equal'
+    MATH_EQUALITY_OP = '='
 
     def __init__(self, connectionHelper,
                  core_relations,

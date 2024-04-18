@@ -1,3 +1,4 @@
+import copy
 import unittest
 
 from mysite.unmasque.src.core.equi_join import U2EquiJoin
@@ -185,7 +186,8 @@ class MyTestCase(BaseTestCase):
         equi = ej.doJob(queries.Q18_test)
         print(equi)
         self.assertEqual(len(equi), 1)
-
+        self.assertFalse(len(ej.arithmetic_eq_predicates))
+        self.assertEqual(len(equi.pending_predicates), 1)
         self.conn.closeConnection()
 
     def test_join_graph_and_filter1(self):
@@ -201,19 +203,24 @@ class MyTestCase(BaseTestCase):
 
         filters = wc.doJob(queries.Q18_test1)
         print(filters)
-        self.assertEqual(len(filters), 2)
-        f = filters[0]
-        self.assertEqual(f[0], 'part')
-        self.assertEqual(f[1], 'p_size')
-        self.assertEqual(f[2], ">=")
-        self.assertEqual(f[3], 4)
+        self.assertEqual(len(filters), 4)
+        filter_pred = ('part', 'p_size', '>=', 4, max_int_val)
+        self.assertTrue(filter_pred in filters)
+        cfilters = copy.deepcopy(filters)
+        other_pred = cfilters.remove(filter_pred)
+        pred = other_pred[0]
+        self.assertEqual(pred[0], 'part')
+        self.assertEqual(pred[1], 'p_reailprice')
+        self.assertEqual(pred[2], 'range')
+        self.assertTrue(pred[3] > 800)
+        self.assertTrue(pred[4] < 1000)
 
-        f = filters[1]
-        self.assertEqual(f[0], 'part')
-        self.assertEqual(f[1], 'p_retailprice')
-        self.assertEqual(f[2], "range")
-        self.assertTrue(f[3] > 800)
-        self.assertTrue(f[4] < 1000)
+        ej = U2EquiJoin(self.conn, from_rels, wc.filter_predicates, wc, minimizer.global_min_instance_dict)
+        equi = ej.doJob(queries.Q18_test1)
+        print(equi)
+        self.assertEqual(len(equi), 1)
+        self.assertFalse(len(ej.arithmetic_eq_predicates))
+        self.assertEqual(len(equi.pending_predicates), 2)
 
         self.conn.closeConnection()
 

@@ -1,24 +1,25 @@
 from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
-from mysite.unmasque.src.core.abstract.un2_where_clause import UN2WhereClause
+from mysite.unmasque.src.core.abstract.filter_holder import FilterHolder
 from mysite.unmasque.src.core.filter import Filter
 from mysite.unmasque.src.util.aoa_utils import get_op, get_tab, get_attrib, merge_equivalent_paritions
 
 
-class U2EquiJoin(UN2WhereClause):
-    TEXT_EQUALITY_OP = 'equal'
-    MATH_EQUALITY_OP = '='
+class U2EquiJoin(FilterHolder):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper,
                  core_relations: list[str],
                  filter_predicates: list,
                  filter_extractor: Filter,
                  global_min_instance_dict: dict):
-        super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Equi Join")
+        super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor, "Equi Join")
+
+        # method from filter object
+        self.prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
+        self.extract_filter_on_attrib_set = self.filter_extractor.extract_filter_on_attrib_set
+
         self.algebraic_eq_predicates = []
         self.arithmetic_eq_predicates = []
         self.filter_predicates = filter_predicates
-        self.filter_extractor = filter_extractor  # to be passed from the extraction pipeline
-        self.get_datatype = self.filter_extractor.get_datatype
         self.pending_predicates = None
 
     def is_it_equality_op(self, op):
@@ -48,7 +49,6 @@ class U2EquiJoin(UN2WhereClause):
                     remaining_group = [eq for eq in equi_join_group if eq not in done]
                     check_again_dict[key] = remaining_group
             partition_eq_dict = check_again_dict
-        # self.logger.debug(self.algebraic_eq_predicates)
         for eq_join in self.algebraic_eq_predicates:
             for pred in eq_join:
                 if len(pred) == 5:
@@ -57,9 +57,9 @@ class U2EquiJoin(UN2WhereClause):
     def handle_unit_eq_group(self, equi_join_group, query) -> bool:
         filter_attribs = []
         datatype = self.get_datatype(equi_join_group[0])
-        prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
+        prepared_attrib_list = self.prepare_attrib_list(equi_join_group)
 
-        self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
+        self.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
                                                            datatype)
         self.logger.debug("join group check", equi_join_group, filter_attribs)
         if len(filter_attribs) > 0:
