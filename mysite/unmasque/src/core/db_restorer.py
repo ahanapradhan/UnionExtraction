@@ -13,10 +13,8 @@ class DbRestorer(AppExtractorBase):
         self.relations = list(self.all_sizes.keys())
         self.relations.sort()
 
-    def extract_params_from_args(self, args=None):
-        if args is not None and len(args):
-            return args[0], args[1]
-        return None, None
+    def extract_params_from_args(self, args):
+        return args[0]
 
     def restore_one_table_where(self, table, where):
         self.drop_derived_relations(table)
@@ -35,8 +33,8 @@ class DbRestorer(AppExtractorBase):
                                            self.connectionHelper.queries.drop_table("r_h")])
 
     def doActualJob(self, args=None):
-        tabs, wheres = self.extract_params_from_args(args)
-        if tabs is None:
+        tabs_wheres = self.extract_params_from_args(args)
+        if tabs_wheres is None:
             for tab in self.relations:
                 if tab not in self.last_restored_size.keys():
                     self.update_current_sizes(tab)
@@ -45,8 +43,12 @@ class DbRestorer(AppExtractorBase):
                     if not row_count:
                         return False
         else:
-            for i, tab in enumerate(tabs):
-                where = wheres[i]
+            self.logger.debug("All sizes:", self.all_sizes)
+            self.logger.debug("Current sizes:", self.last_restored_size)
+
+            self.logger.debug(tabs_wheres)
+            for i, entry in enumerate(tabs_wheres):
+                tab, where = entry[0], entry[1]
                 if tab not in self.last_restored_size.keys():
                     self.update_current_sizes(tab)
                 if where == 'true' and self.last_restored_size[tab] == self.all_sizes[tab]:
@@ -73,4 +75,5 @@ class DbRestorer(AppExtractorBase):
         row_count = self.connectionHelper.execute_sql_fetchone_0(
             self.connectionHelper.queries.get_row_count(tab))
         self.last_restored_size[tab] = row_count
+        self.logger.debug("Updating table size: ", self.last_restored_size[tab])
         return row_count

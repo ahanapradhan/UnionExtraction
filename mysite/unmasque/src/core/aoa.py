@@ -410,11 +410,6 @@ class AlgebraicPredicate(FilterHolder):
         self.global_min_instance_dict = copy.deepcopy(self.filter_extractor.global_min_instance_dict)
 
     def fill_in_internal_predicates(self):
-        for eq_join in self.algebraic_eq_predicates:
-            join_graph_edge = list(f"{item[1]}" for item in eq_join if len(item) == 2)
-            join_graph_edge.sort()
-            for i in range(0, len(join_graph_edge) - 1):
-                self.join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
         for a_eq in self.arithmetic_eq_predicates:
             self.filter_predicates.append(a_eq)
         to_remove = []

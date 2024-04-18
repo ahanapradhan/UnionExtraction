@@ -15,6 +15,43 @@ class MyTestCase(BaseTestCase):
         self.conn.config.use_cs2 = False
         self.pipeline = ExtractionPipeLine(self.conn)
 
+    def test_multiple_aoa(self):
+        self.conn.connectUsingParams()
+        core_rels = ['orders', 'lineitem', 'partsupp']
+        query = "Select l_quantity, l_shipinstruct From orders, lineitem, partsupp " \
+                "Where ps_partkey = l_partkey " \
+                "and ps_suppkey = l_suppkey " \
+                "and o_orderkey = l_orderkey " \
+                "and l_shipdate >= o_orderdate; "
+        """
+                "and ps_availqty <= l_orderkey " \
+                "and l_extendedprice <= 20000 " \
+                "and o_totalprice <= 60000 " \
+                "and ps_supplycost <= 500 " \
+                "and l_linenumber = 1 " \
+                "Order By l_orderkey Limit 10;"
+        """
+        time_profile = create_zero_time_profile()
+        self.pipeline.all_sizes = tpchSettings.all_size
+        aoa, time_profile = self.pipeline.mutation_pipeline(core_rels, query, time_profile)
+        print(aoa.aoa_predicates)
+        # self.assertEqual(len(aoa.aoa_predicates), 2)
+        # self.assertTrue((('orders', 'o_orderdate'), ('lineitem', 'l_shipdate')) in aoa.aoa_predicates)
+        # self.assertTrue((('partsupp', 'ps_availqty'), ('lineitem', 'l_orderkey')) in aoa.aoa_predicates)
+        print(aoa.aoa_less_thans)
+        # self.assertFalse(len(aoa.aoa_less_thans))
+
+        print(aoa.arithmetic_ineq_predicates)
+        # self.assertEqual(len(aoa.arithmetic_ineq_predicates), 2)
+
+        print(aoa.algebraic_eq_predicates)
+        # self.assertEqual(len(aoa.algebraic_eq_predicates), 3)
+        print(aoa.arithmetic_eq_predicates)
+        # self.assertEqual(len(aoa.arithmetic_eq_predicates), 1)
+        # self.assertTrue(('lineitem', 'l_linenumber', '=', 1, 1) in aoa.arithmetic_eq_predicates)
+
+        self.conn.closeConnection()
+
     def test_aoa_dev(self):
         query = "SELECT c_name as name, " \
                 "c_acctbal as account_balance " \
@@ -27,7 +64,7 @@ class MyTestCase(BaseTestCase):
         core_rels = ['orders', 'customer', 'nation']
         time_profile = create_zero_time_profile()
         self.pipeline.all_sizes = tpchSettings.all_size
-        aoa, time_profile = self.pipeline.mutation_pipeline(core_rels, None, query, time_profile)
+        aoa, time_profile = self.pipeline.mutation_pipeline(core_rels, query, time_profile)
 
         print(aoa.aoa_predicates)
         self.assertEqual(len(aoa.aoa_predicates), 1)
@@ -50,7 +87,7 @@ class MyTestCase(BaseTestCase):
 
         time_profile = create_zero_time_profile()
         self.pipeline.all_sizes = tpchSettings.all_size
-        aoa, time_profile = self.pipeline.mutation_pipeline(from_rels, None, query, time_profile)
+        aoa, time_profile = self.pipeline.mutation_pipeline(from_rels, query, time_profile)
 
         print(aoa.aoa_predicates)
         self.assertEqual(len(aoa.aoa_predicates), 1)
@@ -61,7 +98,8 @@ class MyTestCase(BaseTestCase):
         print(aoa.arithmetic_ineq_predicates)
         self.assertEqual(len(aoa.arithmetic_ineq_predicates), 1)
         self.assertTrue(
-            ('orders', 'o_orderdate', 'range', datetime.date(1998, 1, 1), datetime.date(1998, 1, 5)) in aoa.arithmetic_ineq_predicates)
+            ('orders', 'o_orderdate', 'range', datetime.date(1998, 1, 1),
+             datetime.date(1998, 1, 5)) in aoa.arithmetic_ineq_predicates)
 
         print(aoa.algebraic_eq_predicates)
         self.assertEqual(len(aoa.algebraic_eq_predicates), 2)

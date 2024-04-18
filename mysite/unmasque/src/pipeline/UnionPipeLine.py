@@ -38,7 +38,7 @@ class UnionPipeLine(ExtractionPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.nullify_relations(nullify)
-            eq, time_profile = self.after_from_clause_extract(query, core_relations, key_lists)
+            eq, time_profile = self.after_from_clause_extract(query, core_relations)
             self.revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
 

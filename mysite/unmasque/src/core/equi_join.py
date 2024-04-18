@@ -19,6 +19,7 @@ class U2EquiJoin(FilterHolder):
 
         self.algebraic_eq_predicates = []
         self.arithmetic_eq_predicates = []
+        self.join_graph = []
         self.filter_predicates = filter_predicates
         self.pending_predicates = None
 
@@ -34,7 +35,16 @@ class U2EquiJoin(FilterHolder):
         self.logger.debug(self.pending_predicates)
         self.logger.debug(self.algebraic_eq_predicates)
         self.logger.debug(self.arithmetic_eq_predicates)
-        return self.algebraic_eq_predicates
+        self.create_join_graph()
+        return self.join_graph
+
+    def create_join_graph(self):
+        for eq_join in self.algebraic_eq_predicates:
+            join_graph_edge = list(f"{item[1]}" for item in eq_join if len(item) == 2)
+            join_graph_edge.sort()
+            for i in range(0, len(join_graph_edge) - 1):
+                self.join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
+        self.logger.debug(self.join_graph)
 
     def algo3_find_eq_joinGraph(self, query: str, partition_eq_dict: dict, ineqaoa_preds: list) -> None:
         self.logger.debug(partition_eq_dict)

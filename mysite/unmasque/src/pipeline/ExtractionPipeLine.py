@@ -1,6 +1,7 @@
 import copy
 
 import mysite.unmasque.src.util.utils
+from .DisjunctionPipeLine import DisjunctionPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.aoa import AlgebraicPredicate
@@ -27,8 +28,13 @@ class ExtractionPipeLine(GenericPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Extraction PipeLine")
-        self.global_pk_dict = {}
+        self.aoa = None
+        self.equi_join = None
+        self.key_lists = None
+        self.filter_extractor = None
+        self.db_restorer = None
         self.global_min_instance_dict = None
+        self.mutation_earlyExit = False
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
@@ -48,59 +54,32 @@ class ExtractionPipeLine(GenericPipeLine):
         self.info[FROM_CLAUSE] = fc.core_relations
 
         self.all_sizes = fc.init.all_sizes
-        self.global_pk_dict = fc.init.global_pk_dict
+        self.key_lists = fc.get_key_lists()
 
-        eq, t = self.after_from_clause_extract(query, fc.core_relations, fc.get_key_lists())
+        eq, t = self.after_from_clause_extract(query, self.info[FROM_CLAUSE])
         self.connectionHelper.closeConnection()
         self.time_profile.update(t)
         return eq
 
-    def nullify_predicates1(self, tabname, preds, get_datatype):
-        always = "true"
-        where_condition = always
-        wheres = []
-        for pred in preds:
-            if not len(pred):
-                return where_condition
-            tab, attrib, op, lb, ub = pred[0], pred[1], pred[2], pred[3], pred[4]
-            if tab != tabname:
-                continue
-            datatype = get_datatype((tab, attrib))
-            val_lb, val_ub = get_format(datatype, lb), get_format(datatype, ub)
-
-            if op.lower() in ['equal', '=']:
-                where_condition = f"{attrib} != {val_lb}"
-            elif op.lower() == 'like':
-                where_condition = f"{attrib} NOT LIKE {val_lb}"
-            else:
-                delta, _ = get_constants_for(datatype)
-                val_lb_minus_one = get_format(datatype, get_val_plus_delta(datatype, lb, -1 * delta))
-                val_ub_plus_one = get_format(datatype, get_val_plus_delta(datatype, ub, 1 * delta))
-                where_condition = f"({attrib} < {val_lb_minus_one} or {attrib} > {val_ub_plus_one})"
-            wheres.append(where_condition)
-        where_condition = " and ".join(wheres) if len(wheres) else always
-        self.logger.debug(where_condition)
-        return where_condition
-
-    def mutation_pipeline(self, core_relations, key_lists, query, time_profile, aoa=None):
+    def mutation_pipeline(self, core_relations, query, time_profile, restore_details=None):
         self.update_state(RESTORE_DB + START)
-        dbRestorer = DbRestorer(self.connectionHelper, core_relations)
-        dbRestorer.set_all_sizes(self.all_sizes)
+        self.db_restorer = DbRestorer(self.connectionHelper, core_relations)
+        self.db_restorer.set_all_sizes(self.all_sizes)
         self.update_state(RESTORE_DB + RUNNING)
-        check = dbRestorer.doJob()
+        check = self.db_restorer.doJob(restore_details)
         self.update_state(RESTORE_DB + DONE)
-        time_profile.update_for_db_restore(dbRestorer.local_elapsed_time, dbRestorer.app_calls)
-        if not check or not dbRestorer.done:
+        time_profile.update_for_db_restore(self.db_restorer.local_elapsed_time, self.db_restorer.app_calls)
+        if not check or not self.db_restorer.done:
             self.info[RESTORE_DB] = None
             self.logger.info("DB restore failed!")
-            return aoa, time_profile
-        self.info[RESTORE_DB] = {'size': dbRestorer.last_restored_size}
+            return False, time_profile
+        self.info[RESTORE_DB] = {'size': self.db_restorer.last_restored_size}
 
         """
         Correlated Sampling
         """
         self.update_state(SAMPLING + START)
-        cs2 = Cs2(self.connectionHelper, dbRestorer.last_restored_size, core_relations, key_lists)
+        cs2 = Cs2(self.connectionHelper, self.db_restorer.last_restored_size, core_relations, self.key_lists)
         self.update_state(SAMPLING + RUNNING)
         check = cs2.doJob(query)
         self.update_state(SAMPLING + DONE)
@@ -123,7 +102,7 @@ class ExtractionPipeLine(GenericPipeLine):
         if not check or not vm.done:
             self.logger.error("Cannot do database minimization. ")
             self.info[DB_MINIMIZATION] = None
-            return aoa, time_profile
+            return False, time_profile
         self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
 
@@ -131,76 +110,86 @@ class ExtractionPipeLine(GenericPipeLine):
         Constant Filter Extraction
         '''
         self.update_state(FILTER + START)
-        fl = Filter(self.connectionHelper, core_relations, self.global_min_instance_dict)
+        self.filter_extractor = Filter(self.connectionHelper, core_relations, self.global_min_instance_dict)
         self.update_state(FILTER + RUNNING)
-        check = fl.doJob(query)
+        check = self.filter_extractor.doJob(query)
         self.update_state(FILTER + DONE)
-        time_profile.update_for_where_clause(fl.local_elapsed_time, fl.app_calls)
-        if not fl.done:
+        time_profile.update_for_where_clause(self.filter_extractor.local_elapsed_time, self.filter_extractor.app_calls)
+        if not self.filter_extractor.done:
             self.info[FILTER] = None
             self.logger.error("Some problem in filter extraction!")
-            return aoa, time_profile
+            return False, time_profile
         if not check:
             self.info[FILTER] = None
             self.logger.info("No filter found")
-        self.info[FILTER] = fl.filter_predicates
+        self.info[FILTER] = self.filter_extractor.filter_predicates
 
         '''
         Equality Relations (Equi-join + Constant Equality filters) Extraction
         '''
         self.update_state(EQUALITY + START)
-        ej = U2EquiJoin(self.connectionHelper, core_relations, fl.filter_predicates, fl, self.global_min_instance_dict)
         self.update_state(EQUALITY + RUNNING)
-        check = ej.doJob(query)
+        self.equi_join = U2EquiJoin(self.connectionHelper, core_relations, self.filter_extractor.filter_predicates,
+                                    self.filter_extractor, self.global_min_instance_dict)
+        check = self.equi_join.doJob(query)
         self.update_state(EQUALITY + DONE)
-        time_profile.update_for_where_clause(ej.local_elapsed_time, ej.app_calls)
-        if not ej.done:
+        time_profile.update_for_where_clause(self.equi_join.local_elapsed_time, self.equi_join.app_calls)
+        if not self.equi_join.done:
             self.info[EQUALITY] = None
             self.logger.error("Some problem in Equality predicate extraction!")
-            return aoa, time_profile
+            return False, time_profile
         if not check:
             self.info[EQUALITY] = None
             self.logger.info("No Equality predicate found")
-        combined_eq_predicates = ej.algebraic_eq_predicates + ej.arithmetic_eq_predicates
+        combined_eq_predicates = self.equi_join.algebraic_eq_predicates + self.equi_join.arithmetic_eq_predicates
         self.info[EQUALITY] = combined_eq_predicates
 
         '''
         AOA Extraction
         '''
         self.update_state(INEQUALITY + START)
-        aoa = AlgebraicPredicate(self.connectionHelper, core_relations,
-                                 ej.pending_predicates,
-                                 ej.arithmetic_eq_predicates,
-                                 ej.algebraic_eq_predicates,
-                                 fl, self.global_min_instance_dict)
-        aoa.arithmetic_eq_predicates = ej.arithmetic_eq_predicates
+        self.aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.equi_join.pending_predicates,
+                                      self.equi_join.arithmetic_eq_predicates,
+                                      self.equi_join.algebraic_eq_predicates, self.filter_extractor,
+                                      self.global_min_instance_dict)
+        self.aoa.enabled = False  # ej.pending_predicates are ineq preds as of now
         self.update_state(INEQUALITY + RUNNING)
-        check = aoa.doJob(query)
+        check = self.aoa.doJob(query)
         self.update_state(INEQUALITY + DONE)
-        time_profile.update_for_where_clause(aoa.local_elapsed_time, aoa.app_calls)
-        self.info[INEQUALITY] = aoa.where_clause
+        time_profile.update_for_where_clause(self.aoa.local_elapsed_time, self.aoa.app_calls)
+        self.info[INEQUALITY] = self.aoa.where_clause
         if not check:
             self.info[INEQUALITY] = None
             self.logger.info("Cannot find inequality Predicates.")
-        if not aoa.done:
+        if not self.aoa.done:
             self.info[INEQUALITY] = None
             self.logger.error("Some error while Inequality Predicates extraction. Aborting extraction!")
-            return None, time_profile
-        return aoa, time_profile
+            return False, time_profile
+        return True, time_profile
 
-    def after_from_clause_extract(self, query, core_relations, key_lists):
+    def after_from_clause_extract(self, query, core_relations):
 
         time_profile = create_zero_time_profile()
         q_generator = QueryStringGenerator(self.connectionHelper)
 
-        aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, None)
-        if self.info[DB_MINIMIZATION] is None:
-            return None, time_profile
-        if not aoa.done:
+        check, time_profile = self.mutation_pipeline(core_relations, query, time_profile)
+        if not check:
+            self.logger.error("Some problem in Regular mutation pipeline. Aborting extraction!")
             return None, time_profile
 
-        aoa, delivery, time_profile = self.extract_non_neg_where_clause(aoa, core_relations, key_lists, query,
-                                                                        time_profile)
+        or_extractor = DisjunctionPipeLine(self)
+        check, time_profile, ors = or_extractor.extract((core_relations, query, time_profile))
+        if not check:
+            self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
+            return None, time_profile
+
+        self.aoa.generate_where_clause(ors)
+        self.aoa.post_process_for_generation_pipeline(query)
+        self.aoa.pipeline_delivery.doJob()
+        return self.aoa.where_clause, time_profile
+
+        delivery = copy.copy(self.aoa.pipeline_delivery)
+
 
         '''
         Projection Extraction
@@ -239,7 +228,7 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while group by extraction. Aborting extraction!")
             return None, time_profile
 
-        for elt in aoa.filter_predicates:
+        for elt in self.aoa.filter_predicates:
             if elt[1] not in gb.group_by_attrib and elt[1] in pj.projected_attribs and (
                     elt[2] == '=' or elt[2] == 'equal'):
                 gb.group_by_attrib.append(elt[1])
@@ -294,7 +283,7 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-        eq = q_generator.generate_query_string(core_relations, pj, gb, agg, ob, lm, aoa)
+        eq = q_generator.generate_query_string(core_relations, pj, gb, agg, ob, lm, self.aoa)
 
         self.logger.debug("extracted query:\n", eq)
 
@@ -305,63 +294,6 @@ class ExtractionPipeLine(GenericPipeLine):
 
         self.update_state(DONE)
         return eq, time_profile
-
-    def extract_non_neg_where_clause(self, aoa, core_relations, key_lists, query, time_profile):
-        aoa, time_profile, ors = self.extract_disjunction(aoa, core_relations, key_lists, query, time_profile)
-        aoa.generate_where_clause(ors)
-        aoa.post_process_for_generation_pipeline(query)
-        aoa.pipeline_delivery.doJob()
-        delivery = copy.copy(aoa.pipeline_delivery)
-        return aoa, delivery, time_profile
-
-    def extract_disjunction(self, aoa, core_relations, key_lists, query, time_profile):  # for once
-        old_preds = copy.deepcopy(aoa.filter_predicates)
-        all_preds = [old_preds]
-        ids = list(range(len(old_preds)))
-        if self.connectionHelper.config.detect_or:
-            while True:
-                or_predicates = []
-                aoa.equi_join_enabled = False
-                for i in ids:
-                    in_candidates = [copy.deepcopy(em[i]) for em in all_preds]
-                    self.logger.debug("Checking OR predicate of ", in_candidates)
-                    if not len(in_candidates[-1]):
-                        or_predicates.append(tuple())
-                        continue
-
-                    self.restore_alternate_db(core_relations, in_candidates)
-                    aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, aoa)
-                    if self.info[DB_MINIMIZATION] is None or \
-                            self.info[INEQUALITY] is None or not aoa.filter_predicates:
-                        or_predicates.append(tuple())
-                    else:
-                        or_predicates.append(aoa.filter_predicates[i])
-                    self.logger.debug("new or predicates...", all_preds, or_predicates)
-                if all(element == tuple() for element in or_predicates):
-                    break
-                all_preds.append(or_predicates)
-
-            '''
-            gaining sanity back from nullified attributes
-            '''
-            for tab in core_relations:
-                aoa.app.sanitize_one_table(tab)
-            # self.logger.debug("All tables restored to get a valid Dmin so that generation pipeline works.")
-            aoa, time_profile = self.mutation_pipeline(core_relations, key_lists, query, time_profile, None)
-        all_ors = list(zip(*all_preds))
-        return aoa, time_profile, all_ors
-
-    def restore_alternate_db(self, core_relations, in_candidates):
-        row_counts = []
-        for tab in core_relations:
-            backup_tab = self.connectionHelper.queries.get_backup(tab)
-            where_condition = self.nullify_predicates1(tab, in_candidates, mysite.unmasque.src.util.utils.get_datatype)
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
-                                               self.connectionHelper.queries.create_table_as_select_star_from_where(
-                                                   tab, backup_tab, where_condition)])
-            row_count = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tab))
-            row_counts.append(row_count)
-            self.logger.debug(f"tab {tab} of {row_count} created.")
 
     def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
         if self.connectionHelper.config.detect_nep:

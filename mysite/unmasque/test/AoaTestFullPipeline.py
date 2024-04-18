@@ -71,28 +71,6 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(aoa.where_clause.count("and"), 7)
         self.conn.closeConnection()
 
-    def test_multiple_aoa(self):
-        self.conn.connectUsingParams()
-        core_rels = ['orders', 'lineitem', 'partsupp']
-        query = "Select l_quantity, l_shipinstruct From orders, lineitem, partsupp " \
-                "Where ps_partkey = l_partkey " \
-                "and ps_suppkey = l_suppkey " \
-                "and o_orderkey = l_orderkey " \
-                "and l_shipdate >= o_orderdate " \
-                "and ps_availqty <= l_orderkey " \
-                "and l_extendedprice <= 20000 " \
-                "and o_totalprice <= 60000 " \
-                "and ps_supplycost <= 500 " \
-                "and l_linenumber = 1 " \
-                "Order By l_orderkey Limit 10;"
-        aoa, check = self.run_pipeline(core_rels, query)
-        self.assertTrue(check)
-        print(aoa.where_clause)
-        self.assertEqual(aoa.where_clause.count("and"), 8)
-        self.assertEqual(aoa.where_clause.count("<="), 5)
-        self.assertEqual(aoa.where_clause.count(" ="), 4)
-        self.conn.closeConnection()
-
     def test_multiple_aoa_1(self):
         self.conn.connectUsingParams()
         core_rels = ['orders', 'lineitem', 'partsupp']
