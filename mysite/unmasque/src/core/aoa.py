@@ -3,20 +3,20 @@ from datetime import date
 from decimal import Decimal
 from typing import Union
 
-from .abstract.abstractConnection import AbstractConnectionHelper
-from mysite.unmasque.src.core.abstract.MutationPipeLineBase import MutationPipeLineBase
-from mysite.unmasque.src.core.filter import Filter, get_constants_for
-from ..util.utils import isQ_result_empty, get_val_plus_delta, get_min_and_max_val, get_format, add_two, get_mid_val
+from mysite.unmasque.src.core.filter import Filter
 from .QueryStringGenerator import handle_range_preds
+from .abstract.abstractConnection import AbstractConnectionHelper
+from .abstract.un2_where_clause import UN2WhereClause
 from .dataclass.generation_pipeline_package import PackageForGenPipeline
 from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \
     get_delta, \
-    merge_equivalent_paritions, get_all_two_combs, get_val_bound_for_chain, get_min_max_for_chain_bounds, \
+    get_all_two_combs, get_val_bound_for_chain, get_min_max_for_chain_bounds, \
     optimize_edge_set, create_adjacency_map_from_aoa_predicates, find_all_chains, \
-    add_concrete_bounds_as_edge2, get_op, remove_item_from_list, \
+    add_concrete_bounds_as_edge2, remove_item_from_list, \
     find_le_attribs_from_edge_set, find_ge_attribs_from_edge_set, add_item_to_list, remove_absorbed_Bs, \
     find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, do_numeric_drama, need_permanent_mutation, \
     find_concrete_bound_from_filter_bounds, is_equal, add_item_to_dict
+from ..util.utils import isQ_result_empty, get_val_plus_delta, get_format, add_two, get_mid_val
 
 
 def check_redundancy(fl_list, a_ineq):
@@ -29,15 +29,11 @@ def check_redundancy(fl_list, a_ineq):
     return False
 
 
-class AlgebraicPredicate(MutationPipeLineBase):
-    SUPPORTED_DATATYPES = ['int', 'date', 'numeric', 'number']
-
+class AlgebraicPredicate(UN2WhereClause):
     def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list[str],
                  global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "AlgebraicPredicate")
         self.filter_extractor = Filter(self.connectionHelper, core_relations, global_min_instance_dict)
-        self.get_datatype = self.filter_extractor.get_datatype  # method
-        self.global_min_instance_dict_bkp = copy.deepcopy(global_min_instance_dict)
         self.pipeline_delivery = None
         self.aoa_predicates = []
         self.arithmetic_eq_predicates = []
@@ -47,10 +43,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.where_clause = ""
         self.join_graph = []
         self.filter_predicates = []
-        self.constants_dict = {}
         self.aoa_enabled = False
         self.equi_join_enabled = True
-        self.init_done = False
         self.filter_in_predicates = []
 
     def reset(self):
@@ -75,12 +69,7 @@ class AlgebraicPredicate(MutationPipeLineBase):
         self.global_min_instance_dict = copy.deepcopy(min_db)
 
     def doActualJob(self, args):
-        query = self.extract_params_from_args(args)
-        if not self.init_done:
-            self.filter_extractor.mock = self.mock
-            self.filter_extractor.mutate_dmin_with_val = self.mutate_dmin_with_val
-            self.init_constants()
-            self.init_done = True
+        query = super().doActualJob(args)
         check = self.filter_extractor.doJob(query)
         if check and self.equi_join_enabled:
             self.restore_d_min_from_dict()
@@ -90,9 +79,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
 
     def extract_aoa(self, query):
         self.filter_extractor.logger.debug("Filters: ", self.filter_extractor.filter_predicates)
-        partition_eq_dict, ineqaoa_preds = self.algo2_preprocessing()
-        self.logger.debug(partition_eq_dict)
-        self.algo3_find_eq_joinGraph(query, partition_eq_dict, ineqaoa_preds)
         self.extract_aoa_core(ineqaoa_preds, query)
         self.cleanup_predicates()
         self.fill_in_internal_predicates()
@@ -378,12 +364,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
             edge_set_dict[datatype] = edge_set
         return edge_set_dict
 
-    def init_constants(self) -> None:
-        for datatype in self.SUPPORTED_DATATYPES:
-            i_min, i_max = get_min_and_max_val(datatype)
-            delta, _ = get_constants_for(datatype)
-            self.constants_dict[datatype] = (i_min, i_max, delta)
-
     def post_process_for_generation_pipeline(self, query) -> None:
         self.logger.debug("aoa post-process.")
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
@@ -568,27 +548,8 @@ class AlgebraicPredicate(MutationPipeLineBase):
             self.mutate_dmin_with_val(self.get_datatype((tab, attrib)), (tab, attrib), val)
         return val
 
-    def mutate_filter_global_min_instance_dict(self, tab: str, attrib: str, val) -> None:
-        g_min_dict = self.filter_extractor.global_min_instance_dict
-        data = g_min_dict[tab]
-        idx = data[0].index(attrib)
-        new_data = []
-        for i in range(0, len(data[1])):
-            if idx == i:
-                new_data.append(val)
-            else:
-                new_data.append(data[1][i])
-        data[1] = tuple(new_data)
-
     def revert_mutation_on_filter_global_min_instance_dict(self) -> None:
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
-
-    def restore_d_min_from_dict(self) -> None:
-        self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
-        if not len(self.filter_extractor.global_min_instance_dict):
-            return
-        for tab in self.core_relations:
-            self.filter_extractor.insert_into_dmin_dict_values(tab)
 
     def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str) -> list:
         filter_attribs = []
@@ -647,76 +608,6 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 self.arithmetic_ineq_predicates.extend(datatype_dict[key])
         return filtered_dict
 
-    def algo3_find_eq_joinGraph(self, query: str, partition_eq_dict: dict, ineqaoa_preds: list) -> None:
-        self.logger.debug(partition_eq_dict)
-        while partition_eq_dict:
-            check_again_dict = {}
-            for key in partition_eq_dict.keys():
-                equi_join_group = partition_eq_dict[key]
-                if len(equi_join_group) <= 3:
-                    self.handle_unit_eq_group(equi_join_group, query)
-                else:
-                    done = self.handle_higher_eq_groups(equi_join_group, query)
-                    remaining_group = [eq for eq in equi_join_group if eq not in done]
-                    check_again_dict[key] = remaining_group
-            partition_eq_dict = check_again_dict
-        # self.logger.debug(self.algebraic_eq_predicates)
-        for eq_join in self.algebraic_eq_predicates:
-            for pred in eq_join:
-                if len(pred) == 5:
-                    ineqaoa_preds.append(pred)
-
-    def handle_unit_eq_group(self, equi_join_group, query) -> bool:
-        filter_attribs = []
-        datatype = self.get_datatype(equi_join_group[0])
-        prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
-
-        self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
-                                                           datatype)
-        self.logger.debug("join group check", equi_join_group, filter_attribs)
-        if len(filter_attribs) > 0:
-            if get_op(filter_attribs[0]) in ['=', 'equal']:
-                return False
-            equi_join_group.extend(filter_attribs)
-        self.algebraic_eq_predicates.append(equi_join_group)
-        return True
-
-    def algo2_preprocessing(self) -> tuple[dict, list]:
-        eq_groups_dict = {}
-        ineq_filter_predicates = []
-        for pred in self.filter_extractor.filter_predicates:
-            if get_op(pred) in ['=', 'equal']:
-                dict_key = pred[3]
-                if dict_key in eq_groups_dict:
-                    eq_groups_dict[dict_key].append((pred[0], pred[1]))
-                else:
-                    eq_groups_dict[dict_key] = [(pred[0], pred[1])]
-            else:
-                ineq_filter_predicates.append(pred)
-
-        for key in eq_groups_dict.keys():
-            if len(eq_groups_dict[key]) == 1:
-                op = 'equal' if isinstance(key, str) else '='
-                self.arithmetic_eq_predicates.append((get_tab(eq_groups_dict[key][0]),
-                                                      get_attrib(eq_groups_dict[key][0]), op, key, key))
-        eqJoin_group_dict = {key: value for key, value in eq_groups_dict.items() if len(value) > 1}
-        return eqJoin_group_dict, ineq_filter_predicates
-
-    def handle_higher_eq_groups(self, equi_join_group, query):
-        seq = list(range(len(equi_join_group)))
-        t_all_paritions = merge_equivalent_paritions(seq)
-        done = None
-        for part in t_all_paritions:
-            check_part = min(part, key=len)
-            attrib_list = []
-            for i in check_part:
-                attrib_list.append(equi_join_group[i])
-            check = self.handle_unit_eq_group(attrib_list, query)
-            if check:
-                done = attrib_list
-                break
-        return done
-
     def mutate_attrib_with_Bound_val(self, tab_attrib: tuple[str, str], datatype: str, val: any,
                                      with_UB: bool, query: str) \
             -> tuple[Union[int, Decimal, date], Union[int, Decimal, date]]:
@@ -733,24 +624,3 @@ class AlgebraicPredicate(MutationPipeLineBase):
                 self.mutate_dmin_with_val(datatype, t_a, dmin_val)
                 val = dmin_val
         return val, dmin_val
-
-    def mutate_dmin_with_val(self, datatype, t_a, val):
-        if datatype == 'date':
-            self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(get_tab(t_a),
-                                                                                      get_attrib(
-                                                                                          t_a),
-                                                                                      get_format(
-                                                                                          datatype,
-                                                                                          val))], self.logger)
-        else:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.update_tab_attrib_with_value(get_tab(t_a),
-                                                                                                          get_attrib(
-                                                                                                              t_a),
-                                                                                                          get_format(
-                                                                                                              datatype,
-                                                                                                              val))],
-                                              self.logger)
-        self.mutate_filter_global_min_instance_dict(get_tab(t_a),
-                                                    get_attrib(t_a), val)
-        self.filter_extractor.global_d_plus_value[get_attrib(t_a)] = val

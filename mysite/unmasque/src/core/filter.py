@@ -1,10 +1,11 @@
 import copy
 import math
 
-from mysite.unmasque.src.core.abstract.MutationPipeLineBase import MutationPipeLineBase
+from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
+from mysite.unmasque.src.core.abstract.un2_where_clause import UN2WhereClause
+from mysite.unmasque.src.util.aoa_utils import get_constants_for
 from mysite.unmasque.src.util.utils import isQ_result_empty, is_int, get_val_plus_delta, get_min_and_max_val, \
     is_left_less_than_right_by_cutoff, get_format, get_mid_val, get_cast_value
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
 
 
 def parse_for_int(val):
@@ -28,7 +29,7 @@ def round_floor(num, places):
     return round(num - adder, places)
 
 
-class Filter(MutationPipeLineBase):
+class Filter(UN2WhereClause):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper,
                  core_relations: list[str],
@@ -44,8 +45,6 @@ class Filter(MutationPipeLineBase):
         self.global_attrib_dict = {}
 
         self.filter_predicates = None
-
-        self.mutate_dmin_with_val = None  # method to be passed by aoa
 
     def do_init(self):
         for tabname in self.core_relations:
@@ -75,28 +74,8 @@ class Filter(MutationPipeLineBase):
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
 
-    def insert_into_dmin_dict_values(self, tabname):
-        values = self.global_min_instance_dict[tabname]
-        attribs, vals = values[0], values[1]
-        attrib_list = ", ".join(attribs)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(tabname)])
-        self.connectionHelper.execute_sql_with_params(
-            self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tabname), [vals])
-
-    def get_datatype(self, tab_attrib: tuple[str, str]) -> str:
-        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
-            return 'int'
-        elif 'date' in self.global_attrib_types_dict[tab_attrib]:
-            return 'date'
-        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'varchar2']):
-            return 'str'
-        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
-            return 'numeric'
-        else:
-            raise ValueError
-
     def doActualJob(self, args):
-        query = self.extract_params_from_args(args)
+        query = super().doActualJob(args)
         self.do_init()
         self.filter_predicates = self.get_filter_predicates(query)
         self.logger.debug(self.filter_predicates)
@@ -288,14 +267,6 @@ class Filter(MutationPipeLineBase):
             val1_round_2 = round_ceil(val1, 2)
             self.append_filter_attrib(tabname, attrib, '>=', val1_round_2, val1_round_2, filterAttribs)
             # filterAttribs.append((tabname, attrib, '>=', float(round_ceil(val1, 2)), float(max_val_domain)))
-
-    def get_dmin_val_of_attrib_list(self, attrib_list: list) -> list:
-        val_list = []
-        for tab_attrib in attrib_list:
-            tabname, attrib = tab_attrib[0], tab_attrib[1]
-            val = self.get_dmin_val(attrib, tabname)
-            val_list.append(val)
-        return val_list
 
     def get_filter_value(self, query, datatype, min_val, max_val, operator, attrib_list):
         query_front_set = set()
@@ -499,13 +470,3 @@ class Filter(MutationPipeLineBase):
         return new_result
 
 
-def get_constants_for(datatype):
-    if datatype in ('int', 'date', 'number'):
-        while_cut_off = 0
-        delta = 1
-    elif datatype in ('float', 'numeric'):
-        while_cut_off = 0.00
-        delta = 0.01
-    else:
-        raise ValueError(f"Unsupported datatype: {datatype}")
-    return delta, while_cut_off

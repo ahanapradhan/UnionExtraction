@@ -22,16 +22,17 @@ class Cs2(AppExtractorBase):
     sample = {}
 
     def __init__(self, connectionHelper,
-                 all_relations,
+                 all_sizes,
                  core_relations,
                  global_key_lists):
         super().__init__(connectionHelper, "cs2")
         self.passed = False
-        self.all_relations = all_relations
         self.core_relations = core_relations
         self.global_key_lists = global_key_lists
-        self.sizes = {}
+        self.sizes = all_sizes
         self.enabled = self.connectionHelper.config.use_cs2
+        self.all_relations = list(self.sizes.keys())
+        self.all_relations.sort()
 
     def getSizes_cs(self):
         if not self.sizes:

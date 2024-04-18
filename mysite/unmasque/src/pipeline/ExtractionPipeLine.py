@@ -6,11 +6,13 @@ from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.aoa import AlgebraicPredicate
 from ..core.db_restorer import DbRestorer
 from ..core.elapsed_time import create_zero_time_profile
+from ..core.equi_join import U2EquiJoin
+from ..core.filter import Filter
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, AOA, PROJECTION, \
-    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESTORE_DB
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESTORE_DB, FILTER, EQUI_JOIN
 from mysite.unmasque.src.core.aggregation import Aggregation
 from mysite.unmasque.src.core.cs2 import Cs2
-from mysite.unmasque.src.core.filter import get_constants_for
+from ..util.aoa_utils import get_constants_for
 from mysite.unmasque.src.core.from_clause import FromClause
 from mysite.unmasque.src.core.groupby_clause import GroupBy
 from mysite.unmasque.src.core.limit import Limit
@@ -98,7 +100,7 @@ class ExtractionPipeLine(GenericPipeLine):
         Correlated Sampling
         """
         self.update_state(SAMPLING + START)
-        cs2 = Cs2(self.connectionHelper, dbRestorer.all_relations, core_relations, key_lists)
+        cs2 = Cs2(self.connectionHelper, dbRestorer.last_restored_size, core_relations, key_lists)
         self.update_state(SAMPLING + RUNNING)
         check = cs2.doJob(query)
         self.update_state(SAMPLING + DONE)
@@ -106,33 +108,66 @@ class ExtractionPipeLine(GenericPipeLine):
         if not check or not cs2.done:
             self.info[SAMPLING] = None
             self.logger.info("Sampling failed!")
-        self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
+        else:
+            self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
 
         """
         View based Database Minimization
         """
         self.update_state(DB_MINIMIZATION + START)
         vm = ViewMinimizer(self.connectionHelper, core_relations, cs2.sizes, cs2.passed)
-        vm.set_all_relations(dbRestorer.all_relations)
         self.update_state(DB_MINIMIZATION + RUNNING)
         check = vm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
-        if not check:
+        if not check or not vm.done:
             self.logger.error("Cannot do database minimization. ")
             self.info[DB_MINIMIZATION] = None
             return aoa, time_profile
-        if not vm.done:
-            self.info[DB_MINIMIZATION] = None
-            self.logger.error("Some problem while view minimization. Aborting extraction!")
-            return aoa, time_profile
         self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
+
+        '''
+        Constant Filter Extraction
+        '''
+        self.update_state(FILTER + START)
+        fl = Filter(self.connectionHelper, core_relations, self.global_min_instance_dict)
+        self.update_state(FILTER + RUNNING)
+        check = fl.doJob(query)
+        self.update_state(FILTER + DONE)
+        time_profile.update_for_where_clause(fl.local_elapsed_time, fl.app_calls)
+        if not fl.done:
+            self.info[FILTER] = None
+            self.logger.error("Some problem in filter extraction!")
+            return aoa, time_profile
+        if not check:
+            self.info[FILTER] = None
+            self.logger.info("No filter found")
+        self.info[FILTER] = fl.filter_predicates
+
+        '''
+        Equality Relations (Equi-join + Constant Equality filters) Extraction
+        '''
+        self.update_state(EQUI_JOIN + START)
+        ej = U2EquiJoin(self.connectionHelper, core_relations, fl.filter_predicates, fl, self.global_min_instance_dict)
+        self.update_state(EQUI_JOIN + RUNNING)
+        check = ej.doJob(query)
+        self.update_state(EQUI_JOIN + DONE)
+        time_profile.update_for_where_clause(ej.local_elapsed_time, ej.app_calls)
+        if not ej.done:
+            self.info[EQUI_JOIN] = None
+            self.logger.error("Some problem in Equi Join extraction!")
+            return aoa, time_profile
+        if not check:
+            self.info[EQUI_JOIN] = None
+            self.logger.info("No Equi-Join found")
+        combined_eq_predicates = ej.algebraic_eq_predicates + ej.arithmetic_eq_predicates
+        self.info[EQUI_JOIN] = combined_eq_predicates
 
         '''
         AOA Extraction
         '''
         self.update_state(AOA + START)
-        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
         if aoa is None:
             aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
         else:

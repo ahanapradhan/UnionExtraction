@@ -1,7 +1,7 @@
 import copy
 from typing import Callable
 
-from mysite.unmasque.src.core.filter import get_constants_for
+from ...util.aoa_utils import get_constants_for
 from ...util.utils import get_val_plus_delta, get_min_and_max_val
 
 

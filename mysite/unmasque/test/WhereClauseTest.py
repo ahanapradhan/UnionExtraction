@@ -1,8 +1,10 @@
 import unittest
 
-from mysite.unmasque.src.core.equi_join import EquiJoin
+from mysite.unmasque.src.core.equi_join import U2EquiJoin
+from mysite.unmasque.src.obsolete.equi_join import EquiJoin
 from mysite.unmasque.src.core.filter import Filter
 from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.util.constants import max_int_val
 from ..test.util import queries, tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase
 
@@ -174,13 +176,16 @@ class MyTestCase(BaseTestCase):
         wc = Filter(self.conn, from_rels, minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q18_test)
-        # print(filters)
-        self.assertEqual(len(filters), 1)
-        f = filters[0]
-        self.assertEqual(f[0], 'part')
-        self.assertEqual(f[1], 'p_size')
-        self.assertEqual(f[2], ">=")
-        self.assertEqual(f[3], 4)
+        print(filters)
+        self.assertEqual(len(filters), 3)
+        filter_pred = ('part', 'p_size', '>=', 4, max_int_val)
+        self.assertTrue(filter_pred in filters)
+
+        ej = U2EquiJoin(self.conn, from_rels, wc.filter_predicates, wc, minimizer.global_min_instance_dict)
+        equi = ej.doJob(queries.Q18_test)
+        print(equi)
+        self.assertEqual(len(equi), 1)
+
         self.conn.closeConnection()
 
     def test_join_graph_and_filter1(self):

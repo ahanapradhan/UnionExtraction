@@ -1,6 +1,6 @@
 import pandas as pd
 
-from mysite.unmasque.src.core.abstract.MinimizerBase import Minimizer
+from .abstract.MinimizerBase import Minimizer
 
 
 def extract_start_and_end_page(logger, rctid):
@@ -20,14 +20,10 @@ class ViewMinimizer(Minimizer):
     max_row_no = 1
 
     def __init__(self, connectionHelper,
-                 core_relations, core_sizes,
+                 core_relations, all_sizes,
                  sampling_status):
-        super().__init__(connectionHelper, core_relations, core_sizes, "View_Minimizer")
+        super().__init__(connectionHelper, core_relations, all_sizes, "View_Minimizer")
         self.cs2_passed = sampling_status
-
-        self.global_other_info_dict = {}
-        self.global_result_dict = {}
-        self.local_other_info_dict = {}
         self.global_min_instance_dict = {}
 
     def extract_params_from_args(self, args):
@@ -35,7 +31,6 @@ class ViewMinimizer(Minimizer):
 
     def doActualJob(self, args):
         query = self.extract_params_from_args(args)
-        # self.take_backup()
         return self.reduce_Database_Instance(query,
                                              True) if self.cs2_passed else self.reduce_Database_Instance(query, False)
 
@@ -62,15 +57,11 @@ class ViewMinimizer(Minimizer):
         return core_sizes
 
     def reduce_Database_Instance(self, query, cs_pass):
-
-        self.local_other_info_dict = {}
         core_sizes = self.getCoreSizes()
-        # print("core_sizes:", core_sizes)
 
         for tabname in self.core_relations:
             view_name = self.connectionHelper.queries.get_tabname_1(
                 tabname) if cs_pass else self.connectionHelper.queries.get_restore_name(tabname)
-            # print("view_name:", view_name)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, view_name)])
             rctid = self.connectionHelper.execute_sql_fetchone(
                 self.connectionHelper.queries.get_min_max_ctid(view_name))
@@ -86,9 +77,6 @@ class ViewMinimizer(Minimizer):
                 [self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_4(tabname)),
                  self.connectionHelper.queries.create_table_as_select_star_from(
                      self.connectionHelper.queries.get_tabname_4(tabname), tabname)])
-
-        # if not self.sanity_check(query):
-        #    return False
 
         self.populate_dict_info()
         return True

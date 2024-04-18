@@ -1,122 +1,106 @@
-import copy
-
-from mysite.unmasque.src.util.utils import get_all_combo_lists, get_datatype_from_typesList, get_dummy_val_for, \
-    get_val_plus_delta
-from mysite.unmasque.src.core.abstract.where_clause import WhereClause
-
-
-def get_two_different_vals(list_type):
-    datatype = get_datatype_from_typesList(list_type)
-    val1 = get_dummy_val_for(datatype)
-    val2 = get_val_plus_delta(datatype, val1, 1)
-    return val1, val2
+from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
+from mysite.unmasque.src.core.abstract.un2_where_clause import UN2WhereClause
+from mysite.unmasque.src.core.filter import Filter
+from mysite.unmasque.src.util.aoa_utils import get_op, get_tab, get_attrib, merge_equivalent_paritions
 
 
-def construct_two_lists(attrib_types_dict, curr_list, elt):
-    list1 = [curr_list[index] for index in elt]
-    list_type = attrib_types_dict[curr_list[elt[0]]] if elt else ''
-    list2 = list(set(curr_list) - set(list1))
-    return list1, list2, list_type
+class U2EquiJoin(UN2WhereClause):
+    TEXT_EQUALITY_OP = 'equal'
+    MATH_EQUALITY_OP = '='
 
+    def __init__(self, connectionHelper: AbstractConnectionHelper,
+                 core_relations: list[str],
+                 filter_predicates: list,
+                 filter_extractor: Filter,
+                 global_min_instance_dict: dict):
+        super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Equi Join")
+        self.algebraic_eq_predicates = []
+        self.arithmetic_eq_predicates = []
+        self.filter_predicates = filter_predicates
+        self.filter_extractor = filter_extractor  # to be passed from the extraction pipeline
+        self.get_datatype = self.filter_extractor.get_datatype
+        self.pending_predicates = None
 
-def remove_edge_from_join_graph_dicts(curr_list, list1, list2, global_key_lists):
-    for keys in global_key_lists:
-        if all(x in keys for x in curr_list):
-            global_key_lists.remove(keys)
-    global_key_lists.append(copy.deepcopy(list1))
-    global_key_lists.append(copy.deepcopy(list2))
-
-
-class EquiJoin(WhereClause):
-
-    def __init__(self, connectionHelper,
-                 global_key_lists,
-                 core_relations,
-                 global_min_instance_dict):
-        super().__init__(connectionHelper,
-                         global_key_lists,
-                         core_relations,
-                         global_min_instance_dict)
-        # join data
-        self.global_join_instance_dict = {}
-        self.global_component_dict = {}
-        self.global_join_graph = []
-        self.global_key_attributes = []
+    def is_it_equality_op(self, op):
+        return op in [self.TEXT_EQUALITY_OP, self.MATH_EQUALITY_OP]
 
     def doActualJob(self, args):
-        query = self.extract_params_from_args(args)
-        self.get_init_data()
-        self.get_join_graph(query)
-        return self.global_join_graph
+        query = super().doActualJob(args)
+        partition_eq_dict, ineqaoa_preds = self.algo2_preprocessing()
+        self.logger.debug(partition_eq_dict)
+        self.algo3_find_eq_joinGraph(query, partition_eq_dict, ineqaoa_preds)
+        self.pending_predicates = ineqaoa_preds  # pending predicates
+        self.logger.debug(self.pending_predicates)
+        self.logger.debug(self.algebraic_eq_predicates)
+        self.logger.debug(self.arithmetic_eq_predicates)
+        return self.algebraic_eq_predicates
 
-    def assign_values_to_lists(self, list1, list2, temp_copy, val1, val2):
-        self.assign_value_to_list(list1, temp_copy, val1)
-        self.assign_value_to_list(list2, temp_copy, val2)
+    def algo3_find_eq_joinGraph(self, query: str, partition_eq_dict: dict, ineqaoa_preds: list) -> None:
+        self.logger.debug(partition_eq_dict)
+        while partition_eq_dict:
+            check_again_dict = {}
+            for key in partition_eq_dict.keys():
+                equi_join_group = partition_eq_dict[key]
+                if len(equi_join_group) <= 3:
+                    self.handle_unit_eq_group(equi_join_group, query)
+                else:
+                    done = self.handle_higher_eq_groups(equi_join_group, query)
+                    remaining_group = [eq for eq in equi_join_group if eq not in done]
+                    check_again_dict[key] = remaining_group
+            partition_eq_dict = check_again_dict
+        # self.logger.debug(self.algebraic_eq_predicates)
+        for eq_join in self.algebraic_eq_predicates:
+            for pred in eq_join:
+                if len(pred) == 5:
+                    ineqaoa_preds.append(pred)
 
-    def assign_value_to_list(self, list1, temp_copy, val1):
-        for val in list1:
-            self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.update_tab_attrib_with_value(str(val[1]), str(val[0]), val1)])
-            index = temp_copy[val[0]][0].index(val[1])
-            mutated_list = copy.deepcopy(list(temp_copy[val[0]][1]))
-            mutated_list[index] = str(val1)
-            temp_copy[val[0]][1] = tuple(mutated_list)
+    def handle_unit_eq_group(self, equi_join_group, query) -> bool:
+        filter_attribs = []
+        datatype = self.get_datatype(equi_join_group[0])
+        prepared_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation(equi_join_group)
 
-    def construct_attribs_types_dict(self):
-        max_list_len = max(len(elt) for elt in self.global_key_lists)
-        combo_dict_of_lists = get_all_combo_lists(max_list_len)
-        attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
-        return attrib_types_dict, combo_dict_of_lists
+        self.filter_extractor.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
+                                                           datatype)
+        self.logger.debug("join group check", equi_join_group, filter_attribs)
+        if len(filter_attribs) > 0:
+            if self.is_it_equality_op(get_op(filter_attribs[0])):
+                return False
+            equi_join_group.extend(filter_attribs)
+        self.algebraic_eq_predicates.append(equi_join_group)
+        return True
 
-    def get_join_graph(self, query):
-        global_key_lists = copy.deepcopy(self.global_key_lists)
-        join_graph = []
-        attrib_types_dict, combo_dict_of_lists = self.construct_attribs_types_dict()
+    def handle_higher_eq_groups(self, equi_join_group, query):
+        seq = list(range(len(equi_join_group)))
+        t_all_paritions = merge_equivalent_paritions(seq)
+        done = None
+        for part in t_all_paritions:
+            check_part = min(part, key=len)
+            attrib_list = []
+            for i in check_part:
+                attrib_list.append(equi_join_group[i])
+            check = self.handle_unit_eq_group(attrib_list, query)
+            if check:
+                done = attrib_list
+                break
+        return done
 
-        # For each list, test its presence in join graph
-        # This will either add the list in join graph or break it
-        while global_key_lists:
-            curr_list = global_key_lists[0]
-            join_keys = [join_key for join_key in curr_list if join_key[0] in self.core_relations]
-            if len(join_keys) <= 1:
-                global_key_lists.remove(curr_list)
-                continue
-            self.logger.debug("... checking for: ", join_keys)
+    def algo2_preprocessing(self) -> tuple[dict, list]:
+        eq_groups_dict = {}
+        ineq_filter_predicates = []
+        for pred in self.filter_predicates:
+            if self.is_it_equality_op(get_op(pred)):
+                dict_key = pred[3]
+                if dict_key in eq_groups_dict:
+                    eq_groups_dict[dict_key].append((pred[0], pred[1]))
+                else:
+                    eq_groups_dict[dict_key] = [(pred[0], pred[1])]
+            else:
+                ineq_filter_predicates.append(pred)
 
-            # Try for all possible combinations
-            for elt in combo_dict_of_lists[len(join_keys)]:
-                list1, list2, list_type = construct_two_lists(attrib_types_dict, join_keys, elt)
-                val1, val2 = get_two_different_vals(list_type)
-                temp_copy = {tab: self.global_min_instance_dict[tab] for tab in self.core_relations}
-
-                # Assign two different values to two lists in database
-                self.assign_values_to_lists(list1, list2, temp_copy, val1, val2)
-
-                # CHECK THE RESULT
-                new_result = self.app.doJob(query)
-                if len(new_result) > 1:
-                    remove_edge_from_join_graph_dicts(join_keys, list1, list2, global_key_lists)
-                    break
-
-            for keys in global_key_lists:
-                if all(x in keys for x in join_keys):
-                    global_key_lists.remove(keys)
-                    join_graph.append(copy.deepcopy(join_keys))
-
-            for val in join_keys:
-                self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.insert_into_tab_select_star_fromtab(val[0],
-                                                                                       self.connectionHelper.queries.get_tabname_4(
-                                                                                           val[0]))])
-        self.refine_join_graph(join_graph)
-
-    def refine_join_graph(self, join_graph):
-        # refine join graph and get all key attributes
-        self.global_join_graph = []
-        self.global_key_attributes = []
-        for elt in join_graph:
-            temp = []
-            for val in elt:
-                temp.append(val[1])
-                self.global_key_attributes.append(val[1])
-            self.global_join_graph.append(copy.deepcopy(temp))
+        for key in eq_groups_dict.keys():
+            if len(eq_groups_dict[key]) == 1:
+                op = self.TEXT_EQUALITY_OP if isinstance(key, str) else self.MATH_EQUALITY_OP
+                self.arithmetic_eq_predicates.append((get_tab(eq_groups_dict[key][0]),
+                                                      get_attrib(eq_groups_dict[key][0]), op, key, key))
+        eqJoin_group_dict = {key: value for key, value in eq_groups_dict.items() if len(value) > 1}
+        return eqJoin_group_dict, ineq_filter_predicates

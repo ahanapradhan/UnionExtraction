@@ -69,7 +69,8 @@ class BaseTestCase(unittest.TestCase):
         self.sanitizer.doJob()
 
     def tearDown(self):
-        self.sanitizer.doJob()
+        # self.sanitizer.doJob()
+        super().tearDown()
 
 
 if __name__ == '__main__':

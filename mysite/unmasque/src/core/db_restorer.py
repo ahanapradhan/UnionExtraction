@@ -6,7 +6,6 @@ class DbRestorer(AppExtractorBase):
     def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list):
         super().__init__(connectionHelper, "Database Restorer")
         self.relations = core_relations
-        self.full_sizes = {}  # need to fill it once for the schema. Call the setter accordingly
         self.last_restored_size = {}
 
     def set_all_sizes(self, sizes):
@@ -41,7 +40,7 @@ class DbRestorer(AppExtractorBase):
             for tab in self.relations:
                 if tab not in self.last_restored_size.keys():
                     self.update_current_sizes(tab)
-                if self.last_restored_size[tab] != self.full_sizes[tab]:
+                if self.last_restored_size[tab] != self.all_sizes[tab]:
                     row_count = self.restore_table_and_confirm(tab)
                     if not row_count:
                         return False
@@ -50,7 +49,7 @@ class DbRestorer(AppExtractorBase):
                 where = wheres[i]
                 if tab not in self.last_restored_size.keys():
                     self.update_current_sizes(tab)
-                if where == 'true' and self.last_restored_size[tab] == self.full_sizes[tab]:
+                if where == 'true' and self.last_restored_size[tab] == self.all_sizes[tab]:
                     self.logger.info("No need to restore table")
                 else:
                     check = self.restore_table_and_confirm(tab, where)
