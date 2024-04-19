@@ -35,10 +35,10 @@ class AlgebraicPredicate(FilterHolder):
                  filter_extractor, global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor,
                          "AlgebraicPredicate")
-        self.pending_predicates = pending_predicates
+        self.ineaoa_enabled = False
         self.arithmetic_eq_predicates = arithmetic_eq_predicates
         self.algebraic_eq_predicates = algebraic_eq_predicates
-        self.arithmetic_ineq_predicates = []
+        self.arithmetic_ineq_predicates = pending_predicates
         self.aoa_predicates = []
         self.aoa_less_thans = []
         self.join_graph = []
@@ -60,9 +60,10 @@ class AlgebraicPredicate(FilterHolder):
     def doActualJob(self, args=None):
         query = super().doActualJob(args)
         self.restore_d_min_from_dict()
-        self.logger.debug("Filters: ", self.pending_predicates)
-        self.extract_aoa_core(query)
-        self.cleanup_predicates()
+        if self.ineaoa_enabled:
+            self.extract_aoa_core(query)
+            self.cleanup_predicates()
+        self.fill_in_internal_predicates()
         return True
 
     def extract_aoa_core(self, query):
@@ -346,9 +347,6 @@ class AlgebraicPredicate(FilterHolder):
         return edge_set_dict
 
     def post_process_for_generation_pipeline(self, query) -> None:
-        if not self.enabled:
-            self.arithmetic_ineq_predicates = self.pending_predicates
-        self.fill_in_internal_predicates()
         self.logger.debug("aoa post-process.")
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
         self.restore_d_min_from_dict()
@@ -578,9 +576,9 @@ class AlgebraicPredicate(FilterHolder):
             datatype = self.get_datatype((get_tab(a_eq), get_attrib(a_eq)))
             if datatype != 'str':
                 new_tup = (get_tab(a_eq), get_attrib(a_eq), 'range', get_LB(a_eq), get_UB(a_eq))
-                self.pending_predicates.append(new_tup)
+                self.arithmetic_ineq_predicates.append(new_tup)
 
-        for pred in self.pending_predicates:
+        for pred in self.arithmetic_ineq_predicates:
             tab_attrib = (pred[0], pred[1])
             datatype = self.get_datatype(tab_attrib)
             if datatype in datatype_dict.keys():
@@ -589,8 +587,9 @@ class AlgebraicPredicate(FilterHolder):
                 datatype_dict[datatype] = [pred]
         filtered_dict = {key: value for key, value in datatype_dict.items() if key != 'str' and len(value) > 1}
         for key in datatype_dict:
-            if len(datatype_dict[key]) == 1:
-                self.arithmetic_ineq_predicates.extend(datatype_dict[key])
+            if len(datatype_dict[key]) > 1:
+                for pred in datatype_dict[key]:
+                    self.arithmetic_ineq_predicates.remove(pred)
         return filtered_dict
 
     def mutate_attrib_with_Bound_val(self, tab_attrib: tuple[str, str], datatype: str, val: any,

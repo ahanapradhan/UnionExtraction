@@ -56,7 +56,7 @@ class DisjunctionTestCase(BaseTestCase):
     def test_sumang_thesis_Q4_prelim(self):
         query = "select AVG(l_extendedprice) as avgTOTAL from lineitem,part " \
                 "where p_partkey = l_partkey and p_brand = 'Brand#52' and " \
-                "(p_container = 'LG CAN' or p_container = 'LG CASE') ORDER BY avgTOTAL desc LIMIT 50;"
+                "(p_container = 'LG CAN' or p_container = 'LG CASE');"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)

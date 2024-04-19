@@ -118,7 +118,6 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
                                       self.equi_join.arithmetic_eq_predicates,
                                       self.equi_join.algebraic_eq_predicates, self.filter_extractor,
                                       self.global_min_instance_dict)
-        self.aoa.enabled = False  # ej.pending_predicates are ineq preds as of now
         self.update_state(INEQUALITY + RUNNING)
         check = self.aoa.doJob(query)
         self.update_state(INEQUALITY + DONE)
@@ -134,7 +133,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         return True, time_profile
 
     def get_predicates_in_action(self):
-        return self.filter_extractor.filter_predicates
+        return self.aoa.filter_predicates
 
     @abstractmethod
     def process(self, query: str):
