@@ -237,6 +237,7 @@ def get_format(datatype, val):
             or datatype == 'character varying' or datatype == 'str':
         return f"\'{str(val)}\'"
     elif datatype == 'float' or datatype == 'numeric':
+        val = float(val)
         return str(round(val, 12))
     return str(val)
 

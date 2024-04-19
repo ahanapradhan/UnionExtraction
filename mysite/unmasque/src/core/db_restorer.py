@@ -3,8 +3,8 @@ from .abstract.abstractConnection import AbstractConnectionHelper
 
 
 class DbRestorer(AppExtractorBase):
-    def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list):
-        super().__init__(connectionHelper, "Database Restorer")
+    def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list, name="Database Restorer"):
+        super().__init__(connectionHelper, name)
         self.relations = core_relations
         self.last_restored_size = {}
 

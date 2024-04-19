@@ -1,22 +1,139 @@
 import copy
 
+from mysite.unmasque.src.core.aoa import AlgebraicPredicate
+from mysite.unmasque.src.core.cs2 import Cs2
+from mysite.unmasque.src.core.db_restorer import DbRestorer
+from mysite.unmasque.src.core.equi_join import U2EquiJoin
+from mysite.unmasque.src.core.filter import Filter
+from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
 from mysite.unmasque.src.pipeline.abstract.generic_pipeline import GenericPipeLine
 from mysite.unmasque.src.util.aoa_utils import get_constants_for
-from mysite.unmasque.src.util.constants import FILTER
+from mysite.unmasque.src.util.constants import FILTER, INEQUALITY, DONE, RUNNING, START, EQUALITY, DB_MINIMIZATION, \
+    SAMPLING, RESTORE_DB
 from mysite.unmasque.src.util.utils import get_format, get_val_plus_delta
 
 
 class DisjunctionPipeLine(GenericPipeLine):
 
-    def __init__(self, extractionPipeLime):
-        super().__init__(extractionPipeLime.connectionHelper, "Disjunction PipeLine")
-        self.extractionPipeLime = extractionPipeLime
-        self.mutation_pipeline = extractionPipeLime.mutation_pipeline
-        self.in_candidates_host = self.extractionPipeLime.aoa
-        self.get_datatype = self.extractionPipeLime.filter_extractor.get_datatype
+    def __init__(self, connectionHelper, name):
+        super().__init__(connectionHelper, name)
+        self.aoa = None
+        self.equi_join = None
+        self.filter_extractor = None
+        self.db_restorer = None
+        self.global_min_instance_dict = None
+
+        self.key_lists = None
+
+    def mutation_pipeline(self, core_relations, query, time_profile, restore_details=None):
+        self.update_state(RESTORE_DB + START)
+        self.db_restorer = DbRestorer(self.connectionHelper, core_relations)
+        self.db_restorer.set_all_sizes(self.all_sizes)
+        self.update_state(RESTORE_DB + RUNNING)
+        check = self.db_restorer.doJob(restore_details)
+        self.update_state(RESTORE_DB + DONE)
+        time_profile.update_for_db_restore(self.db_restorer.local_elapsed_time, self.db_restorer.app_calls)
+        if not check or not self.db_restorer.done:
+            self.info[RESTORE_DB] = None
+            self.logger.info("DB restore failed!")
+            return False, time_profile
+        self.info[RESTORE_DB] = {'size': self.db_restorer.last_restored_size}
+
+        """
+        Correlated Sampling
+        """
+        self.update_state(SAMPLING + START)
+        cs2 = Cs2(self.connectionHelper, self.db_restorer.last_restored_size, core_relations, self.key_lists)
+        self.update_state(SAMPLING + RUNNING)
+        check = cs2.doJob(query)
+        self.update_state(SAMPLING + DONE)
+        time_profile.update_for_cs2(cs2.local_elapsed_time, cs2.app_calls)
+        if not check or not cs2.done:
+            self.info[SAMPLING] = None
+            self.logger.info("Sampling failed!")
+        else:
+            self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
+
+        """
+            View based Database Minimization
+            """
+        self.update_state(DB_MINIMIZATION + START)
+        vm = ViewMinimizer(self.connectionHelper, core_relations, cs2.sizes, cs2.passed)
+        self.update_state(DB_MINIMIZATION + RUNNING)
+        check = vm.doJob(query)
+        self.update_state(DB_MINIMIZATION + DONE)
+        time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
+        if not check or not vm.done:
+            self.logger.error("Cannot do database minimization. ")
+            self.info[DB_MINIMIZATION] = None
+            return False, time_profile
+        self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
+        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
+
+        '''
+        Constant Filter Extraction
+        '''
+        self.update_state(FILTER + START)
+        self.filter_extractor = Filter(self.connectionHelper, core_relations, self.global_min_instance_dict)
+        self.update_state(FILTER + RUNNING)
+        check = self.filter_extractor.doJob(query)
+        self.update_state(FILTER + DONE)
+        time_profile.update_for_where_clause(self.filter_extractor.local_elapsed_time,
+                                             self.filter_extractor.app_calls)
+        if not self.filter_extractor.done:
+            self.info[FILTER] = None
+            self.logger.error("Some problem in filter extraction!")
+            return False, time_profile
+        if not check:
+            self.info[FILTER] = None
+            self.logger.info("No filter found")
+        self.info[FILTER] = self.filter_extractor.filter_predicates
+
+        '''
+        Equality Relations (Equi-join + Constant Equality filters) Extraction
+        '''
+        self.update_state(EQUALITY + START)
+        self.update_state(EQUALITY + RUNNING)
+        self.equi_join = U2EquiJoin(self.connectionHelper, core_relations, self.filter_extractor.filter_predicates,
+                                    self.filter_extractor, self.global_min_instance_dict)
+        check = self.equi_join.doJob(query)
+        self.update_state(EQUALITY + DONE)
+        time_profile.update_for_where_clause(self.equi_join.local_elapsed_time, self.equi_join.app_calls)
+        if not self.equi_join.done:
+            self.info[EQUALITY] = None
+            self.logger.error("Some problem in Equality predicate extraction!")
+            return False, time_profile
+        if not check:
+            self.info[EQUALITY] = None
+            self.logger.info("No Equality predicate found")
+        combined_eq_predicates = self.equi_join.algebraic_eq_predicates + self.equi_join.arithmetic_eq_predicates
+        self.info[EQUALITY] = combined_eq_predicates
+
+        '''
+        AOA Extraction
+        '''
+        self.update_state(INEQUALITY + START)
+        self.aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.equi_join.pending_predicates,
+                                      self.equi_join.arithmetic_eq_predicates,
+                                      self.equi_join.algebraic_eq_predicates, self.filter_extractor,
+                                      self.global_min_instance_dict)
+        self.aoa.enabled = False  # ej.pending_predicates are ineq preds as of now
+        self.update_state(INEQUALITY + RUNNING)
+        check = self.aoa.doJob(query)
+        self.update_state(INEQUALITY + DONE)
+        time_profile.update_for_where_clause(self.aoa.local_elapsed_time, self.aoa.app_calls)
+        self.info[INEQUALITY] = self.aoa.where_clause
+        if not check:
+            self.info[INEQUALITY] = None
+            self.logger.info("Cannot find inequality Predicates.")
+        if not self.aoa.done:
+            self.info[INEQUALITY] = None
+            self.logger.error("Some error while Inequality Predicates extraction. Aborting extraction!")
+            return False, time_profile
+        return True, time_profile
 
     def get_predicates_in_action(self):
-        return self.in_candidates_host.arithmetic_eq_predicates
+        return self.aoa.arithmetic_eq_predicates
 
     def process(self, query: str):
         raise NotImplementedError("Reaching here is absurd!")
@@ -39,12 +156,12 @@ class DisjunctionPipeLine(GenericPipeLine):
                 return False, time_profile, None
             '''
             gaining sanity back from nullified attributes
-
-            for tab in core_relations:
-                aoa.app.sanitize_one_table(tab)
-            # self.logger.debug("All tables restored to get a valid Dmin so that generation pipeline works.")
-            aoa, time_profile = self.mutation_pipeline(core_relations, query, time_profile)
             '''
+            check, time_profile = self.mutation_pipeline(core_relations, query, time_profile)
+            if not check:
+                self.logger.error("Error while sanitizing after disjunction. Aborting!")
+                return False, time_profile, None
+
         all_ors = list(zip(*all_eq_predicates))
         return True, time_profile, all_ors
 
@@ -88,7 +205,7 @@ class DisjunctionPipeLine(GenericPipeLine):
             tab, attrib, op, lb, ub = pred[0], pred[1], pred[2], pred[3], pred[4]
             if tab != tabname:
                 continue
-            datatype = self.get_datatype((tab, attrib))
+            datatype = self.filter_extractor.get_datatype((tab, attrib))
             val_lb, val_ub = get_format(datatype, lb), get_format(datatype, ub)
 
             if op.lower() in ['equal', '=']:
@@ -105,12 +222,6 @@ class DisjunctionPipeLine(GenericPipeLine):
         self.logger.debug(where_condition)
         return where_condition
 
-    def extract(self, args):
-        core_relations, query, time_profile = args[0], args[1], args[2]
-        self.extractionPipeLime.mutation_earlyExit = True
-        check, time_profile, ors = self.extract_disjunction(core_relations, query, time_profile)
-        self.extractionPipeLime.mutation_earlyExit = False
-        return check, time_profile, ors
-
-
+    def extract(self, query):
+        raise NotImplementedError("Reaching here is absurd!")
 

@@ -16,17 +16,17 @@ class UnionPipeLine(ExtractionPipeLine):
     def extract(self, query):
         # opening and closing connection actions are vital.
         self.connectionHelper.connectUsingParams()
-
         self.update_state(UNION + START)
         union = Union(self.connectionHelper)
         self.update_state(UNION + RUNNING)
         p, pstr, union_profile = union.doJob(query)
         self.update_state(UNION + DONE)
-        self.info[UNION] = p
-        self.update_time_profile(union, union_profile)
-        self.all_relations = union.all_relations
-        key_lists = union.key_lists
         self.connectionHelper.closeConnection()
+
+        self.update_time_profile(union, union_profile)
+        self.core_relations = [item for subset in p for item in subset]
+        self.all_relations = union.all_relations
+        self.key_lists = union.key_lists
         u_eq = []
 
         for rels in p:

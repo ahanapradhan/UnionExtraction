@@ -10,8 +10,8 @@ from ..test.util.BaseTestCase import BaseTestCase
 
 class MyTestCase(BaseTestCase):
 
-    def backup_tables(self):
-        for tab in tpchSettings.relations:
+    def backup_tables(self, relations):
+        for tab in relations:
             restore_name = self.conn.queries.get_backup(tab)
             self.conn.execute_sql([self.conn.queries.create_table_as_select_star_from(restore_name, tab)])
 
@@ -81,8 +81,9 @@ class MyTestCase(BaseTestCase):
     def test_for_some_query(self):
         q = "SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100 Limit 20;"
         self.conn.connectUsingParams()
-        self.backup_tables()
-        rc_hash = ResultComparator(self.conn, False)
+        core_relations = ['part', 'partsupp']
+        self.backup_tables(core_relations)
+        rc_hash = ResultComparator(self.conn, False, core_relations)
         matched_hash = rc_hash.doJob(q, q)
         self.assertTrue(matched_hash)
         self.conn.closeConnection()
@@ -94,12 +95,15 @@ class MyTestCase(BaseTestCase):
             "and l_quantity <= 23.0 " \
             "Group By l_shipmode Limit 100; "
         self.conn.connectUsingParams()
-        rc_hash = ResultComparator(self.conn, True)
+        core_relations = ['lineitem']
+        self.backup_tables(core_relations)
+        rc_hash = ResultComparator(self.conn, True, core_relations)
         matched_hash = rc_hash.doJob(q, q)
         self.assertTrue(matched_hash)
         self.conn.closeConnection()
         self.conn.connectUsingParams()
-        rc_diff = ResultComparator(self.conn, False)
+        self.backup_tables(core_relations)
+        rc_diff = ResultComparator(self.conn, False, core_relations)
         matched_diff = rc_diff.doJob(q, q)
         self.assertTrue(matched_diff)
         self.conn.closeConnection()

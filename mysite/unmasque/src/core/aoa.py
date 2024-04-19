@@ -61,13 +61,12 @@ class AlgebraicPredicate(FilterHolder):
         query = super().doActualJob(args)
         self.restore_d_min_from_dict()
         self.logger.debug("Filters: ", self.pending_predicates)
-        self.extract_aoa_core(self.pending_predicates, query)
+        self.extract_aoa_core(query)
         self.cleanup_predicates()
-        self.fill_in_internal_predicates()
         return True
 
-    def extract_aoa_core(self, ineqaoa_preds, query):
-        edge_set_dict = self.algo4_create_edgeSet_E(ineqaoa_preds)
+    def extract_aoa_core(self, query):
+        edge_set_dict = self.algo4_create_edgeSet_E()
         self.logger.debug("edge_set_dict:", edge_set_dict)
         for datatype in edge_set_dict.keys():
             E, L = self.algo7_find_aoa(edge_set_dict, datatype, query)
@@ -334,8 +333,8 @@ class AlgebraicPredicate(FilterHolder):
                 if check:
                     add_item_to_list((col_i, ub_dot), E)
 
-    def algo4_create_edgeSet_E(self, ineqaoa_preds: list) -> dict:
-        filtered_dict = self.isolate_ineq_aoa_preds_per_datatype(ineqaoa_preds)
+    def algo4_create_edgeSet_E(self) -> dict:
+        filtered_dict = self.isolate_ineq_aoa_preds_per_datatype()
         edge_set_dict = {}
         for datatype in filtered_dict:
             edge_set = []
@@ -347,6 +346,9 @@ class AlgebraicPredicate(FilterHolder):
         return edge_set_dict
 
     def post_process_for_generation_pipeline(self, query) -> None:
+        if not self.enabled:
+            self.arithmetic_ineq_predicates = self.pending_predicates
+        self.fill_in_internal_predicates()
         self.logger.debug("aoa post-process.")
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
         self.restore_d_min_from_dict()
@@ -421,13 +423,22 @@ class AlgebraicPredicate(FilterHolder):
                 self.filter_predicates.append(a_ineq)
         for t_r in to_remove:
             self.arithmetic_ineq_predicates.remove(t_r)
+        self.create_equi_join_graph()
+
+    def create_equi_join_graph(self):
+        for eq_join in self.algebraic_eq_predicates:
+            join_graph_edge = list(f"{item[1]}" for item in eq_join if len(item) == 2)
+            join_graph_edge.sort()
+            for i in range(0, len(join_graph_edge) - 1):
+                self.join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
+        self.logger.debug(self.join_graph)
 
     def generate_where_clause(self, all_ors=None) -> None:
         predicates = []
         self.generate_algebraice_eualities(predicates)
         self.generate_algebraic_inequalities(predicates)
 
-        if all_ors is not None:
+        if all_ors is not None and len(all_ors):
             self.generate_arithmetic_conjunctive_disjunctions(all_ors, predicates)
         else:
             self.generate_arithmetic_pure_conjunctions(predicates)
@@ -511,7 +522,7 @@ class AlgebraicPredicate(FilterHolder):
 
         prep = self.prepare_attrib_list(joined_tab_attrib)
         self.handle_filter_for_subrange(prep, datatype, filter_attribs, max_val, min_val,
-                                                         query)
+                                        query)
         val = get_val_bound_for_chain(get_min(self.constants_dict[datatype]),
                                       get_max(self.constants_dict[datatype]),
                                       filter_attribs, is_UB)
@@ -561,18 +572,15 @@ class AlgebraicPredicate(FilterHolder):
         if check:
             edge_set.append(tuple([next_tab_attrib, tab_attrib]))
 
-    def isolate_ineq_aoa_preds_per_datatype(self,
-                                            ineqaoa_preds: list[tuple[str, str, str,
-                                            Union[int, date, Decimal],
-                                            Union[int, date, Decimal]]]) -> dict:
+    def isolate_ineq_aoa_preds_per_datatype(self) -> dict:
         datatype_dict = {}
         for a_eq in self.arithmetic_eq_predicates:
             datatype = self.get_datatype((get_tab(a_eq), get_attrib(a_eq)))
             if datatype != 'str':
                 new_tup = (get_tab(a_eq), get_attrib(a_eq), 'range', get_LB(a_eq), get_UB(a_eq))
-                ineqaoa_preds.append(new_tup)
+                self.pending_predicates.append(new_tup)
 
-        for pred in ineqaoa_preds:
+        for pred in self.pending_predicates:
             tab_attrib = (pred[0], pred[1])
             datatype = self.get_datatype(tab_attrib)
             if datatype in datatype_dict.keys():

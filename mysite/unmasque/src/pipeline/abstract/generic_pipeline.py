@@ -11,6 +11,7 @@ from mysite.unmasque.src.core.result_comparator import ResultComparator
 
 def synchronized(wrapped):
     lock = threading.Lock()
+
     # print(lock, id(lock))
 
     @functools.wraps(wrapped)
@@ -46,6 +47,8 @@ class GenericPipeLine:
         self.all_sizes = {}
         self.error = None
 
+        self.core_relations = None
+
     def process(self, query: str):
         result = None
         try:
@@ -78,8 +81,8 @@ class GenericPipeLine:
     def verify_correctness(self, query, result):
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams()
-        rc = ResultComparator(self.connectionHelper, True)
-        rc.set_all_relations(list(self.all_sizes.keys()))
+        rc = ResultComparator(self.connectionHelper, True, self.core_relations)
+        # rc.set_all_relations(list(self.all_sizes.keys()))
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
         self.info[RESULT_COMPARE] = matched

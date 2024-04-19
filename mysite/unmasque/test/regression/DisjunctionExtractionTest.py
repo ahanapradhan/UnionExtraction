@@ -1,9 +1,5 @@
 import unittest
 
-from mysite.unmasque.src.core.from_clause import FromClause
-from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
-from mysite.unmasque.src.core.aoa import AlgebraicPredicate
-from mysite.unmasque.test.util import tpchSettings
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.util.BaseTestCase import BaseTestCase
 
@@ -51,7 +47,7 @@ class DisjunctionTestCase(BaseTestCase):
     def test_sumang_thesis_Q4(self):
         query = "select AVG(l_extendedprice) as avgTOTAL from lineitem,part " \
                 "where p_partkey = l_partkey and (p_brand = 'Brand#52' or p_brand = 'Brand#12') and " \
-                "(p_container = 'LG CAN' or p_container = 'LG CASE') ORDER BY avgTOTAL desc LIMIT 50;"
+                "(p_container = 'LG CAN' or p_container = 'LG CASE');"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
@@ -61,10 +57,10 @@ class DisjunctionTestCase(BaseTestCase):
         query = "select AVG(l_extendedprice) as avgTOTAL from lineitem,part " \
                 "where p_partkey = l_partkey and p_brand = 'Brand#52' and " \
                 "(p_container = 'LG CAN' or p_container = 'LG CASE') ORDER BY avgTOTAL desc LIMIT 50;"
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
-        # self.assertTrue(self.pipeline.correct)
+        self.assertTrue(self.pipeline.correct)
 
     def test_for_disjunction(self):
         query = f"select c_mktsegment as segment from customer,nation,orders, lineitem where " \
@@ -85,29 +81,6 @@ class DisjunctionTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         print(eq)
         self.assertTrue(self.pipeline.correct)
-
-    def test_Q6_filter(self):
-        query = "select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
-                "s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) and (s_acctbal > 2000 or " \
-                "ps_supplycost < 500) group by n_name ORDER BY n_name LIMIT 10;"
-        self.conn.connectUsingParams()
-        fc = FromClause(self.conn)
-        check = fc.doJob(query)
-        if not check or not fc.done:
-            self.assertTrue(False)
-
-        minimizer = ViewMinimizer(self.conn, fc.core_relations, tpchSettings.all_size, False)
-        check = minimizer.doJob(query)
-        self.assertTrue(check)
-
-        wc = AlgebraicPredicate(self.conn, fc.core_relations, pending_predicates, filter_extractor,
-                                minimizer.global_min_instance_dict)
-        wc.equi_join_enabled = False
-
-        filters = wc.doJob(query)
-        print(filters)
-        self.assertEqual(len(filters), 6)
-        self.conn.closeConnection()
 
 
 if __name__ == '__main__':

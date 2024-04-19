@@ -1,12 +1,12 @@
-from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
+from mysite.unmasque.src.core.db_restorer import DbRestorer
 
 
-class Comparator(AppExtractorBase):
+class Comparator(DbRestorer):
     r_e = "r_e"
     r_h = "r_h"
 
-    def __init__(self, connectionHelper, name, earlyExit):
-        super().__init__(connectionHelper, name)
+    def __init__(self, connectionHelper, name, earlyExit, core_relations=None):
+        super().__init__(connectionHelper, core_relations, name)
         self.earlyExit = earlyExit
         self.row_count_r_e = 0
         self.row_count_r_h = 0
@@ -14,9 +14,11 @@ class Comparator(AppExtractorBase):
     def extract_params_from_args(self, args):
         return args[0], args[1]
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         Q_h, Q_E = self.extract_params_from_args(args)
-        self.sanitize()
+        for tab in self.relations:
+            self.restore_table_and_confirm(tab)
+
         if Q_E is None:
             self.logger.info("Got None to compare. Cannot do anything...sorry!")
             return False
