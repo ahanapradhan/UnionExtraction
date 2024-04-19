@@ -26,7 +26,7 @@ class U2EquiJoin(FilterHolder):
     def is_it_equality_op(self, op):
         return op in [self.TEXT_EQUALITY_OP, self.MATH_EQUALITY_OP]
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         query = super().doActualJob(args)
         partition_eq_dict, ineqaoa_preds = self.algo2_preprocessing()
         self.logger.debug(partition_eq_dict)

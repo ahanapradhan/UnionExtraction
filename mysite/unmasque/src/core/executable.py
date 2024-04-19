@@ -29,7 +29,7 @@ class Executable(Base):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         result = []
         try:

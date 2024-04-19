@@ -21,10 +21,10 @@ class ExtractionPipeLine(DisjunctionPipeLine):
         super().__init__(connectionHelper, "Extraction PipeLine")
 
     def process(self, query: str):
-        GenericPipeLine.process(self, query)
+        return GenericPipeLine.process(self, query)
 
     def doJob(self, query, qe=None):
-        GenericPipeLine.doJob(self, query, qe)
+        return GenericPipeLine.doJob(self, query, qe)
 
     def verify_correctness(self, query, result):
         GenericPipeLine.verify_correctness(self, query, result)
@@ -66,7 +66,8 @@ class ExtractionPipeLine(DisjunctionPipeLine):
             self.logger.error("Some problem in Regular mutation pipeline. Aborting extraction!")
             return None, time_profile
 
-        check, time_profile, ors = self.extract_disjunction(core_relations, query, time_profile)
+        check, time_profile, ors = self.extract_disjunction(self.aoa.arithmetic_eq_predicates,
+                                                            core_relations, query, time_profile)
         if not check:
             self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
             return None, time_profile

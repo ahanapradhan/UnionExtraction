@@ -62,7 +62,7 @@ class NEP(Minimizer, GenerationPipeLineBase):
                     break
         return nep_exists, matched
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         # self.connectionHelper.connectUsingParams()
         result = self.doNepJob(args)
         # self.connectionHelper.closeConnection()

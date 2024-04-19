@@ -1,6 +1,7 @@
 import functools
 import threading
 import time
+from abc import abstractmethod, ABC
 
 from ...core.elapsed_time import create_zero_time_profile
 from ...util.Log import Log
@@ -31,7 +32,7 @@ class PipeLineState(object):
         self.state = state
 
 
-class GenericPipeLine:
+class GenericPipeLine(ABC):
     _instance = None
     state = WAITING
 
@@ -58,14 +59,14 @@ class GenericPipeLine:
             result = self.extract(query)
             self.verify_correctness(query, result)
         except Exception as e:
-            print("Some problem while Execution!")
-            print(e)
+            self.logger.error("Some problem while Execution!")
+            self.logger.error(e)
             return result
         else:
-            print("Valid Execution")
+            self.logger.error("Valid Execution")
             return result
         finally:
-            print("Ended Execution")
+            self.logger.error("Ended Execution")
 
     def doJob(self, query, qe=None):
         local_start_time = time.time()
@@ -82,7 +83,6 @@ class GenericPipeLine:
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams()
         rc = ResultComparator(self.connectionHelper, True, self.core_relations)
-        # rc.set_all_relations(list(self.all_sizes.keys()))
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
         self.info[RESULT_COMPARE] = matched
@@ -98,6 +98,7 @@ class GenericPipeLine:
             self.correct = False
             self.update_state(WRONG)
 
+    @abstractmethod
     def extract(self, query):
         pass
 

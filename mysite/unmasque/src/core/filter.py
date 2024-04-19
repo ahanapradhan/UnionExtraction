@@ -74,7 +74,7 @@ class Filter(UN2WhereClause):
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         query = super().doActualJob(args)
         self.do_init()
         self.filter_predicates = self.get_filter_predicates(query)

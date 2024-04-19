@@ -28,7 +28,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def doActualJob(self, args) -> bool:
+    def doActualJob(self, args=None) -> bool:
         query = self.extract_params_from_args(args)
         self.do_init()
         check = self.doExtractJob(query)

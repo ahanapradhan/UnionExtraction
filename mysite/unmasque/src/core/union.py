@@ -14,7 +14,7 @@ class Union(AppExtractorBase):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         db = UnionFromClause(self.connectionHelper)
         p, pstr, union_profile = algorithm1.algo(db, query)

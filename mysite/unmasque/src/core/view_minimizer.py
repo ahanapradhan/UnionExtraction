@@ -29,7 +29,7 @@ class ViewMinimizer(Minimizer):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         return self.reduce_Database_Instance(query,
                                              True) if self.cs2_passed else self.reduce_Database_Instance(query, False)

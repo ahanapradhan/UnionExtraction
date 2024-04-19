@@ -79,7 +79,7 @@ class FromClause(AppExtractorBase):
         self.all_relations = self.init.all_relations
         return True
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         setup_done = self.setup()
         if not setup_done:
             return False

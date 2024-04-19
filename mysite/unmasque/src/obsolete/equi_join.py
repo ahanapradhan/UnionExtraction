@@ -43,7 +43,7 @@ class EquiJoin(WhereClause):
         self.global_join_graph = []
         self.global_key_attributes = []
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         self.get_init_data()
         self.get_join_graph(query)

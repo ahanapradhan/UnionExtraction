@@ -45,7 +45,7 @@ class UnionFromClause(Schema, AppExtractorBase):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         QH = self.extract_params_from_args(args)
         fromTabQ = set(self.get_fromTabs(QH))
         comTabQ = set(self.get_comTabs(QH))

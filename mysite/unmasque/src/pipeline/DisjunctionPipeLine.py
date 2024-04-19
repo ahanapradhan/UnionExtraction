@@ -1,4 +1,5 @@
 import copy
+from abc import abstractmethod, ABC
 
 from mysite.unmasque.src.core.aoa import AlgebraicPredicate
 from mysite.unmasque.src.core.cs2 import Cs2
@@ -13,7 +14,7 @@ from mysite.unmasque.src.util.constants import FILTER, INEQUALITY, DONE, RUNNING
 from mysite.unmasque.src.util.utils import get_format, get_val_plus_delta
 
 
-class DisjunctionPipeLine(GenericPipeLine):
+class DisjunctionPipeLine(GenericPipeLine, ABC):
 
     def __init__(self, connectionHelper, name):
         super().__init__(connectionHelper, name)
@@ -133,19 +134,22 @@ class DisjunctionPipeLine(GenericPipeLine):
         return True, time_profile
 
     def get_predicates_in_action(self):
-        return self.aoa.arithmetic_eq_predicates
+        return self.filter_extractor.filter_predicates
 
+    @abstractmethod
     def process(self, query: str):
-        raise NotImplementedError("Reaching here is absurd!")
+        raise NotImplementedError("Trouble!")
 
+    @abstractmethod
     def doJob(self, query, qe=None):
-        raise NotImplementedError("Reaching here is absurd!")
+        raise NotImplementedError("Trouble!")
 
+    @abstractmethod
     def verify_correctness(self, query, result):
-        raise NotImplementedError("Reaching here is absurd!")
+        raise NotImplementedError("Trouble!")
 
-    def extract_disjunction(self, core_relations, query, time_profile):  # for once
-        curr_eq_predicates = copy.deepcopy(self.get_predicates_in_action())
+    def extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
+        curr_eq_predicates = copy.deepcopy(init_predicates)
         all_eq_predicates = [curr_eq_predicates]
         ids = list(range(len(curr_eq_predicates)))
         if self.connectionHelper.config.detect_or:
@@ -222,6 +226,6 @@ class DisjunctionPipeLine(GenericPipeLine):
         self.logger.debug(where_condition)
         return where_condition
 
+    @abstractmethod
     def extract(self, query):
-        raise NotImplementedError("Reaching here is absurd!")
-
+        pass

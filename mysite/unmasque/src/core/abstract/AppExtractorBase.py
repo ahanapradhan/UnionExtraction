@@ -1,8 +1,10 @@
+from abc import ABC
+
 from .ExtractorBase import Base
 from mysite.unmasque.src.core.executable import Executable
 
 
-class AppExtractorBase(Base):
+class AppExtractorBase(Base, ABC):
 
     def __init__(self, connectionHelper, name):
         super().__init__(connectionHelper, name)

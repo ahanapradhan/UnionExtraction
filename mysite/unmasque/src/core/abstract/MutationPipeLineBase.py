@@ -1,11 +1,12 @@
 import copy
 from _decimal import Decimal
+from abc import ABC
 
 from .AppExtractorBase import AppExtractorBase
 from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
 
 
-class MutationPipeLineBase(AppExtractorBase):
+class MutationPipeLineBase(AppExtractorBase, ABC):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper,
                  core_relations: list[str],

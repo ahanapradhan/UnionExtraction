@@ -1,4 +1,5 @@
 import time
+from abc import abstractmethod
 
 from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
 from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
@@ -39,12 +40,14 @@ class Base(TpchSanitizer):
             self.local_elapsed_time = self.local_end_time - self.local_start_time
             self.method_call_count += 1
 
-    def doActualJob(self, args):
+    @abstractmethod
+    def doActualJob(self, args=None):
         pass
 
     def doAppCountJob(self, args):
         return self.doActualJob(args)
 
+    @abstractmethod
     def extract_params_from_args(self, args):
         pass
 

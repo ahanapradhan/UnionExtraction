@@ -33,7 +33,7 @@ class Initiator(Base):
             self.logger.error("Unmasque Error: \n Support File Not Accessible. ")
         return check_pkfk
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         self.reset()
         check = self.verify_support_files()
         self.logger.info("support files verified..")

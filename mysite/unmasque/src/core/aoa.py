@@ -57,7 +57,7 @@ class AlgebraicPredicate(FilterHolder):
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(min_db)
         self.global_min_instance_dict = copy.deepcopy(min_db)
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         query = super().doActualJob(args)
         self.restore_d_min_from_dict()
         self.logger.debug("Filters: ", self.pending_predicates)

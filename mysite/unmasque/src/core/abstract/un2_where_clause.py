@@ -27,7 +27,7 @@ class UN2WhereClause(MutationPipeLineBase):
         self.constants_dict = {}
         self.init_done = False
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         if not self.init_done:
             self.mock = self.mock
