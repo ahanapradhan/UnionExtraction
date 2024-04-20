@@ -66,7 +66,7 @@ class ExtractionPipeLine(DisjunctionPipeLine):
             self.logger.error("Some problem in Regular mutation pipeline. Aborting extraction!")
             return None, time_profile
 
-        check, time_profile, ors = self.extract_disjunction(self.aoa.arithmetic_eq_predicates,
+        check, time_profile, ors = self.extract_disjunction(self.aoa.filter_predicates,
                                                             core_relations, query, time_profile)
         if not check:
             self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
