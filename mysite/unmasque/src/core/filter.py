@@ -1,5 +1,6 @@
 import copy
 import math
+from typing import List, Tuple
 
 from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
 from mysite.unmasque.src.core.abstract.un2_where_clause import UN2WhereClause
@@ -32,7 +33,7 @@ def round_floor(num, places):
 class Filter(UN2WhereClause):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 core_relations: list[str],
+                 core_relations: List[str],
                  global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Filter")
         # init data

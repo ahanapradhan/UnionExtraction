@@ -5,7 +5,7 @@ from .src.pipeline.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionFactory import ConnectionHelperFactory
 from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUALITY, \
     FILTER, \
-    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK, WRONG, UNION
+    LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK, UNION, WRONG
 
 ALL_STATES = [WAITING, UNION, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, EQUALITY, FILTER, PROJECTION,
               GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, DONE]
@@ -32,9 +32,11 @@ def login_view(request):
             return render(request, 'unmasque/login.html', {'error_message': msg})
 
         # SET THE FOLLOWING PARAMS FROM UI CHECKBOX VALUES
-        connHelper.config.detect_nep = False
-        connHelper.config.detect_union = True
-        connHelper.config.use_cs2 = True
+        
+        connHelper.config.detect_nep = (request.POST.get("NEP") == "NEP")
+        connHelper.config.detect_union = (request.POST.get("union") == "Union")
+        connHelper.config.use_cs2 = (request.POST.get("sampling") == "Sampling")
+        print("Checkbox", connHelper.config.detect_nep, connHelper.config.detect_union, connHelper.config.use_cs2)
 
         token = start_extraction_pipeline_async(connHelper, query, request)
         return redirect(f'progress/{token}')
@@ -154,7 +156,7 @@ def progress_page(request, token):
                                                       'progress_message': partials[1] if partials else "_QNF_",
                                                       'profiling': 'NA', 'token': token, 'states': ALL_STATES,
                                                       "start": START,
-                                                      "running": RUNNING, "done": DONE})
+                                                      "running": RUNNING, "done": DONE, "union": UNION})
 
 
 def bye_page(request):

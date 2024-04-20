@@ -3,13 +3,14 @@ from _decimal import Decimal
 from abc import ABC
 
 from .AppExtractorBase import AppExtractorBase
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
+from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
+from typing import List
 
 
 class MutationPipeLineBase(AppExtractorBase, ABC):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 core_relations: list[str],
+                 core_relations: List[str],
                  global_min_instance_dict: dict,
                  name: str):
         super().__init__(connectionHelper, name)
@@ -42,7 +43,8 @@ class MutationPipeLineBase(AppExtractorBase, ABC):
         res, des, val = None, None, None
         data_problem = False
         try:
-            res, des = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.select_attribs_from_relation([attrib], tab))
+            res, des = self.connectionHelper.execute_sql_fetchall(
+                self.connectionHelper.queries.select_attribs_from_relation([attrib], tab))
             val = res[0][0]
         except ValueError:
             data_problem = True

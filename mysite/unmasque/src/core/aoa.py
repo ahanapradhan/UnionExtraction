@@ -1,7 +1,7 @@
 import copy
 from datetime import date
 from decimal import Decimal
-from typing import Union
+from typing import Union, List, Tuple
 
 from .QueryStringGenerator import handle_range_preds
 from .abstract.abstractConnection import AbstractConnectionHelper
@@ -104,7 +104,7 @@ class AlgebraicPredicate(FilterHolder):
         for e in eq_set:
             add_item_to_list(e, self.arithmetic_eq_predicates)
 
-    def algo7_find_aoa(self, edge_set_dict: dict, datatype: str, query: str) -> tuple[list, list]:
+    def algo7_find_aoa(self, edge_set_dict: dict, datatype: str, query: str) -> Tuple[List, List]:
         edge_set = edge_set_dict[datatype]
         # self.optimize_edge_set(edge_set)
         E, L, absorbed_UBs, absorbed_LBs = edge_set, [], {}, {}
@@ -172,7 +172,7 @@ class AlgebraicPredicate(FilterHolder):
         for t_r in to_remove:
             remove_item_from_list(t_r, E)
 
-    def find_transitive_concrete_L_Bounds(self, L: list[tuple], cb_list: list, to_remove: list, is_UB: bool) -> None:
+    def find_transitive_concrete_L_Bounds(self, L: List[Tuple], cb_list: list, to_remove: list, is_UB: bool) -> None:
         if not len(L) or not len(cb_list):
             return
         for edge in L:
@@ -502,7 +502,7 @@ class AlgebraicPredicate(FilterHolder):
                 one_pred = " OR ".join(preds)
             predicates.append(one_pred)
 
-    def get_equi_join_group(self, tab_attrib: tuple[str, str]) -> list[tuple[str, str]]:
+    def get_equi_join_group(self, tab_attrib: Tuple[str, str]) -> List[Tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:
             if tab_attrib in eq:
                 var_eq = [e for e in eq if len(e) == 2]
@@ -594,7 +594,7 @@ class AlgebraicPredicate(FilterHolder):
 
     def mutate_attrib_with_Bound_val(self, tab_attrib: tuple[str, str], datatype: str, val: any,
                                      with_UB: bool, query: str) \
-            -> tuple[Union[int, Decimal, date], Union[int, Decimal, date]]:
+            -> Tuple[Union[int, Decimal, date], Union[int, Decimal, date]]:
         dmin_val = self.get_dmin_val(get_attrib(tab_attrib), get_tab(tab_attrib))
         factor = -1 if with_UB else 1
         if dmin_val == val:

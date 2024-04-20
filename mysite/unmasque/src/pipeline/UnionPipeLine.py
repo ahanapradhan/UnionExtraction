@@ -23,6 +23,10 @@ class UnionPipeLine(ExtractionPipeLine):
         self.update_state(UNION + DONE)
         self.connectionHelper.closeConnection()
 
+        l = []
+        for ele in p:
+            l.append(list(ele))
+        self.info[UNION] = l
         self.update_time_profile(union, union_profile)
         self.core_relations = [item for subset in p for item in subset]
         self.all_relations = union.all_relations

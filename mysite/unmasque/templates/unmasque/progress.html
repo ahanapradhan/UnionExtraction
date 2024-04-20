@@ -53,7 +53,7 @@
     </div>
     <div class="btnContainer">
         <a href="{% url 'cancel' token %}" ><button class="submit">Cancel</button></a>
-        <a href="{% url 'result' token %}" ><button class="submit">Result</button></a>
+        <a href="{% url 'result' token %}" ><button class="submit" id="res_btn" disabled>Result</button></a>
     </div>
     <!-- Progress updates will be displayed here -->
 
@@ -123,23 +123,22 @@
         let k = (prev, data) =>{
             for(let i of STATES.slice(1, STATES.indexOf(data.progress_message))){
                 switch(i){
-                    case STATES[1]:
-
+                    case STATES[2]:
                         $("#from").empty()
-                        for(let f=0; f<data.state_info[STATES[1]].length; f++){
-                            if(f == data.state_info[STATES[1]].length-1) $("#from").append(data.state_info[STATES[1]][f])
-                            else $("#from").append(data.state_info[STATES[1]][f] + ", ")
+                        for(let f=0; f<data.state_info[STATES[2]].length; f++){
+                            if(f == data.state_info[STATES[2]].length-1) $("#from").append(data.state_info[STATES[2]][f])
+                            else $("#from").append(data.state_info[STATES[2]][f] + ", ")
                         }
                         break
                     
                     case STATES[5]:
                         $("#where").empty()
-                        $("#where").append(where_and_join(data.state_info[STATES[5]], data.state_info[STATES[4]]))
+                        $("#where").append(data.state_info[STATES[5]])
                         break
                     
-                    case STATES[6]:
-                        var p_name = data.state_info[STATES[6]]['names']
-                        var p_attrib = data.state_info[STATES[6]]['attribs']
+                    case STATES[8]:
+                        var p_name = data.state_info[STATES[8]]['names']
+                        var p_attrib = data.state_info[STATES[8]]['attribs']
                         res = ""
                         for(let i = 0; i<p_name.length; i++){
                             if(p_name[i] == p_attrib[i]){
@@ -154,11 +153,11 @@
                         $("#select").append(res)
                         break
                     
-                    case STATES[7]:
+                    case STATES[9]:
                         $("#group_by").empty();
                         res = ""
                     
-                        let g_attribs = data.state_info[STATES[7]]
+                        let g_attribs = data.state_info[STATES[9]]
                         if(!g_attribs) continue
                         for(let i=0; i<g_attribs.length; i++){
                             if(i!=g_attribs.length-1) res += (g_attribs[i] + ", ")
@@ -167,9 +166,9 @@
                         $("#group_by").append(res)
                         break
                     
-                    case STATES[8]:
+                    case STATES[10]:
                         
-                        let aggs = data.state_info[STATES[8]]
+                        let aggs = data.state_info[STATES[10]]
                         if(!aggs) continue;
                         res = ""
                         $("#select").empty()
@@ -184,15 +183,15 @@
                         $("#select").append(res)
                         break;
                     
-                    case STATES[9]:
+                    case STATES[11]:
                         $("#order_by").empty()
                         
-                        if(data.state_info[STATES[9]]) $("#order_by").append(data.state_info[STATES[9]].slice(0, data.state_info[STATES[9]].length-2))
+                        if(data.state_info[STATES[11]]) $("#order_by").append(data.state_info[STATES[11]].slice(0, data.state_info[STATES[11]].length-2))
                         break;
 
-                    case STATES[10]:
+                    case STATES[12]:
                         $("#limit").empty();
-                        if(data.state_info[STATES[10]]) $("#limit").append(data.state_info[STATES[10]]);
+                        if(data.state_info[STATES[12]]) $("#limit").append(data.state_info[STATES[12]]);
                         break;
                 }
             }
@@ -212,23 +211,33 @@
         // Function to fetch progress updates using AJAX
         let stateInfoRefine = (data, curr_state) =>{
             if(curr_state == STATES[0]) return ""
-            if(curr_state == STATES[5] && data.state_info[curr_state] != null) return JSON.stringify(data.state_info[curr_state][0])
-            if(curr_state == STATES[2]){
-                res = "<table class=\"min_tab sample_table\"><tr><th>Table</th><th>Sample</th><th>Original</th></tr>"
-                for(let ele of data.state_info[STATES[1]]){
-                    res += "<tr>"+("<td>"+ele+"</td><td>"+data.state_info[STATES[2]]["sample"][ele] + "</td><td>" + data.state_info[STATES[2]]["size"][ele] + "</td></tr>")
+            if(curr_state == STATES[7] && data.state_info[curr_state] != null) return JSON.stringify(data.state_info[curr_state][0])
+            if(curr_state == STATES[3]){
+                if(data.state_info[STATES[3]] == STATES[3] + "DISABLED") 
+                {
+                    return "SAMPLING DISABLED!";
                 }
-                res += "</table>"
-                return res;
+                else if(data.state_info[STATES[3]] == STATES[3] + "FAILED"){
+                    return "SAMPLING FAILED!";
+                }
+                else{
+                    res = "<table class=\"min_tab sample_table\"><tr><th>Table</th><th>Sample</th><th>Original</th></tr>"
+                    for(let ele of data.state_info[STATES[2]]){
+                        res += "<tr>"+("<td>"+ele+"</td><td>"+data.state_info[STATES[3]]["sample"][ele] + "</td><td>" + data.state_info[STATES[3]]["size"][ele] + "</td></tr>")
+                    }
+                    res += "</table>"
+                    return res;
+                }
             }            
             return JSON.stringify(data.state_info[curr_state])
         }
 
         let getTables = (data) => {
-            tables = data.state_info[STATES[1]]
-            dbmin = data.state_info[STATES[3]]
+            tables = data.state_info[STATES[2]]
+            dbmin = data.state_info[STATES[4]]
             res = ""
             for(let i=0; i<tables.length; i++){
+                res += "<div class=\"tab_title\">" + tables[i] +"<div>" 
                 res+="<table class=\"min_tab\"><tr>"
                 for(let j=0; j<dbmin[tables[i]][0].length; j++){
                     res += "<th>"+ dbmin[tables[i]][0][j] +"</th>"
@@ -263,10 +272,10 @@
                         if(data.progress_message != curr_state){
                             $(".actualInfo").empty()
                             for(let i of STATES.slice(1, STATES.indexOf(curr_state)+1)){
-                                if(i == STATES[3]){
+                                if(i == STATES[4]){
                                     $(".actualInfo").append("<div class=\"innerContainer\"><button class=\"collapsible\">"+ i +"</button><div class=\"content dbmin\">" + getTables(data)+ "</textarea></div>")
                                 }
-                                else if(i == STATES[2]) $(".actualInfo").append("<div class=\"innerContainer\"><button class=\"collapsible\">"+ i +"</button><div class=\"content\">"+stateInfoRefine(data, i)+"</div>")   
+                                else if(i == STATES[3]) $(".actualInfo").append("<div class=\"innerContainer\"><button class=\"collapsible\">"+ i +"</button><div class=\"content\">"+stateInfoRefine(data, i)+"</div>")   
                             }
                             //f()
                             //g()
@@ -276,7 +285,10 @@
 
                         console.log(data.state_info)
                     }
-                    if(curr_state == "_DONE") return
+                    if(curr_state == "_DONE"){
+                        $("#res_btn").removeAttr("disabled")
+                        return
+                    }
                     // Set a timeout to fetch progress again after 1 second
                     setTimeout(fetchProgress, 1000);
                 },

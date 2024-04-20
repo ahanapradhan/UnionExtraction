@@ -2,6 +2,7 @@ import copy
 
 from ...util.Log import Log
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
+from typing import List
 
 
 class TpchSanitizer:

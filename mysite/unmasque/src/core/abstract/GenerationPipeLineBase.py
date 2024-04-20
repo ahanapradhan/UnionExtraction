@@ -1,7 +1,7 @@
 import ast
 import copy
 from datetime import date
-from typing import Union
+from typing import Union, List, Tuple
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
@@ -88,7 +88,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             self.update_with_val(other_attrib, join_tabname, val)
 
     def update_attrib_to_see_impact(self, attrib: str, tabname: str) \
-            -> tuple[Union[int, float, date, str], Union[int, float, date, str]]:
+            -> Tuple[Union[int, float, date, str], Union[int, float, date, str]]:
         prev = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
         val = self.get_different_s_val(attrib, tabname, prev)
         self.logger.debug(f"update {tabname}.{ attrib} with value {val} that had previous value {prev}")

@@ -1,5 +1,8 @@
-from mysite.unmasque.src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from mysite.unmasque.src.core.abstract.MinimizerBase import Minimizer
+
+from typing import List
+
+from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
 from ..util.utils import isQ_result_empty
 

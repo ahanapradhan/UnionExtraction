@@ -1,11 +1,11 @@
 import datetime
 from datetime import date
-from typing import Union
+from typing import Union, List, Tuple
 
 from .utils import get_datatype_of_val, get_format
 
 
-def optimize_edge_set(edge_set: list[tuple[tuple[str, str], tuple[str, str]]]):
+def optimize_edge_set(edge_set: List[Tuple[Tuple[str, str], Tuple[str, str]]]):
     nodes = set()
     for pred in edge_set:
         nodes.add(pred[0])
@@ -94,41 +94,41 @@ def get_all_two_combs2(items):
     return seq
 
 
-def get_LB(pred: tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
+def get_LB(pred: Tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
     return pred[3]
 
 
-def get_UB(pred: tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
+def get_UB(pred: Tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
     return pred[4]
 
 
 def get_attrib(pred: Union[
-    tuple[str, str, str, Union[int, float, date], Union[int, float, date]],
-    tuple[str, str]
+    Tuple[str, str, str, Union[int, float, date], Union[int, float, date]],
+    Tuple[str, str]
 ]):
     return pred[1]
 
 
 def get_tab(pred: Union[
-    tuple[str, str, str, Union[int, float, date], Union[int, float, date]],
-    tuple[str, str]
+    Tuple[str, str, str, Union[int, float, date], Union[int, float, date]],
+    Tuple[str, str]
 ]):
     return pred[0]
 
 
-def get_op(pred: tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
+def get_op(pred: Tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
     return pred[2]
 
 
-def get_max(pred: tuple[Union[int, float, date], Union[int, float, date], Union[int, float, date]]):
+def get_max(pred: Tuple[Union[int, float, date], Union[int, float, date], Union[int, float, date]]):
     return pred[1]
 
 
-def get_min(pred: tuple[Union[int, float, date], Union[int, float, date], Union[int, float, date]]):
+def get_min(pred: Tuple[Union[int, float, date], Union[int, float, date], Union[int, float, date]]):
     return pred[0]
 
 
-def get_delta(pred: tuple[any, any, any]):
+def get_delta(pred: Tuple[any, any, any]):
     return pred[2]
 
 
@@ -235,8 +235,8 @@ def merge_equivalent_paritions(arr):
     return my_list
 
 
-def is_same_tab_attrib(one: Union[tuple[str, str], Union[int, float, date]],
-                       two: Union[tuple[str, str], Union[int, float, date]]) -> bool:
+def is_same_tab_attrib(one: Union[Tuple[str, str], Union[int, float, date]],
+                       two: Union[Tuple[str, str], Union[int, float, date]]) -> bool:
     check = False
     try:
         check = get_tab(one) == get_tab(two) and get_attrib(one) == get_attrib(two)
@@ -270,7 +270,7 @@ def add_concrete_bounds_as_edge2(pred_list, edge_set, datatype):
             edge_set.append(((get_tab(pred), get_attrib(pred)), ub))
 
 
-def get_LB_of_next_attrib(ineq_group: list[tuple], c: tuple[str, str]):
+def get_LB_of_next_attrib(ineq_group: List[Tuple], c: Tuple[str, str]):
     for pred in ineq_group:
         if get_tab(pred) == get_tab(c) and get_attrib(pred) == get_attrib(c) and (get_op(pred) in ['>=', 'range']):
             return get_LB(pred)
@@ -287,8 +287,8 @@ def add_pred_for(aoa_l, pred):
 def adjust_Bounds2(LB_impact: bool, UB_impact: bool,
                    absorbed_LBs, absorbed_UBs,
                    aoa_CB_LBs, aoa_CB_UBs,
-                   attrib: tuple[str, str], next_attrib: tuple[str, str],
-                   edge_set: list[tuple[tuple[str, str], tuple[str, str]]]) -> bool:
+                   attrib: Tuple[str, str], next_attrib: Tuple[str, str],
+                   edge_set: List[Tuple[Tuple[str, str], Tuple[str, str]]]) -> bool:
     _LB = get_concrete_LB_in_edge(edge_set, next_attrib)
     _UB = get_concrete_UB_out_edge(edge_set, attrib)
     if _UB:
@@ -373,7 +373,7 @@ def remove_item_from_list(item, item_list):
         pass
 
 
-def find_le_attribs_from_edge_set(attrib: tuple[str, str], edge_set: list) -> list:
+def find_le_attribs_from_edge_set(attrib: Tuple[str, str], edge_set: list) -> list:
     prev_lb_attrib = map(lambda x: x[0]
     if is_same_tab_attrib(x[1], attrib) and isinstance(x[0], tuple)
     else None, edge_set)
@@ -381,7 +381,7 @@ def find_le_attribs_from_edge_set(attrib: tuple[str, str], edge_set: list) -> li
     return prev_lb_list
 
 
-def find_ge_attribs_from_edge_set(attrib: tuple[str, str], edge_set: list) -> list:
+def find_ge_attribs_from_edge_set(attrib: Tuple[str, str], edge_set: list) -> list:
     prev_ub_attrib = map(lambda x: x[1]
     if is_same_tab_attrib(x[0], attrib) and isinstance(x[1], tuple)
     else None, edge_set)

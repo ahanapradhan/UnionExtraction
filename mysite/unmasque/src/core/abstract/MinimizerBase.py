@@ -18,7 +18,6 @@ class Minimizer(AppExtractorBase):
         self.mock = False
         self.all_relations = list(all_sizes.keys())
         self.all_relations.sort()
-
     def getCoreSizes(self):
         for table in self.all_relations:
             self.all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(
