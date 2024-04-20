@@ -38,7 +38,8 @@ class DisjunctionTestCase(BaseTestCase):
         query = "select l_shipmode,sum(l_extendedprice) as revenue " \
                 "from lineitem " \
                 "where l_shipdate >= date '1994-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and (l_quantity =42 or l_quantity =50 or l_quantity=24) group by l_shipmode limit 100;"
+                "and (l_quantity =42 or l_quantity =50 or l_quantity=24) group by l_shipmode order by l_shipmode " \
+                 "limit 100;"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
