@@ -1,3 +1,5 @@
+from abc import ABC
+
 from .AppExtractorBase import AppExtractorBase
 from ...util.utils import isQ_result_empty
 
@@ -9,7 +11,7 @@ def calculate_mid_ctids(size):
     return mid_ctid1, mid_ctid2
 
 
-class Minimizer(AppExtractorBase):
+class Minimizer(AppExtractorBase, ABC):
 
     def __init__(self, connectionHelper, core_relations, all_sizes, name):
         AppExtractorBase.__init__(self, connectionHelper, name)
@@ -18,6 +20,7 @@ class Minimizer(AppExtractorBase):
         self.mock = False
         self.all_relations = list(all_sizes.keys())
         self.all_relations.sort()
+
     def getCoreSizes(self):
         for table in self.all_relations:
             self.all_sizes[table] = self.connectionHelper.execute_sql_fetchone_0(
@@ -149,5 +152,5 @@ class Minimizer(AppExtractorBase):
             drop_fn = self.get_drop_fn(tab)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_as_select_star_from(
                 self.connectionHelper.queries.get_tabname_4(tab), tab),
-                                               drop_fn(tab), self.connectionHelper.queries.alter_table_rename_to(
+                drop_fn(tab), self.connectionHelper.queries.alter_table_rename_to(
                     self.connectionHelper.queries.get_tabname_4(tab), tab)])
