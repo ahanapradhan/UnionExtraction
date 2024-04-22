@@ -3,7 +3,7 @@ from pathlib import Path
 
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
-    SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE
+    SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR
 
 
 class Config:
@@ -30,6 +30,7 @@ class Config:
         self.config_loaded = False
         self.detect_union = False
         self.detect_nep = False
+        self.detect_or = False
         self.use_cs2 = False
         self.app_type = ApplicationType.SQL_ERR_FWD
         self.database = "postgres"
@@ -81,3 +82,8 @@ class Config:
             self.use_cs2 = False
         elif use_cs2.lower() == "yes":
             self.use_cs2 = True
+        detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
+        if detect_or.lower() == "no":
+            self.detect_or = False
+        elif detect_or.lower() == "yes":
+            self.detect_or = True

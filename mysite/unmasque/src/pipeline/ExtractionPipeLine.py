@@ -1,28 +1,33 @@
 import copy
 
+from mysite.unmasque.src.core.aggregation import Aggregation
+from mysite.unmasque.src.core.from_clause import FromClause
+from mysite.unmasque.src.core.groupby_clause import GroupBy
+from mysite.unmasque.src.core.limit import Limit
+from mysite.unmasque.src.core.nep import NEP
+from mysite.unmasque.src.core.orderby_clause import OrderBy
+from mysite.unmasque.src.core.projection import Projection
+from .DisjunctionPipeLine import DisjunctionPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
-from ..core.aoa import AlgebraicPredicate
 from ..core.elapsed_time import create_zero_time_profile
-from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, NEP_, AOA, PROJECTION, \
+from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, NEP_, PROJECTION, \
     GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
-from ...refactored.aggregation import Aggregation
-from ...refactored.cs2 import Cs2
-from ...refactored.from_clause import FromClause
-from ...refactored.groupby_clause import GroupBy
-from ...refactored.limit import Limit
-from ...refactored.nep import NEP
-from ...refactored.orderby_clause import OrderBy
-from ...refactored.projection import Projection
-from ...refactored.view_minimizer import ViewMinimizer
 
 
-class ExtractionPipeLine(GenericPipeLine):
+class ExtractionPipeLine(DisjunctionPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Extraction PipeLine")
-        self.global_pk_dict = {}
-        self.global_min_instance_dict = None
+
+    def process(self, query: str):
+        return GenericPipeLine.process(self, query)
+
+    def doJob(self, query, qe=None):
+        return GenericPipeLine.doJob(self, query, qe)
+
+    def verify_correctness(self, query, result):
+        GenericPipeLine.verify_correctness(self, query, result)
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
@@ -39,77 +44,38 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some problem while extracting from clause. Aborting!")
             self.info[FROM_CLAUSE] = None
             return None, self.time_profile
-
-        self.all_relations = fc.all_relations
-        self.global_pk_dict = fc.init.global_pk_dict
-
         self.info[FROM_CLAUSE] = fc.core_relations
 
-        eq, t = self.after_from_clause_extract(query, fc.core_relations, fc.get_key_lists())
+        self.core_relations = fc.core_relations
+
+        self.all_sizes = fc.init.all_sizes
+        self.key_lists = fc.get_key_lists()
+
+        eq, t = self.after_from_clause_extract(query, self.core_relations)
         self.connectionHelper.closeConnection()
         self.time_profile.update(t)
         return eq
 
-    def after_from_clause_extract(self, query, core_relations, key_lists):  # get core_relations, key_lists from from clause
+    def after_from_clause_extract(self, query, core_relations):
 
         time_profile = create_zero_time_profile()
         q_generator = QueryStringGenerator(self.connectionHelper)
 
-        '''
-        Correlated Sampling
-        '''
-        self.update_state(SAMPLING + START)
-        cs2 = Cs2(self.connectionHelper, self.all_relations, core_relations, key_lists)
-        self.update_state(SAMPLING + RUNNING)
-        check = cs2.doJob(query)
-        self.update_state(SAMPLING + DONE)
-        time_profile.update_for_cs2(cs2.local_elapsed_time, cs2.app_calls)
-        self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
-        if not check or not cs2.done:
-            self.info[SAMPLING] = SAMPLING + "FAILED"
-            self.logger.info("Sampling failed!")
-        if not self.connectionHelper.config.use_cs2:
-            self.info[SAMPLING] = SAMPLING + "DISABLED"
-            self.logger.info("Sampling is disabled!")
-
-        self.update_state(DB_MINIMIZATION + START)
-        vm = ViewMinimizer(self.connectionHelper, core_relations, cs2.sizes, cs2.passed)
-        vm.set_all_relations(self.all_relations)
-        self.update_state(DB_MINIMIZATION + RUNNING)
-        check = vm.doJob(query)
-        self.update_state(DB_MINIMIZATION + DONE)
-        time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
-        self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
+        check, time_profile = self.mutation_pipeline(core_relations, query, time_profile)
         if not check:
-            self.logger.error("Cannot do database minimization. ")
-            self.info[DB_MINIMIZATION] = None
-            return None, time_profile
-        if not vm.done:
-            self.info[DB_MINIMIZATION] = None
-            self.logger.error("Some problem while view minimization. Aborting extraction!")
+            self.logger.error("Some problem in Regular mutation pipeline. Aborting extraction!")
             return None, time_profile
 
-        '''
-        AOA Extraction
-        '''
-        self.update_state(AOA + START)
-        self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
-        aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.global_min_instance_dict)
-        self.update_state(AOA + RUNNING)
-        check = aoa.doJob(query)
-        self.update_state(AOA + DONE)
-        time_profile.update_for_where_clause(aoa.local_elapsed_time, aoa.app_calls)
-        self.info[AOA] = aoa.where_clause
-
+        check, time_profile, ors = self.extract_disjunction(self.aoa.filter_predicates,
+                                                            core_relations, query, time_profile)
         if not check:
-            self.info[AOA] = None
-            self.logger.info("Cannot find Algebraic Predicates.")
-        if not aoa.done:
-            self.info[AOA] = None
-            self.logger.error("Some error while Filter Predicate extraction. Aborting extraction!")
+            self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
             return None, time_profile
 
-        delivery = aoa.pipeline_delivery
+        self.aoa.post_process_for_generation_pipeline(query)
+        self.aoa.generate_where_clause(ors)
+
+        delivery = copy.copy(self.aoa.pipeline_delivery)
 
         '''
         Projection Extraction
@@ -148,7 +114,7 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while group by extraction. Aborting extraction!")
             return None, time_profile
 
-        for elt in aoa.filter_predicates:
+        for elt in self.aoa.filter_predicates:
             if elt[1] not in gb.group_by_attrib and elt[1] in pj.projected_attribs and (
                     elt[2] == '=' or elt[2] == 'equal'):
                 gb.group_by_attrib.append(elt[1])
@@ -203,11 +169,11 @@ class ExtractionPipeLine(GenericPipeLine):
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-        eq = q_generator.generate_query_string(core_relations, pj, gb, agg, ob, lm, aoa)
+        eq = q_generator.generate_query_string(core_relations, pj, gb, agg, ob, lm, self.aoa)
 
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self.extract_NEP(core_relations, cs2.sizes, eq, q_generator, query, time_profile, delivery)
+        eq = self.extract_NEP(core_relations, {}, eq, q_generator, query, time_profile, delivery)
 
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
@@ -218,7 +184,7 @@ class ExtractionPipeLine(GenericPipeLine):
     def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
         if self.connectionHelper.config.detect_nep:
             self.update_state(NEP_ + START)
-            nep = NEP(self.connectionHelper, core_relations, sizes, q_generator, delivery)
+            nep = NEP(self.connectionHelper, core_relations, q_generator, delivery, sizes)
             self.update_state(NEP_ + RUNNING)
             check = nep.doJob([query, eq])
             if nep.Q_E:

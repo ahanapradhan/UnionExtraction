@@ -1,6 +1,6 @@
 from . import algorithm1
 from .union_from_clause import UnionFromClause
-from ...refactored.abstract.AppExtractorBase import AppExtractorBase
+from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
 
 
 class Union(AppExtractorBase):
@@ -14,7 +14,7 @@ class Union(AppExtractorBase):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         db = UnionFromClause(self.connectionHelper)
         p, pstr, union_profile = algorithm1.algo(db, query)

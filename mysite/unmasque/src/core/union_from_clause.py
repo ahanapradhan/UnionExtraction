@@ -1,7 +1,7 @@
 from ..mocks.database import Schema
-from ...refactored.abstract.AppExtractorBase import AppExtractorBase
-from ...refactored.from_clause import FromClause
-from ...refactored.util.utils import isQ_result_empty
+from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
+from mysite.unmasque.src.core.from_clause import FromClause
+from ..util.utils import isQ_result_empty
 
 
 class UnionFromClause(Schema, AppExtractorBase):
@@ -45,7 +45,7 @@ class UnionFromClause(Schema, AppExtractorBase):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         QH = self.extract_params_from_args(args)
         fromTabQ = set(self.get_fromTabs(QH))
         comTabQ = set(self.get_comTabs(QH))

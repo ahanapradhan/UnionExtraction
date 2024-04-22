@@ -2,8 +2,7 @@ import datetime
 from datetime import date
 from typing import Union, List, Tuple
 
-from ...refactored.filter import get_constants_for
-from ...refactored.util.utils import get_datatype_of_val, get_format
+from .utils import get_datatype_of_val, get_format
 
 
 def optimize_edge_set(edge_set: List[Tuple[Tuple[str, str], Tuple[str, str]]]):
@@ -543,3 +542,15 @@ def need_permanent_mutation(datatype, diffs: list) -> bool:
         raise ValueError
     val = conseq(diffs)
     return val == d_val
+
+
+def get_constants_for(datatype):
+    if datatype in ('int', 'date', 'number'):
+        while_cut_off = 0
+        delta = 1
+    elif datatype in ('float', 'numeric'):
+        while_cut_off = 0.00
+        delta = 0.01
+    else:
+        raise ValueError(f"Unsupported datatype: {datatype}")
+    return delta, while_cut_off

@@ -3,7 +3,7 @@ import unittest
 
 import pytest as pytest
 
-from ..refactored.nep import NEP
+from mysite.unmasque.src.core.nep import NEP
 from ..src.core.QueryStringGenerator import QueryStringGenerator
 from ..src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ..src.util.constants import max_numeric_val
@@ -79,7 +79,7 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'l_shipmode, Sum(l_extendedprice) as revenue'
         q_gen.where_op = 'l_shipdate >= \'1994-01-01\' and l_quantity <= 23.0 '
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.set_all_relations(tpchSettings.relations)
         o.enabled = True
         o.mock = True
@@ -173,7 +173,7 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
         self.backup_tables()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.set_all_relations(tpchSettings.relations)
         o.enabled = True
         o.mock = True
@@ -245,9 +245,8 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
         self.backup_tables()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.set_all_relations(tpchSettings.relations)
-
         o.enabled = True
         o.mock = True
 
@@ -326,9 +325,8 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
         self.backup_tables()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.set_all_relations(tpchSettings.relations)
-
         o.enabled = True
         o.mock = True
 
@@ -411,9 +409,8 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
         self.backup_tables()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.set_all_relations(tpchSettings.relations)
-
         o.enabled = True
         o.mock = True
 
@@ -531,7 +528,7 @@ class MyTestCase(BaseTestCase):
 
         delivery.doJob()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.set_all_relations(tpchSettings.relations)
 
         o.enabled = True
@@ -643,7 +640,7 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
         self.backup_tables()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.set_all_relations(tpchSettings.relations)
 
         o.enabled = True
@@ -755,7 +752,7 @@ class MyTestCase(BaseTestCase):
         delivery.doJob()
         self.backup_tables()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         o.set_all_relations(tpchSettings.relations)
 
         o.enabled = True
@@ -872,9 +869,9 @@ class MyTestCase(BaseTestCase):
                                          self.get_datatype)
         self.do_init()
         delivery.doJob()
+        o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)
         self.backup_tables()
 
-        o = NEP(self.conn, core_rels, tpchSettings.all_size, q_gen, delivery)
         o.set_all_relations(tpchSettings.relations)
 
         o.enabled = True

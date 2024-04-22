@@ -9,26 +9,28 @@ class UnionPipeLine(ExtractionPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper)
+        self.all_relations = None
         self.name = "Union PipeLine"
         self.pipeLineError = False
 
     def extract(self, query):
         # opening and closing connection actions are vital.
         self.connectionHelper.connectUsingParams()
-
         self.update_state(UNION + START)
         union = Union(self.connectionHelper)
         self.update_state(UNION + RUNNING)
         p, pstr, union_profile = union.doJob(query)
         self.update_state(UNION + DONE)
+        self.connectionHelper.closeConnection()
+
         l = []
         for ele in p:
             l.append(list(ele))
         self.info[UNION] = l
         self.update_time_profile(union, union_profile)
+        self.core_relations = [item for subset in p for item in subset]
         self.all_relations = union.all_relations
-        key_lists = union.key_lists
-        self.connectionHelper.closeConnection()
+        self.key_lists = union.key_lists
         u_eq = []
 
         for rels in p:
@@ -40,7 +42,7 @@ class UnionPipeLine(ExtractionPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.nullify_relations(nullify)
-            eq, time_profile = self.after_from_clause_extract(query, core_relations, key_lists)
+            eq, time_profile = self.after_from_clause_extract(query, core_relations)
             self.revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
 

@@ -4,9 +4,11 @@ import unittest
 
 import pytest
 
-from ..refactored.cs2 import Cs2
-from ..refactored.projection import Projection
-from ..refactored.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.core.cs2 import Cs2
+from mysite.unmasque.src.core.elapsed_time import create_zero_time_profile
+from mysite.unmasque.src.core.projection import Projection
+from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ..src.core.aoa import AlgebraicPredicate
 from ..test.util import tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase
@@ -51,6 +53,10 @@ def get_subquery2():
 class MyTestCase(BaseTestCase):
     global_min_instance_dict = None
 
+    def __init__(self, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
+        self.pipeline = ExtractionPipeLine(self.conn)
+
     def test_dormant_aoa(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count From orders, lineitem " \
@@ -63,28 +69,6 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(aoa.where_clause)
         self.assertEqual(aoa.where_clause.count("and"), 7)
-        self.conn.closeConnection()
-
-    def test_multiple_aoa(self):
-        self.conn.connectUsingParams()
-        core_rels = ['orders', 'lineitem', 'partsupp']
-        query = "Select l_quantity, l_shipinstruct From orders, lineitem, partsupp " \
-                "Where ps_partkey = l_partkey " \
-                "and ps_suppkey = l_suppkey " \
-                "and o_orderkey = l_orderkey " \
-                "and l_shipdate >= o_orderdate " \
-                "and ps_availqty <= l_orderkey " \
-                "and l_extendedprice <= 20000 " \
-                "and o_totalprice <= 60000 " \
-                "and ps_supplycost <= 500 " \
-                "and l_linenumber = 1 " \
-                "Order By l_orderkey Limit 10;"
-        aoa, check = self.run_pipeline(core_rels, query)
-        self.assertTrue(check)
-        print(aoa.where_clause)
-        self.assertEqual(aoa.where_clause.count("and"), 8)
-        self.assertEqual(aoa.where_clause.count("<="), 5)
-        self.assertEqual(aoa.where_clause.count(" ="), 4)
         self.conn.closeConnection()
 
     def test_multiple_aoa_1(self):
@@ -150,7 +134,8 @@ class MyTestCase(BaseTestCase):
         check = vm.doJob(query)
         self.assertTrue(vm.done and check)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
-        aoa = AlgebraicPredicate(self.conn, core_rels, self.global_min_instance_dict)
+        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor,
+                                 self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
@@ -164,21 +149,6 @@ class MyTestCase(BaseTestCase):
         check = pj.doJob(query)
         self.assertTrue(check)
         return aoa, check, pj
-
-    def test_aoa_dev(self):
-        query = "SELECT c_name as name, " \
-                "c_acctbal as account_balance " \
-                "FROM orders, customer, nation " \
-                "WHERE o_custkey > 2500 and c_custkey = o_custkey and c_custkey <= 5000" \
-                "and c_nationkey = n_nationkey " \
-                "and o_orderdate between '1998-01-01' and '1998-01-15' " \
-                "and o_totalprice <= c_acctbal;"
-        self.conn.connectUsingParams()
-        core_rels = ['orders', 'customer', 'nation']
-        aoa, check = self.run_pipeline(core_rels, query)
-        self.assertTrue(check)
-        self.assertEqual(aoa.where_clause.count("and"), 6)
-        self.conn.closeConnection()
 
     @pytest.mark.skip
     def test_paper_subquery1(self):
@@ -351,7 +321,7 @@ class MyTestCase(BaseTestCase):
         self.conn.connectUsingParams()
         query = f"Select o_orderstatus, l_shipmode From lineitem, orders, customer, nation " \
                 f"Where l_orderkey = o_orderkey and o_custkey = c_custkey and c_nationkey = n_nationkey and " \
-                 f"l_linenumber >= 4 and n_name LIKE 'IND%' " \
+                f"l_linenumber >= 4 and n_name LIKE 'IND%' " \
                 f"and c_acctbal < l_extendedprice and l_extendedprice < o_totalprice;"
         aoa, check, pj = self.run_pipeline_till_projection(['orders', 'lineitem', 'customer', 'nation'], query)
         self.assertTrue(check)

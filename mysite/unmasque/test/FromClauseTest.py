@@ -3,7 +3,7 @@ import unittest
 import pytest
 
 from mysite.unmasque.src.util.constants import OK
-from ..refactored.from_clause import FromClause
+from mysite.unmasque.src.core.from_clause import FromClause
 from ..test.util import queries
 from ..test.util.BaseTestCase import BaseTestCase
 

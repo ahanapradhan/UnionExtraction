@@ -6,7 +6,7 @@ from mysite.unmasque.test.util.queries import Q5
 
 sys.path.append("../../../")
 
-from mysite.unmasque.refactored.orderby_clause import OrderBy
+from mysite.unmasque.src.core.orderby_clause import OrderBy
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 

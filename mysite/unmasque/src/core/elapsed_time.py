@@ -10,6 +10,7 @@ def create_zero_time_profile():
 class ElapsedTime:
     clause_keys = ["From Clause:",
                    "Union:",
+                   "Restore DB:",
                    "Correlated Sampling:",
                    "View Minimization:",
                    "Where Clause:",
@@ -23,6 +24,10 @@ class ElapsedTime:
                    "Total: "]
 
     def __init__(self):
+        self.table_string = ''
+        self.app_db_restore = 0
+        self.t_db_restore = 0
+
         self.t_sampling = 0
         self.t_view_min = 0
         self.t_where_clause = 0
@@ -92,6 +97,10 @@ class ElapsedTime:
         self.t_sampling += t_u
         self.app_sampling += c_app
 
+    def update_for_db_restore(self, t_u, c_app):
+        self.t_db_restore += t_u
+        self.app_db_restore += c_app
+
     def update_for_view_minimization(self, t_u, c_app):
         self.t_view_min += t_u
         self.app_view_min += c_app
@@ -116,6 +125,7 @@ class ElapsedTime:
         self.t_orderby += other_profile.t_orderby
         self.t_limit += other_profile.t_limit
         self.t_nep += other_profile.t_nep
+        self.t_db_restore += other_profile.t_db_restore
 
         self.app_total = other_profile.app_total
 
@@ -128,6 +138,7 @@ class ElapsedTime:
         self.app_orderby += other_profile.app_orderby
         self.app_limit += other_profile.app_limit
         self.app_nep += other_profile.app_nep
+        self.app_db_restore += other_profile.app_db_restore
 
     def print(self):
         max_len = len(max(self.clause_keys, key=len)) + 1
@@ -160,7 +171,7 @@ class ElapsedTime:
         ds = copy.deepcopy(self.display_string)
         ds = ds.replace("\n", "<br>")
         return ds
-    
+
     def get_table_display_string(self):
         times = self.get_times()
         app = self.get_app_calls()
@@ -170,7 +181,8 @@ class ElapsedTime:
             if i!=len(self.clause_keys)-1:
                 self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(times[i]) + '</td><td>' +str(app[i])+ '</td></tr>'
             else:
-                self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(round(times[i])) + '</td><td>' + str(app[i]) +'</td></tr>'        
+                self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(
+                    round(times[i])) + '</td><td>' + str(app[i]) + '</td></tr>'
         self.table_string += '</table>'
         return self.table_string
 

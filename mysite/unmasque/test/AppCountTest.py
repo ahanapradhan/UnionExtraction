@@ -2,7 +2,7 @@
 
 import unittest
 
-from ..refactored.from_clause import FromClause
+from mysite.unmasque.src.core.from_clause import FromClause
 from ..src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from .util import queries
 from .util.BaseTestCase import BaseTestCase

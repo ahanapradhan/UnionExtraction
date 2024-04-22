@@ -1,6 +1,6 @@
 import unittest
 
-from mysite.unmasque.refactored.cs2 import Cs2
+from mysite.unmasque.src.core.cs2 import Cs2
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 

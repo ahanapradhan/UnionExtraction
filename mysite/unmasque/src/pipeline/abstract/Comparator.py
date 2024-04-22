@@ -1,22 +1,30 @@
-from ....refactored.abstract.AppExtractorBase import AppExtractorBase
+from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
+from mysite.unmasque.src.core.db_restorer import DbRestorer
 
 
 class Comparator(AppExtractorBase):
     r_e = "r_e"
     r_h = "r_h"
 
-    def __init__(self, connectionHelper, name, earlyExit):
+    def __init__(self, connectionHelper, name, earlyExit, core_relations=None):
         super().__init__(connectionHelper, name)
+        self.relations = core_relations
         self.earlyExit = earlyExit
         self.row_count_r_e = 0
         self.row_count_r_h = 0
+        self.db_restorer = DbRestorer(self.connectionHelper, self.relations)
 
     def extract_params_from_args(self, args):
         return args[0], args[1]
 
-    def doActualJob(self, args):
+    def doActualJob(self, args=None):
         Q_h, Q_E = self.extract_params_from_args(args)
-        self.sanitize()
+        for tab in self.relations:
+            tab_size = self.db_restorer.restore_table_and_confirm(tab)
+            if not tab_size:
+                self.logger.error(f"Could not restore {tab}, cannot run result comparator!")
+                return False
+
         if Q_E is None:
             self.logger.info("Got None to compare. Cannot do anything...sorry!")
             return False
