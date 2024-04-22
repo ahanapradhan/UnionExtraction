@@ -1,6 +1,6 @@
 from . import algorithm1
 from .union_from_clause import UnionFromClause
-from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
+from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 
 
 class Union(AppExtractorBase):

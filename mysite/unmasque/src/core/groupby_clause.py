@@ -1,9 +1,9 @@
 import ast
 
-from mysite.unmasque.src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from mysite.unmasque.src.util.utils import isQ_result_empty, get_dummy_val_for, get_val_plus_delta, get_format, get_char
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
-from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from ...src.util.utils import isQ_result_empty, get_dummy_val_for, get_val_plus_delta, get_format, get_char
+from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
+from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
 NON_TEXT_TYPES = ['date', 'int', 'integer', 'numeric', 'float']
 

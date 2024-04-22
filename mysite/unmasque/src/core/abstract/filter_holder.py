@@ -1,4 +1,4 @@
-from mysite.unmasque.src.core.abstract.un2_where_clause import UN2WhereClause
+from ....src.core.abstract.un2_where_clause import UN2WhereClause
 
 
 class FilterHolder(UN2WhereClause):

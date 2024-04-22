@@ -1,7 +1,7 @@
 import oracledb
 from oracledb import OperationalError
 
-from mysite.unmasque.src.util.oracle_queries import OracleQueries
+from ...src.util.oracle_queries import OracleQueries
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 import oracledb as cx_Oracle
 

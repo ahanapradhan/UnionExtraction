@@ -1,9 +1,9 @@
 import time
 from abc import abstractmethod
 
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
-from mysite.unmasque.src.pipeline.abstract.TpchSanitizer import TpchSanitizer
-from mysite.unmasque.src.util.Log import Log
+from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
+from ....src.pipeline.abstract.TpchSanitizer import TpchSanitizer
+from ....src.util.Log import Log
 
 
 class Base(TpchSanitizer):

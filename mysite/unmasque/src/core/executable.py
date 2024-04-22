@@ -1,5 +1,5 @@
-from mysite.unmasque.src.core.abstract.ExtractorBase import Base
-from mysite.unmasque.src.util.constants import REL_ERROR, RELATION
+from ...src.core.abstract.ExtractorBase import Base
+from ...src.util.constants import REL_ERROR, RELATION
 
 
 def get_result_as_tuple_1(res, result):

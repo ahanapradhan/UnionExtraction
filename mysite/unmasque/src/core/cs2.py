@@ -1,7 +1,7 @@
 import copy
 
-from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
-from mysite.unmasque.src.util.utils import isQ_result_empty
+from ...src.core.abstract.AppExtractorBase import AppExtractorBase
+from ...src.util.utils import isQ_result_empty
 
 
 def get_base_t(key_list, sizes):

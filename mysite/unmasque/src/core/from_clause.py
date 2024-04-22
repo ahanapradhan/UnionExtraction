@@ -1,8 +1,8 @@
-from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
-from mysite.unmasque.src.core.initialization import Initiator
-from mysite.unmasque.src.util.utils import isQ_result_empty
-from mysite.unmasque.src.util.application_type import ApplicationType
-from mysite.unmasque.src.util.constants import REL_ERROR
+from ...src.core.abstract.AppExtractorBase import AppExtractorBase
+from ...src.core.initialization import Initiator
+from ...src.util.utils import isQ_result_empty
+from ...src.util.application_type import ApplicationType
+from ...src.util.constants import REL_ERROR
 
 
 class FromClause(AppExtractorBase):

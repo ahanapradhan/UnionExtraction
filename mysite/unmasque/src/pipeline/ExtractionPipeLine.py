@@ -1,12 +1,12 @@
 import copy
 
-from mysite.unmasque.src.core.aggregation import Aggregation
-from mysite.unmasque.src.core.from_clause import FromClause
-from mysite.unmasque.src.core.groupby_clause import GroupBy
-from mysite.unmasque.src.core.limit import Limit
-from mysite.unmasque.src.core.nep import NEP
-from mysite.unmasque.src.core.orderby_clause import OrderBy
-from mysite.unmasque.src.core.projection import Projection
+from ...src.core.aggregation import Aggregation
+from ...src.core.from_clause import FromClause
+from ...src.core.groupby_clause import GroupBy
+from ...src.core.limit import Limit
+from ...src.core.nep import NEP
+from ...src.core.orderby_clause import OrderBy
+from ...src.core.projection import Projection
 from .DisjunctionPipeLine import DisjunctionPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator

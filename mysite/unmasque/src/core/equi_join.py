@@ -1,7 +1,7 @@
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
-from mysite.unmasque.src.core.abstract.filter_holder import FilterHolder
-from mysite.unmasque.src.core.filter import Filter
-from mysite.unmasque.src.util.aoa_utils import get_op, get_tab, get_attrib, merge_equivalent_paritions
+from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
+from ...src.core.abstract.filter_holder import FilterHolder
+from ...src.core.filter import Filter
+from ...src.util.aoa_utils import get_op, get_tab, get_attrib, merge_equivalent_paritions
 
 
 class U2EquiJoin(FilterHolder):

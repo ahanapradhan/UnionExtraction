@@ -1,12 +1,12 @@
 import ast
 import copy
 from datetime import date
-from typing import Union, List, Tuple
+from typing import Union, Tuple
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
-from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
+from ....src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
 NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number']
 

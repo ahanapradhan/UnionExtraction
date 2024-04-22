@@ -1,4 +1,4 @@
-from mysite.unmasque.src.pipeline.abstract.Comparator import Comparator
+from ...src.pipeline.abstract.Comparator import Comparator
 
 
 class ResultComparator(Comparator):

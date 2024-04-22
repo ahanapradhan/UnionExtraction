@@ -6,8 +6,8 @@ from itertools import combinations
 
 from dateutil.relativedelta import relativedelta
 
-from mysite.unmasque.src.util import constants
-from mysite.unmasque.src.util.constants import dummy_int, dummy_date, dummy_char
+from ...src.util import constants
+from ...src.util.constants import dummy_int, dummy_date, dummy_char
 
 
 def get_header_from_cursour_desc(desc):

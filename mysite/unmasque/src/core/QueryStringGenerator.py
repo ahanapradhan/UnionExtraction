@@ -1,7 +1,7 @@
 import copy
 
 from ..util.constants import COUNT, SUM, max_str_len
-from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
+from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 from ..util.utils import get_min_and_max_val, get_format, get_datatype
 
 

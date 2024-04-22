@@ -6,7 +6,7 @@ from psycopg2 import OperationalError
 
 from .constants import OK
 from ..core.abstract.abstractConnection import AbstractConnectionHelper
-from mysite.unmasque.src.util.postgres_queries import PostgresQueries
+from ...src.util.postgres_queries import PostgresQueries
 
 
 class PostgresConnectionHelper(AbstractConnectionHelper):

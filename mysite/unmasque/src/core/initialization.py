@@ -2,10 +2,13 @@ import csv
 import os.path
 import pathlib
 
-from mysite.unmasque.src.core.abstract.ExtractorBase import Base
+from ...src.core.abstract.ExtractorBase import Base
 
 
 class Initiator(Base):
+
+    def extract_params_from_args(self, args):
+        pass
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Initiator")

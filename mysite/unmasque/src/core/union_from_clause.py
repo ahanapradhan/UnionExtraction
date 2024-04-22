@@ -1,6 +1,6 @@
 from ..mocks.database import Schema
-from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
-from mysite.unmasque.src.core.from_clause import FromClause
+from ...src.core.abstract.AppExtractorBase import AppExtractorBase
+from ...src.core.from_clause import FromClause
 from ..util.utils import isQ_result_empty
 
 

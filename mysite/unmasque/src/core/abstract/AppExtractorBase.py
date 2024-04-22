@@ -1,7 +1,7 @@
 from abc import ABC
 
 from .ExtractorBase import Base
-from mysite.unmasque.src.core.executable import Executable
+from ....src.core.executable import Executable
 
 
 class AppExtractorBase(Base, ABC):

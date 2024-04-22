@@ -1,5 +1,5 @@
-from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
-from mysite.unmasque.src.core.db_restorer import DbRestorer
+from ....src.core.abstract.AppExtractorBase import AppExtractorBase
+from ....src.core.db_restorer import DbRestorer
 
 
 class Comparator(AppExtractorBase):

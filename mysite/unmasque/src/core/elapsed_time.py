@@ -189,6 +189,7 @@ class ElapsedTime:
     def get_times(self):
         times = [round(entry, 2) for entry in [self.t_from_clause,
                                                self.t_union,
+                                               self.t_db_restore,
                                                self.t_sampling,
                                                self.t_view_min,
                                                self.t_where_clause,
