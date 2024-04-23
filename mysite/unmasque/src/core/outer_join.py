@@ -15,7 +15,7 @@ class OuterJoin(GenerationPipeLineBase):
         list_of_tables, new_join_graph = self.get_tables_list_and_new_join_graph()
         final_edge_seq = self.create_final_edge_seq(list_of_tables, new_join_graph)
         table_attr_dict = self.create_table_attrib_dict()
-        return True
+        #return True
 
         # self.restore_d_min()
         self.create_importance_dict(new_join_graph, query, table_attr_dict)
@@ -75,7 +75,7 @@ class OuterJoin(GenerationPipeLineBase):
             # make dict of table, attributes: projected val
             loc = {}
             for table in table_attr_dict.keys():
-                loc[table_attr_dict[table]] = colnames.index(table_attr_dict[table])
+                loc[table_attr_dict[table]] = res_hq[0].index(table_attr_dict[table])
             self.logger.debug(loc)
 
             res_hq_dict = {}
