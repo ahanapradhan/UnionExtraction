@@ -13,7 +13,7 @@ class MyTestCase(BaseTestCase):
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_simple(self):
-        query = "select n_regionkey where n_name <> 'GERMANY';"
+        query = "select n_regionkey from nation where n_name <> 'GERMANY';"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
