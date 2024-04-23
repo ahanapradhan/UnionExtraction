@@ -195,10 +195,10 @@ class ExtractionPipeLine(DisjunctionPipeLine):
             self.update_state(NEP_ + RESULT_COMPARE + DONE)
             if matched is None:
                 self.logger.error("Extracted Query is not semantically correct!..not going to try to extract NEP!")
-                return False
+                return eq
             if matched:
                 self.logger.info("No NEP!")
-                return True
+                return eq
 
             for tabname in self.core_relations:
                 self.update_state(NEP_ + DB_MINIMIZATION + START)
