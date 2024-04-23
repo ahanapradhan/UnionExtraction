@@ -215,7 +215,7 @@ class ExtractionPipeLine(DisjunctionPipeLine):
                 if nep_filters is None or not len(nep_filters):
                     self.logger.info("NEP does not exists.")
                 else:
-                    eq = q_generator.updateExtractedQueryWithNEPVal(eq, nep_filters)
+                    eq = q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
                 self.update_state(NEP_ + FILTER + DONE)
 
         time_profile.update_for_view_minimization(nep_minimizer.local_elapsed_time, nep_minimizer.app_calls)
