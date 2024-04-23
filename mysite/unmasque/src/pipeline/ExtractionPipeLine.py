@@ -1,5 +1,6 @@
 import copy
 
+from ..core.outer_join import OuterJoin
 from ...src.core.aggregation import Aggregation
 from ...src.core.from_clause import FromClause
 from ...src.core.groupby_clause import GroupBy
@@ -174,6 +175,16 @@ class ExtractionPipeLine(DisjunctionPipeLine):
         self.logger.debug("extracted query:\n", eq)
 
         eq = self.extract_NEP(core_relations, self.all_sizes, eq, q_generator, query, time_profile, delivery)
+
+        oj = OuterJoin(self.connectionHelper, delivery, pj.projected_attribs)
+        check = oj.doJob(query)
+        if not oj.done:
+            self.logger.error("Error in outer join extractor")
+            return eq, time_profile
+        if not check:
+            self.logger.info("No outer join")
+            return eq, time_profile
+        eq = oj.Q_E
 
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
