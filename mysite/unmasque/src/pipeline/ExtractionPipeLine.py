@@ -173,7 +173,7 @@ class ExtractionPipeLine(DisjunctionPipeLine):
 
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self.extract_NEP(core_relations, {}, eq, q_generator, query, time_profile, delivery)
+        eq = self.extract_NEP(core_relations, self.all_sizes, eq, q_generator, query, time_profile, delivery)
 
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)
@@ -186,7 +186,7 @@ class ExtractionPipeLine(DisjunctionPipeLine):
             return eq
 
         nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, sizes)
-        nep_extractor = NEP(self.connectionHelper, core_relations, delivery)
+        nep_extractor = NEP(self.connectionHelper, delivery)
 
         for i in range(10):
             self.update_state(NEP_ + RESULT_COMPARE + START)
@@ -203,14 +203,14 @@ class ExtractionPipeLine(DisjunctionPipeLine):
             for tabname in self.core_relations:
                 self.update_state(NEP_ + DB_MINIMIZATION + START)
                 self.update_state(NEP_ + DB_MINIMIZATION + RUNNING)
-                minimized = nep_minimizer.doJob(query, eq, tabname)
+                minimized = nep_minimizer.doJob((query, eq, tabname))
                 if not minimized:
                     continue
                 self.update_state(NEP_ + DB_MINIMIZATION + DONE)
 
                 self.update_state(NEP_ + FILTER + START)
                 self.update_state(NEP_ + FILTER + RUNNING)
-                nep_filters = nep_extractor.doJob(query, tabname)
+                nep_filters = nep_extractor.doJob((query, tabname))
                 if nep_filters is None or not len(nep_filters):
                     self.logger.info("NEP does not exists.")
                 else:
