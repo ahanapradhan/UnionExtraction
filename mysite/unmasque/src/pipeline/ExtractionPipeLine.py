@@ -211,12 +211,14 @@ class ExtractionPipeLine(DisjunctionPipeLine):
                 self.update_state(NEP_ + FILTER + START)
                 self.update_state(NEP_ + FILTER + RUNNING)
                 nep_filters = nep_extractor.doJob((query, tabname))
+                self.logger.debug(f"Nep filters on {tabname}: {str(nep_filters)}")
                 if nep_filters is None or not len(nep_filters):
                     self.logger.info("NEP does not exists.")
                 else:
-                    eq = q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
+                    eq = q_generator.updateExtractedQueryWithNEPVal(eq, nep_filters)
                 self.update_state(NEP_ + FILTER + DONE)
 
         time_profile.update_for_view_minimization(nep_minimizer.local_elapsed_time, nep_minimizer.app_calls)
         time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
+        self.logger.debug("returning..", eq)
         return eq
