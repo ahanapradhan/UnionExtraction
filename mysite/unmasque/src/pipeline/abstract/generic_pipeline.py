@@ -63,10 +63,10 @@ class GenericPipeLine(ABC):
             self.logger.error(e)
             return result
         else:
-            self.logger.error("Valid Execution")
+            self.logger.info("Valid Execution")
             return result
         finally:
-            self.logger.error("Ended Execution")
+            self.logger.info("Ended Execution")
 
     def doJob(self, query, qe=None):
         local_start_time = time.time()
