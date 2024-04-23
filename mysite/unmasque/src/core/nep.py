@@ -8,8 +8,8 @@ from ..util.utils import isQ_result_empty
 
 
 class NepComparator(ResultComparator):
-    def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, True)
+    def __init__(self, connectionHelper, core_relations):
+        super().__init__(connectionHelper, True, core_relations)
         self.earlyExit = False
 
 
@@ -18,7 +18,7 @@ class NepMinimizer(Minimizer):
     def __init__(self, connectionHelper, core_relations, all_sizes={}):
         super().__init__(connectionHelper, core_relations, all_sizes, "NEP Minimizer")
         self.Q_E = None
-        self.nep_comparator = NepComparator(self.connectionHelper)
+        self.nep_comparator = NepComparator(self.connectionHelper, core_relations)
 
     def set_all_relations(self, relations: list[str]):
         self.all_relations = copy.deepcopy(relations)
@@ -111,7 +111,8 @@ class NepMinimizer(Minimizer):
         self.logger.debug(self.nep_comparator.row_count_r_e, self.nep_comparator.row_count_r_h)
         if self.nep_comparator.row_count_r_e == 1 and not self.nep_comparator.row_count_r_h:
             return True
-        if self.nep_comparator.row_count_r_e > 1 and self.nep_comparator.row_count_r_h <= self.nep_comparator.row_count_r_e:
+        if self.nep_comparator.row_count_r_e > 1 \
+                and self.nep_comparator.row_count_r_h <= self.nep_comparator.row_count_r_e:
             return True
         elif not self.nep_comparator.row_count_r_e:
             return False
@@ -122,85 +123,32 @@ class NepMinimizer(Minimizer):
 
 
 class NEP(GenerationPipeLineBase):
-    loop_count_cutoff = 10
-    '''
-    NEP extractor do not terminate if input Q_E is not correct. This cutoff is to prevent infinite looping
-    It imposes on the user the following restriction: hidden query cannot have more than 10 NEPs.
-    Of course we can set this cutoff to much higher value if needed.
-    '''
 
-    def __init__(self, connectionHelper, core_relations, query_generator, delivery, all_sizes={}):
-        super().__init__(connectionHelper, delivery)
-        self.nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, all_sizes)
-        self.filter_attrib_dict = {}
-        self.attrib_types_dict = {}
-        self.Q_E = ""
-        self.query_generator = query_generator
-        self.wrong = False
-        self.enabled = self.connectionHelper.config.detect_nep
-
-    def set_all_relations(self, relations: list[str]):
-        super().set_all_relations(relations)
-        self.nep_minimizer.set_all_relations(relations)
+    def __init__(self, connectionHelper, core_relations, delivery):
+        super().__init__(connectionHelper, core_relations, delivery)
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
 
-    def do_one_round_nep(self, query, nep_exists, matched, is_for_joined):
-        loop_count = 0
-        while not matched and loop_count < self.loop_count_cutoff:
-            loop_count += 1
-            for i, tabname in enumerate(self.core_relations):
-                self.logger.debug(f"loop count {loop_count}")
-                self.logger.info("NEP may exists")
-                nep_exists = True
-                minimized = self.nep_minimizer.doJob(query, self.Q_E, tabname)
-                if not minimized:
-                    continue
-                Q_E = self.get_nep(tabname, query, i, is_for_joined)
-                if Q_E is None:
-                    self.logger.error("Q_E is None. Cannot do NEP extraction!")
-                    self.wrong = True
-                    break
-                self.Q_E = Q_E
-                matched = self.nep_minimizer.match(query, self.Q_E)
-                if matched:
-                    break
-        return nep_exists, matched
-
-    def doActualJob(self, args=None):
-        query, Q_E = self.extract_params_from_args(args)
-        nep_exists = False
-        # Run the hidden query on the original database instance
-        matched = self.nep_comparator.doJob(query, Q_E)
-        if matched is None:
-            self.logger.error("Extracted Query is not semantically correct!..not going to try to extract NEP!")
-            return False
-
-        self.Q_E = Q_E
-        nep_exists, matched = self.do_one_round_nep(query, nep_exists, matched, False)
-        if matched:
-            return nep_exists
-        if self.wrong:
-            return False
-        nep_exists, matched = self.do_one_round_nep(query, nep_exists, matched, True)
-        if matched:
-            return nep_exists
-
-    def get_nep(self, tabname, query, i, is_for_joined):
+    def extract_NEP_for_table(self, tabname, query, is_for_joined):
+        i = self.core_relations.index(tabname)
         self.logger.debug("Inside get nep")
         res = self.app.doJob(query)
+        filterAttribs = []
         if isQ_result_empty(res):
             attrib_list = self.global_all_attribs[i]
             self.logger.debug("attrib list: ", attrib_list)
-            filterAttribs = []
             filterAttribs = self.check_per_attrib(attrib_list,
                                                   tabname,
                                                   query,
                                                   filterAttribs, is_for_joined)
-            if filterAttribs is not None and len(filterAttribs):
-                return self.query_generator.updateExtractedQueryWithNEPVal(query, filterAttribs)
-        return self.Q_E
+        return filterAttribs
+
+    def doActualJob(self, args=None):
+        query, table = self.extract_params_from_args(args)
+        nonKey_filter = self.extract_NEP_for_table(table, query, False)
+        key_filter = self.extract_NEP_for_table(table, query, True)
+        return nonKey_filter + key_filter
 
     def check_per_attrib(self, attrib_list, tabname, query, filterAttribs, is_for_joined):
         if is_for_joined:

@@ -4,7 +4,7 @@ from ...src.core.aggregation import Aggregation
 from ...src.core.from_clause import FromClause
 from ...src.core.groupby_clause import GroupBy
 from ...src.core.limit import Limit
-from ...src.core.nep import NEP
+from ...src.core.nep import NEP, NepMinimizer
 from ...src.core.orderby_clause import OrderBy
 from ...src.core.projection import Projection
 from .DisjunctionPipeLine import DisjunctionPipeLine
@@ -12,7 +12,7 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, NEP_, PROJECTION, \
-    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, DB_MINIMIZATION, WRONG, FILTER, RESULT_COMPARE
 
 
 class ExtractionPipeLine(DisjunctionPipeLine):
@@ -182,16 +182,41 @@ class ExtractionPipeLine(DisjunctionPipeLine):
         return eq, time_profile
 
     def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
-        if self.connectionHelper.config.detect_nep:
-            self.update_state(NEP_ + START)
-            nep = NEP(self.connectionHelper, core_relations, q_generator, delivery, sizes)
-            self.update_state(NEP_ + RUNNING)
-            check = nep.doJob([query, eq])
-            if nep.Q_E:
-                eq = nep.Q_E
-            time_profile.update_for_nep(nep.local_elapsed_time, nep.app_calls)
-            self.update_state(NEP_ + DONE)
+        if not self.connectionHelper.config.detect_nep:
+            return eq
 
-            if not check:
-                self.logger.info("NEP does not exists.")
+        nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, sizes)
+        nep_extractor = NEP(self.connectionHelper, core_relations, delivery)
+
+        for i in range(10):
+            self.update_state(NEP_ + RESULT_COMPARE + START)
+            self.update_state(NEP_ + RESULT_COMPARE + RUNNING)
+            matched = nep_minimizer.match(query, eq)
+            self.update_state(NEP_ + RESULT_COMPARE + DONE)
+            if matched is None:
+                self.logger.error("Extracted Query is not semantically correct!..not going to try to extract NEP!")
+                return False
+            if matched:
+                self.logger.info("No NEP!")
+                return True
+
+            for tabname in self.core_relations:
+                self.update_state(NEP_ + DB_MINIMIZATION + START)
+                self.update_state(NEP_ + DB_MINIMIZATION + RUNNING)
+                minimized = nep_minimizer.doJob(query, eq, tabname)
+                if not minimized:
+                    continue
+                self.update_state(NEP_ + DB_MINIMIZATION + DONE)
+
+                self.update_state(NEP_ + FILTER + START)
+                self.update_state(NEP_ + FILTER + RUNNING)
+                nep_filters = nep_extractor.doJob(query, tabname)
+                if nep_filters is None or not len(nep_filters):
+                    self.logger.info("NEP does not exists.")
+                else:
+                    eq = q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
+                self.update_state(NEP_ + FILTER + DONE)
+
+        time_profile.update_for_view_minimization(nep_minimizer.local_elapsed_time, nep_minimizer.app_calls)
+        time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
         return eq
