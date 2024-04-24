@@ -1,10 +1,11 @@
 import copy
+from abc import ABC
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ...util.utils import is_int
 
 
-class WhereClause(MutationPipeLineBase):
+class WhereClause(MutationPipeLineBase, ABC):
 
     def __init__(self, connectionHelper,
                  global_key_lists,

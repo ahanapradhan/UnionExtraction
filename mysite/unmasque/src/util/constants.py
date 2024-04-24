@@ -55,6 +55,8 @@ DETECT_UNION = "union"
 DETECT_NEP = "nep"
 USE_CS2 = "cs2"
 DETECT_OR = "or"
+DETECT_OJ = "outer_join"
+
 
 WAITING = "_WAITING"
 DONE = "_DONE"

@@ -5,7 +5,6 @@ from datetime import timedelta, date
 import pytest
 
 from mysite.unmasque.src.core.executable import Executable
-from mysite.unmasque.src.util.utils import isQ_result_empty
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.src.Optimizer_config import set_optimizer_params
 from ...test.util import tpchSettings, queries
@@ -86,7 +85,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -148,7 +147,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -166,7 +165,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -208,7 +207,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -257,7 +256,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -275,7 +274,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -292,7 +291,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -310,7 +309,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -328,7 +327,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -346,7 +345,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -364,7 +363,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -382,7 +381,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -400,7 +399,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -419,7 +418,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -438,7 +437,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -457,7 +456,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)
@@ -475,7 +474,7 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
-        if isQ_result_empty(result):
+        if app.isQ_result_empty(result):
             print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
                   "query!")
             self.assertTrue(False)

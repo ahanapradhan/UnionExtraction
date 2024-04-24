@@ -15,7 +15,7 @@ from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab
     find_le_attribs_from_edge_set, find_ge_attribs_from_edge_set, add_item_to_list, remove_absorbed_Bs, \
     find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, do_numeric_drama, need_permanent_mutation, \
     find_concrete_bound_from_filter_bounds, is_equal, add_item_to_dict
-from ..util.utils import isQ_result_empty, get_val_plus_delta, get_format, add_two, get_mid_val
+from ..util.utils import get_val_plus_delta, get_format, add_two, get_mid_val
 
 
 def check_redundancy(fl_list, a_ineq):
@@ -352,7 +352,7 @@ class AlgebraicPredicate(FilterHolder):
         self.restore_d_min_from_dict()
         self.do_permanent_mutation()
         res = self.app.doJob(query)
-        if isQ_result_empty(res):
+        if self.app.isQ_result_empty(res):
             print("Mutation got wrong! %%%%%%")
 
         for i, pred in enumerate(self.filter_predicates):
@@ -603,7 +603,7 @@ class AlgebraicPredicate(FilterHolder):
         for t_a in joined_tab_attribs:
             self.mutate_dmin_with_val(datatype, t_a, val)
         new_res = self.app.doJob(query)
-        if isQ_result_empty(new_res):
+        if self.app.isQ_result_empty(new_res):
             for t_a in joined_tab_attribs:
                 self.mutate_dmin_with_val(datatype, t_a, dmin_val)
                 val = dmin_val

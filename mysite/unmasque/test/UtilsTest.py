@@ -2,11 +2,23 @@ import unittest
 
 from mysite.unmasque.src.core.orderby_clause import check_sort_order
 from mysite.unmasque.src.util.configParser import Config
+from ..src.core.nullfree_executable import is_result_nonempty_nullfree
 from ..src.util import utils
 from ..src.util.PostgresConnectionHelper import PostgresConnectionHelper
 
 
 class MyTestCase(unittest.TestCase):
+
+    def test_nullfree_exe(self):
+        res1 = [('col1', 'col2', 'col3'), (None, 1, None)]
+        res2 = [('col1', 'col2', 'col3'), (1, 1, 2)]
+        res3 = [('col1', 'col2', 'col3'), None]
+        self.assertFalse(is_result_nonempty_nullfree(res1))
+        self.assertTrue(is_result_nonempty_nullfree(res2))
+        self.assertFalse(is_result_nonempty_nullfree(res3))
+
+
+
     def test_check_order(self):
         check = check_sort_order(['-1.09', '-2.99', '-3.01'])
         print(check)
@@ -23,9 +35,6 @@ class MyTestCase(unittest.TestCase):
         nonNulls = {one, two, three}
         res = utils.get_pairs_from_set(nonNulls)
         self.assertEqual(res, {frozenset({one, three}), frozenset({two, three}), frozenset({one, two})})
-
-    def test_char_len(self):
-        print(len(E'\\'))
 
     def test_construct_maxNonNulls(self):
         s = frozenset({'S'})

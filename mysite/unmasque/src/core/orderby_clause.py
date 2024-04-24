@@ -2,7 +2,7 @@ import copy
 
 import frozenlist
 
-from ...src.util.utils import isQ_result_empty, get_unused_dummy_val, get_dummy_val_for, \
+from ...src.util.utils import get_unused_dummy_val, get_dummy_val_for, \
     get_val_plus_delta, get_format, get_char
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.util.constants import COUNT, NO_ORDER, SUM
@@ -242,7 +242,7 @@ class OrderBy(GenerationPipeLineBase):
                 new_result = self.app.doJob(query)
                 self.joined_attrib_valDict.clear()
                 self.logger.debug("New Result", k, new_result)
-                if isQ_result_empty(new_result):
+                if self.app.isQ_result_empty(new_result):
                     self.logger.error('some error in generating new database. '
                                       'Result is empty. Can not identify Ordering')
                     return None

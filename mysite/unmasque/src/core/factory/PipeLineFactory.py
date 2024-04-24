@@ -3,9 +3,9 @@ import threading
 import time
 from queue import Queue
 
-from .ExtractionPipeLine import ExtractionPipeLine
-from .UnionPipeLine import UnionPipeLine
-from ..util.constants import WAITING
+from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
+from mysite.unmasque.src.util.constants import WAITING
 
 
 def raise_exception(id):

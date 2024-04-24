@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 
-from .src.pipeline.PipeLineFactory import PipeLineFactory
+from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionFactory import ConnectionHelperFactory
 from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUALITY, \
     FILTER, \

@@ -90,12 +90,6 @@ def find_diff_idx(list1, list2):
     return diffs
 
 
-def isQ_result_empty(Res):
-    if len(Res) <= 1:
-        return True
-    return False
-
-
 def generateCombos(val):
     res = [[0]]
     for i in range(1, val):

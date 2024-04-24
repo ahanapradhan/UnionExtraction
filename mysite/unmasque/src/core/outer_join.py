@@ -18,11 +18,11 @@ class OuterJoin(GenerationPipeLineBase):
         list_of_tables, new_join_graph = self.get_tables_list_and_new_join_graph()
         final_edge_seq = self.create_final_edge_seq(list_of_tables, new_join_graph)
         table_attr_dict = self.create_table_attrib_dict()
+        self.create_importance_dict(new_join_graph, query, table_attr_dict)
+
+        set_possible_queries, list_dict_spq = self.FormulateQueries(final_edge_seq, query)
         return True
 
-        # self.restore_d_min()
-        self.create_importance_dict(new_join_graph, query, table_attr_dict)
-        set_possible_queries, list_dict_spq = self.FormulateQueries(final_edge_seq, query)
         sem_eq_queries = self.remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries,
                                                                 list_dict_spq)
         self.Q_E = sem_eq_queries[0]
@@ -278,17 +278,16 @@ class OuterJoin(GenerationPipeLineBase):
         if tabname not in list_of_tables:
             list_of_tables.append(tabname)
         self.logger.debug(attrib, tabname)
-        temp.append(tabname)
+        temp.append((attrib, tabname))
 
     def FormulateQueries(self, final_edge_seq, query):
-
         filter_pred_on = []
         filter_pred_where = []
         for fp in self.global_filter_predicates:
             restore_value = self.connectionHelper.execute_sql_fetchall("select " + fp[1] + " From " + fp[0] + ";")
             self.connectionHelper.execute_sql(["Update " + fp[0] + " Set " + fp[1] + " = Null;"])
             res_hq = self.app.doJob(query)
-            if len(res_hq) == 0:
+            if len(res_hq) == 1:
                 filter_pred_where.append(fp)
             else:
                 filter_pred_on.append(fp)

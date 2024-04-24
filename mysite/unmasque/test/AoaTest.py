@@ -5,7 +5,7 @@ import pytest
 from mysite.unmasque.src.core.limit import Limit
 from mysite.unmasque.src.core.orderby_clause import OrderBy
 from mysite.unmasque.src.core.projection import Projection
-from ..src.util.utils import isQ_result_empty
+from ..src.core.executable import isQ_result_empty
 from ..src.core.aoa import AlgebraicPredicate
 from ..src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ..src.util.aoa_utils import find_all_chains, create_adjacency_map_from_aoa_predicates, \

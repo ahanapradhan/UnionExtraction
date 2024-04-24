@@ -1,7 +1,6 @@
 from abc import ABC
 
 from .AppExtractorBase import AppExtractorBase
-from ...util.utils import isQ_result_empty
 
 
 def calculate_mid_ctids(size):
@@ -34,7 +33,7 @@ class Minimizer(AppExtractorBase, ABC):
     def sanity_check(self, query):
         # SANITY CHECK
         new_result = self.app.doJob(query)
-        if isQ_result_empty(new_result):
+        if self.app.isQ_result_empty(new_result):
             self.logger.error("Error: Query out of extractable domain\n")
             return False
         return True
@@ -98,7 +97,7 @@ class Minimizer(AppExtractorBase, ABC):
             [self.connectionHelper.queries.create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
         new_result = self.app.doJob(query)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(view)])
-        if not isQ_result_empty(new_result):
+        if not self.app.isQ_result_empty(new_result):
             return True  # this half works
         return False  # this half does not work
 

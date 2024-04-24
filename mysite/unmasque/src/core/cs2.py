@@ -1,7 +1,6 @@
 import copy
 
 from ...src.core.abstract.AppExtractorBase import AppExtractorBase
-from ...src.util.utils import isQ_result_empty
 
 
 def get_base_t(key_list, sizes):
@@ -96,7 +95,7 @@ class Cs2(AppExtractorBase):
 
         # check for null free rows and not just nonempty results
         new_result = self.app.doJob(query)
-        if isQ_result_empty(new_result):
+        if self.app.isQ_result_empty(new_result):
             for table in self.core_relations:
                 self.connectionHelper.execute_sqls_with_DictCursor([self.connectionHelper.queries.drop_table(table)])
                 self.sample[table] = sizes[table]

@@ -1,7 +1,7 @@
 import ast
 
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ...src.util.utils import isQ_result_empty, get_dummy_val_for, get_val_plus_delta, get_format, get_char
+from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
@@ -66,7 +66,7 @@ class GroupBy(GenerationPipeLineBase):
                 self.see_d_min()
                 new_result = self.app.doJob(query)
 
-                if isQ_result_empty(new_result):
+                if self.app.isQ_result_empty(new_result):
                     self.logger.error('some error in generating new database. '
                                       'Result is empty. Can not identify Grouping')
                     return False

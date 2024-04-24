@@ -2,7 +2,7 @@ import signal
 import sys
 
 from ..src.util.ConnectionFactory import ConnectionHelperFactory
-from .pipeline.PipeLineFactory import PipeLineFactory
+from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
 
 
