@@ -6,6 +6,8 @@ from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 
 
 class OuterJoin(GenerationPipeLineBase):
+    join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ' RIGHT OUTER JOIN ',
+                ('h', 'l'): ' LEFT OUTER JOIN ', ('h', 'h'): ' FULL OUTER JOIN '}
 
     def __init__(self, connectionHelper, global_pk_dict, delivery, projected_attributes, q_gen):
         super().__init__(connectionHelper, "Outer Join", delivery)
@@ -195,7 +197,7 @@ class OuterJoin(GenerationPipeLineBase):
                 res_poss_q = self.app.doJob(poss_q)
                 #  maybe needs  work
                 if len(res_HQ) != len(res_poss_q):
-                    pass
+                    same = False
                 else:
                     data_HQ = res_HQ[1:]
                     data_poss_q = res_poss_q[1:]
@@ -308,9 +310,8 @@ class OuterJoin(GenerationPipeLineBase):
                     self.logger.debug("error sneha!!!")
 
                 self.logger.debug(imp_t1, imp_t2)
-                join_map = {('l', 'l'): ' Inner Join ', ('l', 'h'): ' Right Outer Join ',
-                            ('h', 'l'): ' Left Outer Join ', ('h', 'h'): ' Full Outer Join '}
-                type_of_join = join_map.get((imp_t1, imp_t2))
+
+                type_of_join = self.join_map.get((imp_t1, imp_t2))
                 if flag_first:
                     self.q_gen.from_op += str(edge[0][1]) + type_of_join + str(edge[1][1]) + ' ON ' + str(
                         edge[0][0]) + ' = ' + str(edge[1][0])

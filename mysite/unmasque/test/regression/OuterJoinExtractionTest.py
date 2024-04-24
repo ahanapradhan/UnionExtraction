@@ -23,7 +23,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.conn.config.detect_or = True
         query = "SELECT l_shipmode, " \
                 "o_shippriority ," \
-                "count(o_orderpriority) as low_line_count " \
+                "count(*) as low_line_count " \
                 "FROM lineitem LEFT OUTER JOIN orders ON " \
                 "( l_orderkey = o_orderkey AND o_totalprice > 50000 ) " \
                 "WHERE l_linenumber = 4 " \
