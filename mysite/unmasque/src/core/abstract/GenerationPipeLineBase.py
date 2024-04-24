@@ -96,11 +96,14 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return val, prev
 
     def update_with_val(self, attrib: str, tabname: str, val) -> None:
-        datatype = self.get_datatype((tabname, attrib))
-        if datatype == 'date' or datatype in NUMBER_TYPES:
-            update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, get_format(datatype, val))
+        if val == 'NULL':
+            update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)
         else:
-            update_q = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, val)
+            datatype = self.get_datatype((tabname, attrib))
+            if datatype == 'date' or datatype in NUMBER_TYPES:
+                update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, get_format(datatype, val))
+            else:
+                update_q = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, val)
         self.connectionHelper.execute_sql([update_q])
 
     def get_s_val(self, attrib: str, tabname: str) -> Union[int, float, date, str]:
