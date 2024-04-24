@@ -7,10 +7,10 @@ class OuterJoinExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = False
-        self.conn.config.detect_or = False
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_sneha_outer_join_basic(self):
+        self.conn.config.detect_or = False
         query = "Select ps_suppkey, p_name, p_type " \
                 "from part LEFT outer join partsupp on p_partkey=ps_partkey and p_size>4 " \
                 "and ps_availqty>3350;"
