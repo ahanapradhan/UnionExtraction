@@ -117,12 +117,16 @@ class OuterJoin(GenerationPipeLineBase):
         return p_att_table
 
     def create_table_attrib_dict(self):
+        self.logger.debug(f"Projected attribs: {self.projected_attributes}")
         # once dict is made compare values to null or not null
         # and prepare importance_dict
         table_attr_dict = {}
         # for each table find a projected attribute which we will check for null values
         for k in self.projected_attributes:
+            if k is None or k == '':
+                continue
             tabname = self.find_tabname_for_given_attrib(k)
+            self.logger.debug("attrib: ", k, "table: ", tabname)
             if tabname not in table_attr_dict.keys():
                 self.logger.debug(k, tabname)
                 table_attr_dict[tabname] = k
@@ -259,9 +263,11 @@ class OuterJoin(GenerationPipeLineBase):
         filter_pred_on = []
         filter_pred_where = []
         for fp in self.global_filter_predicates:
+            self.logger.debug(f"fp from global filter predicates: {fp}")
             tab, attrib = fp[0], fp[1]
             _, prev = self.update_attrib_to_see_impact(attrib, tab)
             res_hq = self.app.doJob(query)
+            self.logger.debug(f"res_hq: {res_hq}")
             if len(res_hq) == 1:
                 filter_pred_where.append(fp)
             else:

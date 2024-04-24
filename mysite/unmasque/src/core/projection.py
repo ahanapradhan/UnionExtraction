@@ -116,7 +116,7 @@ class Projection(GenerationPipeLineBase):
         self.update_with_val(attrib, tabname, prev)
         self.update_attribs_bulk(join_tabnames, other_attribs, prev)
 
-        if len(new_result1) > 1:
+        if not self.app.isQ_result_empty(new_result1):
             new_result1 = list(new_result1[1])
             diff = find_diff_idx(new_result1, new_result)
             if diff:
@@ -137,7 +137,7 @@ class Projection(GenerationPipeLineBase):
             return
         new_result1 = self.app.doJob(query)
         self.update_with_val(attrib, tabname, prev)
-        if len(new_result1) > 1:
+        if not self.app.isQ_result_empty(new_result1):
             new_result1 = list(new_result1[1])
             diff = find_diff_idx(new_result1, new_result)
             if diff:
