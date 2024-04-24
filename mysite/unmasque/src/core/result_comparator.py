@@ -42,7 +42,10 @@ class ResultComparator(Comparator):
                     continue
                 temp = []
                 for val in row:
-                    temp.append(str(val))
+                    if val == 'None':
+                        temp.append('NULL')
+                    else:
+                        temp.append(str(val))
                 ins = (tuple(temp))
                 # print(ins)
                 if len(res_Qh_) == 1 and len(res_Qh_[0]) == 1:

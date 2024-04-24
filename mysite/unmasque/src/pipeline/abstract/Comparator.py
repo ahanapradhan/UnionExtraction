@@ -98,6 +98,7 @@ class Comparator(AppExtractorBase):
         header_ = header_.replace(',)', ')')
         str_values = str(values)
         str_values = str_values.replace(",)", ")")
+        str_values = str_values.replace("\'NULL\'", "NULL")
         if not str_values.startswith('('):
             str_values = f"('{str_values}')"
         self.connectionHelper.execute_sql([f"INSERT INTO {self.r_h}{header_} VALUES {str_values};"])

@@ -193,10 +193,14 @@ class OuterJoin(GenerationPipeLineBase):
                 if len(res_HQ) != len(res_poss_q):
                     pass
                 else:
+                    data_HQ = res_HQ[1:]
+                    data_poss_q = res_poss_q[1:]
                     # maybe use the available result comparator techniques
-                    for var in range(len(res_HQ)):
-                        self.logger.debug(res_HQ[var] == res_poss_q[var])
-                        if not (res_HQ[var] == res_poss_q[var]):
+                    for var in range(len(data_HQ)):
+                        self.logger.debug(data_HQ[var] == data_poss_q[var])
+                        if not (data_HQ[var] == data_poss_q[var]):
+                            self.logger.debug(data_HQ[var])
+                            self.logger.debug(data_poss_q[var])
                             same = False
 
                 self.update_with_val(attrib, table, s_val)
