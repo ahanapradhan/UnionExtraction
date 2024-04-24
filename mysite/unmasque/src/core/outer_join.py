@@ -1,18 +1,22 @@
 import copy
+from datetime import date
+from typing import Tuple, Union
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 
 
 class OuterJoin(GenerationPipeLineBase):
 
-    def __init__(self, connectionHelper, delivery, projected_attributes):
+    def __init__(self, connectionHelper, global_pk_dict, delivery, projected_attributes, q_gen):
         super().__init__(connectionHelper, "Outer Join", delivery)
+        self.global_pk_dict = global_pk_dict
         self.check_nep_again = False
         self.sem_eq_queries = None
         self.sem_eq_listdict = {}
         self.importance_dict = {}
         self.projected_attributes = projected_attributes
         self.Q_E = None
+        self.q_gen = q_gen
 
     def doExtractJob(self, query: str) -> bool:
         list_of_tables, new_join_graph = self.get_tables_list_and_new_join_graph()
@@ -60,21 +64,18 @@ class OuterJoin(GenerationPipeLineBase):
         return final_edge_seq
 
     def create_importance_dict(self, new_join_graph, query, table_attr_dict):
-        importance_dict = {}
+        self.importance_dict = {}
         for edge in new_join_graph:
+            key = tuple(edge)
             # modify d1
             # break join condition on this edge
-            tuple1 = edge[0]
-            key = tuple1[0]
-            table = tuple1[1]
-            self.connectionHelper.execute_sql(
-                ['Update ' + table + ' set ' + key + '= -(select ' + key + ' from ' + table + ');'])
-
+            attrib, table = edge[0][0], edge[0][1]
+            s_val = self.get_dmin_val(attrib, table)
+            break_val = self.get_different_s_val(attrib, table, s_val)
+            self.logger.debug(f"{table}.{attrib} s_val {s_val}, break val {break_val}")
+            self.update_with_val(attrib, table, break_val)
             res_hq = self.app.doJob(query)
-            self.logger.debug(res_hq)
-
-            self.connectionHelper.execute_sql(
-                ['Update ' + table + ' set ' + key + '= -(select ' + key + ' from ' + table + ');'])
+            self.update_with_val(attrib, table, s_val)
 
             # make dict of table, attributes: projected val
             loc = {}
@@ -83,62 +84,40 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug(loc)
 
             res_hq_dict = {}
-            if len(res_hq) == 0:
+            if len(res_hq) == 1:
                 for k in loc.keys():
                     if k not in res_hq_dict.keys():
                         res_hq_dict[k] = [None]
                     else:
                         res_hq_dict[k].append(None)
             else:
-                for l in range(len(res_hq)):
+                data = res_hq[1:]
+                for l in range(len(data)):
                     for k in loc.keys():
                         if k not in res_hq_dict.keys():
-                            res_hq_dict[k] = [res_hq[l][loc[k]]]
+                            res_hq_dict[k] = [data[l][loc[k]]]
                         else:
-                            res_hq_dict[k].append(res_hq[l][loc[k]])
+                            res_hq_dict[k].append(data[l][loc[k]])
             self.logger.debug(res_hq_dict)
 
-            # importance_dict={}
-            # for e in new_join_graph:
-            importance_dict[tuple(edge)] = {}
-            table1 = edge[0][1]  # first table
-            table2 = edge[1][1]
-
-            p_att_table1 = None
-            p_att_table2 = None
-            att1 = table_attr_dict[table1]
-            att2 = table_attr_dict[table2]
-            if att1 in res_hq_dict.keys():
-                for i in res_hq_dict[att1]:
-                    if i is not None:
-                        p_att_table1 = 10
-                        break
-            if att2 in res_hq_dict.keys():
-                for i in res_hq_dict[att2]:
-                    if i is not None:
-                        p_att_table2 = 10
-                        break
-
+            self.importance_dict[key] = {}
+            p_att_table1 = self.make_importance_dict_entry(key, edge[0][1], res_hq_dict, table_attr_dict)
+            p_att_table2 = self.make_importance_dict_entry(key, edge[1][1], res_hq_dict, table_attr_dict)
             self.logger.debug(p_att_table1, p_att_table2)
-            temp1 = ''
-            temp2 = ''
-            if p_att_table1 is None and p_att_table2 is None:
-                temp1 = 'l'
-                temp2 = 'l'
-            elif p_att_table1 is None and p_att_table2 is not None:
-                temp1 = 'l'
-                temp2 = 'h'
-            elif p_att_table1 is not None and p_att_table2 is None:
-                temp1 = 'h'
-                temp2 = 'l'
-            elif p_att_table1 is not None and p_att_table2 is not None:
-                temp1 = 'h'
-                temp2 = 'h'
 
-            importance_dict[tuple(edge)][table1] = temp1
-            importance_dict[tuple(edge)][table2] = temp2
-        self.logger.debug(importance_dict)
-        self.importance_dict = importance_dict
+        self.logger.debug(self.importance_dict)
+
+    def make_importance_dict_entry(self, key, table, res_hq_dict, table_attr_dict):
+        p_att_table = None
+        attrib = table_attr_dict[table]
+        if attrib in res_hq_dict.keys():
+            for i in res_hq_dict[attrib]:
+                if i not in [None, 'None']:
+                    p_att_table = 10
+                    break
+        priority = 'h' if p_att_table is not None else 'l'
+        self.importance_dict[key][table] = priority
+        return p_att_table
 
     def create_table_attrib_dict(self):
         # once dict is made compare values to null or not null
@@ -214,11 +193,9 @@ class OuterJoin(GenerationPipeLineBase):
 
                 ## result of hidden query
                 res_HQ = self.app.doJob(query)
-                self.logger.debug(res_HQ)
 
                 ## result of extracted query
                 res_poss_q = self.app.doJob(poss_q)
-                self.logger.debug(res_poss_q)
 
                 ##  maybe needs  work
                 if len(res_HQ) != len(res_poss_q):
@@ -280,49 +257,37 @@ class OuterJoin(GenerationPipeLineBase):
         self.logger.debug(attrib, tabname)
         temp.append((attrib, tabname))
 
+    def update_attrib_to_see_impact(self, attrib: str, tabname: str) \
+            -> Tuple[Union[int, float, date, str], Union[int, float, date, str]]:
+        prev = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
+        val = 'NULL'
+        self.logger.debug(f"update {tabname}.{attrib} with value {val} that had previous value {prev}")
+        self.update_with_val(attrib, tabname, val)
+        return val, prev
+
     def FormulateQueries(self, final_edge_seq, query):
         filter_pred_on = []
         filter_pred_where = []
         for fp in self.global_filter_predicates:
-            restore_value = self.connectionHelper.execute_sql_fetchall("select " + fp[1] + " From " + fp[0] + ";")
-            self.connectionHelper.execute_sql(["Update " + fp[0] + " Set " + fp[1] + " = Null;"])
+            tab, attrib = fp[0], fp[1]
+            _, prev = self.update_attrib_to_see_impact(attrib, tab)
             res_hq = self.app.doJob(query)
             if len(res_hq) == 1:
                 filter_pred_where.append(fp)
             else:
                 filter_pred_on.append(fp)
-
-            self.logger.debug(restore_value[0][0])
-            self.connectionHelper.execute_sql(
-                ["Update " + fp[0] + " Set " + fp[1] + " = " + str(restore_value[0][0]) + ";"])
+            self.update_with_val(attrib, tab, prev)
         self.logger.debug(filter_pred_on, filter_pred_where)
 
         set_possible_queries = []
-        key_dict = {
-            'nation': ['n_nationkey', 'n_regionkey'],
-            'region': ['r_regionkey'],
-            'supplier': ['s_suppkey', 's_nationkey'],
-            'partsupp': ['ps_partkey', 'ps_suppkey'],
-            'part': ['p_partkey'],
-            'lineitem': ['l_orderkey', 'l_partkey', 'l_suppkey'],
-            'orders': ['o_orderkey', 'o_custkey'],
-            'customer': ['c_custkey', 'c_nationkey']
-        }
 
         flat_list = [item for sublist in self.global_join_graph for item in sublist]
         keys_of_tables = [*set(flat_list)]
-        tables = self.core_relations
 
-        tables_in_joins = []
-        for key in keys_of_tables:
-            for tab in tables:
-                if key in key_dict[tab] and tab not in tables_in_joins:
-                    tables_in_joins.append(tab)
-
-        tables_not_in_joins = []
-        for tab in tables:
-            if tab not in tables_in_joins:
-                tables_not_in_joins.append(tab)
+        tables_in_joins = [tab for tab in self.core_relations if
+                           any(key in self.global_pk_dict[tab] for key in keys_of_tables)]
+        tables_not_in_joins = [tab for tab in self.core_relations if tab not in tables_in_joins]
 
         self.logger.debug(tables_in_joins, tables_not_in_joins)
 
@@ -333,14 +298,7 @@ class OuterJoin(GenerationPipeLineBase):
             fp_on = copy.deepcopy(filter_pred_on)
             fp_where = copy.deepcopy(filter_pred_where)
 
-            query = "Select " + self.select_op
-            # handle tables not participating in join
-            if len(tables_not_in_joins) != 0:
-                query += " From "
-                for tab in tables_not_in_joins:
-                    query += tab + " , "
-            else:
-                query += " From "
+            self.q_gen.from_op = ", ".join(tables_not_in_joins)
 
             flag_first = True
             for edge in seq:
@@ -355,17 +313,11 @@ class OuterJoin(GenerationPipeLineBase):
                     self.logger.debug("error sneha!!!")
 
                 self.logger.debug(imp_t1, imp_t2)
-                if imp_t1 == 'l' and imp_t2 == 'l':
-                    type_of_join = ' Inner Join '
-                elif imp_t1 == 'l' and imp_t2 == 'h':
-                    type_of_join = ' Right Outer Join '
-                elif imp_t1 == 'h' and imp_t2 == 'l':
-                    type_of_join = ' Left Outer Join '
-                elif imp_t1 == 'h' and imp_t2 == 'h':
-                    type_of_join = ' Full Outer Join '
-
+                join_map = {('l', 'l'): ' Inner Join ', ('l', 'h'): ' Right Outer Join ',
+                            ('h', 'l'): ' Left Outer Join ', ('h', 'h'): ' Full Outer Join '}
+                type_of_join = join_map.get((imp_t1, imp_t2))
                 if flag_first:
-                    query += str(edge[0][1]) + type_of_join + str(edge[1][1]) + ' ON ' + str(
+                    self.q_gen.from_op += str(edge[0][1]) + type_of_join + str(edge[1][1]) + ' ON ' + str(
                         edge[0][0]) + ' = ' + str(edge[1][0])
                     flag_first = False
                     # check for filter predicates for both tables
@@ -374,7 +326,6 @@ class OuterJoin(GenerationPipeLineBase):
                     table2 = edge[1][1]
                     for fp in fp_on:
                         if fp[0] == table1 or fp[0] == table2:
-                            predicate = ''
                             elt = fp
                             if elt[2].strip() == 'range':
                                 if '-' in str(elt[4]):
@@ -392,11 +343,11 @@ class OuterJoin(GenerationPipeLineBase):
                                     elt[4]) + "'"
                             else:
                                 predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
-                            query += " and " + predicate
+                            self.q_gen.from_op += " and " + predicate
                             # fp_on.remove(fp)
 
                 else:
-                    query += ' ' + type_of_join + str(edge[1][1]) + ' ON ' + str(edge[0][0]) + ' = ' + str(
+                    self.q_gen.from_op += ' ' + type_of_join + str(edge[1][1]) + ' ON ' + str(edge[0][0]) + ' = ' + str(
                         edge[1][0])
                     # check for filter predicates for second tables
                     # append fp to query
@@ -421,12 +372,12 @@ class OuterJoin(GenerationPipeLineBase):
                                     elt[4]) + "'"
                             else:
                                 predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
-                            query += " and " + predicate
+                            self.q_gen.from_op += " and " + predicate
                             # fp_on.remove(fp)
             # add other components of the query
             # + where clause
             # + group by, order by, limit
-            self.where_op = ''
+            self.q_gen.where_op = ''
 
             for elt in fp_where:
                 if elt[2].strip() == 'range':
@@ -444,24 +395,18 @@ class OuterJoin(GenerationPipeLineBase):
                     predicate = elt[1] + " " + str(elt[2]).replace('equal', '=') + " '" + str(elt[4]) + "'"
                 else:
                     predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
-                if self.where_op == '':
-                    self.where_op = predicate
+                if self.q_gen.where_op == '':
+                    self.q_gen.where_op = predicate
                 else:
-                    self.where_op = self.where_op + " and " + predicate
+                    self.q_gen.where_op = self.q_gen.where_op + " and " + predicate
 
             # assemble the rest of the query
-            if self.where_op != '':
-                query = query + " Where " + self.where_op
-            if self.groupby_op != '':
-                query = query + " Group By " + self.groupby_op
-            if self.orderby_op != '':
-                query = query + " Order By " + self.orderby_op
-            if self.limit_op != '':
-                query = query + " Limit " + self.limit_op
-
-            self.logger.debug(query)
+            q_candidate = self.q_gen.assembleQuery()
             self.logger.debug("+++++++++++++++++++++")
-            set_possible_queries.append(query)
+            set_possible_queries.append(q_candidate)
+
+        for q in set_possible_queries:
+            self.logger.debug(q)
 
         return set_possible_queries
 

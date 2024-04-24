@@ -20,6 +20,7 @@ class ExtractionPipeLine(DisjunctionPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Extraction PipeLine")
+        self.global_pk_dict = None
 
     def process(self, query: str):
         return GenericPipeLine.process(self, query)
@@ -51,6 +52,7 @@ class ExtractionPipeLine(DisjunctionPipeLine):
 
         self.all_sizes = fc.init.all_sizes
         self.key_lists = fc.get_key_lists()
+        self.global_pk_dict = fc.init.global_pk_dict
 
         eq, t = self.after_from_clause_extract(query, self.core_relations)
         self.connectionHelper.closeConnection()
@@ -176,7 +178,7 @@ class ExtractionPipeLine(DisjunctionPipeLine):
 
         eq = self.extract_NEP(core_relations, self.all_sizes, eq, q_generator, query, time_profile, delivery)
 
-        oj = OuterJoin(self.connectionHelper, delivery, pj.projected_attribs)
+        oj = OuterJoin(self.connectionHelper, self.global_pk_dict, delivery, pj.projected_attribs, q_generator)
         check = oj.doJob(query)
         if not oj.done:
             self.logger.error("Error in outer join extractor")

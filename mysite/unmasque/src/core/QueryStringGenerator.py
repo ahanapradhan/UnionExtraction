@@ -43,6 +43,12 @@ def get_exact_NE_string_predicate(elt, output):
 
 class QueryStringGenerator(AppExtractorBase):
 
+    def doActualJob(self, args=None):
+        pass
+
+    def extract_params_from_args(self, args):
+        pass
+
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Query String Generator")
         self.select_op = ''

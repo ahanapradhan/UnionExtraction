@@ -3,7 +3,8 @@ from ...src.core.executable import Executable
 
 def is_result_nonempty_nullfree(res, logger=None):
     if logger is not None:
-        logger.debug(res[1:])
+        pass
+        #logger.debug(res[1:])
     if res[1:] is None:
         return False
     if res[1:] == [None]:
