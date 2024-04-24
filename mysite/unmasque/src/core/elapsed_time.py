@@ -19,6 +19,7 @@ class ElapsedTime:
                    "Aggregation:",
                    "Order by:",
                    "Limit:",
+                   "Outer Join:",
                    "NEP: ",
                    "Result\n Comparator:",
                    "Total: "]
@@ -36,6 +37,7 @@ class ElapsedTime:
         self.t_aggregate = 0
         self.t_orderby = 0
         self.t_limit = 0
+        self.t_outer_join = 0
         self.t_nep = 0
         self.t_union = 0
         self.t_from_clause = 0
@@ -51,6 +53,7 @@ class ElapsedTime:
         self.app_aggregate = 0
         self.app_orderby = 0
         self.app_limit = 0
+        self.app_outer_join = 0
         self.app_nep = 0
         self.app_union = 0
         self.app_from_clause = 0
@@ -108,6 +111,10 @@ class ElapsedTime:
     def update_for_nep(self, t_u, c_app):
         self.t_nep += t_u
         self.app_nep += c_app
+
+    def update_for_outer_join(self, t_u, c_app):
+        self.t_outer_join += t_u
+        self.app_outer_join += c_app
 
     def update_for_app(self, t_u):
         self.app_total += t_u

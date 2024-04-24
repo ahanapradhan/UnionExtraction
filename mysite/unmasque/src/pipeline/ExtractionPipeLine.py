@@ -176,10 +176,9 @@ class ExtractionPipeLine(DisjunctionPipeLine):
 
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self.extract_NEP(core_relations, self.all_sizes, eq, q_generator, query, time_profile, delivery)
-
         oj = OuterJoin(self.connectionHelper, self.global_pk_dict, delivery, pj.projected_attribs, q_generator)
         check = oj.doJob(query)
+        time_profile.update_for_outer_join(oj.local_elapsed_time, oj.app_calls)
         if not oj.done:
             self.logger.error("Error in outer join extractor")
             return eq, time_profile
@@ -187,6 +186,8 @@ class ExtractionPipeLine(DisjunctionPipeLine):
             self.logger.info("No outer join")
             return eq, time_profile
         eq = oj.Q_E
+
+        eq = self.extract_NEP(core_relations, self.all_sizes, eq, q_generator, query, time_profile, delivery)
 
         # last component in the pipeline should do this
         time_profile.update_for_app(lm.app.method_call_count)

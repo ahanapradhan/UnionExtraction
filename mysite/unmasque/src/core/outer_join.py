@@ -24,12 +24,9 @@ class OuterJoin(GenerationPipeLineBase):
         table_attr_dict = self.create_table_attrib_dict()
         self.create_importance_dict(new_join_graph, query, table_attr_dict)
 
-        set_possible_queries, list_dict_spq = self.FormulateQueries(final_edge_seq, query)
-        return True
-
-        sem_eq_queries = self.remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries,
-                                                                list_dict_spq)
-        self.Q_E = sem_eq_queries[0]
+        set_possible_queries = self.FormulateQueries(final_edge_seq, query)
+        self.remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries)
+        self.Q_E = self.sem_eq_queries[0]
         return True
 
     def create_final_edge_seq(self, list_of_tables, new_join_graph):
@@ -173,55 +170,60 @@ class OuterJoin(GenerationPipeLineBase):
             self.connectionHelper.execute_sql(['drop table ' + tabname + ';',
                                                'alter table ' + tabname + '_restore rename to ' + tabname + ';'])
 
-    def remove_semantically_nonEq_queries(self, new_join_graph, query, set_possible_queries, list_dict_spq):
+    def remove_semantically_nonEq_queries(self, new_join_graph, query, set_possible_queries):
         # eliminate semanticamy non-equivalent querie from set_possible_queries
         # this code needs to be finished (27 feb)
         sem_eq_queries = []
-        sem_eq_listdict = []
 
         for num in range(0, len(set_possible_queries)):
             poss_q = set_possible_queries[num]
-            same = 1
+            same = True
             for edge in new_join_graph:
-                # modify d1
-                # break join condition on this edge
-                tuple1 = edge[0]
-                key = tuple1[0]
-                table = tuple1[1]
-                self.connectionHelper.execute_sql(
-                    ['Update ' + table + ' set ' + key + '= -(select ' + key + ' from ' + table + ');'])
+                attrib, table = edge[0][0], edge[0][1]
+                s_val = self.get_dmin_val(attrib, table)
+                break_val = self.get_different_s_val(attrib, table, s_val)
+                self.logger.debug(f"{table}.{attrib} s_val {s_val}, break val {break_val}")
+                self.update_with_val(attrib, table, break_val)
 
-                ## result of hidden query
+                # result of hidden query
                 res_HQ = self.app.doJob(query)
-
-                ## result of extracted query
+                # result of extracted query
                 res_poss_q = self.app.doJob(poss_q)
-
-                ##  maybe needs  work
+                #  maybe needs  work
                 if len(res_HQ) != len(res_poss_q):
                     pass
                 else:
-                    ## maybe use the available result comparator techniques
-
+                    # maybe use the available result comparator techniques
                     for var in range(len(res_HQ)):
                         self.logger.debug(res_HQ[var] == res_poss_q[var])
                         if not (res_HQ[var] == res_poss_q[var]):
-                            same = 0
+                            same = False
 
-                self.connectionHelper.execute_sql(
-                    ['Update ' + table + ' set ' + key + '= -(select ' + key + ' from ' + table + ');'])
+                self.update_with_val(attrib, table, s_val)
 
-            if same == 1:
+            if same:
                 sem_eq_queries.append(poss_q)
-                sem_eq_listdict.append(list_dict_spq[num])
 
         self.sem_eq_queries = sem_eq_queries
-        self.sem_eq_listdict = sem_eq_listdict
-        temp_seq = self.sem_eq_queries
+        # temp_seq = self.sem_eq_queries
+        # self.nep_check(sem_eq_queries, temp_seq)
+        # self.restore_relations()
+        # output1 = self.finalize_output()
+        # self.logger.debug(output1)
 
+    def finalize_output(self):
+        for Q_E in self.sem_eq_queries:
+            nep_flag = False
+            outer_join_flag = False
+            r = check_nep_oj.check_nep_oj(Q_E)
+            if not nep_flag and not outer_join_flag:
+                output1 = Q_E
+                break
+        return output1
+
+    def nep_check(self, sem_eq_queries, temp_seq):
         self.check_nep_again = self.connectionHelper.config.detect_nep
         while self.check_nep_again:
-
             self.check_nep_again = False
             sem_eq_queries = temp_seq
             temp_seq = []
@@ -231,24 +233,7 @@ class OuterJoin(GenerationPipeLineBase):
             if qr:
                 for x in self.sem_eq_queries:
                     temp_seq.append(x)
-
-        # self.logger.debug("sem_eq_queries")
-        # self.logger.debug(sem_eq_queries)   
         self.sem_eq_queries = sem_eq_queries
-
-        self.restore_relations()
-
-        for Q_E in self.sem_eq_queries:
-            nep_flag = False
-            outer_join_flag = False
-            r = check_nep_oj.check_nep_oj(Q_E)
-            if not nep_flag and not outer_join_flag:
-                output1 = Q_E
-                break
-
-        self.logger.debug(output1)
-
-        return output1
 
     def add_tabname_for_attrib(self, attrib, list_of_tables, temp):
         tabname = self.find_tabname_for_given_attrib(attrib)
