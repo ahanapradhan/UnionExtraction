@@ -3,31 +3,7 @@ from datetime import date
 from typing import Tuple, Union
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
-
-
-def formulate_predicate_from_filter(elt):
-    tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), str(elt[3]), str(elt[4])
-    if op == 'range':
-        if '-' in ub:
-            predicate = f"{tab}.{attrib} between {lb} and {ub}"
-        else:
-            predicate = f"{tab}.{attrib} between \'{lb}\' and \'{ub}\'"
-    elif op == '>=':
-        if '-' in lb:
-            predicate = f"{tab}.{attrib} {op} \'{lb}\'"
-        else:
-            predicate = f"{tab}.{attrib} {op} {lb}"
-    elif op in ['<=', '=']:
-        if '-' in ub:
-            predicate = f"{tab}.{attrib} {op} \'{ub}\'"
-        else:
-            predicate = f"{tab}.{attrib} {op} {ub}"
-    elif 'equal' in op or 'like' in op or '-' in op:
-        predicate = f"{tab}.{attrib} {str(op.replace('equal', '='))} \'{ub}\'"
-    else:
-        predicate = ''
-
-    return predicate
+from ..util.utils import get_format
 
 
 class OuterJoin(GenerationPipeLineBase):
@@ -381,14 +357,14 @@ class OuterJoin(GenerationPipeLineBase):
         return imp_t1, imp_t2
 
     def add_where_clause(self, elt):
-        predicate = formulate_predicate_from_filter(elt)
+        predicate = self.formulate_predicate_from_filter(elt)
         if self.q_gen.where_op == '':
             self.q_gen.where_op = predicate
         else:
             self.q_gen.where_op = self.q_gen.where_op + " and " + predicate
 
     def add_on_clause_for_filter(self, fp):
-        predicate = formulate_predicate_from_filter(fp)
+        predicate = self.formulate_predicate_from_filter(fp)
         self.q_gen.from_op += " and " + predicate
 
     def extract_params_from_args(self, args):

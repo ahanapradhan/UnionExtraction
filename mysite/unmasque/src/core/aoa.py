@@ -3,7 +3,6 @@ from datetime import date
 from decimal import Decimal
 from typing import Union, List, Tuple
 
-from .QueryStringGenerator import handle_range_preds
 from .abstract.abstractConnection import AbstractConnectionHelper
 from .abstract.filter_holder import FilterHolder
 from .dataclass.generation_pipeline_package import PackageForGenPipeline
@@ -369,7 +368,8 @@ class AlgebraicPredicate(FilterHolder):
                                                        self.aoa_less_thans,
                                                        self.global_min_instance_dict,
                                                        self.get_dmin_val,
-                                                       self.get_datatype)
+                                                       self.get_datatype,
+                                                       self.formulate_predicate_from_filter)
         self.pipeline_delivery.doJob()
         self.logger.debug(self.pipeline_delivery.global_filter_predicates)
 
@@ -431,6 +431,23 @@ class AlgebraicPredicate(FilterHolder):
                 self.join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
         self.logger.debug(self.join_graph)
 
+    def formulate_predicate_from_filter(self, elt):
+        tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), str(elt[3]), str(elt[4])
+        datatype = self.get_datatype((tab, attrib))
+        f_lb, f_ub = get_format(datatype, lb), get_format(datatype, ub)
+        if op == 'range':
+            predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
+        elif op == '>=':
+            predicate = f"{tab}.{attrib} {op} {f_lb}"
+        elif op in ['<=', '=']:
+            predicate = f"{tab}.{attrib} {op} {f_ub}"
+        elif 'equal' in op or 'like' in op or '-' in op:
+            predicate = f"{tab}.{attrib} {str(op.replace('equal', '='))} {f_ub}"
+        else:
+            predicate = ''
+
+        return predicate
+
     def generate_where_clause(self, all_ors=None) -> None:
         predicates = []
         self.generate_algebraice_eualities(predicates)
@@ -464,17 +481,19 @@ class AlgebraicPredicate(FilterHolder):
 
     def generate_arithmetic_pure_conjunctions(self, predicates):
         for a_eq in self.arithmetic_eq_predicates:
-            datatype = self.get_datatype((get_tab(a_eq), get_attrib(a_eq)))
-            pred = f"{get_tab(a_eq)}.{get_attrib(a_eq)} = {get_format(datatype, get_LB(a_eq))}"
+            # datatype = self.get_datatype((get_tab(a_eq), get_attrib(a_eq)))
+            # pred = f"{get_tab(a_eq)}.{get_attrib(a_eq)} = {get_format(datatype, get_LB(a_eq))}"
+            pred = self.formulate_predicate_from_filter(a_eq)
             predicates.append(pred)
         for a_ineq in self.arithmetic_ineq_predicates:
-            datatype = self.get_datatype((get_tab(a_ineq), get_attrib(a_ineq)))
-            pred_op = f"{get_tab(a_ineq)}.{get_attrib(a_ineq)} "
-            if datatype == 'str':
-                pred_op += f"LIKE {get_format(datatype, a_ineq[3])}"
-            else:
-                pred_op = handle_range_preds(datatype, a_ineq, pred_op)
-            predicates.append(pred_op)
+            # datatype = self.get_datatype((get_tab(a_ineq), get_attrib(a_ineq)))
+            # pred_op = f"{get_tab(a_ineq)}.{get_attrib(a_ineq)} "
+            # if datatype == 'str':
+            #    pred_op += f"LIKE {get_format(datatype, a_ineq[3])}"
+            # else:
+            #    pred_op = handle_range_preds(datatype, a_ineq, pred_op)
+            pred = self.formulate_predicate_from_filter(a_ineq)
+            predicates.append(pred)
 
     def generate_arithmetic_conjunctive_disjunctions(self, all_ors, predicates):
         for p in all_ors:
@@ -494,10 +513,11 @@ class AlgebraicPredicate(FilterHolder):
             else:
                 pred_str, preds = "", []
                 for i in non_empty_indices:
-                    if p[i][2] in ['equal', '=']:
-                        pred_str = f"{tab_attribs[i][0]}.{tab_attribs[i][1]} = {get_format(datatypes[i], p[i][3])}"
-                    else:
-                        pred_str = handle_range_preds(datatypes[i], p[i], f'{tab_attribs[i][0]}.{tab_attribs[i][1]} ')
+                    # if p[i][2] in ['equal', '=']:
+                    #    pred_str = f"{tab_attribs[i][0]}.{tab_attribs[i][1]} = {get_format(datatypes[i], p[i][3])}"
+                    # else:
+                    #    pred_str = handle_range_preds(datatypes[i], p[i], f'{tab_attribs[i][0]}.{tab_attribs[i][1]} ')
+                    pred_str = self.formulate_predicate_from_filter(p[i])
                     preds.append(pred_str)
                 one_pred = " OR ".join(preds)
             predicates.append(one_pred)
