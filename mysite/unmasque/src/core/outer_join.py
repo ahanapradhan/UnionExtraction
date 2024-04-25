@@ -84,8 +84,9 @@ class OuterJoin(GenerationPipeLineBase):
             loc = {}
             for table in table_attr_dict.keys():
                 pj_attrib = table_attr_dict[table]
-                pj_name = self.projected_names[self.projected_attributes.index(pj_attrib)]
-                loc[pj_attrib] = res_hq[0].index(pj_name)
+                if pj_attrib is not None:
+                    pj_name = self.projected_names[self.projected_attributes.index(pj_attrib)]
+                    loc[pj_attrib] = res_hq[0].index(pj_name)
             self.logger.debug(loc)
 
             res_hq_dict = {}
