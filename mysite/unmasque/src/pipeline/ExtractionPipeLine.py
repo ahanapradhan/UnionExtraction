@@ -187,7 +187,8 @@ class ExtractionPipeLine(DisjunctionPipeLine):
         if not check:
             self.logger.info("No outer join")
             return eq, time_profile
-        eq = oj.Q_E
+        if oj.Q_E is not None:
+            eq = oj.Q_E
 
         eq = self.extract_NEP(core_relations, self.all_sizes, eq, q_generator, query, time_profile, delivery)
 

@@ -3,7 +3,6 @@ from datetime import date
 from typing import Tuple, Union
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ..util.utils import get_format
 
 
 class OuterJoin(GenerationPipeLineBase):
@@ -23,6 +22,9 @@ class OuterJoin(GenerationPipeLineBase):
 
     def doExtractJob(self, query: str) -> bool:
         list_of_tables, new_join_graph = self.get_tables_list_and_new_join_graph()
+        if not len(new_join_graph):
+            self.logger.info("No Join clause found.")
+            return True
         final_edge_seq = self.create_final_edge_seq(list_of_tables, new_join_graph)
         table_attr_dict = self.create_table_attrib_dict()
         self.create_importance_dict(new_join_graph, query, table_attr_dict)
