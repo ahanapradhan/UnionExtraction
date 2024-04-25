@@ -32,9 +32,7 @@ class OuterJoin(GenerationPipeLineBase):
 
         set_possible_queries, fp_on = self.FormulateQueries(final_edge_seq, query)
         self.remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries, fp_on)
-        self.Q_E = self.sem_eq_queries[0]
-        if not self.Q_E.count('OUTER'):
-            self.Q_E = None
+        self.Q_E = self.sem_eq_queries[0] if len(self.sem_eq_queries) else None
         return True
 
     def create_final_edge_seq(self, list_of_tables, new_join_graph):
@@ -308,7 +306,8 @@ class OuterJoin(GenerationPipeLineBase):
             # assemble the rest of the query
             q_candidate = self.q_gen.assembleQuery()
             self.logger.debug("+++++++++++++++++++++")
-            set_possible_queries.append(q_candidate)
+            if q_candidate.count('OUTER'):
+                set_possible_queries.append(q_candidate)
 
         for q in set_possible_queries:
             self.logger.debug(q)
