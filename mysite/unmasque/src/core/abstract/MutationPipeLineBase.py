@@ -46,12 +46,15 @@ class MutationPipeLineBase(AppExtractorBase, ABC):
             res, des = self.connectionHelper.execute_sql_fetchall(
                 self.connectionHelper.queries.select_attribs_from_relation([attrib], tab))
             val = res[0][0]
-        except ValueError:
+        except ValueError as e:
             data_problem = True
-            pass
-        except IndexError:
+            self.logger.debug(e)
+        except IndexError as e:
             data_problem = True
-            pass
+            self.logger.debug(e)
+        except Exception as e:
+            data_problem = True
+            self.logger.debug(e)
         if data_problem:
             values = self.global_min_instance_dict[tab]
             attribs, vals = values[0], values[1]

@@ -3,7 +3,7 @@ import unittest
 from time import sleep
 
 from mysite.unmasque import views
-from mysite.unmasque.src.pipeline.PipeLineFactory import PipeLineFactory
+from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from mysite.unmasque.src.pipeline.abstract.generic_pipeline import GenericPipeLine
 from mysite.unmasque.src.util.PostgresConnectionHelper import PostgresConnectionHelper
 from mysite.unmasque.src.util.configParser import Config

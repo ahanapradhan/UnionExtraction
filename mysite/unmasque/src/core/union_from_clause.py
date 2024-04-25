@@ -1,7 +1,6 @@
 from ..mocks.database import Schema
 from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 from ...src.core.from_clause import FromClause
-from ..util.utils import isQ_result_empty
 
 
 class UnionFromClause(Schema, AppExtractorBase):
@@ -40,7 +39,7 @@ class UnionFromClause(Schema, AppExtractorBase):
         return self.doJob(QH)
 
     def isEmpty(self, Res):
-        return isQ_result_empty(Res)
+        return self.app.isQ_result_empty(Res)
 
     def extract_params_from_args(self, args):
         return args[0]

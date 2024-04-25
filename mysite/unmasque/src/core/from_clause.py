@@ -1,6 +1,5 @@
 from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 from ...src.core.initialization import Initiator
-from ...src.util.utils import isQ_result_empty
 from ...src.util.application_type import ApplicationType
 from ...src.util.constants import REL_ERROR
 
@@ -39,7 +38,7 @@ class FromClause(AppExtractorBase):
                     [self.connectionHelper.queries.alter_table_rename_to(tabname, "temp"),
                      self.connectionHelper.queries.create_table_like(tabname, "temp")], self.logger)
                 new_result = self.app.doJob(query)
-                if isQ_result_empty(new_result):
+                if self.app.isQ_result_empty(new_result):
                     self.core_relations.append(tabname)
                     self.logger.info("Table ", tabname, " is in from clause..")
             except Exception as error:

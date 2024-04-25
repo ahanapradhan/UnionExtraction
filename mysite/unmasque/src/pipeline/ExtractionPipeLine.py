@@ -1,24 +1,26 @@
 import copy
 
+from mysite.unmasque.src.pipeline.fragments.DisjunctionPipeLine import DisjunctionPipeLine
+from mysite.unmasque.src.pipeline.fragments.NepPipeLine import NepPipeLine
+from .abstract.generic_pipeline import GenericPipeLine
+from ..core.elapsed_time import create_zero_time_profile
+from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, PROJECTION, \
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
 from ...src.core.aggregation import Aggregation
 from ...src.core.from_clause import FromClause
 from ...src.core.groupby_clause import GroupBy
 from ...src.core.limit import Limit
-from ...src.core.nep import NEP, NepMinimizer
 from ...src.core.orderby_clause import OrderBy
 from ...src.core.projection import Projection
-from .DisjunctionPipeLine import DisjunctionPipeLine
-from .abstract.generic_pipeline import GenericPipeLine
-from ..core.QueryStringGenerator import QueryStringGenerator
-from ..core.elapsed_time import create_zero_time_profile
-from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, NEP_, PROJECTION, \
-    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, DB_MINIMIZATION, WRONG, FILTER, RESULT_COMPARE
 
 
-class ExtractionPipeLine(DisjunctionPipeLine):
+class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
 
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "Extraction PipeLine")
+        DisjunctionPipeLine.__init__(self, connectionHelper, "Extraction PipeLine")
+        NepPipeLine.__init__(self, connectionHelper)
+        self.pj = None
+        self.global_pk_dict = None
 
     def process(self, query: str):
         return GenericPipeLine.process(self, query)
@@ -50,6 +52,7 @@ class ExtractionPipeLine(DisjunctionPipeLine):
 
         self.all_sizes = fc.init.all_sizes
         self.key_lists = fc.get_key_lists()
+        self.global_pk_dict = fc.init.global_pk_dict
 
         eq, t = self.after_from_clause_extract(query, self.core_relations)
         self.connectionHelper.closeConnection()
@@ -59,7 +62,6 @@ class ExtractionPipeLine(DisjunctionPipeLine):
     def after_from_clause_extract(self, query, core_relations):
 
         time_profile = create_zero_time_profile()
-        q_generator = QueryStringGenerator(self.connectionHelper)
 
         check, time_profile = self.mutation_pipeline(core_relations, query, time_profile)
         if not check:
@@ -81,24 +83,24 @@ class ExtractionPipeLine(DisjunctionPipeLine):
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
-        pj = Projection(self.connectionHelper, delivery)
+        self.pj = Projection(self.connectionHelper, delivery)
 
         self.update_state(PROJECTION + RUNNING)
-        check = pj.doJob(query)
+        check = self.pj.doJob(query)
         self.update_state(PROJECTION + DONE)
-        time_profile.update_for_projection(pj.local_elapsed_time, pj.app_calls)
-        self.info[PROJECTION] = {'names': pj.projection_names, 'attribs': pj.projected_attribs}
+        time_profile.update_for_projection(self.pj.local_elapsed_time, self.pj.app_calls)
+        self.info[PROJECTION] = {'names': self.pj.projection_names, 'attribs': self.pj.projected_attribs}
         if not check:
             self.info[PROJECTION] = None
             self.logger.error("Cannot find projected attributes. ")
             return None, time_profile
-        if not pj.done:
+        if not self.pj.done:
             self.info[PROJECTION] = None
             self.logger.error("Some error while projection extraction. Aborting extraction!")
             return None, time_profile
 
         self.update_state(GROUP_BY + START)
-        gb = GroupBy(self.connectionHelper, delivery, pj.projected_attribs)
+        gb = GroupBy(self.connectionHelper, delivery, self.pj.projected_attribs)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
 
@@ -115,13 +117,13 @@ class ExtractionPipeLine(DisjunctionPipeLine):
             return None, time_profile
 
         for elt in self.aoa.filter_predicates:
-            if elt[1] not in gb.group_by_attrib and elt[1] in pj.projected_attribs and (
+            if elt[1] not in gb.group_by_attrib and elt[1] in self.pj.projected_attribs and (
                     elt[2] == '=' or elt[2] == 'equal'):
                 gb.group_by_attrib.append(elt[1])
 
         self.update_state(AGGREGATE + START)
-        agg = Aggregation(self.connectionHelper, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
-                          pj.dependencies, pj.solution, pj.param_list, delivery)
+        agg = Aggregation(self.connectionHelper, self.pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
+                          self.pj.dependencies, self.pj.solution, self.pj.param_list, delivery)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
 
@@ -137,7 +139,7 @@ class ExtractionPipeLine(DisjunctionPipeLine):
             return None, time_profile
 
         self.update_state(ORDER_BY + START)
-        ob = OrderBy(self.connectionHelper, pj.projected_attribs, pj.projection_names, pj.dependencies,
+        ob = OrderBy(self.connectionHelper, self.pj.projected_attribs, self.pj.projection_names, self.pj.dependencies,
                      agg.global_aggregated_attributes, delivery)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
@@ -157,7 +159,6 @@ class ExtractionPipeLine(DisjunctionPipeLine):
         lm = Limit(self.connectionHelper, gb.group_by_attrib, delivery)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
-
         self.update_state(LIMIT + DONE)
         time_profile.update_for_limit(lm.local_elapsed_time, lm.app_calls)
         self.info[LIMIT] = lm.limit
@@ -169,56 +170,14 @@ class ExtractionPipeLine(DisjunctionPipeLine):
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-        eq = q_generator.generate_query_string(core_relations, pj, gb, agg, ob, lm, self.aoa)
+        eq = self.q_generator.generate_query_string(core_relations, self.pj, gb, agg, ob, lm, self.aoa)
 
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self.extract_NEP(core_relations, self.all_sizes, eq, q_generator, query, time_profile, delivery)
+        eq = self.extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
 
         # last component in the pipeline should do this
-        time_profile.update_for_app(lm.app.method_call_count)
+        # time_profile.update_for_app(lm.app.method_call_count)
 
         self.update_state(DONE)
         return eq, time_profile
-
-    def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
-        if not self.connectionHelper.config.detect_nep:
-            return eq
-
-        nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, sizes)
-        nep_extractor = NEP(self.connectionHelper, delivery)
-
-        for i in range(10):
-            self.update_state(NEP_ + RESULT_COMPARE + START)
-            self.update_state(NEP_ + RESULT_COMPARE + RUNNING)
-            matched = nep_minimizer.match(query, eq)
-            self.update_state(NEP_ + RESULT_COMPARE + DONE)
-            if matched is None:
-                self.logger.error("Extracted Query is not semantically correct!..not going to try to extract NEP!")
-                return eq
-            if matched:
-                self.logger.info("No NEP!")
-                return eq
-
-            for tabname in self.core_relations:
-                self.update_state(NEP_ + DB_MINIMIZATION + START)
-                self.update_state(NEP_ + DB_MINIMIZATION + RUNNING)
-                minimized = nep_minimizer.doJob((query, eq, tabname))
-                if not minimized:
-                    continue
-                self.update_state(NEP_ + DB_MINIMIZATION + DONE)
-
-                self.update_state(NEP_ + FILTER + START)
-                self.update_state(NEP_ + FILTER + RUNNING)
-                nep_filters = nep_extractor.doJob((query, tabname))
-                self.logger.debug(f"Nep filters on {tabname}: {str(nep_filters)}")
-                if nep_filters is None or not len(nep_filters):
-                    self.logger.info("NEP does not exists.")
-                else:
-                    eq = q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
-                self.update_state(NEP_ + FILTER + DONE)
-
-        time_profile.update_for_view_minimization(nep_minimizer.local_elapsed_time, nep_minimizer.app_calls)
-        time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
-        self.logger.debug("returning..", eq)
-        return eq

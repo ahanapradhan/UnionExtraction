@@ -1,5 +1,6 @@
 import unittest
 
+from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.util.BaseTestCase import BaseTestCase
 
@@ -9,8 +10,9 @@ class MyTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = True
         self.conn.config.detect_or = False
-
-        self.pipeline = ExtractionPipeLine(self.conn)
+        self.conn.config.detect_oj = False
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
 
     def test_simple(self):
         query = "select n_regionkey from nation where n_name <> 'GERMANY';"

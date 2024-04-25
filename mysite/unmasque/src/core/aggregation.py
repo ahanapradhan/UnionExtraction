@@ -3,7 +3,7 @@ import copy
 import math
 
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ..util.utils import isQ_result_empty, is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
+from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
 from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ...src.util.constants import min_int_val, max_int_val
 from .projection import get_param_values_external
@@ -226,7 +226,7 @@ class Aggregation(GenerationPipeLineBase):
                     new_result = self.app.doJob(query)
                     self.logger.debug("New Result", new_result)  # FOR DEBUG
                     self.logger.debug("Comaparison", agg_array)  # FOR DEBUG
-                    if isQ_result_empty(new_result):
+                    if self.app.isQ_result_empty(new_result):
                         self.logger.error('some error in generating new database. '
                                           'Result is empty. Can not identify aggregation')
                         return False

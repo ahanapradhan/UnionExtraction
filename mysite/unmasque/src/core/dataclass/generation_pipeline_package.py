@@ -54,7 +54,8 @@ class PackageForGenPipeline:
                  global_min_instance_dict: dict,
 
                  get_dmin_val: Callable[[str, str], any],
-                 get_datatype: Callable[[Tuple[str, str]], str]):
+                 get_datatype: Callable[[Tuple[str, str]], str],
+                 formulate_predicate_from_filter):
 
         self.core_relations = core_relations
         self.global_all_attribs = global_all_attribs
@@ -73,6 +74,7 @@ class PackageForGenPipeline:
         # methods passed by aoa extractor
         self.get_dmin_val = get_dmin_val
         self.get_datatype = get_datatype
+        self.formulate_predicate_from_filter = formulate_predicate_from_filter
 
     def doJob(self):
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}

@@ -1,14 +1,15 @@
 from abc import ABC
 
 from .ExtractorBase import Base
-from ....src.core.executable import Executable
+from ..factory.ExecutableFactory import ExecutableFactory
 
 
 class AppExtractorBase(Base, ABC):
 
     def __init__(self, connectionHelper, name):
         super().__init__(connectionHelper, name)
-        self.app = Executable(connectionHelper)
+        exe_factory = ExecutableFactory()
+        self.app = exe_factory.create_exe(self.connectionHelper)
         self.app_calls = 0
         self.enabled = True
 

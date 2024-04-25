@@ -2,39 +2,6 @@ import copy
 
 from ..util.constants import COUNT, SUM, max_str_len
 from ...src.core.abstract.AppExtractorBase import AppExtractorBase
-from ..util.utils import get_min_and_max_val, get_format, get_datatype
-
-
-def refine_aggregates(agg, wc):
-    for i, attrib in enumerate(agg.global_projected_attributes):
-        if attrib in wc.global_key_attributes and attrib in agg.global_groupby_attributes:
-            if not any(keyword in agg.global_aggregated_attributes[i][1] for keyword in [SUM, COUNT]):
-                agg.global_aggregated_attributes[i] = (agg.global_aggregated_attributes[i][0], '')
-    temp_list = copy.deepcopy(agg.global_groupby_attributes)
-    for attrib in temp_list:
-        if attrib not in agg.global_projected_attributes:
-            agg.global_groupby_attributes.remove(attrib)
-        else:
-            if not any(elt[0] == attrib and (SUM in elt[1] or COUNT in elt[1]) for elt in
-                       agg.global_aggregated_attributes):
-                agg.global_groupby_attributes.remove(attrib)
-
-
-def handle_range_preds(datatype, pred, pred_op):
-    min_val, max_val = get_min_and_max_val(datatype)
-    min_present = False
-    max_present = False
-    if pred[3] == min_val:  # no min val
-        min_present = True
-    if pred[4] == max_val:  # no max val
-        max_present = True
-    if min_present and not max_present:
-        pred_op += " <= " + get_format(datatype, pred[4])
-    elif not min_present and max_present:
-        pred_op += " >= " + get_format(datatype, pred[3])
-    elif not min_present and not max_present:
-        pred_op += f" >= {get_format(datatype, pred[3])} and {pred[0]}.{pred[1]} <= {get_format(datatype,pred[4])}"
-    return pred_op
 
 
 def get_exact_NE_string_predicate(elt, output):
@@ -42,6 +9,12 @@ def get_exact_NE_string_predicate(elt, output):
 
 
 class QueryStringGenerator(AppExtractorBase):
+
+    def doActualJob(self, args=None):
+        pass
+
+    def extract_params_from_args(self, args):
+        pass
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Query String Generator")
@@ -52,73 +25,13 @@ class QueryStringGenerator(AppExtractorBase):
         self.order_by_op = ''
         self.limit_op = None
 
-    def generate_join_string(self, ej):
-        joins = []
-        for edge in ej:
-            edge.sort()
-            # for i in range(len(edge) - 1):
-            #    left_e = edge[i]
-            #    right_e = edge[i + 1]
-            join_e = f"{edge[0]} = {edge[1]}"
-            joins.append(join_e)
-        self.where_op += " and ".join(joins)
-
     def generate_query_string(self, core_relations, pj, gb, agg, ob, lm, aoa):
         relations = copy.deepcopy(core_relations)
         relations.sort()
         self.from_op = ", ".join(relations)
-        '''
-        self.generate_join_string(aoa.join_graph)
-
-        if self.where_op and len(aoa.filter_predicates):
-            self.where_op += "\n and "
-        self.add_filters(aoa)
-
-        if self.where_op and len(aoa.aoa_predicates):
-            self.where_op += "\n and "
-        self.add_aoa_predicates(aoa)
-        '''
         self.where_op = aoa.where_clause
         eq = self.refine_Query1(pj.joined_attribs, pj, gb, agg, ob, lm)
         return eq
-
-    def get_filter_only(self, wc):
-        filters = []
-        res = ""
-        for pred in wc.filter_predicates:
-            tab_col = tuple(pred[:2])
-            pred_op = pred[1] + " "
-            datatype = get_datatype(wc.global_attrib_types, tab_col)
-            if pred[2] != ">=" and pred[2] != "<=" and pred[2] != "range":
-                if pred[2] == "equal":
-                    pred_op += " = "
-                else:
-                    pred_op += pred[2] + " "
-                pred_op += get_format(datatype, pred[3])
-            else:
-                pred_op = handle_range_preds(datatype, pred, pred_op)
-
-            filters.append(pred_op)
-        res += " and ".join(filters)
-        return res
-
-    def add_filters(self, wc):
-        filters = []
-        for pred in wc.filter_predicates:
-            tab_col = tuple(pred[:2])
-            pred_op = pred[1] + " "
-            datatype = get_datatype(wc.global_attrib_types, tab_col)
-            if pred[2] != ">=" and pred[2] != "<=" and pred[2] != "range":
-                if pred[2] == "equal":
-                    pred_op += " = "
-                else:
-                    pred_op += pred[2] + " "
-                pred_op += get_format(datatype, pred[3])
-            else:
-                pred_op = handle_range_preds(datatype, pred, pred_op)
-
-            filters.append(pred_op)
-        self.where_op += " and ".join(filters)
 
     def assembleQuery(self):
         output = f"Select {self.select_op}\n From {self.from_op}"
@@ -188,31 +101,6 @@ class QueryStringGenerator(AppExtractorBase):
                 self.select_op = self.select_op + ", " + elt
 
         self.order_by_op = ob.orderBy_string
-        if lm.limit is not None:
-            self.limit_op = str(lm.limit)
-        eq = self.assembleQuery()
-        return eq
-
-    def refine_Query(self, wc, pj, gb, agg, ob, lm):
-        refine_aggregates(agg, wc)
-
-        # UPDATE OUTPUTS
-        if len(agg.global_groupby_attributes) == 1:
-            self.group_by_op = agg.global_groupby_attributes[0]
-        else:
-            self.group_by_op = ", ".join(agg.global_groupby_attributes)
-
-        for i, elt in enumerate(agg.global_projected_attributes):
-            if agg.global_aggregated_attributes[i][1] != '':
-                suffix = f'({elt})' if elt else ""
-                elt = agg.global_aggregated_attributes[i][1] + suffix
-                if COUNT in agg.global_aggregated_attributes[i][1]:
-                    elt = agg.global_aggregated_attributes[i][1]
-            if elt and elt != pj.projection_names[i]:
-                elt = f'{elt} as {pj.projection_names[i]}' if pj.projection_names[i] else elt
-            self.select_op += ", " + elt if self.select_op else elt
-
-        self.order_by_op = ob.orderBy_string[:-2]
         if lm.limit is not None:
             self.limit_op = str(lm.limit)
         eq = self.assembleQuery()

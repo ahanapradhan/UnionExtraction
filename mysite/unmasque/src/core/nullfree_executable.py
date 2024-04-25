@@ -1,18 +1,28 @@
-from ...src.core.executable import Executable, is_error
+from ...src.core.executable import Executable
 
 
-def is_result_nullfree(res):
-    for row in res:
-        # Check if the whole row is None (SPJA Case)
-        if any(val is None for val in row):
-            return False
-    return True
+def is_result_nonempty_nullfree(res, logger=None):
+    if logger is not None:
+        pass
+        # logger.debug(res[1:])
+    if res[1:] is None:
+        return False
+    if res[1:] == [None]:
+        return False
+    if not len(res[1:]):
+        return False
+    for row in res[1:]:
+        if all(val not in [None, 'None'] for val in row):
+            return True
+    return False
 
 
 class NullFreeExecutable(Executable):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper)
+        self.extractor_name = "Null Free Executable"
 
+    """
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         result = False
@@ -26,3 +36,7 @@ class NullFreeExecutable(Executable):
             raise error
 
         return result
+    """
+
+    def isQ_result_empty(self, Res):
+        return not is_result_nonempty_nullfree(Res, self.logger)

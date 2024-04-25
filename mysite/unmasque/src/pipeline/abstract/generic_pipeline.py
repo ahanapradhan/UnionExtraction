@@ -4,6 +4,7 @@ import time
 from abc import abstractmethod, ABC
 
 from ...core.elapsed_time import create_zero_time_profile
+from ...core.factory.ExecutableFactory import ExecutableFactory
 from ...util.Log import Log
 from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING
 from ....src.core.executable import Executable
@@ -47,17 +48,18 @@ class GenericPipeLine(ABC):
         self.correct = False
         self.all_sizes = {}
         self.error = None
-
         self.core_relations = None
 
     def process(self, query: str):
         result = None
         try:
             self.update_state(WAITING)
-            app = Executable(self.connectionHelper)
+            exe_factory = ExecutableFactory()
+            app = exe_factory.create_exe(self.connectionHelper)
             app.method_call_count = 0
             result = self.extract(query)
             self.verify_correctness(query, result)
+            self.time_profile.update_for_app(app.method_call_count)
         except Exception as e:
             self.logger.error("Some problem while Execution!")
             self.logger.error(e)

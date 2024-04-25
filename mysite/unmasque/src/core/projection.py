@@ -5,7 +5,7 @@ import numpy as np
 from sympy import symbols, expand, collect, nsimplify
 
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ...src.util.utils import count_empty_lists_in, find_diff_idx, isQ_result_empty
+from ...src.util.utils import count_empty_lists_in, find_diff_idx
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ...src.util import constants
@@ -35,7 +35,7 @@ class Projection(GenerationPipeLineBase):
 
     def doExtractJob(self, query):
         res = self.app.doJob(query)
-        if isQ_result_empty(res):
+        if self.app.isQ_result_empty(res):
             self.logger.error("Cannot do projection. Bye!")
             return False
         # return False # test
@@ -65,7 +65,7 @@ class Projection(GenerationPipeLineBase):
 
     def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)
-        if isQ_result_empty(new_result):
+        if self.app.isQ_result_empty(new_result):
             self.logger.error("Unmasque: \n some error in generating new database. "
                               "Result is empty. Can not identify "
                               "projections completely.")
@@ -116,7 +116,7 @@ class Projection(GenerationPipeLineBase):
         self.update_with_val(attrib, tabname, prev)
         self.update_attribs_bulk(join_tabnames, other_attribs, prev)
 
-        if len(new_result1) > 1:
+        if not self.app.isQ_result_empty(new_result1):
             new_result1 = list(new_result1[1])
             diff = find_diff_idx(new_result1, new_result)
             if diff:
@@ -137,7 +137,7 @@ class Projection(GenerationPipeLineBase):
             return
         new_result1 = self.app.doJob(query)
         self.update_with_val(attrib, tabname, prev)
-        if len(new_result1) > 1:
+        if not self.app.isQ_result_empty(new_result1):
             new_result1 = list(new_result1[1])
             diff = find_diff_idx(new_result1, new_result)
             if diff:

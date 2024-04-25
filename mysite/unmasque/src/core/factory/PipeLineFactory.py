@@ -3,9 +3,10 @@ import threading
 import time
 from queue import Queue
 
-from .ExtractionPipeLine import ExtractionPipeLine
-from .UnionPipeLine import UnionPipeLine
-from ..util.constants import WAITING
+from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from mysite.unmasque.src.pipeline.OuterJoinPipeLine import OuterJoinPipeLine
+from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
+from mysite.unmasque.src.util.constants import WAITING
 
 
 def raise_exception(id):
@@ -69,10 +70,14 @@ class PipeLineFactory:
 
     def create_pipeline(self, connectionHelper):
         detect_union = connectionHelper.config.detect_union
+        detect_oj = connectionHelper.config.detect_oj
         pipe = None
         if detect_union:
             pipe = UnionPipeLine(connectionHelper)
             print("Union Pipeline")
+        elif detect_oj:
+            pipe = OuterJoinPipeLine(connectionHelper)
+            print("Outer Join Pipeline")
         else:
             pipe = ExtractionPipeLine(connectionHelper)
             print("Extraction Pipeline")

@@ -1,10 +1,8 @@
 import copy
-from typing import List
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
-from ..util.utils import isQ_result_empty
 
 
 class NepComparator(ResultComparator):
@@ -135,7 +133,7 @@ class NEP(GenerationPipeLineBase):
         self.logger.debug("Inside get nep")
         res = self.app.doJob(query)
         filterAttribs = []
-        if isQ_result_empty(res):
+        if self.app.isQ_result_empty(res):
             attrib_list = self.global_all_attribs[i]
             self.logger.debug("attrib list: ", attrib_list)
             filterAttribs = self.check_per_attrib(attrib_list,
@@ -188,6 +186,6 @@ class NEP(GenerationPipeLineBase):
             self.update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
 
     def update_filter_attribs_from_res(self, new_result, filterAttribs, tabname, attrib, prev):
-        if not isQ_result_empty(new_result):
+        if not self.app.isQ_result_empty(new_result):
             filterAttribs.append((tabname, attrib, '<>', prev))
             self.logger.debug(filterAttribs, '++++++_______++++++')
