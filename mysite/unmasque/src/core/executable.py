@@ -49,7 +49,7 @@ class Executable(Base):
         # self.logger.debug("add_header")
 
     def isQ_result_empty(self, Res):
-        self.logger.debug("isQ_result_empty")
+        # self.logger.debug("isQ_result_empty")
         if len(Res) <= 1:
             return True
         return False
