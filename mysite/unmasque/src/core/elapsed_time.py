@@ -205,6 +205,7 @@ class ElapsedTime:
                                                self.t_aggregate,
                                                self.t_orderby,
                                                self.t_limit,
+                                               self.t_outer_join,
                                                self.t_nep,
                                                self.t_result_comp,
                                                self.t_total]]
@@ -222,6 +223,7 @@ class ElapsedTime:
                 self.app_aggregate,
                 self.app_orderby,
                 self.app_limit,
+                self.app_outer_join,
                 self.app_nep,
                 self.app_result_comp,
                 self.app_total]
