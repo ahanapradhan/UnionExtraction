@@ -5,6 +5,31 @@ from typing import Tuple, Union
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 
 
+def formulate_predicate_from_filter(elt):
+    tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), str(elt[3]), str(elt[4])
+    if op == 'range':
+        if '-' in ub:
+            predicate = f"{tab}.{attrib} between {lb} and {ub}"
+        else:
+            predicate = f"{tab}.{attrib} between \'{lb}\' and \'{ub}\'"
+    elif op == '>=':
+        if '-' in lb:
+            predicate = f"{tab}.{attrib} {op} \'{lb}\'"
+        else:
+            predicate = f"{tab}.{attrib} {op} {lb}"
+    elif op in ['<=', '=']:
+        if '-' in ub:
+            predicate = f"{tab}.{attrib} {op} \'{ub}\'"
+        else:
+            predicate = f"{tab}.{attrib} {op} {ub}"
+    elif 'equal' in op or 'like' in op or '-' in op:
+        predicate = f"{tab}.{attrib} {str(op.replace('equal', '='))} \'{ub}\'"
+    else:
+        predicate = ''
+
+    return predicate
+
+
 class OuterJoin(GenerationPipeLineBase):
     join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ' RIGHT OUTER JOIN ',
                 ('h', 'l'): ' LEFT OUTER JOIN ', ('h', 'h'): ' FULL OUTER JOIN '}
@@ -26,8 +51,8 @@ class OuterJoin(GenerationPipeLineBase):
         table_attr_dict = self.create_table_attrib_dict()
         self.create_importance_dict(new_join_graph, query, table_attr_dict)
 
-        set_possible_queries = self.FormulateQueries(final_edge_seq, query)
-        self.remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries)
+        set_possible_queries, fp_on = self.FormulateQueries(final_edge_seq, query)
+        self.remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries, fp_on)
         self.Q_E = self.sem_eq_queries[0]
         return True
 
@@ -176,7 +201,7 @@ class OuterJoin(GenerationPipeLineBase):
             self.connectionHelper.execute_sql(['drop table ' + tabname + ';',
                                                'alter table ' + tabname + '_restore rename to ' + tabname + ';'])
 
-    def remove_semantically_nonEq_queries(self, new_join_graph, query, set_possible_queries):
+    def remove_semantically_nonEq_queries(self, new_join_graph, query, set_possible_queries, on_predicates):
         # eliminate semanticamy non-equivalent querie from set_possible_queries
         # this code needs to be finished (27 feb)
         sem_eq_queries = []
@@ -190,26 +215,16 @@ class OuterJoin(GenerationPipeLineBase):
                 break_val = self.get_different_s_val(attrib, table, s_val)
                 self.logger.debug(f"{table}.{attrib} s_val {s_val}, break val {break_val}")
                 self.update_with_val(attrib, table, break_val)
-
-                # result of hidden query
-                res_HQ = self.app.doJob(query)
-                # result of extracted query
-                res_poss_q = self.app.doJob(poss_q)
-                #  maybe needs  work
-                if len(res_HQ) != len(res_poss_q):
-                    same = False
-                else:
-                    data_HQ = res_HQ[1:]
-                    data_poss_q = res_poss_q[1:]
-                    # maybe use the available result comparator techniques
-                    for var in range(len(data_HQ)):
-                        self.logger.debug(data_HQ[var] == data_poss_q[var])
-                        if not (data_HQ[var] == data_poss_q[var]):
-                            self.logger.debug(data_HQ[var])
-                            self.logger.debug(data_poss_q[var])
-                            same = False
-
+                same = self.are_the_results_same(poss_q, query, same)
                 self.update_with_val(attrib, table, s_val)
+            for fp in on_predicates:
+                attrib, tab = fp[1], fp[0]
+                self.logger.debug(fp, attrib, tab)
+                prev = self.get_dmin_val(attrib, tab)
+                self.logger.debug(f"{tab}.{attrib} s_val {prev}, break val NULL")
+                self.update_with_val(attrib, tab, 'NULL')
+                same = self.are_the_results_same(poss_q, query, same)
+                self.update_with_val(attrib, tab, prev)
 
             if same:
                 sem_eq_queries.append(poss_q)
@@ -220,6 +235,26 @@ class OuterJoin(GenerationPipeLineBase):
         # self.restore_relations()
         # output1 = self.finalize_output()
         # self.logger.debug(output1)
+
+    def are_the_results_same(self, poss_q, query, same):
+        # result of hidden query
+        res_HQ = self.app.doJob(query)
+        # result of extracted query
+        res_poss_q = self.app.doJob(poss_q)
+        #  maybe needs  work
+        if len(res_HQ) != len(res_poss_q):
+            same = False
+        else:
+            data_HQ = res_HQ[1:]
+            data_poss_q = res_poss_q[1:]
+            # maybe use the available result comparator techniques
+            for var in range(len(data_HQ)):
+                self.logger.debug(data_HQ[var] == data_poss_q[var])
+                if not (data_HQ[var] == data_poss_q[var]):
+                    self.logger.debug(data_HQ[var])
+                    self.logger.debug(data_poss_q[var])
+                    same = False
+        return same
 
     def finalize_output(self):
         for Q_E in self.sem_eq_queries:
@@ -291,7 +326,7 @@ class OuterJoin(GenerationPipeLineBase):
         for q in set_possible_queries:
             self.logger.debug(q)
 
-        return set_possible_queries
+        return set_possible_queries, fp_on
 
     def determine_on_and_where_filters(self, query):
         filter_pred_on = []
@@ -322,7 +357,7 @@ class OuterJoin(GenerationPipeLineBase):
         if flag_first:
             self.q_gen.from_op = ''
         type_of_join = self.join_map.get((imp_t1, imp_t2))
-        join_condition = f" ON {edge[0][0]} = {edge[1][0]}"
+        join_condition = f" ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
         relevant_tables = [table2] if not flag_first else [table1, table2]
         join_part = f"{type_of_join} {table2} {join_condition}"
         self.q_gen.from_op += f" {table1} {join_part}" if flag_first else "" + join_part
@@ -346,44 +381,14 @@ class OuterJoin(GenerationPipeLineBase):
         return imp_t1, imp_t2
 
     def add_where_clause(self, elt):
-        if elt[2].strip() == 'range':
-            if '-' in str(elt[4]):
-                predicate = elt[1] + " between " + str(elt[3]) + " and " + str(elt[4])
-            else:
-                predicate = elt[1] + " between " + " '" + str(elt[3]) + "'" + " and " + " '" + str(
-                    elt[4]) + "'"
-        elif elt[2].strip() == '>=':
-            if '-' in str(elt[3]):
-                predicate = elt[1] + " " + str(elt[2]) + " '" + str(elt[3]) + "' "
-            else:
-                predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
-        elif 'equal' in elt[2] or 'like' in elt[2].lower() or '-' in str(elt[4]):
-            predicate = elt[1] + " " + str(elt[2]).replace('equal', '=') + " '" + str(elt[4]) + "'"
-        else:
-            predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
+        predicate = formulate_predicate_from_filter(elt)
         if self.q_gen.where_op == '':
             self.q_gen.where_op = predicate
         else:
             self.q_gen.where_op = self.q_gen.where_op + " and " + predicate
 
     def add_on_clause_for_filter(self, fp):
-        elt = fp
-        if elt[2].strip() == 'range':
-            if '-' in str(elt[4]):
-                predicate = elt[1] + " between " + str(elt[3]) + " and " + str(elt[4])
-            else:
-                predicate = elt[1] + " between " + " '" + str(
-                    elt[3]) + "'" + " and " + " '" + str(elt[4]) + "'"
-        elif elt[2].strip() == '>=':
-            if '-' in str(elt[3]):
-                predicate = elt[1] + " " + str(elt[2]) + " '" + str(elt[3]) + "' "
-            else:
-                predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
-        elif 'equal' in elt[2] or 'like' in elt[2].lower() or '-' in str(elt[4]):
-            predicate = elt[1] + " " + str(elt[2]).replace('equal', '=') + " '" + str(
-                elt[4]) + "'"
-        else:
-            predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
+        predicate = formulate_predicate_from_filter(fp)
         self.q_gen.from_op += " and " + predicate
 
     def extract_params_from_args(self, args):
