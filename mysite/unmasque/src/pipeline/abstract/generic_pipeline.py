@@ -48,7 +48,6 @@ class GenericPipeLine(ABC):
         self.correct = False
         self.all_sizes = {}
         self.error = None
-
         self.core_relations = None
 
     def process(self, query: str):

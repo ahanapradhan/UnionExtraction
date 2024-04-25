@@ -77,7 +77,7 @@ class PipeLineFactory:
             print("Union Pipeline")
         elif detect_oj:
             pipe = OuterJoinPipeLine(connectionHelper)
-            print("Extraction Pipeline")
+            print("Outer Join Pipeline")
         else:
             pipe = ExtractionPipeLine(connectionHelper)
             print("Extraction Pipeline")
