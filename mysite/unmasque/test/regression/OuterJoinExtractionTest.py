@@ -63,10 +63,19 @@ class OuterJoinExtractionTestCase(BaseTestCase):
 
     def test_multiple_outer_join(self):
         self.conn.config.detect_or = False
-        query = "Select ps_supplycost, p_name, p_type, l_quantity " \
-                "from partsupp " \
-                "right outer join part on p_partkey=ps_partkey and p_size = 4 and ps_availqty > 3350 " \
-                "right outer join lineitem on ps_suppkey = l_suppkey and l_returnflag = 'R' ;"
+        query = "SELECT p_name, s_phone, ps_supplycost " \
+                "FROM part INNER JOIN partsupp ON p_partkey = ps_partkey AND p_size > 7 " \
+                "LEFT OUTER JOIN supplier ON ps_suppkey = s_suppkey AND s_acctbal < 2000;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_multiple_outer_join1(self):
+        self.conn.config.detect_or = False
+        query = "SELECT p_name, s_phone, ps_supplycost " \
+                "FROM part LEFT OUTER JOIN partsupp ON p_partkey = ps_partkey AND p_size > 7 " \
+                "RIGHT OUTER JOIN supplier ON ps_suppkey = s_suppkey AND s_acctbal < 2000;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)

@@ -4,7 +4,7 @@ from ...src.core.executable import Executable
 def is_result_nonempty_nullfree(res, logger=None):
     if logger is not None:
         pass
-        #logger.debug(res[1:])
+        # logger.debug(res[1:])
     if res[1:] is None:
         return False
     if res[1:] == [None]:
@@ -12,9 +12,9 @@ def is_result_nonempty_nullfree(res, logger=None):
     if not len(res[1:]):
         return False
     for row in res[1:]:
-        if any(val in [None, 'None'] for val in row):
-            return False
-    return True
+        if all(val not in [None, 'None'] for val in row):
+            return True
+    return False
 
 
 class NullFreeExecutable(Executable):
