@@ -13,7 +13,7 @@ from .abstract.generic_pipeline import GenericPipeLine
 from ..core.QueryStringGenerator import QueryStringGenerator
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, NEP_, PROJECTION, \
-    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, DB_MINIMIZATION, WRONG, FILTER, RESULT_COMPARE
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, DB_MINIMIZATION, WRONG, FILTER, RESULT_COMPARE, OUTER_JOIN
 
 
 class ExtractionPipeLine(DisjunctionPipeLine):
@@ -160,7 +160,6 @@ class ExtractionPipeLine(DisjunctionPipeLine):
         lm = Limit(self.connectionHelper, gb.group_by_attrib, delivery)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
-
         self.update_state(LIMIT + DONE)
         time_profile.update_for_limit(lm.local_elapsed_time, lm.app_calls)
         self.info[LIMIT] = lm.limit
@@ -176,8 +175,11 @@ class ExtractionPipeLine(DisjunctionPipeLine):
 
         self.logger.debug("extracted query:\n", eq)
 
+        self.update_state(OUTER_JOIN + START)
         oj = OuterJoin(self.connectionHelper, self.global_pk_dict, delivery, pj.projected_attribs, q_generator)
+        self.update_state(OUTER_JOIN + RUNNING)
         check = oj.doJob(query)
+        self.update_state(OUTER_JOIN + DONE)
         time_profile.update_for_outer_join(oj.local_elapsed_time, oj.app_calls)
         if not oj.done:
             self.logger.error("Error in outer join extractor")
