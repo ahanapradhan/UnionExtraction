@@ -81,3 +81,15 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
+    def test_multiple_outer_join2(self):
+        self.conn.config.detect_or = False
+        query = "SELECT p_name, s_phone, ps_supplycost, n_name " \
+                "FROM part RIGHT OUTER JOIN partsupp ON p_partkey = ps_partkey AND p_size > 7 " \
+                "LEFT OUTER JOIN supplier ON ps_suppkey = s_suppkey AND s_acctbal < 2000 " \
+                "RIGHT OUTER JOIN nation on s_nationkey = n_nationkey and n_regionkey = 1;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
+
