@@ -44,7 +44,9 @@ class TpchSanitizer:
         self.connectionHelper.begin_transaction()
         self.connectionHelper.execute_sqls_with_DictCursor(
             [self.connectionHelper.queries.create_table_as_select_star_from(backup_name,
-                                                                            table)],
+                                                                            table),
+             f"ALTER TABLE {backup_name} SET (autovacuum_enabled = false);"
+             ],
             self.logger)
         self.connectionHelper.commit_transaction()
         self.logger.debug(f"... done")

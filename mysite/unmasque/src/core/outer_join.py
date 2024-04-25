@@ -262,6 +262,38 @@ class OuterJoin(GenerationPipeLineBase):
         return val, prev
 
     def FormulateQueries(self, final_edge_seq, query):
+        fp_on, fp_where = self.determine_on_and_where_filters(query)
+        set_possible_queries = []
+        flat_list = [item for sublist in self.global_join_graph for item in sublist]
+        keys_of_tables = [*set(flat_list)]
+        tables_in_joins = [tab for tab in self.core_relations if
+                           any(key in self.global_pk_dict[tab] for key in keys_of_tables)]
+        tables_not_in_joins = [tab for tab in self.core_relations if tab not in tables_in_joins]
+        self.logger.debug(tables_in_joins, tables_not_in_joins)
+
+        for seq in final_edge_seq:
+            # fp_on = copy.deepcopy(filter_pred_on)
+            # fp_where = copy.deepcopy(filter_pred_where)
+            # self.q_gen.from_op = ", ".join(tables_not_in_joins)
+            flag_first = True
+            # if len(tables_not_in_joins):
+            #    flag_first = False
+            for edge in seq:
+                table1, table2 = edge[0][1], edge[1][1]
+                imp_t1, imp_t2 = self.determine_join_edge_type(edge, table1, table2)
+                flag_first = self.generate_from_on_clause(edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2)
+            self.generate_where_clause(fp_where)
+            # assemble the rest of the query
+            q_candidate = self.q_gen.assembleQuery()
+            self.logger.debug("+++++++++++++++++++++")
+            set_possible_queries.append(q_candidate)
+
+        for q in set_possible_queries:
+            self.logger.debug(q)
+
+        return set_possible_queries
+
+    def determine_on_and_where_filters(self, query):
         filter_pred_on = []
         filter_pred_where = []
         for fp in self.global_filter_predicates:
@@ -276,135 +308,83 @@ class OuterJoin(GenerationPipeLineBase):
                 filter_pred_on.append(fp)
             self.update_with_val(attrib, tab, prev)
         self.logger.debug(filter_pred_on, filter_pred_where)
+        return filter_pred_on, filter_pred_where
 
-        set_possible_queries = []
+    def generate_where_clause(self, fp_where):
+        # add other components of the query
+        # + where clause
+        # + group by, order by, limit
+        self.q_gen.where_op = ''
+        for elt in fp_where:
+            self.add_where_clause(elt)
 
-        flat_list = [item for sublist in self.global_join_graph for item in sublist]
-        keys_of_tables = [*set(flat_list)]
+    def generate_from_on_clause(self, edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2):
+        if flag_first:
+            self.q_gen.from_op = ''
+        type_of_join = self.join_map.get((imp_t1, imp_t2))
+        join_condition = f" ON {edge[0][0]} = {edge[1][0]}"
+        relevant_tables = [table2] if not flag_first else [table1, table2]
+        join_part = f"{type_of_join} {table2} {join_condition}"
+        self.q_gen.from_op += f" {table1} {join_part}" if flag_first else "" + join_part
+        flag_first = False
+        for fp in fp_on:
+            if fp[0] in relevant_tables:
+                self.add_on_clause_for_filter(fp)
+        return flag_first
 
-        tables_in_joins = [tab for tab in self.core_relations if
-                           any(key in self.global_pk_dict[tab] for key in keys_of_tables)]
-        tables_not_in_joins = [tab for tab in self.core_relations if tab not in tables_in_joins]
+    def determine_join_edge_type(self, edge, table1, table2):
+        # steps to determine type of join for edge
+        if tuple(edge) in self.importance_dict.keys():
+            imp_t1 = self.importance_dict[tuple(edge)][table1]
+            imp_t2 = self.importance_dict[tuple(edge)][table2]
+        elif tuple(list(reversed(edge))) in self.importance_dict.keys():
+            imp_t1 = self.importance_dict[tuple(list(reversed(edge)))][table1]
+            imp_t2 = self.importance_dict[tuple(list(reversed(edge)))][table2]
+        else:
+            self.logger.debug("error sneha!!!")
+        self.logger.debug(imp_t1, imp_t2)
+        return imp_t1, imp_t2
 
-        self.logger.debug(tables_in_joins, tables_not_in_joins)
+    def add_where_clause(self, elt):
+        if elt[2].strip() == 'range':
+            if '-' in str(elt[4]):
+                predicate = elt[1] + " between " + str(elt[3]) + " and " + str(elt[4])
+            else:
+                predicate = elt[1] + " between " + " '" + str(elt[3]) + "'" + " and " + " '" + str(
+                    elt[4]) + "'"
+        elif elt[2].strip() == '>=':
+            if '-' in str(elt[3]):
+                predicate = elt[1] + " " + str(elt[2]) + " '" + str(elt[3]) + "' "
+            else:
+                predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
+        elif 'equal' in elt[2] or 'like' in elt[2].lower() or '-' in str(elt[4]):
+            predicate = elt[1] + " " + str(elt[2]).replace('equal', '=') + " '" + str(elt[4]) + "'"
+        else:
+            predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
+        if self.q_gen.where_op == '':
+            self.q_gen.where_op = predicate
+        else:
+            self.q_gen.where_op = self.q_gen.where_op + " and " + predicate
 
-        importance_dict = self.importance_dict
-
-        for seq in final_edge_seq:
-
-            fp_on = copy.deepcopy(filter_pred_on)
-            fp_where = copy.deepcopy(filter_pred_where)
-
-            self.q_gen.from_op = ", ".join(tables_not_in_joins)
-
-            flag_first = True
-            for edge in seq:
-                # steps to determine type of join for edge
-                if tuple(edge) in importance_dict.keys():
-                    imp_t1 = importance_dict[tuple(edge)][edge[0][1]]
-                    imp_t2 = importance_dict[tuple(edge)][edge[1][1]]
-                elif tuple(list(reversed(edge))) in importance_dict.keys():
-                    imp_t1 = importance_dict[tuple(list(reversed(edge)))][edge[0][1]]
-                    imp_t2 = importance_dict[tuple(list(reversed(edge)))][edge[1][1]]
-                else:
-                    self.logger.debug("error sneha!!!")
-
-                self.logger.debug(imp_t1, imp_t2)
-
-                type_of_join = self.join_map.get((imp_t1, imp_t2))
-                if flag_first:
-                    self.q_gen.from_op += str(edge[0][1]) + type_of_join + str(edge[1][1]) + ' ON ' + str(
-                        edge[0][0]) + ' = ' + str(edge[1][0])
-                    flag_first = False
-                    # check for filter predicates for both tables
-                    # append fp to query
-                    table1 = edge[0][1]
-                    table2 = edge[1][1]
-                    for fp in fp_on:
-                        if fp[0] == table1 or fp[0] == table2:
-                            elt = fp
-                            if elt[2].strip() == 'range':
-                                if '-' in str(elt[4]):
-                                    predicate = elt[1] + " between " + str(elt[3]) + " and " + str(elt[4])
-                                else:
-                                    predicate = elt[1] + " between " + " '" + str(
-                                        elt[3]) + "'" + " and " + " '" + str(elt[4]) + "'"
-                            elif elt[2].strip() == '>=':
-                                if '-' in str(elt[3]):
-                                    predicate = elt[1] + " " + str(elt[2]) + " '" + str(elt[3]) + "' "
-                                else:
-                                    predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
-                            elif 'equal' in elt[2] or 'like' in elt[2].lower() or '-' in str(elt[4]):
-                                predicate = elt[1] + " " + str(elt[2]).replace('equal', '=') + " '" + str(
-                                    elt[4]) + "'"
-                            else:
-                                predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
-                            self.q_gen.from_op += " and " + predicate
-                            # fp_on.remove(fp)
-
-                else:
-                    self.q_gen.from_op += ' ' + type_of_join + str(edge[1][1]) + ' ON ' + str(edge[0][0]) + ' = ' + str(
-                        edge[1][0])
-                    # check for filter predicates for second tables
-                    # append fp to query
-
-                    for fp in fp_on:
-                        if fp[0] == edge[1][1]:
-                            predicate = ''
-                            elt = fp
-                            if elt[2].strip() == 'range':
-                                if '-' in str(elt[4]):
-                                    predicate = elt[1] + " between " + str(elt[3]) + " and " + str(elt[4])
-                                else:
-                                    predicate = elt[1] + " between " + " '" + str(
-                                        elt[3]) + "'" + " and " + " '" + str(elt[4]) + "'"
-                            elif elt[2].strip() == '>=':
-                                if '-' in str(elt[3]):
-                                    predicate = elt[1] + " " + str(elt[2]) + " '" + str(elt[3]) + "' "
-                                else:
-                                    predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
-                            elif 'equal' in elt[2] or 'like' in elt[2].lower() or '-' in str(elt[4]):
-                                predicate = elt[1] + " " + str(elt[2]).replace('equal', '=') + " '" + str(
-                                    elt[4]) + "'"
-                            else:
-                                predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
-                            self.q_gen.from_op += " and " + predicate
-                            # fp_on.remove(fp)
-            # add other components of the query
-            # + where clause
-            # + group by, order by, limit
-            self.q_gen.where_op = ''
-
-            for elt in fp_where:
-                if elt[2].strip() == 'range':
-                    if '-' in str(elt[4]):
-                        predicate = elt[1] + " between " + str(elt[3]) + " and " + str(elt[4])
-                    else:
-                        predicate = elt[1] + " between " + " '" + str(elt[3]) + "'" + " and " + " '" + str(
-                            elt[4]) + "'"
-                elif elt[2].strip() == '>=':
-                    if '-' in str(elt[3]):
-                        predicate = elt[1] + " " + str(elt[2]) + " '" + str(elt[3]) + "' "
-                    else:
-                        predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
-                elif 'equal' in elt[2] or 'like' in elt[2].lower() or '-' in str(elt[4]):
-                    predicate = elt[1] + " " + str(elt[2]).replace('equal', '=') + " '" + str(elt[4]) + "'"
-                else:
-                    predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
-                if self.q_gen.where_op == '':
-                    self.q_gen.where_op = predicate
-                else:
-                    self.q_gen.where_op = self.q_gen.where_op + " and " + predicate
-
-            # assemble the rest of the query
-            q_candidate = self.q_gen.assembleQuery()
-            self.logger.debug("+++++++++++++++++++++")
-            set_possible_queries.append(q_candidate)
-
-        for q in set_possible_queries:
-            self.logger.debug(q)
-
-        return set_possible_queries
+    def add_on_clause_for_filter(self, fp):
+        elt = fp
+        if elt[2].strip() == 'range':
+            if '-' in str(elt[4]):
+                predicate = elt[1] + " between " + str(elt[3]) + " and " + str(elt[4])
+            else:
+                predicate = elt[1] + " between " + " '" + str(
+                    elt[3]) + "'" + " and " + " '" + str(elt[4]) + "'"
+        elif elt[2].strip() == '>=':
+            if '-' in str(elt[3]):
+                predicate = elt[1] + " " + str(elt[2]) + " '" + str(elt[3]) + "' "
+            else:
+                predicate = elt[1] + " " + str(elt[2]) + " " + str(elt[3])
+        elif 'equal' in elt[2] or 'like' in elt[2].lower() or '-' in str(elt[4]):
+            predicate = elt[1] + " " + str(elt[2]).replace('equal', '=') + " '" + str(
+                elt[4]) + "'"
+        else:
+            predicate = elt[1] + ' ' + str(elt[2]) + ' ' + str(elt[4])
+        self.q_gen.from_op += " and " + predicate
 
     def extract_params_from_args(self, args):
         return args[0]
