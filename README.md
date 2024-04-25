@@ -1,3 +1,26 @@
+# UNMASQUE
+
+UNMASQUE is a tool for hidden query extraction (HQE).
+
+This code corresponds to UNMASQUE Project: https://dsl.cds.iisc.ac.in/projects/HIDDEN/index.html 
+
+UNMASQUE code for https://dsl.cds.iisc.ac.in/publications/report/TR/TR-2021-02_updated.pdf    
+
+This repository contains code developed by various students who worked on the project.  
+
+New features on top of the above theory correspond to the following theses:  
+
+Disjunction: https://dsl.cds.iisc.ac.in/publications/thesis/sumang.pdf  
+
+Algebraic Predicates: https://dsl.cds.iisc.ac.in/publications/thesis/aman.pdf  
+
+Negation Predicates, Result Comparator, View based DB minimizer: https://dsl.cds.iisc.ac.in/publications/thesis/mukul.pdf  
+
+Outer Join: https://dsl.cds.iisc.ac.in/publications/thesis/sneha.pdf  
+
+Based on the above theoretical ideas, the code has been freshly designed.  
+
+
 # Setting Up the Database
 ## PostgreSQL Installation  
 
@@ -27,10 +50,8 @@ A developement environment for python project is required next. Here is the link
 * `psycopg2==2.9.3`
 * `numpy==1.22.4`
 
-# Setting Up the UN1+UNION UNMASQUE Code
-This code corresponds to UNMASQUE Project: https://dsl.cds.iisc.ac.in/projects/HIDDEN/index.html  
-UNMASQUE code for https://dsl.cds.iisc.ac.in/publications/report/TR/TR-2021-02_updated.pdf    
-This repository contains code developed by various students who worked on the project.   
+# Setting Up the UNMASQUE Code
+
 The code is organized into the following directories:  
 
 ## mysite
@@ -41,13 +62,9 @@ The `mysite` directory contains the main project code.
 
 Inside `unmasque`, you'll find the following subdirectories:
 
-#### refactored
-
-The `refactored` directory contains code that has been refactored from the original codebase developed in various theses. This code has likely undergone improvements and optimizations.
-
 #### src
 
-The `src` directory contains newly written logic, often designed to simplify existing code. This may include enhancements or entirely new functionality.
+The `src` directory contains code that has been refactored from the original codebase developed in various theses, as well as newly written logic, often designed to simplify existing code. This may include enhancements or entirely new functionality.
 
 #### test
 
@@ -78,4 +95,8 @@ Use the following command:
 the `main` function in main_cmd.py can be run from the IDE.  
 
 (Current code uses relative imports in main_cmd.py script. If that causes import related error while trying to run from IDE, please change the imports to absolute.)
+
+#### From GUI:
+In terminal, go inside `unmasque` folder and start the django app using command: `python3 manage.py runserver`
+Once the server is up at 8080 port of localhost, the GUI can be accessed through the link: `http://localhost:8080/unmasque/`
 

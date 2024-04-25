@@ -154,7 +154,6 @@ class OuterJoin(GenerationPipeLineBase):
                 i = 0
                 while i < (len(edge)) - 1:
                     temp = []
-
                     self.add_tabname_for_attrib(edge[i], list_of_tables, temp)
                     self.add_tabname_for_attrib(edge[i + 1], list_of_tables, temp)
 
