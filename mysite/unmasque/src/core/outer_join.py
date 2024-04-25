@@ -9,7 +9,7 @@ class OuterJoin(GenerationPipeLineBase):
     join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ' RIGHT OUTER JOIN ',
                 ('h', 'l'): ' LEFT OUTER JOIN ', ('h', 'h'): ' FULL OUTER JOIN '}
 
-    def __init__(self, connectionHelper, global_pk_dict, delivery, projected_attributes, q_gen):
+    def __init__(self, connectionHelper, global_pk_dict, delivery, projected_attributes, q_gen, projected_names):
         super().__init__(connectionHelper, "Outer Join", delivery)
         self.global_pk_dict = global_pk_dict
         self.check_nep_again = False
@@ -17,6 +17,7 @@ class OuterJoin(GenerationPipeLineBase):
         self.sem_eq_listdict = {}
         self.importance_dict = {}
         self.projected_attributes = projected_attributes
+        self.projected_names = projected_names
         self.Q_E = None
         self.q_gen = q_gen
 
@@ -82,7 +83,9 @@ class OuterJoin(GenerationPipeLineBase):
             # make dict of table, attributes: projected val
             loc = {}
             for table in table_attr_dict.keys():
-                loc[table_attr_dict[table]] = res_hq[0].index(table_attr_dict[table])
+                pj_attrib = table_attr_dict[table]
+                pj_name = self.projected_names[self.projected_attributes.index(pj_attrib)]
+                loc[pj_attrib] = res_hq[0].index(pj_name)
             self.logger.debug(loc)
 
             res_hq_dict = {}
@@ -135,6 +138,9 @@ class OuterJoin(GenerationPipeLineBase):
             if tabname not in table_attr_dict.keys():
                 self.logger.debug(k, tabname)
                 table_attr_dict[tabname] = k
+        for tab in self.core_relations:
+            if tab not in table_attr_dict.keys():
+                table_attr_dict[tab] = None
         self.logger.debug("table_attr_dict: ", table_attr_dict)
         return table_attr_dict
 
@@ -277,12 +283,12 @@ class OuterJoin(GenerationPipeLineBase):
     def FormulateQueries(self, final_edge_seq, query):
         fp_on, fp_where = self.determine_on_and_where_filters(query)
         set_possible_queries = []
-        flat_list = [item for sublist in self.global_join_graph for item in sublist]
-        keys_of_tables = [*set(flat_list)]
-        tables_in_joins = [tab for tab in self.core_relations if
-                           any(key in self.global_pk_dict[tab] for key in keys_of_tables)]
-        tables_not_in_joins = [tab for tab in self.core_relations if tab not in tables_in_joins]
-        self.logger.debug(tables_in_joins, tables_not_in_joins)
+        # flat_list = [item for sublist in self.global_join_graph for item in sublist]
+        # keys_of_tables = [*set(flat_list)]
+        # tables_in_joins = [tab for tab in self.core_relations if
+        #                   any(key in self.global_pk_dict[tab] for key in keys_of_tables)]
+        # tables_not_in_joins = [tab for tab in self.core_relations if tab not in tables_in_joins]
+        # self.logger.debug(tables_in_joins, tables_not_in_joins)
 
         for seq in final_edge_seq:
             # fp_on = copy.deepcopy(filter_pred_on)

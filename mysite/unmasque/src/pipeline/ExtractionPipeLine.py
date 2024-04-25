@@ -176,7 +176,8 @@ class ExtractionPipeLine(DisjunctionPipeLine):
         self.logger.debug("extracted query:\n", eq)
 
         self.update_state(OUTER_JOIN + START)
-        oj = OuterJoin(self.connectionHelper, self.global_pk_dict, delivery, pj.projected_attribs, q_generator)
+        oj = OuterJoin(self.connectionHelper, self.global_pk_dict, delivery, pj.projected_attribs, q_generator,
+                       pj.projection_names)
         self.update_state(OUTER_JOIN + RUNNING)
         check = oj.doJob(query)
         self.update_state(OUTER_JOIN + DONE)

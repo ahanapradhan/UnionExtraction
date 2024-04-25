@@ -453,7 +453,7 @@ class AlgebraicPredicate(FilterHolder):
         self.generate_algebraice_eualities(predicates)
         self.generate_algebraic_inequalities(predicates)
 
-        if all_ors is not None and len(all_ors):
+        if self.connectionHelper.config.detect_or:
             self.generate_arithmetic_conjunctive_disjunctions(all_ors, predicates)
         else:
             self.generate_arithmetic_pure_conjunctions(predicates)
