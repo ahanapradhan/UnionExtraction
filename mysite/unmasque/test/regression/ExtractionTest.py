@@ -31,6 +31,7 @@ class ExtractionTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = False
         self.conn.config.detect_or = False
+        self.conn.config.detect_oj = False
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_for_filter_1(self):
