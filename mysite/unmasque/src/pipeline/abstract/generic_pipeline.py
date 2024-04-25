@@ -60,6 +60,7 @@ class GenericPipeLine(ABC):
             app.method_call_count = 0
             result = self.extract(query)
             self.verify_correctness(query, result)
+            self.time_profile.update_for_app(app.method_call_count)
         except Exception as e:
             self.logger.error("Some problem while Execution!")
             self.logger.error(e)

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
 from mysite.unmasque.src.core.nep import NepMinimizer, NEP
 from mysite.unmasque.src.pipeline.abstract.generic_pipeline import GenericPipeLine
 from mysite.unmasque.src.util.constants import FILTER, DONE, NEP_, RUNNING, START, DB_MINIMIZATION, RESULT_COMPARE
@@ -8,6 +9,7 @@ from mysite.unmasque.src.util.constants import FILTER, DONE, NEP_, RUNNING, STAR
 class NepPipeLine(GenericPipeLine, ABC):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "NEP Pipeline")
+        self.q_generator = QueryStringGenerator(self.connectionHelper)
 
     @abstractmethod
     def extract(self, query):

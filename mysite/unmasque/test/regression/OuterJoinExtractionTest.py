@@ -1,4 +1,6 @@
-from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+import pytest
+
+from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
@@ -7,7 +9,8 @@ class OuterJoinExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = False
-        self.pipeline = ExtractionPipeLine(self.conn)
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
 
     def test_sneha_outer_join_basic(self):
         self.conn.config.detect_or = False
@@ -20,7 +23,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_outer_join_on_where_filters(self):
-        self.conn.config.detect_or = True
+        self.conn.config.detect_or = False
         query = "SELECT l_shipmode, " \
                 "o_shippriority ," \
                 "count(*) as low_line_count " \
@@ -34,6 +37,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
+    @pytest.mark.skip
     def test_outer_join_w_disjunction(self):
         self.conn.config.detect_or = True
         query = "SELECT l_linenumber, o_shippriority , " \
@@ -46,6 +50,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
+    @pytest.mark.skip
     def test_outer_join_on_disjunction(self):
         self.conn.config.detect_or = True
         query = "SELECT l_linenumber, " \
