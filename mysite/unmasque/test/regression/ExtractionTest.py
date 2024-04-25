@@ -219,6 +219,16 @@ class ExtractionTestCase(BaseTestCase):
         tp.print()
         self.pipeline.connectionHelper.closeConnection()
 
+    def test_extraction_Q3_full(self):
+        self.pipeline.connectionHelper.connectUsingParams()
+        key = 'Q3'
+        query = queries.queries_dict[key]
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.pipeline.connectionHelper.closeConnection()
+
     def test_extraction_Q3_1(self):
         key = 'Q3_1'
         query = queries.queries_dict[key]
