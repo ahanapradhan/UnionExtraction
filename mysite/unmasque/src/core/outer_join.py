@@ -343,7 +343,7 @@ class OuterJoin(GenerationPipeLineBase):
         if flag_first:
             self.q_gen.from_op = ''
         type_of_join = self.join_map.get((imp_t1, imp_t2))
-        join_condition = f"\n\t\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
+        join_condition = f"\n\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
         relevant_tables = [table2] if not flag_first else [table1, table2]
         join_part = f"\n{type_of_join} {table2} {join_condition}"
         self.q_gen.from_op += f" {table1} {join_part}" if flag_first else "" + join_part
@@ -375,7 +375,7 @@ class OuterJoin(GenerationPipeLineBase):
 
     def add_on_clause_for_filter(self, fp):
         predicate = self.formulate_predicate_from_filter(fp)
-        self.q_gen.from_op += " and " + predicate
+        self.q_gen.from_op += "\n\t and " + predicate
 
     def extract_params_from_args(self, args):
         return args[0]
