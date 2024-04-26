@@ -1,6 +1,8 @@
 import copy
 
+from ..util.aoa_utils import add_pred_for
 from ..util.constants import COUNT, SUM, max_str_len
+from ..util.utils import get_format
 from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 
 
@@ -18,6 +20,16 @@ class QueryStringGenerator(AppExtractorBase):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Query String Generator")
+        self.join_graph = None
+        self.filter_in_predicates = []
+        self.filter_predicates = None
+        self.where_clause = None
+        self.arithmetic_ineq_predicates = None
+        self.arithmetic_eq_predicates = None
+        self.algebraic_eq_predicates = None
+        self.aoa_less_thans = None
+        self.aoa_predicates = None
+
         self.select_op = ''
         self.from_op = ''
         self.where_op = ''
@@ -25,12 +37,88 @@ class QueryStringGenerator(AppExtractorBase):
         self.order_by_op = ''
         self.limit_op = None
 
-    def generate_query_string(self, core_relations, pj, gb, agg, ob, lm, aoa):
+        self.get_datatype = None
+        self.formulate_predicate_from_filter = None
+
+    def set_where_clause_generation_stuff(self, delivery):
+        self.get_datatype = delivery.get_datatype
+        self.formulate_predicate_from_filter = delivery.formulate_predicate_from_filter
+        self.aoa_predicates = delivery.global_aoa_le_predicates
+        self.aoa_less_thans = delivery.global_aoa_l_predicates
+        self.join_graph = delivery.global_join_graph
+        self.filter_predicates = delivery.global_filter_predicates
+        # self.filter_in_predicates = delivery.filter_in_predicates
+
+    def __generate_algebraice_eualities(self, predicates):
+        for eq_join in self.join_graph:
+            join_edge = list(f"{item[0]}.{item[1]}" for item in eq_join if len(item) == 2)
+            join_edge.sort()
+            predicates.extend(f"{join_edge[i]} = {join_edge[i + 1]}" for i in range(len(join_edge) - 1))
+
+    def __generate_algebraic_inequalities(self, predicates):
+        for aoa in self.aoa_predicates:
+            pred = []
+            add_pred_for(aoa[0], pred)
+            add_pred_for(aoa[1], pred)
+            predicates.append(" <= ".join(pred))
+        for aoa in self.aoa_less_thans:
+            pred = []
+            add_pred_for(aoa[0], pred)
+            add_pred_for(aoa[1], pred)
+            predicates.append(" < ".join(pred))
+
+    def __generate_arithmetic_pure_conjunctions(self, predicates):
+        for a_eq in self.filter_predicates:
+            pred = self.formulate_predicate_from_filter(a_eq)
+            predicates.append(pred)
+
+    def __generate_arithmetic_conjunctive_disjunctions(self, all_ors, predicates):
+        for p in all_ors:
+            non_empty_indices = [i for i, t_a in enumerate(p) if t_a]
+            tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
+            ops = [p[i][2] for i in non_empty_indices]
+            datatypes = [self.get_datatype(tab_attribs[i]) for i in non_empty_indices]
+            values = [get_format(datatypes[i], p[i][3]) for i in non_empty_indices]
+            values.sort()
+            uniq_tab_attribs = set(tab_attribs)
+            if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
+                tab, attrib = next(iter(uniq_tab_attribs))
+                self.filter_in_predicates.extend((tab, attrib, 'IN', values, values))
+                all_vals_str = ", ".join(values)
+                one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(
+                    values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
+            else:
+                pred_str, preds = "", []
+                for i in non_empty_indices:
+                    pred_str = self.formulate_predicate_from_filter(p[i])
+                    preds.append(pred_str)
+                one_pred = " OR ".join(preds)
+            predicates.append(one_pred)
+
+    def generate_where_clause(self, all_ors=None) -> str:
+        predicates = []
+        self.__generate_algebraice_eualities(predicates)
+        self.__generate_algebraic_inequalities(predicates)
+
+        if self.connectionHelper.config.detect_or:
+            self.__generate_arithmetic_conjunctive_disjunctions(all_ors, predicates)
+        else:
+            self.__generate_arithmetic_pure_conjunctions(predicates)
+
+        where_clause = "\n and ".join(predicates)
+        self.logger.debug(where_clause)
+        return where_clause
+
+    def generate_query_string(self, core_relations, pj, gb, agg, ob, lm, all_ors):
         relations = copy.deepcopy(core_relations)
         relations.sort()
         self.from_op = ", ".join(relations)
-        self.where_op = aoa.where_clause
-        eq = self.__refine_Query1(pj.joined_attribs, pj, gb, agg, ob, lm)
+        self.where_op = self.generate_where_clause(all_ors)
+        self.generate_group_by_clause(agg, pj.joined_attribs)
+        self.generate_select_clause(agg, pj)
+        self.order_by_op = ob.orderBy_string
+        self.limit_op = str(lm.limit) if lm.limit is not None else ''
+        eq = self.assembleQuery()
         return eq
 
     def assembleQuery(self):
@@ -41,13 +129,33 @@ class QueryStringGenerator(AppExtractorBase):
             output = f"{output} \n Group By {self.group_by_op}"
         if self.order_by_op != '':
             output = f"{output} \n Order By {self.order_by_op}"
-        if self.limit_op is not None:
+        if self.limit_op != '':
             output = f"{output} \n Limit {self.limit_op}"
         output = f"{output};"
         return output
 
-    def __refine_Query1(self, global_key_attributes, pj, gb, agg, ob, lm):
-        self.logger.debug("inside:   reveal_proc_support.refine_Query")
+    def generate_select_clause(self, agg, pj):
+        # first_occur = True
+        for i in range(len(agg.global_projected_attributes)):
+            elt = agg.global_projected_attributes[i]
+            if agg.global_aggregated_attributes[i][1] != '':
+                if COUNT in agg.global_aggregated_attributes[i][1]:
+                    elt = agg.global_aggregated_attributes[i][1]
+                else:
+                    elt = agg.global_aggregated_attributes[i][1] + '(' + elt + ')'
+
+            if elt != pj.projection_names[i] and pj.projection_names[i] != '':
+                elt = elt + ' as ' + pj.projection_names[i]
+            self.select_op = elt if not i else f'{self.select_op}, {elt}'
+            # first_occur = False
+
+            # if first_occur:
+            #    self.select_op = elt
+            #    first_occur = False
+            # else:
+            #    self.select_op = self.select_op + ", " + elt
+
+    def generate_group_by_clause(self, agg, global_key_attributes):
         for i in range(len(agg.global_projected_attributes)):
             attrib = agg.global_projected_attributes[i]
             if attrib in global_key_attributes and attrib in agg.global_groupby_attributes:
@@ -73,38 +181,17 @@ class QueryStringGenerator(AppExtractorBase):
                 except:
                     pass
 
-        # UPDATE OUTPUTS
-        first_occur = True
-        self.group_by_op = ''
+        # first_occur = True
+        # self.group_by_op = ''
         for i in range(len(agg.global_groupby_attributes)):
             elt = agg.global_groupby_attributes[i]
-            if first_occur:
-                self.group_by_op = elt
-                first_occur = False
-            else:
-                self.group_by_op = self.group_by_op + ", " + elt
-        first_occur = True
-        for i in range(len(agg.global_projected_attributes)):
-            elt = agg.global_projected_attributes[i]
-            if agg.global_aggregated_attributes[i][1] != '':
-                if COUNT in agg.global_aggregated_attributes[i][1]:
-                    elt = agg.global_aggregated_attributes[i][1]
-                else:
-                    elt = agg.global_aggregated_attributes[i][1] + '(' + elt + ')'
-
-            if elt != pj.projection_names[i] and pj.projection_names[i] != '':
-                elt = elt + ' as ' + pj.projection_names[i]
-            if first_occur:
-                self.select_op = elt
-                first_occur = False
-            else:
-                self.select_op = self.select_op + ", " + elt
-
-        self.order_by_op = ob.orderBy_string
-        if lm.limit is not None:
-            self.limit_op = str(lm.limit)
-        eq = self.assembleQuery()
-        return eq
+            # UPDATE OUTPUTS
+            self.group_by_op = elt if not i else f'{self.group_by_op}, {elt}'
+            # if first_occur:
+            #    self.group_by_op = elt
+            #    first_occur = False
+            # else:
+            #    self.group_by_op = self.group_by_op + ", " + elt
 
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:

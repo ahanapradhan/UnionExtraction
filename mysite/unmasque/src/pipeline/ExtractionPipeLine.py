@@ -75,9 +75,10 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
             return None, time_profile
 
         self.aoa.post_process_for_generation_pipeline(query)
-        self.aoa.generate_where_clause(ors)
+        # self.aoa.generate_where_clause(ors)
 
         delivery = copy.copy(self.aoa.pipeline_delivery)
+        self.q_generator.set_where_clause_generation_stuff(delivery)
 
         '''
         Projection Extraction
@@ -170,7 +171,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-        eq = self.q_generator.generate_query_string(core_relations, self.pj, gb, agg, ob, lm, self.aoa)
+        eq = self.q_generator.generate_query_string(core_relations, self.pj, gb, agg, ob, lm, ors)
 
         self.logger.debug("extracted query:\n", eq)
 

@@ -1,7 +1,6 @@
 import unittest
 
 from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
-from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.util.BaseTestCase import BaseTestCase
 
 

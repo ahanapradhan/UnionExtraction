@@ -161,22 +161,12 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q1(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q1'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
-        self.pipeline.connectionHelper.closeConnection()
 
     @pytest.mark.skip
     def test_extract_Q3_optimizer_options_off(self):
@@ -203,25 +193,6 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_extraction_Q3(self):
-        self.pipeline.connectionHelper.connectUsingParams()
-        key = 'Q3'
-        from_rels = tpchSettings.from_rels[key]
-        query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
-        eq = self.pipeline.doJob(query)
-        self.assertTrue(eq is not None)
-        print(eq)
-        self.pipeline.time_profile.print()
-        self.pipeline.connectionHelper.closeConnection()
-
-    def test_extraction_Q3_full(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q3'
         query = queries.queries_dict[key]
         eq = self.pipeline.doJob(query)
@@ -262,35 +233,16 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
 
     def test_extraction_Q4(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q4'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
-        self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q5(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q5'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
@@ -298,129 +250,60 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_full_Q5(self):
-        self.conn.connectUsingParams()
         key = 'Q5'
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
-        self.conn.closeConnection()
 
     def test_extraction_Q6(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q6'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
-        self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q7(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q7'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
-        self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q11(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q11'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
-        self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q16(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q16'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
-        self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q17(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q17'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
-        self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q18(self):
-        self.pipeline.connectionHelper.connectUsingParams()
         key = 'Q18'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
-        app = Executable(self.conn)
-        result = app.doJob(query)
-        if app.isQ_result_empty(result):
-            print("Hidden query doesn't produce a populated result. It is beyond the scope of Unmasque..skipping "
-                  "query!")
-            self.assertTrue(False)
-
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
-        self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q21(self):
         self.pipeline.connectionHelper.connectUsingParams()

@@ -445,82 +445,10 @@ class AlgebraicPredicate(FilterHolder):
             predicate = f"{tab}.{attrib} {str(op.replace('equal', '='))} {f_ub}"
         else:
             predicate = ''
-
         return predicate
 
-    def generate_where_clause(self, all_ors=None) -> None:
-        predicates = []
-        self.generate_algebraice_eualities(predicates)
-        self.generate_algebraic_inequalities(predicates)
 
-        if self.connectionHelper.config.detect_or:
-            self.generate_arithmetic_conjunctive_disjunctions(all_ors, predicates)
-        else:
-            self.generate_arithmetic_pure_conjunctions(predicates)
 
-        self.where_clause = "\n and ".join(predicates)
-        self.logger.debug(self.where_clause)
-
-    def generate_algebraice_eualities(self, predicates):
-        for eq_join in self.algebraic_eq_predicates:
-            join_edge = list(f"{item[0]}.{item[1]}" for item in eq_join if len(item) == 2)
-            join_edge.sort()
-            predicates.extend(f"{join_edge[i]} = {join_edge[i + 1]}" for i in range(len(join_edge) - 1))
-
-    def generate_algebraic_inequalities(self, predicates):
-        for aoa in self.aoa_predicates:
-            pred = []
-            add_pred_for(aoa[0], pred)
-            add_pred_for(aoa[1], pred)
-            predicates.append(" <= ".join(pred))
-        for aoa in self.aoa_less_thans:
-            pred = []
-            add_pred_for(aoa[0], pred)
-            add_pred_for(aoa[1], pred)
-            predicates.append(" < ".join(pred))
-
-    def generate_arithmetic_pure_conjunctions(self, predicates):
-        for a_eq in self.arithmetic_eq_predicates:
-            # datatype = self.get_datatype((get_tab(a_eq), get_attrib(a_eq)))
-            # pred = f"{get_tab(a_eq)}.{get_attrib(a_eq)} = {get_format(datatype, get_LB(a_eq))}"
-            pred = self.formulate_predicate_from_filter(a_eq)
-            predicates.append(pred)
-        for a_ineq in self.arithmetic_ineq_predicates:
-            # datatype = self.get_datatype((get_tab(a_ineq), get_attrib(a_ineq)))
-            # pred_op = f"{get_tab(a_ineq)}.{get_attrib(a_ineq)} "
-            # if datatype == 'str':
-            #    pred_op += f"LIKE {get_format(datatype, a_ineq[3])}"
-            # else:
-            #    pred_op = handle_range_preds(datatype, a_ineq, pred_op)
-            pred = self.formulate_predicate_from_filter(a_ineq)
-            predicates.append(pred)
-
-    def generate_arithmetic_conjunctive_disjunctions(self, all_ors, predicates):
-        for p in all_ors:
-            non_empty_indices = [i for i, t_a in enumerate(p) if t_a]
-            tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
-            ops = [p[i][2] for i in non_empty_indices]
-            datatypes = [self.get_datatype(tab_attribs[i]) for i in non_empty_indices]
-            values = [get_format(datatypes[i], p[i][3]) for i in non_empty_indices]
-            values.sort()
-            uniq_tab_attribs = set(tab_attribs)
-            if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
-                tab, attrib = next(iter(uniq_tab_attribs))
-                self.filter_in_predicates.extend((tab, attrib, 'IN', values, values))
-                all_vals_str = ", ".join(values)
-                one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(
-                    values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
-            else:
-                pred_str, preds = "", []
-                for i in non_empty_indices:
-                    # if p[i][2] in ['equal', '=']:
-                    #    pred_str = f"{tab_attribs[i][0]}.{tab_attribs[i][1]} = {get_format(datatypes[i], p[i][3])}"
-                    # else:
-                    #    pred_str = handle_range_preds(datatypes[i], p[i], f'{tab_attribs[i][0]}.{tab_attribs[i][1]} ')
-                    pred_str = self.formulate_predicate_from_filter(p[i])
-                    preds.append(pred_str)
-                one_pred = " OR ".join(preds)
-            predicates.append(one_pred)
 
     def get_equi_join_group(self, tab_attrib: Tuple[str, str]) -> List[Tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:
