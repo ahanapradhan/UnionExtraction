@@ -92,6 +92,7 @@ class QueryStringGenerator(AppExtractorBase):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Query String Generator")
+        self.eq_join_predicates = None
         self.join_graph = None
         self.filter_in_predicates = []
         self.filter_predicates = None
@@ -126,18 +127,19 @@ class QueryStringGenerator(AppExtractorBase):
             predicate = ''
         return predicate
 
-    def set_where_clause_generation_stuff(self, delivery):
+    def set_aoa_details(self, delivery):
         self.get_datatype = delivery.get_datatype
         self.aoa_predicates = delivery.global_aoa_le_predicates
         self.aoa_less_thans = delivery.global_aoa_l_predicates
-        self.join_graph = delivery.global_join_graph
         self.filter_predicates = delivery.global_filter_predicates
 
     def __generate_algebraice_eualities(self, predicates):
-        for eq_join in self.join_graph:
+        for eq_join in self.eq_join_predicates:
+            self.logger.debug(f"Creating join clause for {eq_join}")
             join_edge = list(f"{item[0]}.{item[1]}" for item in eq_join if len(item) == 2)
             join_edge.sort()
             predicates.extend(f"{join_edge[i]} = {join_edge[i + 1]}" for i in range(len(join_edge) - 1))
+        self.logger.debug(predicates)
 
     def __generate_algebraic_inequalities(self, predicates):
         for aoa in self.aoa_predicates:
@@ -202,7 +204,8 @@ class QueryStringGenerator(AppExtractorBase):
         self.logger.debug(where_clause)
         return where_clause
 
-    def generate_query_string(self, core_relations, pj, agg, ob, lm, all_ors):
+    def generate_query_string(self, core_relations, eq_join_preds, pj, agg, ob, lm, all_ors):
+        self.eq_join_predicates = eq_join_preds
         relations = copy.deepcopy(core_relations)
         relations.sort()
         self.from_op = ", ".join(relations)

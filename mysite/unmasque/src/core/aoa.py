@@ -6,7 +6,7 @@ from typing import Union, List, Tuple
 from .abstract.abstractConnection import AbstractConnectionHelper
 from .abstract.filter_holder import FilterHolder
 from .dataclass.generation_pipeline_package import PackageForGenPipeline
-from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \
+from ..util.aoa_utils import get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \
     get_delta, \
     get_all_two_combs, get_val_bound_for_chain, get_min_max_for_chain_bounds, \
     optimize_edge_set, create_adjacency_map_from_aoa_predicates, find_all_chains, \
@@ -14,7 +14,7 @@ from ..util.aoa_utils import add_pred_for, get_min, get_max, get_attrib, get_tab
     find_le_attribs_from_edge_set, find_ge_attribs_from_edge_set, add_item_to_list, remove_absorbed_Bs, \
     find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, do_numeric_drama, need_permanent_mutation, \
     find_concrete_bound_from_filter_bounds, is_equal, add_item_to_dict
-from ..util.utils import get_val_plus_delta, get_format, add_two, get_mid_val
+from ..util.utils import get_val_plus_delta, add_two, get_mid_val
 
 
 def check_redundancy(fl_list, a_ineq):
@@ -366,6 +366,7 @@ class AlgebraicPredicate(FilterHolder):
                                                        self.get_dmin_val, self.get_datatype)
         self.pipeline_delivery.doJob()
         self.logger.debug(self.pipeline_delivery.global_filter_predicates)
+        self.logger.debug(self.pipeline_delivery.global_join_graph)
 
     def do_permanent_mutation(self):
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_less_thans))
@@ -423,7 +424,7 @@ class AlgebraicPredicate(FilterHolder):
             join_graph_edge.sort()
             for i in range(0, len(join_graph_edge) - 1):
                 self.join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
-        self.logger.debug(self.join_graph)
+        self.logger.debug("create_equi_join_graph: ", self.join_graph)
 
     def get_equi_join_group(self, tab_attrib: Tuple[str, str]) -> List[Tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:
