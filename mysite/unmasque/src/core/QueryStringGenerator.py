@@ -30,7 +30,7 @@ class QueryStringGenerator(AppExtractorBase):
         relations.sort()
         self.from_op = ", ".join(relations)
         self.where_op = aoa.where_clause
-        eq = self.refine_Query1(pj.joined_attribs, pj, gb, agg, ob, lm)
+        eq = self.__refine_Query1(pj.joined_attribs, pj, gb, agg, ob, lm)
         return eq
 
     def assembleQuery(self):
@@ -46,7 +46,7 @@ class QueryStringGenerator(AppExtractorBase):
         output = f"{output};"
         return output
 
-    def refine_Query1(self, global_key_attributes, pj, gb, agg, ob, lm):
+    def __refine_Query1(self, global_key_attributes, pj, gb, agg, ob, lm):
         self.logger.debug("inside:   reveal_proc_support.refine_Query")
         for i in range(len(agg.global_projected_attributes)):
             attrib = agg.global_projected_attributes[i]
@@ -155,14 +155,14 @@ class QueryStringGenerator(AppExtractorBase):
             self.where_op = " ".join(where_parts)
 
     def getStrFilterValue(self, query, tabname, attrib, representative, max_length):
-        representative = self.get_minimal_representative_str(attrib, query, representative, tabname)
-        output = self.handle_for_wildcard_char_underscore(attrib, query, representative, tabname)
+        representative = self.__get_minimal_representative_str(attrib, query, representative, tabname)
+        output = self.__handle_for_wildcard_char_underscore(attrib, query, representative, tabname)
         if output == '':
             return output
-        output = self.handle_for_wildcard_char_perc(attrib, max_length, output, query, tabname)
+        output = self.__handle_for_wildcard_char_perc(attrib, max_length, output, query, tabname)
         return output
 
-    def handle_for_wildcard_char_perc(self, attrib, max_length, output, query, tabname):
+    def __handle_for_wildcard_char_perc(self, attrib, max_length, output, query, tabname):
         # GET % positions
         index = 0
         representative = copy.deepcopy(output)
@@ -207,7 +207,7 @@ class QueryStringGenerator(AppExtractorBase):
                 print(e)
         return output
 
-    def handle_for_wildcard_char_underscore(self, attrib, query, representative, tabname):
+    def __handle_for_wildcard_char_underscore(self, attrib, query, representative, tabname):
         index = 0
         output = ""
         # currently inverted exclaimaination is being used assuming it will not be in the string
@@ -255,7 +255,7 @@ class QueryStringGenerator(AppExtractorBase):
             index = index + 1
         return output
 
-    def get_minimal_representative_str(self, attrib, query, representative, tabname):
+    def __get_minimal_representative_str(self, attrib, query, representative, tabname):
         index = 0
         output = ""
         temp = list(representative)

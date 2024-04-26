@@ -24,10 +24,10 @@ class NepPipeLine(GenericPipeLine, ABC):
         raise NotImplementedError("Trouble!")
 
     @abstractmethod
-    def verify_correctness(self, query, result):
+    def _verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
-    def extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
+    def _extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
         if not self.connectionHelper.config.detect_nep:
             return eq
 
