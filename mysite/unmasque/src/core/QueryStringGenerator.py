@@ -164,7 +164,7 @@ class QueryStringGenerator(AppExtractorBase):
             tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
             ops = [p[i][2] for i in non_empty_indices]
             datatypes = [self.get_datatype(tab_attribs[i]) for i in non_empty_indices]
-            values = [p[i][3] for i in non_empty_indices]
+            values = [get_format(datatypes[i], p[i][3]) for i in non_empty_indices]
             values.sort()
             uniq_tab_attribs = set(tab_attribs)
             if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
