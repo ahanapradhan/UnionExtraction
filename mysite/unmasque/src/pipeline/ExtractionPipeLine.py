@@ -170,7 +170,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-        eq = self.q_generator.generate_query_string(core_relations, self.pj, gb, agg, ob, lm, self.or_predicates)
+        eq = self.q_generator.generate_query_string(core_relations, self.pj, agg, ob, lm, self.or_predicates)
         self.logger.debug("extracted query:\n", eq)
 
         eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
