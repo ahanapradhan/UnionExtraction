@@ -111,8 +111,8 @@ class QueryStringGenerator(AppExtractorBase):
     def formulate_predicate_from_filter(self, elt):
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[4]
         datatype = self.get_datatype((tab, attrib))
-        f_lb = f"({', '.join(lb)})" if isinstance(lb, tuple) else get_format(datatype, lb)
-        f_ub = f"({', '.join(ub)})" if isinstance(ub, tuple) else get_format(datatype, ub)
+        f_lb = f"({', '.join(lb)})" if isinstance(lb, list) else get_format(datatype, lb)
+        f_ub = f"({', '.join(ub)})" if isinstance(ub, list) else get_format(datatype, ub)
         if op == 'range':
             predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
         elif op == '>=':
@@ -164,7 +164,7 @@ class QueryStringGenerator(AppExtractorBase):
             tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
             ops = [p[i][2] for i in non_empty_indices]
             datatypes = [self.get_datatype(tab_attribs[i]) for i in non_empty_indices]
-            values = [get_format(datatypes[i], p[i][3]) for i in non_empty_indices]
+            values = [p[i][3] for i in non_empty_indices]
             values.sort()
             uniq_tab_attribs = set(tab_attribs)
             if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
