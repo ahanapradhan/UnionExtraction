@@ -169,10 +169,8 @@ class QueryStringGenerator(AppExtractorBase):
             uniq_tab_attribs = set(tab_attribs)
             if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
                 tab, attrib = next(iter(uniq_tab_attribs))
-                self.__adjust_for_in_predicates(attrib, tab, values)
-                all_vals_str = ", ".join(values)
-                one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(
-                    values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
+                in_pred = self.__adjust_for_in_predicates(attrib, tab, values)
+                one_pred = self.formulate_predicate_from_filter(in_pred)
             else:
                 pred_str, preds = "", []
                 for i in non_empty_indices:
@@ -182,13 +180,15 @@ class QueryStringGenerator(AppExtractorBase):
             predicates.append(one_pred)
 
     def __adjust_for_in_predicates(self, attrib, tab, values):
-        self.filter_in_predicates.extend((tab, attrib, 'IN', values, values))
+        in_pred = [tab, attrib, 'IN', values, values] if len(values) > 1 else [tab, attrib, '=', values, values]
+        self.filter_in_predicates.append(tuple(in_pred))
         remove_eq_filter_predicate = []
         for eq_pred in self.filter_predicates:
             if eq_pred[0] == tab and eq_pred[1] == attrib and eq_pred[2] in ['equal', '=']:
                 remove_eq_filter_predicate.append(eq_pred)
         for t_r in remove_eq_filter_predicate:
             self.filter_predicates.remove(t_r)
+        return tuple(in_pred)
 
     def generate_where_clause(self, all_ors=None) -> str:
         predicates = []
