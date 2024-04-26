@@ -33,7 +33,7 @@ class MyTestCase(BaseTestCase):
         """
         time_profile = create_zero_time_profile()
         self.pipeline.all_sizes = tpchSettings.all_size
-        aoa, time_profile = self.pipeline.mutation_pipeline(core_rels, query, time_profile)
+        aoa, time_profile = self.pipeline._mutation_pipeline(core_rels, query, time_profile)
         print(aoa.aoa_predicates)
         # self.assertEqual(len(aoa.aoa_predicates), 2)
         # self.assertTrue((('orders', 'o_orderdate'), ('lineitem', 'l_shipdate')) in aoa.aoa_predicates)
@@ -64,7 +64,7 @@ class MyTestCase(BaseTestCase):
         core_rels = ['orders', 'customer', 'nation']
         time_profile = create_zero_time_profile()
         self.pipeline.all_sizes = tpchSettings.all_size
-        aoa, time_profile = self.pipeline.mutation_pipeline(core_rels, query, time_profile)
+        aoa, time_profile = self.pipeline._mutation_pipeline(core_rels, query, time_profile)
 
         print(aoa.aoa_predicates)
         self.assertEqual(len(aoa.aoa_predicates), 1)
@@ -87,7 +87,7 @@ class MyTestCase(BaseTestCase):
 
         time_profile = create_zero_time_profile()
         self.pipeline.all_sizes = tpchSettings.all_size
-        aoa, time_profile = self.pipeline.mutation_pipeline(from_rels, query, time_profile)
+        aoa, time_profile = self.pipeline._mutation_pipeline(from_rels, query, time_profile)
 
         print(aoa.aoa_predicates)
         self.assertEqual(len(aoa.aoa_predicates), 1)

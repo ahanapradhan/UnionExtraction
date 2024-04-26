@@ -28,8 +28,8 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
     def doJob(self, query, qe=None):
         return GenericPipeLine.doJob(self, query, qe)
 
-    def verify_correctness(self, query, result):
-        GenericPipeLine.verify_correctness(self, query, result)
+    def _verify_correctness(self, query, result):
+        GenericPipeLine._verify_correctness(self, query, result)
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
@@ -54,22 +54,22 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         self.key_lists = fc.get_key_lists()
         self.global_pk_dict = fc.init.global_pk_dict
 
-        eq, t = self.after_from_clause_extract(query, self.core_relations)
+        eq, t = self._after_from_clause_extract(query, self.core_relations)
         self.connectionHelper.closeConnection()
         self.time_profile.update(t)
         return eq
 
-    def after_from_clause_extract(self, query, core_relations):
+    def _after_from_clause_extract(self, query, core_relations):
 
         time_profile = create_zero_time_profile()
 
-        check, time_profile = self.mutation_pipeline(core_relations, query, time_profile)
+        check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
         if not check:
             self.logger.error("Some problem in Regular mutation pipeline. Aborting extraction!")
             return None, time_profile
 
-        check, time_profile, ors = self.extract_disjunction(self.aoa.filter_predicates,
-                                                            core_relations, query, time_profile)
+        check, time_profile, ors = self._extract_disjunction(self.aoa.filter_predicates,
+                                                             core_relations, query, time_profile)
         if not check:
             self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
             return None, time_profile
@@ -174,7 +174,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
 
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self.extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
+        eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
 
         # last component in the pipeline should do this
         # time_profile.update_for_app(lm.app.method_call_count)

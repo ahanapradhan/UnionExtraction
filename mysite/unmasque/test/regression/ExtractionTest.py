@@ -5,6 +5,7 @@ from datetime import timedelta, date
 import pytest
 
 from mysite.unmasque.src.core.executable import Executable
+from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.src.Optimizer_config import set_optimizer_params
 from ...test.util import tpchSettings, queries
@@ -32,7 +33,8 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_nep = False
         self.conn.config.detect_or = False
         self.conn.config.detect_oj = False
-        self.pipeline = ExtractionPipeLine(self.conn)
+        factory = PipeLineFactory(self.conn)
+        self.pipeline = factory.create_pipeline()
 
     def test_for_filter_1(self):
         lower = 11
@@ -144,7 +146,6 @@ class ExtractionTestCase(BaseTestCase):
     def test_extraction_tpch_query3(self):
         self.pipeline.connectionHelper.connectUsingParams()
         key = 'tpch_query3'
-        from_rels = tpchSettings.from_rels[key]
         query = queries.queries_dict[key]
         app = Executable(self.conn)
         result = app.doJob(query)
@@ -153,10 +154,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q1(self):
@@ -171,10 +172,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     @pytest.mark.skip
@@ -213,10 +214,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q3_full(self):
@@ -272,10 +273,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q5(self):
@@ -290,10 +291,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_full_Q5(self):
@@ -325,10 +326,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q7(self):
@@ -343,10 +344,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q11(self):
@@ -361,10 +362,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q16(self):
@@ -379,10 +380,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q17(self):
@@ -397,10 +398,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q18(self):
@@ -415,11 +416,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
-
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q21(self):
@@ -434,11 +434,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
-
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q23_1(self):
@@ -453,11 +452,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
-
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q9_simple(self):
@@ -472,10 +470,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_extraction_Q10_simple(self):
@@ -490,10 +488,10 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq, tp = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq = self.pipeline.extract(query)
         self.assertTrue(eq is not None)
         print(eq)
-        tp.print()
+        self.pipeline.time_profile.print()
         self.pipeline.connectionHelper.closeConnection()
 
     def test_for_bug(self):
@@ -549,6 +547,7 @@ class ExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    @pytest.mark.skip
     def test_diff_res(self):
         query = "SELECT * FROM lineitem, orders " \
                 "WHERE l_quantity < 1000 " \

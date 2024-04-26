@@ -25,7 +25,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.global_min_instance_dict = None
         self.key_lists = None
 
-    def mutation_pipeline(self, core_relations, query, time_profile, restore_details=None):
+    def _mutation_pipeline(self, core_relations, query, time_profile, restore_details=None):
         self.update_state(RESTORE_DB + START)
         self.db_restorer = DbRestorer(self.connectionHelper, core_relations)
         self.db_restorer.set_all_sizes(self.all_sizes)
@@ -131,7 +131,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             return False, time_profile
         return True, time_profile
 
-    def get_predicates_in_action(self):
+    def __get_predicates_in_action(self):
         return self.aoa.filter_predicates
 
     @abstractmethod
@@ -143,23 +143,23 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         raise NotImplementedError("Trouble!")
 
     @abstractmethod
-    def verify_correctness(self, query, result):
+    def _verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
-    def extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
+    def _extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
         curr_eq_predicates = copy.deepcopy(init_predicates)
         all_eq_predicates = [curr_eq_predicates]
         ids = list(range(len(curr_eq_predicates)))
         if self.connectionHelper.config.detect_or:
             try:
-                time_profile = self.run_extraction_loop(all_eq_predicates, core_relations, ids, query, time_profile)
+                time_profile = self.__run_extraction_loop(all_eq_predicates, core_relations, ids, query, time_profile)
             except Exception as e:
                 self.logger.error("Error in disjunction loop. ", str(e))
                 return False, time_profile, None
             '''
             gaining sanity back from nullified attributes
             '''
-            check, time_profile = self.mutation_pipeline(core_relations, query, time_profile)
+            check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
             if not check:
                 self.logger.error("Error while sanitizing after disjunction. Aborting!")
                 return False, time_profile, None
@@ -167,7 +167,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         all_ors = list(zip(*all_eq_predicates))
         return True, time_profile, all_ors
 
-    def run_extraction_loop(self, all_eq_predicates, core_relations, ids, query, time_profile):
+    def __run_extraction_loop(self, all_eq_predicates, core_relations, ids, query, time_profile):
         while True:
             or_eq_predicates = []
             for i in ids:
@@ -177,27 +177,27 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
                     or_eq_predicates.append(tuple())
                     continue
 
-                restore_details = self.get_OR_db_restoration_details(core_relations, in_candidates)
+                restore_details = self.__get_OR_db_restoration_details(core_relations, in_candidates)
                 self.logger.debug(restore_details)
-                check, time_profile = self.mutation_pipeline(core_relations, query, time_profile, restore_details)
-                if not check or not self.get_predicates_in_action():
+                check, time_profile = self._mutation_pipeline(core_relations, query, time_profile, restore_details)
+                if not check or not self.__get_predicates_in_action():
                     or_eq_predicates.append(tuple())
                 else:
-                    or_eq_predicates.append(self.get_predicates_in_action()[i])
+                    or_eq_predicates.append(self.__get_predicates_in_action()[i])
                 self.logger.debug("new or predicates...", all_eq_predicates, or_eq_predicates)
             if all(element == tuple() for element in or_eq_predicates):
                 break
             all_eq_predicates.append(or_eq_predicates)
         return time_profile
 
-    def get_OR_db_restoration_details(self, core_relations, in_candidates):
+    def __get_OR_db_restoration_details(self, core_relations, in_candidates):
         restore_details = []
         for tab in core_relations:
-            where_condition = self.falsify_predicates(tab, in_candidates)
+            where_condition = self.__falsify_predicates(tab, in_candidates)
             restore_details.append((tab, where_condition))
         return restore_details
 
-    def falsify_predicates(self, tabname, held_predicates):
+    def __falsify_predicates(self, tabname, held_predicates):
         always = "true"
         where_condition = always
         wheres = []

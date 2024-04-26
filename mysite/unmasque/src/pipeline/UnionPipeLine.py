@@ -27,7 +27,7 @@ class UnionPipeLine(ExtractionPipeLine):
         for ele in p:
             l.append(list(ele))
         self.info[UNION] = l
-        self.update_time_profile(union, union_profile)
+        self.__update_time_profile(union, union_profile)
         self.core_relations = [item for subset in p for item in subset]
         self.all_relations = union.all_relations
         self.key_lists = union.key_lists
@@ -41,9 +41,9 @@ class UnionPipeLine(ExtractionPipeLine):
             nullify = set(self.all_relations).difference(core_relations)
 
             self.connectionHelper.connectUsingParams()
-            self.nullify_relations(nullify)
-            eq, time_profile = self.after_from_clause_extract(query, core_relations)
-            self.revert_nullifications(nullify)
+            self.__nullify_relations(nullify)
+            eq, time_profile = self._after_from_clause_extract(query, core_relations)
+            self.__revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
 
             if time_profile is not None:
@@ -58,10 +58,10 @@ class UnionPipeLine(ExtractionPipeLine):
                 self.pipeLineError = True
                 break
 
-        result = self.post_process(pstr, u_eq)
+        result = self.__post_process(pstr, u_eq)
         return result
 
-    def post_process(self, pstr, u_eq):
+    def __post_process(self, pstr, u_eq):
         u_Q = "\n UNION ALL \n".join(u_eq)
         u_Q += ";"
         if "UNION ALL" not in u_Q:
@@ -76,12 +76,12 @@ class UnionPipeLine(ExtractionPipeLine):
         self.update_state(DONE)
         return result
 
-    def update_time_profile(self, union, union_time):
+    def __update_time_profile(self, union, union_time):
         duration, app_calls = union_time[0], union_time[1]
         self.time_profile.update_for_from_clause(union.local_elapsed_time - duration, union.app_calls - app_calls)
         self.time_profile.update_for_union(duration, app_calls)
 
-    def nullify_relations(self, relations):
+    def __nullify_relations(self, relations):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab,
                                                                                                    self.connectionHelper.queries.get_tabname_un(
@@ -91,7 +91,7 @@ class UnionPipeLine(ExtractionPipeLine):
                                                                                                self.connectionHelper.queries.get_tabname_un(
                                                                                                    tab))], self.logger)
 
-    def revert_nullifications(self, relations):
+    def __revert_nullifications(self, relations):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
                                                self.connectionHelper.queries.alter_table_rename_to(

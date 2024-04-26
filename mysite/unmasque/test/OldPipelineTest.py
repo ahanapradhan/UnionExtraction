@@ -35,7 +35,7 @@ class MyTestCase(BaseTestCase):
         self.conn.connectUsingParams()
         from_rels = tpchSettings.from_rels[q_key]
         query = queries.queries_dict[q_key]
-        eq, _ = self.pipeline.after_from_clause_extract(query, from_rels)
+        eq, _ = self.pipeline._after_from_clause_extract(query, from_rels)
         self.conn.closeConnection()
         self.assertTrue(eq is not None)
 
