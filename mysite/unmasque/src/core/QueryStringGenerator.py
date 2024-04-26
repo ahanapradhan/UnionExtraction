@@ -95,15 +95,10 @@ class QueryStringGenerator(AppExtractorBase):
         self.join_graph = None
         self.filter_in_predicates = []
         self.filter_predicates = None
-        self.where_clause = None
-        self.arithmetic_ineq_predicates = None
-        self.arithmetic_eq_predicates = None
-        self.algebraic_eq_predicates = None
         self.aoa_less_thans = None
         self.aoa_predicates = None
 
         self.get_datatype = None
-        self.formulate_predicate_from_filter = None
 
         self.select_op = ''
         self.from_op = ''
@@ -112,14 +107,31 @@ class QueryStringGenerator(AppExtractorBase):
         self.order_by_op = ''
         self.limit_op = None
 
+    def formulate_predicate_from_filter(self, elt):
+        tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), str(elt[3]), str(elt[4])
+        datatype = self.get_datatype((tab, attrib))
+        f_lb = str(tuple(lb)) if isinstance(lb, list) else get_format(datatype, lb)
+        f_ub = str(tuple(ub)) if isinstance(ub, list) else get_format(datatype, ub)
+        if op == 'range':
+            predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
+        elif op == '>=':
+            predicate = f"{tab}.{attrib} {op} {f_lb}"
+        elif op in ['<=', '=']:
+            predicate = f"{tab}.{attrib} {op} {f_ub}"
+        elif 'equal' in op or 'like' in op or '-' in op:
+            predicate = f"{tab}.{attrib} {str(op.replace('equal', '='))} {f_ub}"
+        elif op == 'IN':
+            predicate = f"{tab}.{attrib} {op} {f_ub}"
+        else:
+            predicate = ''
+        return predicate
+
     def set_where_clause_generation_stuff(self, delivery):
         self.get_datatype = delivery.get_datatype
-        self.formulate_predicate_from_filter = delivery.formulate_predicate_from_filter
         self.aoa_predicates = delivery.global_aoa_le_predicates
         self.aoa_less_thans = delivery.global_aoa_l_predicates
         self.join_graph = delivery.global_join_graph
         self.filter_predicates = delivery.global_filter_predicates
-        # self.filter_in_predicates = delivery.filter_in_predicates
 
     def __generate_algebraice_eualities(self, predicates):
         for eq_join in self.join_graph:
@@ -155,7 +167,7 @@ class QueryStringGenerator(AppExtractorBase):
             uniq_tab_attribs = set(tab_attribs)
             if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
                 tab, attrib = next(iter(uniq_tab_attribs))
-                self.filter_in_predicates.extend((tab, attrib, 'IN', values, values))
+                self.__adjust_for_in_predicates(attrib, tab, values)
                 all_vals_str = ", ".join(values)
                 one_pred = f"{tab}.{attrib} IN ({all_vals_str})" if len(
                     values) > 1 else f"{tab}.{attrib} = {all_vals_str}"
@@ -166,6 +178,15 @@ class QueryStringGenerator(AppExtractorBase):
                     preds.append(pred_str)
                 one_pred = " OR ".join(preds)
             predicates.append(one_pred)
+
+    def __adjust_for_in_predicates(self, attrib, tab, values):
+        self.filter_in_predicates.extend((tab, attrib, 'IN', values, values))
+        remove_eq_filter_predicate = []
+        for eq_pred in self.filter_predicates:
+            if eq_pred[0] == tab and eq_pred[1] == attrib and eq_pred[2] in ['equal', '=']:
+                remove_eq_filter_predicate.append(eq_pred)
+        for t_r in remove_eq_filter_predicate:
+            self.filter_predicates.remove(t_r)
 
     def generate_where_clause(self, all_ors=None) -> str:
         predicates = []
@@ -181,8 +202,7 @@ class QueryStringGenerator(AppExtractorBase):
         self.logger.debug(where_clause)
         return where_clause
 
-    def generate_query_string(self, core_relations, pj, gb, agg, ob, lm, all_ors):
-        query = QueryString()
+    def generate_query_string(self, core_relations, pj, agg, ob, lm, all_ors):
         relations = copy.deepcopy(core_relations)
         relations.sort()
         self.from_op = ", ".join(relations)
@@ -205,7 +225,6 @@ class QueryStringGenerator(AppExtractorBase):
         return query.assembleQuery()
 
     def generate_select_clause(self, agg, pj):
-        # first_occur = True
         for i in range(len(agg.global_projected_attributes)):
             elt = agg.global_projected_attributes[i]
             if agg.global_aggregated_attributes[i][1] != '':
@@ -217,13 +236,6 @@ class QueryStringGenerator(AppExtractorBase):
             if elt != pj.projection_names[i] and pj.projection_names[i] != '':
                 elt = elt + ' as ' + pj.projection_names[i]
             self.select_op = elt if not i else f'{self.select_op}, {elt}'
-            # first_occur = False
-
-            # if first_occur:
-            #    self.select_op = elt
-            #    first_occur = False
-            # else:
-            #    self.select_op = self.select_op + ", " + elt
 
     def generate_group_by_clause(self, agg, global_key_attributes):
         for i in range(len(agg.global_projected_attributes)):
@@ -250,18 +262,10 @@ class QueryStringGenerator(AppExtractorBase):
                     agg.global_groupby_attributes.remove(attrib)
                 except:
                     pass
-
-        # first_occur = True
-        # self.group_by_op = ''
         for i in range(len(agg.global_groupby_attributes)):
             elt = agg.global_groupby_attributes[i]
             # UPDATE OUTPUTS
             self.group_by_op = elt if not i else f'{self.group_by_op}, {elt}'
-            # if first_occur:
-            #    self.group_by_op = elt
-            #    first_occur = False
-            # else:
-            #    self.group_by_op = self.group_by_op + ", " + elt
 
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:
@@ -283,7 +287,7 @@ class QueryStringGenerator(AppExtractorBase):
             else:
                 self.where_op = predicate
 
-        Q_E = self.assembleQuery()
+        Q_E = self.generate_query()
         return Q_E
 
     def remove_exact_NE_string_predicate(self, elt):

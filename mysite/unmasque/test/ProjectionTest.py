@@ -126,16 +126,10 @@ class MyTestCase(BaseTestCase):
         super().tearDown()
 
     def post_process_for_generation_pipeline(self):
-        self.pipeline_delivery = PackageForGenPipeline(self.core_relations,
-                                                       self.global_all_attribs,
-                                                       self.global_attrib_types,
-                                                       self.filter_predicates,
-                                                       [],
-                                                       self.join_graph,
-                                                       [],
-                                                       self.global_min_instance_dict,
-                                                       self.get_dmin_val,
-                                                       self.get_datatype)
+        self.pipeline_delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs,
+                                                       self.global_attrib_types, self.filter_predicates, [],
+                                                       self.join_graph, [], self.global_min_instance_dict,
+                                                       self.get_dmin_val, self.get_datatype)
         self.pipeline_delivery.doJob()
 
     def test_projection_Q1(self):

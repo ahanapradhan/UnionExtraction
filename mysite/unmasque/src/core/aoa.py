@@ -359,17 +359,11 @@ class AlgebraicPredicate(FilterHolder):
                 if pred[:2] == in_pred[:2]:
                     self.filter_predicates[i] = in_pred
 
-        self.pipeline_delivery = PackageForGenPipeline(self.core_relations,
-                                                       self.filter_extractor.global_all_attribs,
+        self.pipeline_delivery = PackageForGenPipeline(self.core_relations, self.filter_extractor.global_all_attribs,
                                                        self.filter_extractor.global_attrib_types,
-                                                       self.filter_predicates,
-                                                       self.aoa_predicates,
-                                                       self.join_graph,
-                                                       self.aoa_less_thans,
-                                                       self.global_min_instance_dict,
-                                                       self.get_dmin_val,
-                                                       self.get_datatype,
-                                                       self.formulate_predicate_from_filter)
+                                                       self.filter_predicates, self.aoa_predicates, self.join_graph,
+                                                       self.aoa_less_thans, self.global_min_instance_dict,
+                                                       self.get_dmin_val, self.get_datatype)
         self.pipeline_delivery.doJob()
         self.logger.debug(self.pipeline_delivery.global_filter_predicates)
 
@@ -430,25 +424,6 @@ class AlgebraicPredicate(FilterHolder):
             for i in range(0, len(join_graph_edge) - 1):
                 self.join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
         self.logger.debug(self.join_graph)
-
-    def formulate_predicate_from_filter(self, elt):
-        tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), str(elt[3]), str(elt[4])
-        datatype = self.get_datatype((tab, attrib))
-        f_lb, f_ub = get_format(datatype, lb), get_format(datatype, ub)
-        if op == 'range':
-            predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
-        elif op == '>=':
-            predicate = f"{tab}.{attrib} {op} {f_lb}"
-        elif op in ['<=', '=']:
-            predicate = f"{tab}.{attrib} {op} {f_ub}"
-        elif 'equal' in op or 'like' in op or '-' in op:
-            predicate = f"{tab}.{attrib} {str(op.replace('equal', '='))} {f_ub}"
-        else:
-            predicate = ''
-        return predicate
-
-
-
 
     def get_equi_join_group(self, tab_attrib: Tuple[str, str]) -> List[Tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:

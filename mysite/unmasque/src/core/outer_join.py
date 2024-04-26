@@ -214,11 +214,6 @@ class OuterJoin(GenerationPipeLineBase):
                 sem_eq_queries.append(poss_q)
 
         self.sem_eq_queries = sem_eq_queries
-        # temp_seq = self.sem_eq_queries
-        # self.nep_check(sem_eq_queries, temp_seq)
-        # self.restore_relations()
-        # output1 = self.finalize_output()
-        # self.logger.debug(output1)
 
     def are_the_results_same(self, poss_q, query, same):
         # result of hidden query
@@ -239,30 +234,6 @@ class OuterJoin(GenerationPipeLineBase):
                     self.logger.debug(data_poss_q[var])
                     same = False
         return same
-
-    def finalize_output(self):
-        for Q_E in self.sem_eq_queries:
-            nep_flag = False
-            outer_join_flag = False
-            r = check_nep_oj.check_nep_oj(Q_E)
-            if not nep_flag and not outer_join_flag:
-                output1 = Q_E
-                break
-        return output1
-
-    def nep_check(self, sem_eq_queries, temp_seq):
-        self.check_nep_again = self.connectionHelper.config.detect_nep
-        while self.check_nep_again:
-            self.check_nep_again = False
-            sem_eq_queries = temp_seq
-            temp_seq = []
-            q = sem_eq_queries[0]
-            qr = nep.nep_algorithm(self.core_relations, q)
-            self.logger.debug(self.sem_eq_queries)
-            if qr:
-                for x in self.sem_eq_queries:
-                    temp_seq.append(x)
-        self.sem_eq_queries = sem_eq_queries
 
     def add_tabname_for_attrib(self, attrib, list_of_tables, temp):
         tabname = self.find_tabname_for_given_attrib(attrib)
@@ -316,7 +287,8 @@ class OuterJoin(GenerationPipeLineBase):
     def determine_on_and_where_filters(self, query):
         filter_pred_on = []
         filter_pred_where = []
-        for fp in self.global_filter_predicates:
+        all_arithmetic_filters = self.global_filter_predicates + self.q_gen.filter_in_predicates
+        for fp in all_arithmetic_filters:
             self.logger.debug(f"fp from global filter predicates: {fp}")
             tab, attrib = fp[0], fp[1]
             _, prev = self.update_attrib_to_see_impact(attrib, tab)
@@ -363,11 +335,11 @@ class OuterJoin(GenerationPipeLineBase):
         return imp_t1, imp_t2
 
     def add_where_clause(self, elt):
-        predicate = self.formulate_predicate_from_filter(elt)
+        predicate = self.q_gen.formulate_predicate_from_filter(elt)
         self.q_gen.where_op = predicate if self.q_gen.where_op == '' else self.q_gen.where_op + " and " + predicate
 
     def add_on_clause_for_filter(self, fp):
-        predicate = self.formulate_predicate_from_filter(fp)
+        predicate = self.q_gen.formulate_predicate_from_filter(fp)
         self.q_gen.from_op += "\n\t and " + predicate
 
     def extract_params_from_args(self, args):

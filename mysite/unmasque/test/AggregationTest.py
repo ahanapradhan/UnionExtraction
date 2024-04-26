@@ -26,16 +26,10 @@ class MyTestCase(BaseTestCase):
         self.app = Executable(self.conn)
 
     def post_process_for_generation_pipeline(self):
-        self.pipeline_delivery = PackageForGenPipeline(self.core_relations,
-                                                       self.global_all_attribs,
-                                                       self.global_attrib_types,
-                                                       self.filter_predicates,
-                                                       [],
-                                                       self.join_graph,
-                                                       [],
-                                                       self.global_min_instance_dict,
-                                                       self.get_dmin_val,
-                                                       self.get_datatype)
+        self.pipeline_delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs,
+                                                       self.global_attrib_types, self.filter_predicates, [],
+                                                       self.join_graph, [], self.global_min_instance_dict,
+                                                       self.get_dmin_val, self.get_datatype)
         self.pipeline_delivery.doJob()
 
     def test_agg_Q1(self):
@@ -87,15 +81,9 @@ class MyTestCase(BaseTestCase):
         create_dmin_for_test(self.core_relations, self.filter_predicates, self.global_attrib_types_dict,
                              self.global_all_attribs, self.join_graph, self.conn, self.app,
                              self.global_min_instance_dict)
-        delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs,
-                                         self.global_attrib_types,
-                                         self.filter_predicates,
-                                         [],
-                                         self.join_graph,
-                                         [],
-                                         self.global_min_instance_dict,
-                                         self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs, self.global_attrib_types,
+                                         self.filter_predicates, [], self.join_graph, [], self.global_min_instance_dict,
+                                         self.get_dmin_val, self.get_datatype)
         delivery.doJob()
 
         agg = Aggregation(self.conn, projections, has_groupBy, group_by_attribs, dep, sol, p_list, delivery)
@@ -188,15 +176,9 @@ class MyTestCase(BaseTestCase):
         create_dmin_for_test(self.core_relations, self.filter_predicates, self.global_attrib_types_dict,
                              self.global_all_attribs, self.join_graph, self.conn, self.app,
                              self.global_min_instance_dict)
-        delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs,
-                                         self.global_attrib_types,
-                                         self.filter_predicates,
-                                         [],
-                                         self.join_graph,
-                                         [],
-                                         self.global_min_instance_dict,
-                                         self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs, self.global_attrib_types,
+                                         self.filter_predicates, [], self.join_graph, [], self.global_min_instance_dict,
+                                         self.get_dmin_val, self.get_datatype)
         delivery.doJob()
 
         group_by_attribs = ['l_orderkey', 'o_totalprice', 'o_shippriority']
@@ -302,15 +284,9 @@ class MyTestCase(BaseTestCase):
         create_dmin_for_test(self.core_relations, self.filter_predicates, self.global_attrib_types_dict,
                              self.global_all_attribs, self.join_graph, self.conn, self.app,
                              self.global_min_instance_dict)
-        delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs,
-                                         self.global_attrib_types,
-                                         self.filter_predicates,
-                                         [],
-                                         self.join_graph,
-                                         [],
-                                         self.global_min_instance_dict,
-                                         self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs, self.global_attrib_types,
+                                         self.filter_predicates, [], self.join_graph, [], self.global_min_instance_dict,
+                                         self.get_dmin_val, self.get_datatype)
         delivery.doJob()
 
         agg = Aggregation(self.conn, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
@@ -412,15 +388,9 @@ class MyTestCase(BaseTestCase):
         create_dmin_for_test(self.core_relations, self.filter_predicates, self.global_attrib_types_dict,
                              self.global_all_attribs, self.join_graph, self.conn, self.app,
                              self.global_min_instance_dict)
-        delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs,
-                                         self.global_attrib_types,
-                                         self.filter_predicates,
-                                         [],
-                                         self.join_graph,
-                                         [],
-                                         self.global_min_instance_dict,
-                                         self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs, self.global_attrib_types,
+                                         self.filter_predicates, [], self.join_graph, [], self.global_min_instance_dict,
+                                         self.get_dmin_val, self.get_datatype)
         delivery.doJob()
 
         agg = Aggregation(self.conn, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
