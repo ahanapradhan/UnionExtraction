@@ -33,8 +33,8 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_nep = False
         self.conn.config.detect_or = False
         self.conn.config.detect_oj = False
-        factory = PipeLineFactory(self.conn)
-        self.pipeline = factory.create_pipeline()
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
 
     def test_for_filter_1(self):
         lower = 11
