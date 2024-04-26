@@ -45,7 +45,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
                 "count(*) as low_line_count  " \
                 "FROM lineitem LEFT OUTER JOIN orders ON l_orderkey = o_orderkey AND o_totalprice > 50000 " \
                 "AND l_shipmode IN ('MAIL', 'AIR', 'TRUCK') AND l_quantity < 30  " \
-                "GROUP BY l_linenumber, o_shippriority Order By l_linenumber Limit 5;"
+                "GROUP BY l_linenumber, o_shippriority Order By l_linenumber, o_shippriority desc  Limit 5;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
