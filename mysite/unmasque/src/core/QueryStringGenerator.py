@@ -109,10 +109,10 @@ class QueryStringGenerator(AppExtractorBase):
         self.limit_op = None
 
     def formulate_predicate_from_filter(self, elt):
-        tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), str(elt[3]), str(elt[4])
+        tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[4]
         datatype = self.get_datatype((tab, attrib))
-        f_lb = f"({', '.join(lb)})" if isinstance(lb, list) else get_format(datatype, lb)
-        f_ub = f"({', '.join(ub)})" if isinstance(ub, list) else get_format(datatype, ub)
+        f_lb = f"({', '.join(lb)})" if isinstance(lb, tuple) else get_format(datatype, lb)
+        f_ub = f"({', '.join(ub)})" if isinstance(ub, tuple) else get_format(datatype, ub)
         if op == 'range':
             predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
         elif op == '>=':
