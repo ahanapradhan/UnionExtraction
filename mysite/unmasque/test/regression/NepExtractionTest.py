@@ -19,6 +19,7 @@ class MyTestCase(BaseTestCase):
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
+        self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
 
     def test_for_numeric_flter(self):
@@ -28,6 +29,7 @@ class MyTestCase(BaseTestCase):
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
+        self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
 
     def test_NEP_mukul_thesis_Q1(self):
@@ -40,6 +42,7 @@ class MyTestCase(BaseTestCase):
                 "Order by l_returnflag, l_linestatus;"
         eq = self.pipeline.doJob(query)
         print(eq)
+        self.pipeline.time_profile.print()
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
@@ -51,6 +54,7 @@ class MyTestCase(BaseTestCase):
                 "Order By numwait desc, s_name Limit 100;"
         eq = self.pipeline.doJob(query)
         print(eq)
+        self.pipeline.time_profile.print()
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
@@ -61,6 +65,7 @@ class MyTestCase(BaseTestCase):
                  "p_type, p_size;")
         eq = self.pipeline.doJob(query)
         print(eq)
+        self.pipeline.time_profile.print()
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 

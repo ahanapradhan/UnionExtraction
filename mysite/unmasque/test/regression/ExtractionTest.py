@@ -154,7 +154,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -172,7 +172,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -214,7 +214,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -273,7 +273,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -291,7 +291,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -308,7 +308,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -326,7 +326,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -344,7 +344,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -362,7 +362,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -380,7 +380,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -398,7 +398,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -416,7 +416,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -434,7 +434,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -452,7 +452,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -470,7 +470,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
@@ -488,7 +488,7 @@ class ExtractionTestCase(BaseTestCase):
                   "query!")
             self.assertTrue(False)
 
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.pipeline.time_profile.print()
