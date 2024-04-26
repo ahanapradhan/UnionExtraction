@@ -50,7 +50,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
+   # pytest.mark.skip
     def test_outer_join_on_disjunction(self):
         self.conn.config.detect_or = True
         query = "SELECT l_linenumber, " \
