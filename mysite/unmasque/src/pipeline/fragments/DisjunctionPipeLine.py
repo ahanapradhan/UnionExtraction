@@ -146,7 +146,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
     def _verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
-    def extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
+    def _extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
         curr_eq_predicates = copy.deepcopy(init_predicates)
         all_eq_predicates = [curr_eq_predicates]
         ids = list(range(len(curr_eq_predicates)))
@@ -155,17 +155,17 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
                 time_profile = self.__run_extraction_loop(all_eq_predicates, core_relations, ids, query, time_profile)
             except Exception as e:
                 self.logger.error("Error in disjunction loop. ", str(e))
-                return False, time_profile, None
+                return False, time_profile
             '''
             gaining sanity back from nullified attributes
             '''
             check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
             if not check:
                 self.logger.error("Error while sanitizing after disjunction. Aborting!")
-                return False, time_profile, None
+                return False, time_profile
 
-        all_ors = list(zip(*all_eq_predicates))
-        return True, time_profile, all_ors
+        self.or_predicates = list(zip(*all_eq_predicates))
+        return True, time_profile
 
     def __run_extraction_loop(self, all_eq_predicates, core_relations, ids, query, time_profile):
         while True:
