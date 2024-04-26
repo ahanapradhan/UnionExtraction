@@ -111,8 +111,8 @@ class QueryStringGenerator(AppExtractorBase):
     def formulate_predicate_from_filter(self, elt):
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), str(elt[3]), str(elt[4])
         datatype = self.get_datatype((tab, attrib))
-        f_lb = str(tuple(lb)) if isinstance(lb, list) else get_format(datatype, lb)
-        f_ub = str(tuple(ub)) if isinstance(ub, list) else get_format(datatype, ub)
+        f_lb = f"({', '.join(lb)})" if isinstance(lb, list) else get_format(datatype, lb)
+        f_ub = f"({', '.join(ub)})" if isinstance(ub, list) else get_format(datatype, ub)
         if op == 'range':
             predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
         elif op == '>=':
@@ -121,8 +121,8 @@ class QueryStringGenerator(AppExtractorBase):
             predicate = f"{tab}.{attrib} {op} {f_ub}"
         elif 'equal' in op or 'like' in op or '-' in op:
             predicate = f"{tab}.{attrib} {str(op.replace('equal', '='))} {f_ub}"
-        elif op == 'IN':
-            predicate = f"{tab}.{attrib} {op} {f_ub}"
+        elif op == 'in':
+            predicate = f"{tab}.{attrib} IN {f_ub}"
         else:
             predicate = ''
         return predicate
