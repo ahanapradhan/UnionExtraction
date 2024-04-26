@@ -64,7 +64,7 @@ class DisjunctionTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
 
     def test_sumang_thesis_Q4_prelim(self):
-        query = "select AVG(l_extendedprice) as avgTOTAL from lineitem,part " \
+        query = "select AVG(l_extendedprice) as avgTOTAL from lineitem, part " \
                 "where p_partkey = l_partkey and p_brand = 'Brand#52' and " \
                 "(p_container = 'LG CAN' or p_container = 'LG CASE');"
         eq = self.pipeline.doJob(query)

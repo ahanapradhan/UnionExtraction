@@ -9,6 +9,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
@@ -42,29 +43,25 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.conn.config.detect_or = True
         query = "SELECT l_linenumber, o_shippriority , " \
                 "count(*) as low_line_count  " \
-                "FROM lineitem LEFT OUTER JOIN orders ON ( l_orderkey = o_orderkey AND o_totalprice > 50000 ) " \
-                "WHERE l_shipmode IN ('MAIL', 'AIR', 'TRUCK') AND l_quantity < 30  " \
+                "FROM lineitem LEFT OUTER JOIN orders ON l_orderkey = o_orderkey AND o_totalprice > 50000 " \
+                "AND l_shipmode IN ('MAIL', 'AIR', 'TRUCK') AND l_quantity < 30  " \
                 "GROUP BY l_linenumber, o_shippriority Order By l_linenumber Limit 5;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
-   # pytest.mark.skip
-    def test_outer_join_on_disjunction(self):
-        self.conn.config.detect_or = True
-        query = "SELECT l_linenumber, " \
-                "o_shippriority ," \
-                "count(*) as low_line_count " \
-                "FROM lineitem LEFT OUTER JOIN orders ON " \
-                "( l_orderkey = o_orderkey AND l_shipmode IN ('MAIL', 'AIR', 'TRUCK')  ) " \
-                "WHERE  o_totalprice > 50000 " \
-                "AND l_quantity < 30 " \
-                "GROUP BY l_linenumber, o_shippriority Order By l_linenumber Limit 5;"
+    def test_sumang_thesis_Q6(self):
+        query = "select n_name,SUM(s_acctbal) from supplier LEFT OUTER JOIN partsupp ON ps_suppkey=s_suppkey AND" \
+                " s_acctbal > 2000 RIGHT OUTER JOIN " \
+                "nation on s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) group by n_name ORDER " \
+                "BY n_name LIMIT 10;"
         eq = self.pipeline.doJob(query)
-        print(eq)
         self.assertTrue(eq is not None)
+        print(eq)
         self.assertTrue(self.pipeline.correct)
+        self.pipeline.time_profile.print()
+
 
     def test_multiple_outer_join(self):
         self.conn.config.detect_or = False
@@ -118,5 +115,3 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
-
-
