@@ -274,7 +274,7 @@ class OuterJoin(GenerationPipeLineBase):
                 flag_first = self.generate_from_on_clause(edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2)
             self.generate_where_clause(fp_where)
             # assemble the rest of the query
-            q_candidate = self.q_gen.assembleQuery()
+            q_candidate = self.q_gen.generate_query()
             self.logger.debug("+++++++++++++++++++++")
             if q_candidate.count('OUTER'):
                 set_possible_queries.append(q_candidate)
