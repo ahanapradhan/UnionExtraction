@@ -55,7 +55,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.conn.config.detect_or = True
         query = "select n_name,SUM(s_acctbal) from supplier LEFT OUTER JOIN partsupp ON ps_suppkey=s_suppkey AND" \
                 " s_acctbal > 2000 RIGHT OUTER JOIN " \
-                "nation on s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) group by n_name ORDER " \
+                "nation on s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) group by n_name ORDER " \
                 "BY n_name LIMIT 10;"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
