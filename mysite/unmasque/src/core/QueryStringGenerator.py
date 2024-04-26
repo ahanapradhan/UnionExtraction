@@ -10,6 +10,78 @@ def get_exact_NE_string_predicate(elt, output):
     return f"{elt[0]}.{elt[1]} {str(elt[2])} \'{str(output)}\' "
 
 
+class QueryString:
+
+    def __init__(self):
+        self._select_op = ''
+        self._from_op = ''
+        self._where_op = ''
+        self._group_by_op = ''
+        self._order_by_op = ''
+        self._limit_op = None
+
+    @property
+    def select_op(self):
+        return self._select_op
+
+    @select_op.setter
+    def select_op(self, value):
+        self._select_op = value
+
+    @property
+    def from_op(self):
+        return self._from_op
+
+    @from_op.setter
+    def from_op(self, value):
+        self._from_op = value
+
+    @property
+    def where_op(self):
+        return self._where_op
+
+    @where_op.setter
+    def where_op(self, value):
+        self._where_op = value
+
+    @property
+    def group_by_op(self):
+        return self._group_by_op
+
+    @group_by_op.setter
+    def group_by_op(self, value):
+        self._group_by_op = value
+
+    @property
+    def order_by_op(self):
+        return self._order_by_op
+
+    @order_by_op.setter
+    def order_by_op(self, value):
+        self._order_by_op = value
+
+    @property
+    def limit_op(self):
+        return self._limit_op
+
+    @limit_op.setter
+    def limit_op(self, value):
+        self._limit_op = value
+
+    def assembleQuery(self):
+        output = f"Select {self.select_op}\n From {self.from_op}"
+        if self.where_op is not None:
+            output = f"{output} \n Where {self.where_op}"
+        if self.group_by_op is not None:
+            output = f"{output} \n Group By {self.group_by_op}"
+        if self.order_by_op is not None:
+            output = f"{output} \n Order By {self.order_by_op}"
+        if self.limit_op is not None:
+            output = f"{output} \n Limit {self.limit_op}"
+        output = f"{output};"
+        return output
+
+
 class QueryStringGenerator(AppExtractorBase):
 
     def doActualJob(self, args=None):
@@ -30,15 +102,15 @@ class QueryStringGenerator(AppExtractorBase):
         self.aoa_less_thans = None
         self.aoa_predicates = None
 
+        self.get_datatype = None
+        self.formulate_predicate_from_filter = None
+
         self.select_op = ''
         self.from_op = ''
         self.where_op = ''
         self.group_by_op = ''
         self.order_by_op = ''
         self.limit_op = None
-
-        self.get_datatype = None
-        self.formulate_predicate_from_filter = None
 
     def set_where_clause_generation_stuff(self, delivery):
         self.get_datatype = delivery.get_datatype
@@ -110,6 +182,7 @@ class QueryStringGenerator(AppExtractorBase):
         return where_clause
 
     def generate_query_string(self, core_relations, pj, gb, agg, ob, lm, all_ors):
+        query = QueryString()
         relations = copy.deepcopy(core_relations)
         relations.sort()
         self.from_op = ", ".join(relations)
@@ -118,21 +191,18 @@ class QueryStringGenerator(AppExtractorBase):
         self.generate_select_clause(agg, pj)
         self.order_by_op = ob.orderBy_string
         self.limit_op = str(lm.limit) if lm.limit is not None else ''
-        eq = self.assembleQuery()
+        eq = self.generate_query()
         return eq
 
-    def assembleQuery(self):
-        output = f"Select {self.select_op}\n From {self.from_op}"
-        if self.where_op != '':
-            output = f"{output} \n Where {self.where_op}"
-        if self.group_by_op != '':
-            output = f"{output} \n Group By {self.group_by_op}"
-        if self.order_by_op != '':
-            output = f"{output} \n Order By {self.order_by_op}"
-        if self.limit_op != '':
-            output = f"{output} \n Limit {self.limit_op}"
-        output = f"{output};"
-        return output
+    def generate_query(self):
+        query = QueryString()
+        query.select_op = self.select_op
+        query.from_op = self.from_op
+        query.where_op = self.where_op if self.where_op != '' else None
+        query.group_by_op = self.group_by_op if self.group_by_op != '' else None
+        query.order_by_op = self.order_by_op if self.order_by_op != '' else None
+        query.limit_op = self.limit_op if self.limit_op != '' else None
+        return query.assembleQuery()
 
     def generate_select_clause(self, agg, pj):
         # first_occur = True

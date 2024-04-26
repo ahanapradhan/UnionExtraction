@@ -331,9 +331,6 @@ class OuterJoin(GenerationPipeLineBase):
         return filter_pred_on, filter_pred_where
 
     def generate_where_clause(self, fp_where):
-        # add other components of the query
-        # + where clause
-        # + group by, order by, limit
         self.q_gen.where_op = ''
         for elt in fp_where:
             self.add_where_clause(elt)
@@ -367,10 +364,7 @@ class OuterJoin(GenerationPipeLineBase):
 
     def add_where_clause(self, elt):
         predicate = self.formulate_predicate_from_filter(elt)
-        if self.q_gen.where_op == '':
-            self.q_gen.where_op = predicate
-        else:
-            self.q_gen.where_op = self.q_gen.where_op + " and " + predicate
+        self.q_gen.where_op = predicate if self.q_gen.where_op == '' else self.q_gen.where_op + " and " + predicate
 
     def add_on_clause_for_filter(self, fp):
         predicate = self.formulate_predicate_from_filter(fp)

@@ -1,5 +1,6 @@
 import unittest
 
+from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.util.BaseTestCase import BaseTestCase
 
@@ -9,7 +10,9 @@ class DisjunctionTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = False
         self.conn.config.detect_or = True
-        self.pipeline = ExtractionPipeLine(self.conn)
+        self.conn.config.detect_oj = False
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
 
     def test_sumang_thesis_Q2(self):
         query = "select c_mktsegment,MAX(c_acctbal) from customer where c_nationkey IN (1, 3, 9, 15, 22) group by " \

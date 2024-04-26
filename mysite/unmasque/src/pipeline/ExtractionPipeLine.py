@@ -68,14 +68,13 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
             self.logger.error("Some problem in Regular mutation pipeline. Aborting extraction!")
             return None, time_profile
 
-        check, time_profile, ors = self._extract_disjunction(self.aoa.filter_predicates,
-                                                             core_relations, query, time_profile)
+        check, time_profile = self._extract_disjunction(self.aoa.filter_predicates,
+                                                        core_relations, query, time_profile)
         if not check:
             self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
             return None, time_profile
 
         self.aoa.post_process_for_generation_pipeline(query)
-        # self.aoa.generate_where_clause(ors)
 
         delivery = copy.copy(self.aoa.pipeline_delivery)
         self.q_generator.set_where_clause_generation_stuff(delivery)
@@ -171,8 +170,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-        eq = self.q_generator.generate_query_string(core_relations, self.pj, gb, agg, ob, lm, ors)
-
+        eq = self.q_generator.generate_query_string(core_relations, self.pj, gb, agg, ob, lm, self.or_predicates)
         self.logger.debug("extracted query:\n", eq)
 
         eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)

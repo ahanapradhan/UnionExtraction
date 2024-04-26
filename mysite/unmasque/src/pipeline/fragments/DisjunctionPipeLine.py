@@ -146,7 +146,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
     def _verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
-    def _extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
+    def extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
         curr_eq_predicates = copy.deepcopy(init_predicates)
         all_eq_predicates = [curr_eq_predicates]
         ids = list(range(len(curr_eq_predicates)))
