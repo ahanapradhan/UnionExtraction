@@ -30,10 +30,6 @@ class NepMinimizer(Minimizer):
         return self.reduce_Database_Instance(query, table)
 
     def reduce_Database_Instance(self, query, table):
-        # check = self.nep_comparator.db_restorer.restore_table_and_confirm(table)
-        # if not check:
-        #    self.logger.error("Error while restoring table. Aborting NEP minimization!")
-        #    return False
         self.getCoreSizes()
         self.logger.debug("Inside get nep")
         tabname1 = self.connectionHelper.queries.get_tabname_1(table)
@@ -124,6 +120,7 @@ class NEP(GenerationPipeLineBase):
 
     def __init__(self, connectionHelper, delivery):
         super().__init__(connectionHelper, "NEP Extractor", delivery)
+        self.neg_predicates = {}
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
@@ -140,12 +137,20 @@ class NEP(GenerationPipeLineBase):
                                                   tabname,
                                                   query,
                                                   filterAttribs, is_for_joined)
+            if len(filterAttribs):
+                neg_elem = filterAttribs[0]
+                tab, attrib, op, neg_val = neg_elem[0], neg_elem[1], neg_elem[2], neg_elem[3]
+                if (tab, attrib) not in self.neg_predicates.keys():
+                    self.neg_predicates[(tab, attrib)] = [(op, neg_val)]
+                else:
+                    self.neg_predicates[(tab, attrib)].append((op, neg_val))
+
         return filterAttribs
 
     def doActualJob(self, args=None):
         query, table = self.extract_params_from_args(args)
         nonKey_filter = self.extract_NEP_for_table(table, query, False)
-        key_filter = []  # self.extract_NEP_for_table(table, query, True)
+        key_filter = self.extract_NEP_for_table(table, query, True)
         return nonKey_filter + key_filter
 
     def check_per_attrib(self, attrib_list, tabname, query, filterAttribs, is_for_joined):

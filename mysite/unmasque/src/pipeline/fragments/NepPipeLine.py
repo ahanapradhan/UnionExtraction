@@ -1,3 +1,4 @@
+import copy
 from abc import ABC, abstractmethod
 
 from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
@@ -31,6 +32,7 @@ class NepPipeLine(GenericPipeLine, ABC):
         if not self.connectionHelper.config.detect_nep:
             return eq
 
+        pos_eq = copy.deepcopy(eq)
         nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, sizes)
         nep_extractor = NEP(self.connectionHelper, delivery)
 

@@ -7,7 +7,7 @@ from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 
 
 def get_exact_NE_string_predicate(elt, output):
-    return f"{elt[0]}.{elt[1]} {str(elt[2])} \'{str(output)}\' "
+    return
 
 
 class QueryString:
@@ -272,8 +272,16 @@ class QueryStringGenerator(AppExtractorBase):
 
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:
+            tab, attrib, op, neg_val = elt[0], elt[1], elt[2], elt[3]
+            datatype = self.get_datatype((tab, attrib))
+            if isinstance(elt[3], str):
+                neg_val = self.getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
+            format_val = get_format(datatype, neg_val)
+            neg_op = 'NOT LIKE' if ('%' in format_val or '_' in format_val) else str(op)
+            predicate = f"{tab}.{attrib} {neg_op} {format_val} "
+            '''
             if '-' in str(elt[3]):
-                predicate = get_exact_NE_string_predicate(elt, elt[3])
+                predicate = f"{elt[0]}.{elt[1]} {str(elt[2])} \'{str(elt[3])}\' "
 
             elif isinstance(elt[3], str):
                 output = self.getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
@@ -281,10 +289,10 @@ class QueryStringGenerator(AppExtractorBase):
                     predicate = f"{elt[0]}.{elt[1]} NOT LIKE '{str(output)}' "
                     self.remove_exact_NE_string_predicate(elt)
                 else:
-                    predicate = get_exact_NE_string_predicate(elt, output)
+                    predicate = f"{elt[0]}.{elt[1]} {str(elt[2])} \'{str(output)}\' "
             else:
                 predicate = f"{elt[0]}.{elt[1]} {str(elt[2])} {str(elt[3])}"
-
+            '''
             if self.where_op and predicate not in self.where_op:
                 self.where_op = f'{self.where_op} and {predicate}'
             else:

@@ -6,7 +6,6 @@ import pytest
 
 from mysite.unmasque.src.core.executable import Executable
 from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
-from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.src.Optimizer_config import set_optimizer_params
 from ...test.util import tpchSettings, queries
 from ...test.util.BaseTestCase import BaseTestCase

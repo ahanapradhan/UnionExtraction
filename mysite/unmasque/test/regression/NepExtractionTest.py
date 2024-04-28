@@ -14,7 +14,7 @@ class MyTestCase(BaseTestCase):
         self.pipeline = factory.create_pipeline(self.conn)
 
     def test_simple(self):
-        query = "select n_regionkey from nation where n_name <> 'GERMANY';"
+        query = "select n_regionkey from nation where n_name NOT IN ('GERMANY', 'INDIA', 'BRAZIL');"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
@@ -24,7 +24,7 @@ class MyTestCase(BaseTestCase):
     def test_for_numeric_flter(self):
         query = "select c_mktsegment as segment from customer,nation,orders where " \
                 "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
-                "and n_name not LIKE 'B%' and o_orderdate >= DATE '1994-01-01';"
+                "and n_name not LIKE 'B%' and n_name not LIKE 'IN%' and o_orderdate >= DATE '1994-01-01';"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
@@ -49,7 +49,7 @@ class MyTestCase(BaseTestCase):
     def test_Q21_mukul_thesis(self):
         query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \
                 "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
-                "and s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name " \
+                "and s_nationkey = n_nationkey and n_name NOT LIKE 'GERM%' and n_name not LIKE 'IND%' Group By s_name " \
                 "Order By numwait desc, s_name Limit 100;"
         eq = self.pipeline.doJob(query)
         print(eq)
