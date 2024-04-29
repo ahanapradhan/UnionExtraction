@@ -13,9 +13,19 @@ class MyTestCase(BaseTestCase):
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
-    def test_something(self):
+    def test_nested_sum(self):
         query = "select c_name, c_acctbal from customer " \
                 "where (select sum(o_totalprice) as total_sum " \
+                "from orders where c_custkey = o_custkey " \
+                "and o_orderstatus = 'O') " \
+                "< 120000  and c_mktsegment = 'BUILDING' limit 5;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+
+    def test_nested_avg(self):
+        query = "select c_name, c_acctbal from customer " \
+                "where (select avg(o_totalprice) as custom_avg " \
                 "from orders where c_custkey = o_custkey " \
                 "and o_orderstatus = 'O') " \
                 "< 120000  and c_mktsegment = 'BUILDING' limit 5;"
