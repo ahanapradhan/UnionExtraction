@@ -37,11 +37,14 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def restore_d_min_from_dict(self) -> None:
         for tab in self.core_relations:
-            values = self.global_min_instance_dict[tab]
-            attribs, vals = values[0], values[1]
-            for i in range(len(attribs)):
-                attrib, val = attribs[i], vals[i]
-                self.update_with_val(attrib, tab, val)
+            self.restore_d_min_from_dict_for_tab(tab)
+
+    def restore_d_min_from_dict_for_tab(self, tab):
+        values = self.global_min_instance_dict[tab]
+        attribs, vals = values[0], values[1]
+        for i in range(len(attribs)):
+            attrib, val = attribs[i], vals[i]
+            self.update_with_val(attrib, tab, val)
 
     def do_init(self) -> None:
         for tab in self.core_relations:

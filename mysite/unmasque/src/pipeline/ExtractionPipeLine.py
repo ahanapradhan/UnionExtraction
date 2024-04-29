@@ -179,7 +179,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         check = ha.doJob([query, eq])
         if check:
             self.logger.debug("OK")
-        return eq
+        return eq, time_profile
 
         eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
 
