@@ -4,6 +4,7 @@ from mysite.unmasque.src.pipeline.fragments.DisjunctionPipeLine import Disjuncti
 from mysite.unmasque.src.pipeline.fragments.NepPipeLine import NepPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.elapsed_time import create_zero_time_profile
+from ..core.where_aggregate import HiddenAggregate
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, PROJECTION, \
     GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
 from ...src.core.aggregation import Aggregation
@@ -173,6 +174,12 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         eq = self.q_generator.generate_query_string(core_relations, self.aoa.algebraic_eq_predicates,
                                                     self.pj, agg, ob, lm, self.or_predicates)
         self.logger.debug("extracted query:\n", eq)
+
+        ha = HiddenAggregate(self.connectionHelper, delivery)
+        check = ha.doJob(query, eq)
+        if check:
+            self.logger.debug("OK")
+        return eq
 
         eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
 
