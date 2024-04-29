@@ -22,4 +22,6 @@ class HiddenAggregate(GenerationPipeLineBase):
 
     def extract_params_from_args(self, args):
         query, Q_E = args[0][0], args[0][1]
+        self.logger.debug(f"Hidden Query: {query}")
+        self.logger.debug(f"Extracted Query: {Q_E}")
         return query, Q_E

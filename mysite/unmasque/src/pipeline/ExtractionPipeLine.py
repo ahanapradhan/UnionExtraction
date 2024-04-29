@@ -176,7 +176,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         self.logger.debug("extracted query:\n", eq)
 
         ha = HiddenAggregate(self.connectionHelper, delivery)
-        check = ha.doJob(query, eq)
+        check = ha.doJob([query, eq])
         if check:
             self.logger.debug("OK")
         return eq
