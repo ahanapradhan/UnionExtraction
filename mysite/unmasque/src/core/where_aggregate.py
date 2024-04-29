@@ -20,12 +20,12 @@ class HiddenAggregate(GenerationPipeLineBase):
             self.logger.info(" It may be a nested aggregate. ")
             for tab in self.core_relations:
                 self.logger.debug(f"Duplicating rows in {tab}")
-                self.connectionHelper.execute_sql([f"Insert into {tab} select * from {tab};"])
+                self.connectionHelper.execute_sql([f"Insert into {tab} (select * from {tab} limit 1);"])
                 check = self.comparator.match(query, Q_E)
                 if check:
                     self.logger.debug("No effect. Reverting changes!")
                     self.connectionHelper.execute_sql([f"Truncate table {tab};"])
-                    self.connectionHelper.execute_sql([f"Insert into {tab} (select * from {tab} limit 1);"])
+                    self.connectionHelper.execute_sql([f"Insert into {tab} (select * from {self.connectionHelper.queries.get_backup(tab)} limit 1);"])
                     self.restore_d_min_from_dict_for_tab(tab)
                 else:
                     self.see_d_min()
