@@ -99,7 +99,7 @@ class MyTestCase(BaseTestCase):
         pipeline.core_relations = ['part', 'partsupp']
         self.backup_tables(pipeline.core_relations)
         self.conn.closeConnection()
-        pipeline._verify_correctness(q, q)
+        pipeline.verify_correctness(q, q)
         self.assertEqual(pipeline.get_state(), DONE)
 
     def test_Q(self):

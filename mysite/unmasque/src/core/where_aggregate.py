@@ -5,11 +5,12 @@ from mysite.unmasque.src.util.utils import get_min_and_max_val
 
 class HiddenAggregate(GenerationPipeLineBase):
 
-    def __init__(self, connectionHelper, delivery, global_pk_dict):
+    def __init__(self, connectionHelper, delivery, global_pk_dict, q_generator):
         super().__init__(connectionHelper, "Nested Aggregated", delivery)
         self.comparator = ResultComparator(self.connectionHelper, True, delivery.core_relations, False)
         self.global_pk_dict = global_pk_dict
         self.inner_query = ""
+        self.q_generator = q_generator
 
     def __assertEqAtSingleRowDmin(self, q_h, q_e) -> bool:
         self.do_init()
@@ -89,8 +90,9 @@ class HiddenAggregate(GenerationPipeLineBase):
             prev = self.get_dmin_val(attrib, table)
             self.logger.debug(f"{tab}.{attrib} = {prev}, limit is {limit} with aggregate function.")
             subquery_select = self.__agg_func_check(Q_E, attrib, check_list, datatype, limit, prev, query, tab)
-            self.logger.debug(subquery_select)
-            self.inner_query = subquery_select
+            if len(subquery_select):
+                self.logger.debug(subquery_select)
+                self.inner_query = subquery_select
         return check_list
 
     def __agg_func_check(self, Q_E, attrib, check_list, datatype, limit, prev, query, tab) -> str:

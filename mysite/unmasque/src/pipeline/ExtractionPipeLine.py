@@ -3,6 +3,7 @@ import copy
 from mysite.unmasque.src.pipeline.fragments.DisjunctionPipeLine import DisjunctionPipeLine
 from mysite.unmasque.src.pipeline.fragments.NepPipeLine import NepPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
+from .fragments.NestedAggWherePipeLine import NestedAggWherePipeLine
 from ..core.elapsed_time import create_zero_time_profile
 from ..core.where_aggregate import HiddenAggregate
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, PROJECTION, \
@@ -15,7 +16,9 @@ from ...src.core.orderby_clause import OrderBy
 from ...src.core.projection import Projection
 
 
-class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
+class ExtractionPipeLine(DisjunctionPipeLine,
+                         NepPipeLine,
+                         NestedAggWherePipeLine):
 
     def __init__(self, connectionHelper):
         DisjunctionPipeLine.__init__(self, connectionHelper, "Extraction PipeLine")
@@ -29,8 +32,8 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
     def doJob(self, query, qe=None):
         return GenericPipeLine.doJob(self, query, qe)
 
-    def _verify_correctness(self, query, result):
-        GenericPipeLine._verify_correctness(self, query, result)
+    def verify_correctness(self, query, result):
+        GenericPipeLine.verify_correctness(self, query, result)
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
@@ -50,7 +53,6 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         self.info[FROM_CLAUSE] = fc.core_relations
 
         self.core_relations = fc.core_relations
-
         self.all_sizes = fc.init.all_sizes
         self.key_lists = fc.get_key_lists()
         self.global_pk_dict = fc.init.global_pk_dict
@@ -175,13 +177,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
                                                     self.pj, agg, ob, lm, self.or_predicates)
         self.logger.debug("extracted query:\n", eq)
 
-        ha = HiddenAggregate(self.connectionHelper, delivery, self.global_pk_dict)
-        check = ha.doJob([query, eq])
-        if check:
-            self.logger.debug("OK")
-        else:
-            self.logger.debug("Oops!")
-        return ha.inner_query, time_profile
+        eq = self._extract_nested_aggregate(eq, self.q_generator, query, time_profile, delivery, self.global_pk_dict)
 
         eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
 

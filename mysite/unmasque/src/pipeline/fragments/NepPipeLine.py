@@ -9,7 +9,7 @@ from mysite.unmasque.src.util.constants import FILTER, DONE, NEP_, RUNNING, STAR
 
 class NepPipeLine(GenericPipeLine, ABC):
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "NEP Pipeline")
+        super().__init__(connectionHelper)
         self.q_generator = QueryStringGenerator(self.connectionHelper)
 
     @abstractmethod
@@ -25,7 +25,7 @@ class NepPipeLine(GenericPipeLine, ABC):
         raise NotImplementedError("Trouble!")
 
     @abstractmethod
-    def _verify_correctness(self, query, result):
+    def verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
     def _extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
