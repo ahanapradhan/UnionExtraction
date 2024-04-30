@@ -19,7 +19,7 @@ class ElapsedTime:
                    "Aggregation:",
                    "Order by:",
                    "Limit:",
-                   "Correlated\n Subquery:"
+                   "Correlated\n Subquery:",
                    "Outer Join:",
                    "NEP: ",
                    "Result\n Comparator:",
