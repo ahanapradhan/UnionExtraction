@@ -11,6 +11,13 @@ from ...src.util.postgres_queries import PostgresQueries
 
 class PostgresConnectionHelper(AbstractConnectionHelper):
 
+    def __init__(self, config, **kwargs):
+        super().__init__(config, **kwargs)
+        self.paramString = f"dbname={self.config.dbname} user={self.config.user} password={self.config.password} " \
+                           f"host={self.config.host} port={self.config.port}"
+        self.queries = PostgresQueries()
+        self.config.config_loaded = True
+
     def rollback_transaction(self):
         self.execute_sql(["ROLLBACK;"])
 
@@ -39,13 +46,6 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
                 return 'view'
             else:
                 return 'table'
-
-    def __init__(self, config, **kwargs):
-        super().__init__(config, **kwargs)
-        self.paramString = f"dbname={self.config.dbname} user={self.config.user} password={self.config.password} " \
-                           f"host={self.config.host} port={self.config.port}"
-        self.queries = PostgresQueries()
-        self.config.config_loaded = True
 
     def form_query(self, selections, wheres):
         query = f"Select {selections}  From information_schema.tables " + \

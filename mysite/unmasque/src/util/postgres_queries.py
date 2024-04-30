@@ -69,7 +69,7 @@ class PostgresQueries(CommonQueries):
         return f"select {min_or_max}(ctid) from {tabname};"
 
     def truncate_table(self, table):
-        return f"Truncate Table {table};"
+        return f"Truncate {table};"
 
     def insert_into_tab_attribs_format(self, att_order, esc_string, tab):
         if esc_string == "":

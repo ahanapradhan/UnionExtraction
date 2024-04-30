@@ -175,11 +175,13 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
                                                     self.pj, agg, ob, lm, self.or_predicates)
         self.logger.debug("extracted query:\n", eq)
 
-        ha = HiddenAggregate(self.connectionHelper, delivery)
+        ha = HiddenAggregate(self.connectionHelper, delivery, self.global_pk_dict)
         check = ha.doJob([query, eq])
         if check:
             self.logger.debug("OK")
-        return eq, time_profile
+        else:
+            self.logger.debug("Oops!")
+        return ha.inner_query, time_profile
 
         eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
 
