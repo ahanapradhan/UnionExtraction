@@ -10,6 +10,7 @@ class HiddenAggregate(GenerationPipeLineBase):
         self.comparator = ResultComparator(self.connectionHelper, True, delivery.core_relations, False)
         self.global_pk_dict = global_pk_dict
         self.inner_query = ""
+        self.inner_select = ""
         self.q_generator = q_generator
 
     def __assertEqAtSingleRowDmin(self, q_h, q_e) -> bool:
@@ -68,7 +69,7 @@ class HiddenAggregate(GenerationPipeLineBase):
         self.logger.debug(f"max = {_max}, avg = {str((_min + _max) / 2)}")
         # violate avg but satisfy min
         res = self.__update_with_two_distinct_vals_and_doAppExe(_max, _min, attrib, query, tab)
-        if not self.app.isQ_result_empty(res):
+        if self.app.isQ_result_empty(res):
             return True
         return False
 
@@ -76,7 +77,6 @@ class HiddenAggregate(GenerationPipeLineBase):
         return not self.__check_for_avg(tab, attrib, prev, limit, datatype, query, Q_E)
 
     def __filter_candidates(self, tab, query, Q_E):
-        check_list = []
         for fl in self.global_filter_predicates:
             table, attrib, op, lb, ub = fl[0], fl[1], fl[2], fl[3], fl[4]
             datatype = self.get_datatype((table, attrib))
@@ -89,13 +89,13 @@ class HiddenAggregate(GenerationPipeLineBase):
             limit = ub if op == '<=' else lb
             prev = self.get_dmin_val(attrib, table)
             self.logger.debug(f"{tab}.{attrib} = {prev}, limit is {limit} with aggregate function.")
-            subquery_select = self.__agg_func_check(Q_E, attrib, check_list, datatype, limit, prev, query, tab)
+            subquery_select = self.__agg_func_check(Q_E, attrib, datatype, limit, prev, query, tab)
             if len(subquery_select):
                 self.logger.debug(subquery_select)
-                self.inner_query = subquery_select
-        return check_list
+                self.inner_select = subquery_select
+                return fl, limit
 
-    def __agg_func_check(self, Q_E, attrib, check_list, datatype, limit, prev, query, tab) -> str:
+    def __agg_func_check(self, Q_E, attrib,  datatype, limit, prev, query, tab) -> str:
         func_names = ['SUM', 'MAX', 'AVG', 'MIN']
         funcs = [self.__check_for_sum, self.__check_for_max, self.__check_for_avg, self.__check_for_min]
         local_check_list = []
@@ -107,9 +107,8 @@ class HiddenAggregate(GenerationPipeLineBase):
                 for k in range(i+1, len(funcs)):
                     local_check_list.append(False)
                 break
-        check_list.append(local_check_list.count(True) == 1)
         f_i = local_check_list.index(True)
-        inner_q_part = f"Select {func_names[f_i]}({attrib}) from {tab}"
+        inner_q_part = f"{func_names[f_i]}({attrib})"
         return inner_q_part
 
     def doActualJob(self, args=None):
@@ -126,9 +125,47 @@ class HiddenAggregate(GenerationPipeLineBase):
                     self.see_d_min()
                     if self.comparator.row_count_r_e > self.comparator.row_count_r_h:
                         self.logger.info(" It is a nested aggregate in the WHERE clause. ")
-                        check_list = self.__filter_candidates(tab, query, Q_E)
-                        return all(flag for flag in check_list)
+                        inner_filter, value = self.__filter_candidates(tab, query, Q_E)
+                        self.__formulate_query_string(inner_filter, value)
+                        break
         return self.inner_query
+
+    def __formulate_query_string(self, inner_filter, value):
+        self.global_filter_predicates.remove(inner_filter)
+        tab = inner_filter[0]
+        other_innser_filters = []
+        for fl in self.global_filter_predicates:
+            if fl[0] == tab:
+                other_innser_filters.append(fl)
+        for fl in other_innser_filters:
+            self.global_filter_predicates.remove(fl)
+
+        inner_from_relations = [tab]
+        outer_from_relations = [table for table in self.core_relations if table not in inner_from_relations]
+        dependent_join_graph = []
+        for eq_join in self.q_generator.eq_join_predicates:
+            one, two = False, False
+            for edge in eq_join:
+                if len(edge) == 2 and edge[0] == tab:
+                    self.logger.debug("Dependent join")
+                    one = True
+                elif len(edge) == 2 and edge[0] in outer_from_relations:
+                    two = True
+                if one and two:
+                    break
+            dependent_join_graph.append(eq_join)
+        independent_join_graph = [equi_join for equi_join in self.q_generator.eq_join_predicates if equi_join not in dependent_join_graph]
+
+        outer_select = self.q_generator.select_op
+        self.q_generator.select_op = self.inner_select
+        inner_query = self.q_generator.rewrite_query(inner_from_relations, dependent_join_graph, other_innser_filters, False)
+        inner_query = inner_query.replace(';', '')
+        nested_pred = f"({inner_query}) {inner_filter[2]} {value}"
+        self.q_generator.select_op = outer_select
+        self.q_generator.rewrite_query(outer_from_relations, independent_join_graph, self.global_filter_predicates)
+        self.q_generator.where_op += " and " + nested_pred
+        outer_query = self.q_generator.generate_query()
+        self.inner_query = outer_query
 
     def __revert_two_rows_generation(self, tab):
         self.logger.debug("No effect. Reverting changes!")

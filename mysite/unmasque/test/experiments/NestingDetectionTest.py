@@ -26,7 +26,7 @@ class MyTestCase(BaseTestCase):
                 "and o_orderstatus = 'O') " \
                 "< 120000  and c_mktsegment = 'BUILDING' limit 5;"
         eq = self.do_test(query)
-        self.assertTrue("SUM(o_totalprice)" in eq)
+        self.assertTrue('SUM(o_totalprice)' in eq)
 
     def test_nested_avg(self):
         query = "select c_name, c_acctbal from customer " \
@@ -35,7 +35,7 @@ class MyTestCase(BaseTestCase):
                 "and o_orderstatus = 'O') " \
                 "< 120000  and c_mktsegment = 'BUILDING' limit 5;"
         eq = self.do_test(query)
-        self.assertTrue("AVG(o_totalprice)" in eq)
+        self.assertTrue('AVG(o_totalprice)' in eq)
 
     def test_nested_min(self):
         query = "select c_name, c_acctbal from customer " \
@@ -44,10 +44,10 @@ class MyTestCase(BaseTestCase):
                 "and o_orderstatus = 'O') " \
                 "< 120000  and c_mktsegment = 'BUILDING' limit 5;"
         eq = self.do_test(query)
-        self.assertTrue("MIN(o_totalprice)" in eq)
+        self.assertTrue('MIN(o_totalprice)' in eq)
 
     def do_test(self, query):
-        eq = self.pipeline.extract(query)
+        eq = self.pipeline.doJob(query)
         self.check_assert(eq)
         return eq
 
@@ -58,7 +58,7 @@ class MyTestCase(BaseTestCase):
                 "and o_orderstatus = 'O') " \
                 "< 120000  and c_mktsegment = 'BUILDING' limit 5;"
         eq = self.do_test(query)
-        self.assertTrue("MAX(o_totalprice)" in eq)
+        self.assertTrue('MAX(o_totalprice)' in eq)
 
 
 if __name__ == '__main__':

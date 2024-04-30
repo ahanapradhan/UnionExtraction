@@ -13,11 +13,11 @@ def get_exact_NE_string_predicate(elt, output):
 class QueryString:
 
     def __init__(self):
-        self._select_op = ''
-        self._from_op = ''
-        self._where_op = ''
-        self._group_by_op = ''
-        self._order_by_op = ''
+        self._select_op = None
+        self._from_op = None
+        self._where_op = None
+        self._group_by_op = None
+        self._order_by_op = None
         self._limit_op = None
 
     @property
@@ -217,15 +217,32 @@ class QueryStringGenerator(AppExtractorBase):
         eq = self.generate_query()
         return eq
 
-    def generate_query(self):
+    def rewrite_query(self, core_relations, eq_join_preds, filter_predicates, gaol=True):
+        self.eq_join_predicates = eq_join_preds
+        self.filter_predicates = filter_predicates
+        relations = copy.deepcopy(core_relations)
+        relations.sort()
+        self.from_op = ", ".join(relations)
+        self.where_op = self.generate_where_clause()
+        eq = self.generate_query(gaol)
+        return eq
+
+    def generate_query(self, gaol=True):
         query = QueryString()
+        self.__generate_SPJ_string(query)
+        if gaol:
+            self.__generate_GAOL_string(query)
+        return query.assembleQuery()
+
+    def __generate_SPJ_string(self, query):
         query.select_op = self.select_op
         query.from_op = self.from_op
         query.where_op = self.where_op if self.where_op != '' else None
+
+    def __generate_GAOL_string(self, query):
         query.group_by_op = self.group_by_op if self.group_by_op != '' else None
         query.order_by_op = self.order_by_op if self.order_by_op != '' else None
         query.limit_op = self.limit_op if self.limit_op != '' else None
-        return query.assembleQuery()
 
     def generate_select_clause(self, agg, pj):
         for i in range(len(agg.global_projected_attributes)):
