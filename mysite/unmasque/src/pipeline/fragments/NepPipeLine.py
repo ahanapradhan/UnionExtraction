@@ -28,7 +28,7 @@ class NepPipeLine(GenericPipeLine, ABC):
     def verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
-    def _extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
+    def _extract_NEP(self, core_relations, sizes, eq, q_generator, query, delivery):
         if not self.connectionHelper.config.detect_nep:
             return eq
 
@@ -52,7 +52,7 @@ class NepPipeLine(GenericPipeLine, ABC):
                 self.update_state(NEP_ + DB_MINIMIZATION + START)
                 self.update_state(NEP_ + DB_MINIMIZATION + RUNNING)
                 minimized = nep_minimizer.doJob((query, eq, tabname))
-                time_profile.update_for_view_minimization(nep_minimizer.local_elapsed_time, nep_minimizer.app_calls)
+                self.time_profile.update_for_view_minimization(nep_minimizer.local_elapsed_time, nep_minimizer.app_calls)
                 if not minimized:
                     continue
                 self.update_state(NEP_ + DB_MINIMIZATION + DONE)
@@ -66,7 +66,7 @@ class NepPipeLine(GenericPipeLine, ABC):
                 else:
                     eq = q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
                 self.update_state(NEP_ + FILTER + DONE)
-                time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
+                self.time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
 
         self.logger.debug("returning..", eq)
         return eq

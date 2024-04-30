@@ -19,6 +19,7 @@ class ElapsedTime:
                    "Aggregation:",
                    "Order by:",
                    "Limit:",
+                   "Correlated\n Subquery:"
                    "Outer Join:",
                    "NEP: ",
                    "Result\n Comparator:",
@@ -30,6 +31,7 @@ class ElapsedTime:
         self.t_db_restore = 0
 
         self.t_sampling = 0
+        self.t_corr_sub = 0
         self.t_view_min = 0
         self.t_where_clause = 0
         self.t_projection = 0
@@ -46,6 +48,7 @@ class ElapsedTime:
         self.display_string = ''
 
         self.app_sampling = 0
+        self.app_corr_sub = 0
         self.app_view_min = 0
         self.app_where_clause = 0
         self.app_projection = 0
@@ -59,6 +62,10 @@ class ElapsedTime:
         self.app_from_clause = 0
         self.app_result_comp = 0
         self.app_total = 0
+
+    def update_for_correlated_nested_subquery(self, t_u, c_app):
+        self.t_corr_sub += t_u
+        self.app_corr_sub += c_app
 
     def update_for_from_clause(self, t_u, c_app):
         self.t_from_clause += t_u
@@ -205,6 +212,7 @@ class ElapsedTime:
                                                self.t_aggregate,
                                                self.t_orderby,
                                                self.t_limit,
+                                               self.t_corr_sub,
                                                self.t_outer_join,
                                                self.t_nep,
                                                self.t_result_comp,
@@ -223,6 +231,7 @@ class ElapsedTime:
                 self.app_aggregate,
                 self.app_orderby,
                 self.app_limit,
+                self.app_corr_sub,
                 self.app_outer_join,
                 self.app_nep,
                 self.app_result_comp,

@@ -59,7 +59,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         eq, t = self._after_from_clause_extract(query, self.core_relations)
         self.connectionHelper.closeConnection()
-        self.time_profile.update(t)
+        # self.time_profile.update(t)
         return eq
 
     def _after_from_clause_extract(self, query, core_relations):
@@ -177,9 +177,11 @@ class ExtractionPipeLine(DisjunctionPipeLine,
                                                     self.pj, agg, ob, lm, self.or_predicates)
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self._extract_nested_aggregate(eq, self.q_generator, query, time_profile, delivery, self.global_pk_dict)
+        self.time_profile.update(time_profile)
 
-        eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
+        eq = self._extract_nested_aggregate(eq, self.q_generator, query, delivery, self.global_pk_dict)
+
+        eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, delivery)
 
         # last component in the pipeline should do this
         # time_profile.update_for_app(lm.app.method_call_count)

@@ -24,15 +24,12 @@ class NestedAggWherePipeLine(GenericPipeLine, ABC):
     def verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
-    @abstractmethod
-    def _extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
-        raise NotImplementedError("Trouble!")
-
-    def _extract_nested_aggregate(self, eq, q_generator, query, time_profile, delivery, global_pk_dict):
+    def _extract_nested_aggregate(self, eq, q_generator, query, delivery, global_pk_dict):
         ha = HiddenAggregate(self.connectionHelper, delivery, global_pk_dict, q_generator)
         check = ha.doJob([query, eq])
+        self.time_profile.update_for_correlated_nested_subquery(ha.local_elapsed_time, ha.app_calls)
         if check:
             self.logger.debug("OK")
         else:
             self.logger.debug("Oops!")
-        return ha.inner_query, time_profile
+        return ha.inner_query

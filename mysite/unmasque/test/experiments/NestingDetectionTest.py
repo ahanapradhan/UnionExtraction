@@ -48,6 +48,7 @@ class MyTestCase(BaseTestCase):
 
     def do_test(self, query):
         eq = self.pipeline.doJob(query)
+        self.pipeline.time_profile.print()
         self.check_assert(eq)
         return eq
 
