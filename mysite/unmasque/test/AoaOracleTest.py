@@ -2,7 +2,7 @@ import unittest
 
 from mysite.unmasque.src.core.limit import Limit
 from mysite.unmasque.src.core.orderby_clause import OrderBy
-from ..src.core.QueryStringGenerator import QueryStringGenerator
+from mysite.unmasque.src.obsolete.OldQueryStringGenerator import OldQueryStringGenerator
 from mysite.unmasque.src.core.aggregation import Aggregation
 from mysite.unmasque.src.core.groupby_clause import GroupBy
 from mysite.unmasque.src.core.projection import Projection
@@ -237,7 +237,7 @@ class MyTestCase(unittest.TestCase):
         lm = Limit(self.conn, gb.group_by_attrib, aoa.pipeline_delivery)
         lm.doJob(query)
         self.assertTrue(lm.done)
-        eq = QueryStringGenerator(self.conn).generate_query_string(relations, pj, agg, ob, lm, aoa)
+        eq = OldQueryStringGenerator(self.conn).generate_query_string(relations, pj, agg, ob, lm, aoa)
         return eq
 
     def test_orders_lineitem_aoa(self):

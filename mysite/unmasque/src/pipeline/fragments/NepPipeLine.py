@@ -1,7 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
 
-from mysite.unmasque.src.core.QueryStringGenerator import QueryStringGenerator
+from mysite.unmasque.src.util.QueryStringGenerator import QueryStringGenerator
 from mysite.unmasque.src.core.nep import NepMinimizer, NEP
 from mysite.unmasque.src.pipeline.abstract.generic_pipeline import GenericPipeLine
 from mysite.unmasque.src.util.constants import FILTER, DONE, NEP_, RUNNING, START, DB_MINIMIZATION, RESULT_COMPARE

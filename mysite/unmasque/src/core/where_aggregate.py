@@ -142,27 +142,23 @@ class HiddenAggregate(GenerationPipeLineBase):
 
         inner_from_relations = [tab]
         outer_from_relations = [table for table in self.core_relations if table not in inner_from_relations]
-        dependent_join_graph = []
-        for eq_join in self.q_generator.eq_join_predicates:
-            one, two = False, False
-            for edge in eq_join:
-                if len(edge) == 2 and edge[0] == tab:
-                    self.logger.debug("Dependent join")
-                    one = True
-                elif len(edge) == 2 and edge[0] in outer_from_relations:
-                    two = True
-                if one and two:
-                    break
-            dependent_join_graph.append(eq_join)
-        independent_join_graph = [equi_join for equi_join in self.q_generator.eq_join_predicates if equi_join not in dependent_join_graph]
+        self.logger.debug(f"Inner query tables: {inner_from_relations}, outer query tables: {outer_from_relations}")
+        dependent_join_edges, independent_join_edges = [], []
+        for edge in self.q_generator.join_edges:
+            tabs = [v[0] for v in edge if len(v) == 2]
+            are_all_out = [True if tab in outer_from_relations else False for tab in tabs]
+            if all(out for out in are_all_out):
+                independent_join_edges.append(edge)
+            else:
+                dependent_join_edges.append(edge)
 
         outer_select = self.q_generator.select_op
         self.q_generator.select_op = self.inner_select
-        inner_query = self.q_generator.rewrite_query(inner_from_relations, dependent_join_graph, other_innser_filters, False)
+        inner_query = self.q_generator.rewrite_query(inner_from_relations, dependent_join_edges, other_innser_filters, False)
         inner_query = inner_query.replace(';', '')
         nested_pred = f"({inner_query}) {inner_filter[2]} {value}"
         self.q_generator.select_op = outer_select
-        self.q_generator.rewrite_query(outer_from_relations, independent_join_graph, self.global_filter_predicates)
+        self.q_generator.rewrite_query(outer_from_relations, independent_join_edges, self.global_filter_predicates)
         self.q_generator.where_op += " and " + nested_pred
         outer_query = self.q_generator.generate_query()
         self.inner_query = outer_query

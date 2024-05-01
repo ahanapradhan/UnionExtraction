@@ -1,9 +1,9 @@
 import copy
 
-from ..util.aoa_utils import add_pred_for
-from ..util.constants import COUNT, SUM, max_str_len
-from ..util.utils import get_format
-from ...src.core.abstract.AppExtractorBase import AppExtractorBase
+from mysite.unmasque.src.util.QueryStringGenerator import add_pred_for
+from mysite.unmasque.src.util.constants import COUNT, SUM, max_str_len
+from mysite.unmasque.src.util.utils import get_format
+from mysite.unmasque.src.core.abstract.AppExtractorBase import AppExtractorBase
 
 
 def get_exact_NE_string_predicate(elt, output):
@@ -82,7 +82,7 @@ class QueryString:
         return output
 
 
-class QueryStringGenerator(AppExtractorBase):
+class OldQueryStringGenerator(AppExtractorBase):
 
     def doActualJob(self, args=None):
         pass
@@ -98,6 +98,7 @@ class QueryStringGenerator(AppExtractorBase):
         self.filter_predicates = None
         self.aoa_less_thans = None
         self.aoa_predicates = None
+        self.join_edges = None
 
         self.get_datatype = None
 
@@ -140,6 +141,7 @@ class QueryStringGenerator(AppExtractorBase):
             join_edge.sort()
             predicates.extend(f"{join_edge[i]} = {join_edge[i + 1]}" for i in range(len(join_edge) - 1))
         self.logger.debug(predicates)
+        self.join_edges = copy.deepcopy(predicates)
 
     def __generate_algebraic_inequalities(self, predicates):
         for aoa in self.aoa_predicates:
@@ -204,6 +206,15 @@ class QueryStringGenerator(AppExtractorBase):
         self.logger.debug(where_clause)
         return where_clause
 
+    def generate_where_clause_given_join_edges(self) -> str:
+        predicates = []
+        predicates.extend(self.join_edges)
+        self.__generate_algebraic_inequalities(predicates)
+        self.__generate_arithmetic_pure_conjunctions(predicates)
+        where_clause = "\n and ".join(predicates)
+        self.logger.debug(where_clause)
+        return where_clause
+
     def generate_query_string(self, core_relations, eq_join_preds, pj, agg, ob, lm, all_ors):
         self.eq_join_predicates = eq_join_preds
         relations = copy.deepcopy(core_relations)
@@ -217,13 +228,13 @@ class QueryStringGenerator(AppExtractorBase):
         eq = self.generate_query()
         return eq
 
-    def rewrite_query(self, core_relations, eq_join_preds, filter_predicates, gaol=True):
-        self.eq_join_predicates = eq_join_preds
+    def rewrite_query(self, core_relations, ed_join_edges, filter_predicates, gaol=True):
+        self.join_edges = ed_join_edges
         self.filter_predicates = filter_predicates
         relations = copy.deepcopy(core_relations)
         relations.sort()
         self.from_op = ", ".join(relations)
-        self.where_op = self.generate_where_clause()
+        self.where_op = self.generate_where_clause_given_join_edges()
         eq = self.generate_query(gaol)
         return eq
 

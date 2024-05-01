@@ -2,8 +2,6 @@ import datetime
 from datetime import date
 from typing import Union, List, Tuple
 
-from .utils import get_datatype_of_val, get_format
-
 
 def optimize_edge_set(edge_set: List[Tuple[Tuple[str, str], Tuple[str, str]]]):
     nodes = set()
@@ -274,14 +272,6 @@ def get_LB_of_next_attrib(ineq_group: List[Tuple], c: Tuple[str, str]):
     for pred in ineq_group:
         if get_tab(pred) == get_tab(c) and get_attrib(pred) == get_attrib(c) and (get_op(pred) in ['>=', 'range']):
             return get_LB(pred)
-
-
-def add_pred_for(aoa_l, pred):
-    if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
-        pred.append(f"{aoa_l[0]}.{aoa_l[1]}")
-    else:
-        pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
-    return aoa_l
 
 
 def adjust_Bounds2(LB_impact: bool, UB_impact: bool,

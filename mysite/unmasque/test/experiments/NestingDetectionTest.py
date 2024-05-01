@@ -61,6 +61,16 @@ class MyTestCase(BaseTestCase):
         eq = self.do_test(query)
         self.assertTrue('MAX(o_totalprice)' in eq)
 
+    def test_nested_sum_2_outer_tables(self):
+        query = "select c_name, c_acctbal, n_name from customer, nation " \
+                "where c_nationkey = n_nationkey and (select sum(o_totalprice) as total_sum " \
+                "from orders where c_custkey = o_custkey " \
+                "and o_orderstatus = 'O') " \
+                "< 120000 and c_mktsegment = 'BUILDING' limit 5;"
+        eq = self.do_test(query)
+        self.assertTrue('SUM(o_totalprice)' in eq)
+        self.assertTrue(self.pipeline.correct)
+
 
 if __name__ == '__main__':
     unittest.main()

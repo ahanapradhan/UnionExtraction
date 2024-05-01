@@ -172,16 +172,22 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-        self.q_generator.set_aoa_details(delivery)
-        eq = self.q_generator.generate_query_string(core_relations, self.aoa.algebraic_eq_predicates,
-                                                    self.pj, agg, ob, lm, self.or_predicates)
+        self.q_generator.get_datatype = self.filter_extractor.get_datatype  # method
+        self.q_generator.projection = self.pj
+        self.q_generator.from_clause = self.core_relations
+        self.q_generator.equi_join = self.aoa
+        self.q_generator.where_clause_remnants = delivery
+        self.q_generator.aggregate = agg
+        self.q_generator.orderby = ob
+        self.q_generator.limit = lm
+        eq = self.q_generator.generate_query_string(self.or_predicates)
         self.logger.debug("extracted query:\n", eq)
 
         self.time_profile.update(time_profile)
 
-        eq = self._extract_nested_aggregate(eq, self.q_generator, query, delivery, self.global_pk_dict)
+        # eq = self._extract_nested_aggregate(eq, self.q_generator, query, delivery, self.global_pk_dict)
 
-        eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, delivery)
+        # eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, delivery)
 
         # last component in the pipeline should do this
         # time_profile.update_for_app(lm.app.method_call_count)
