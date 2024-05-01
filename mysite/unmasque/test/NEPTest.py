@@ -854,17 +854,6 @@ class MyTestCase(BaseTestCase):
         self.conn.execute_sql(["drop table partsupp1;"])
         self.conn.closeConnection()
 
-    def test_remove_NE_string_q_gen(self):
-        elf = ['partsupp', 'ps_comment', '<>', 'hello world regular mina dependencies']
-        q_gen = OldQueryStringGenerator(self.conn)
-        q_gen.where_op = 'ps_suppkey = s_suppkey and s_nationkey = n_nationkey and ' \
-                         'n_name = \'ARGENTINA\' and ps_comment <> \'dependencies\' ' \
-                         'and ps_comment <> \'hello world regular mina dependencies\''
-        q_gen.remove_exact_NE_string_predicate(elf)
-        print(q_gen.where_op)
-        self.assertEqual(q_gen.where_op, 'ps_suppkey = s_suppkey and '
-                                         's_nationkey = n_nationkey and n_name = \'ARGENTINA\'')
-
 
 if __name__ == '__main__':
     unittest.main()

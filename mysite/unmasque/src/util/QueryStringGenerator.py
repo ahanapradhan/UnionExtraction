@@ -1,8 +1,9 @@
 import copy
 
 from mysite.unmasque.src.core.executable import Executable
+from mysite.unmasque.src.core.factory.ExecutableFactory import ExecutableFactory
 from mysite.unmasque.src.util.Log import Log
-from mysite.unmasque.src.util.constants import COUNT, SUM
+from mysite.unmasque.src.util.constants import COUNT, SUM, max_str_len
 from mysite.unmasque.src.util.utils import get_format, get_datatype_of_val
 
 
@@ -117,11 +118,18 @@ class QueryDetails:
         self.global_groupby_attributes = other.global_groupby_attributes
         self.global_aggregated_attributes = other.global_aggregated_attributes
 
+    def add_to_where_op(self, predicate):
+        if self.where_op and predicate not in self.where_op:
+            self.where_op = f'{self.where_op} and {predicate}'
+        else:
+            self.where_op = predicate
+
 
 class QueryStringGenerator:
     def __init__(self, connectionHelper):
         self.connectionHelper = connectionHelper
-        self.app = Executable(self.connectionHelper)
+        exeFactory = ExecutableFactory()
+        self.app = exeFactory.create_exe(self.connectionHelper)
         self.__get_datatype = None
         self._queries = {}
         self._workingCopy = QueryDetails()
@@ -206,6 +214,39 @@ class QueryStringGenerator:
         self._workingCopy.join_edges = value
         self._workingCopy.eq_join_predicates.clear()  # when join edges are assigned directly, old equi join predicates are obsolete
 
+    def updateExtractedQueryWithNEPVal(self, query, val):
+        for elt in val:
+            tab, attrib, op, neg_val = elt[0], elt[1], elt[2], elt[3]
+            datatype = self.get_datatype((tab, attrib))
+            format_val = get_format(datatype, neg_val)
+            '''
+            neg_op = str(op)
+            if isinstance(elt[3], str):
+                output = self._getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
+                f_output = get_format(datatype, output)
+                neg_op = 'NOT LIKE' if ('%' in f_output or '_' in f_output) else neg_op
+                if '%' in output or '_' in output:
+                    self._remove_exact_NE_string_predicate(elt)
+                format_val = f_output
+            predicate = f"{tab}.{attrib} {neg_op} {format_val} "
+            '''
+
+            if datatype == 'str':
+                output = self._getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
+                self.logger.debug(output)
+                if '%' in output or '_' in output:
+                    predicate = f"{tab}.{attrib} NOT LIKE '{str(output)}' "
+                    self._remove_exact_NE_string_predicate(elt)
+                else:
+                    predicate = f"{tab}.{attrib} {str(op)} \'{str(output)}\' "
+            else:
+                predicate = f"{tab}.{attrib} {str(op)} {format_val}"
+
+            self._workingCopy.add_to_where_op(predicate)
+
+        Q_E = self.write_query()
+        return Q_E
+
     def __generate_where_clause(self, all_ors=None) -> str:
         predicates = []
         if not len(self._workingCopy.join_edges):
@@ -228,7 +269,7 @@ class QueryStringGenerator:
         self._workingCopy.where_op = self.__generate_where_clause(all_ors)
         self.__generate_group_by_clause()
         self.__generate_select_clause()
-        eq = self.__generate_query()
+        eq = self.write_query()
         return eq
 
     def rewrite_query(self, core_relations, ed_join_edges, filter_predicates, gaol=True):
@@ -237,10 +278,10 @@ class QueryStringGenerator:
         self.from_clause = core_relations
         self.join_edges = ed_join_edges
         self._workingCopy.filter_predicates = filter_predicates
-        eq = self.__generate_query(gaol)
+        eq = self.write_query(gaol)
         return eq
 
-    def __generate_query(self, gaol=True) -> str:
+    def write_query(self, gaol=True) -> str:
 
         self.logger.debug(self._workingCopy.select_op)
         self.logger.debug(self._workingCopy.from_op)
@@ -254,7 +295,9 @@ class QueryStringGenerator:
         if gaol:
             self.__generate_GAOL_string(query)
         query_string = query.assembleQuery()
-        self._queries[hash(query_string)] = (query, copy.deepcopy(self._workingCopy))
+        key = hash(query_string)
+        if key not in self._queries:
+            self._queries[key] = (query, copy.deepcopy(self._workingCopy))
         return query_string
 
     def __generate_SPJ_string(self, query):
@@ -265,8 +308,7 @@ class QueryStringGenerator:
     def __generate_GAOL_string(self, query):
         query.group_by_op = self._workingCopy.group_by_op if self._workingCopy.group_by_op != '' else None
         query.order_by_op = self._workingCopy.order_by_op if self._workingCopy.order_by_op != '' else None
-        query.limit_op = self._workingCopy.limit_op if (self._workingCopy.limit_op != ''
-                                                        or self._workingCopy.limit_op is not None) else None
+        query.limit_op = self._workingCopy.limit_op if self._workingCopy.limit_op != '' else None
 
     def formulate_predicate_from_filter(self, elt):
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[4]
@@ -393,7 +435,7 @@ class QueryStringGenerator:
             # UPDATE OUTPUTS
             self._workingCopy.group_by_op = elt if not i else f'{self._workingCopy.group_by_op}, {elt}'
 
-    def remove_exact_NE_string_predicate(self, elt):
+    def _remove_exact_NE_string_predicate(self, elt):
         while elt[1] in self._workingCopy.where_op:
             where_parts = self._workingCopy.where_op.split()
             attrib_index = where_parts.index(elt[1])
@@ -418,9 +460,10 @@ class QueryStringGenerator:
                 where_parts.pop(attrib_index - 1)  # for and
             self._workingCopy.where_op = " ".join(where_parts)
 
-    def getStrFilterValue(self, query, tabname, attrib, representative, max_length):
+    def _getStrFilterValue(self, query, tabname, attrib, representative, max_length):
         representative = self.__get_minimal_representative_str(attrib, query, representative, tabname)
         output = self.__handle_for_wildcard_char_underscore(attrib, query, representative, tabname)
+        self.logger.debug(f"rep: {representative}, handling _: {output}")
         if output == '':
             return output
         output = self.__handle_for_wildcard_char_perc(attrib, max_length, output, query, tabname)
@@ -430,27 +473,26 @@ class QueryStringGenerator:
         # GET % positions
         index = 0
         representative = copy.deepcopy(output)
+        self.logger.debug(representative)
         if len(representative) < max_length:
             output = ""
 
             while index < len(representative):
-
                 temp = list(representative)
                 if temp[index] == 'a':
                     temp.insert(index, 'b')
                 else:
                     temp.insert(index, 'a')
                 temp = ''.join(temp)
-                u_query = f"update {tabname} set {attrib} = '{temp}';"
-
+                u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
                 try:
-                    self.connectionHelper.execute_sql([u_query])
+                    self.connectionHelper.execute_sql([u_query], self.logger)
                     new_result = self.app.doJob(query)
-                    if len(new_result) <= 1:
+
+                    if self.app.isQ_result_empty(new_result):
                         output = output + '%'
                 except Exception as e:
-                    print(e)
-
+                    self.logger.debug(e)
                 output = output + representative[index]
                 index = index + 1
 
@@ -460,15 +502,14 @@ class QueryStringGenerator:
             else:
                 temp.append('a')
             temp = ''.join(temp)
-            u_query = f"update {tabname} set {attrib} = '{temp}';"
-
+            u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
             try:
-                self.connectionHelper.execute_sql([u_query])
+                self.connectionHelper.execute_sql([u_query], self.logger)
                 new_result = self.app.doJob(query)
-                if len(new_result) <= 1:
+                if self.app.isQ_result_empty(new_result):
                     output = output + '%'
             except Exception as e:
-                print(e)
+                self.logger.debug(e)
         return output
 
     def __handle_for_wildcard_char_underscore(self, attrib, query, representative, tabname):
@@ -489,7 +530,7 @@ class QueryStringGenerator:
             try:
                 self.connectionHelper.execute_sql([u_query])
                 new_result = self.app.doJob(query)
-                if len(new_result) <= 1:
+                if self.app.isQ_result_empty(new_result):
                     temp = copy.deepcopy(representative)
                     temp = temp[:index] + temp[index + 1:]
 
@@ -497,7 +538,7 @@ class QueryStringGenerator:
                     try:
                         self.connectionHelper.execute_sql([u_query])
                         new_result = self.app.doJob(query)
-                        if len(new_result) <= 1:
+                        if self.app.isQ_result_empty(new_result):
                             representative = representative[:index] + representative[index + 1:]
                         else:
                             output = output + "_"
@@ -505,7 +546,7 @@ class QueryStringGenerator:
                             representative[index] = u"\u00A1"
                             representative = ''.join(representative)
                     except Exception as e:
-                        print(e)
+                        self.logger.debug(e)
                         output = output + "_"
                         representative = list(representative)
                         representative[index] = u"\u00A1"
@@ -513,7 +554,7 @@ class QueryStringGenerator:
                 else:
                     output = output + representative[index]
             except Exception as e:
-                print(e)
+                self.logger.debug(e)
                 output = output + representative[index]
 
             index = index + 1
@@ -531,14 +572,14 @@ class QueryStringGenerator:
             try:
                 self.connectionHelper.execute_sql([u_query])
                 new_result = self.app.doJob(query)
-                if len(new_result) <= 1:
+                if self.app.isQ_result_empty(new_result):
                     pass
                 else:
                     output = output + representative[index]
                     temp[index] = representative[index]
 
             except Exception as e:
-                print(e)
+                self.logger.debug(e)
                 output = output + representative[index]
                 temp[index] = representative[index]
 

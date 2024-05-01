@@ -1,6 +1,7 @@
 import unittest
 
 from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
+from mysite.unmasque.src.util.QueryStringGenerator import QueryStringGenerator
 
 
 class Sample:
@@ -39,6 +40,20 @@ class MyTestCase(unittest.TestCase):
         sample = Sample()
         sample.hello = 10
         sample.print()
+
+    def test_remove_NE_string_q_gen(self):
+        conn = ConnectionHelperFactory().createConnectionHelper()
+        elf = ['partsupp', 'ps_comment', '<>', 'hello world regular mina dependencies']
+        q_gen = QueryStringGenerator(conn)
+        where_op = 'ps_suppkey = s_suppkey and s_nationkey = n_nationkey and ' \
+                         'n_name = \'ARGENTINA\' and ps_comment <> \'dependencies\' ' \
+                         'and ps_comment <> \'hello world regular mina dependencies\''
+        q_gen._workingCopy.where_op = where_op
+        q_gen._remove_exact_NE_string_predicate(elf)
+        print(q_gen._workingCopy.where_op)
+        self.assertEqual(q_gen._workingCopy.where_op, 'ps_suppkey = s_suppkey and '
+                                         's_nationkey = n_nationkey and n_name = \'ARGENTINA\'')
+
 
 
 if __name__ == '__main__':

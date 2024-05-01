@@ -28,11 +28,11 @@ class NepPipeLine(GenericPipeLine, ABC):
     def verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
-    def _extract_NEP(self, core_relations, sizes, eq, q_generator, query, delivery):
+    def _extract_NEP(self, core_relations, sizes, query, delivery):
+        eq = self.q_generator.write_query()
         if not self.connectionHelper.config.detect_nep:
             return eq
 
-        pos_eq = copy.deepcopy(eq)
         nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, sizes)
         nep_extractor = NEP(self.connectionHelper, delivery)
 
@@ -64,7 +64,7 @@ class NepPipeLine(GenericPipeLine, ABC):
                 if nep_filters is None or not len(nep_filters):
                     self.logger.info("NEP does not exists.")
                 else:
-                    eq = q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
+                    eq = self.q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
                 self.update_state(NEP_ + FILTER + DONE)
                 self.time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
 

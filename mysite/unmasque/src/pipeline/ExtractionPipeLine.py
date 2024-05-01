@@ -187,7 +187,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         # eq = self._extract_nested_aggregate(eq, self.q_generator, query, delivery, self.global_pk_dict)
 
-        # eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, delivery)
+        eq = self._extract_NEP(core_relations, self.all_sizes, query, delivery)
 
         # last component in the pipeline should do this
         # time_profile.update_for_app(lm.app.method_call_count)
