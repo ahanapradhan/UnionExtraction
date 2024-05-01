@@ -484,15 +484,7 @@ class QueryStringGenerator:
                 else:
                     temp.insert(index, 'a')
                 temp = ''.join(temp)
-                u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
-                try:
-                    self.connectionHelper.execute_sql([u_query], self.logger)
-                    new_result = self.app.doJob(query)
-
-                    if self.app.isQ_result_empty(new_result):
-                        output = output + '%'
-                except Exception as e:
-                    self.logger.debug(e)
+                output = self.try_with_temp(attrib, output, query, tabname, temp)
                 output = output + representative[index]
                 index = index + 1
 
@@ -502,14 +494,18 @@ class QueryStringGenerator:
             else:
                 temp.append('a')
             temp = ''.join(temp)
-            u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
-            try:
-                self.connectionHelper.execute_sql([u_query], self.logger)
-                new_result = self.app.doJob(query)
-                if self.app.isQ_result_empty(new_result):
-                    output = output + '%'
-            except Exception as e:
-                self.logger.debug(e)
+            output = self.try_with_temp(attrib, output, query, tabname, temp)
+        return output
+
+    def try_with_temp(self, attrib, output, query, tabname, temp):
+        u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
+        try:
+            self.connectionHelper.execute_sql([u_query], self.logger)
+            new_result = self.app.doJob(query)
+            if self.app.isQ_result_empty(new_result):
+                output = output + '%'
+        except Exception as e:
+            self.logger.debug(e)
         return output
 
     def __handle_for_wildcard_char_underscore(self, attrib, query, representative, tabname):
@@ -525,7 +521,7 @@ class QueryStringGenerator:
             else:
                 temp[index] = 'a'
             temp = ''.join(temp)
-            u_query = f"update {tabname} set {attrib} = '{temp}';"
+            u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
 
             try:
                 self.connectionHelper.execute_sql([u_query])
@@ -534,7 +530,7 @@ class QueryStringGenerator:
                     temp = copy.deepcopy(representative)
                     temp = temp[:index] + temp[index + 1:]
 
-                    u_query = f"update {tabname} set {attrib} = '{temp}';"
+                    u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
                     try:
                         self.connectionHelper.execute_sql([u_query])
                         new_result = self.app.doJob(query)
@@ -567,8 +563,7 @@ class QueryStringGenerator:
         while index < len(representative):
             temp[index] = ''
             temp_str = ''.join(temp)
-            u_query = f"update {tabname} set {attrib} = '{temp_str}';"
-
+            u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp_str)
             try:
                 self.connectionHelper.execute_sql([u_query])
                 new_result = self.app.doJob(query)
@@ -577,12 +572,10 @@ class QueryStringGenerator:
                 else:
                     output = output + representative[index]
                     temp[index] = representative[index]
-
             except Exception as e:
                 self.logger.debug(e)
                 output = output + representative[index]
                 temp[index] = representative[index]
-
             index = index + 1
         return output
 
