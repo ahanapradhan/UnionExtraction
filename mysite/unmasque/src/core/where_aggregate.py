@@ -9,7 +9,7 @@ class HiddenAggregate(GenerationPipeLineBase):
         super().__init__(connectionHelper, "Nested Aggregated", delivery)
         self.comparator = ResultComparator(self.connectionHelper, True, delivery.core_relations, False)
         self.global_pk_dict = global_pk_dict
-        self.inner_query = ""
+        self.Q_E = ""
         self.inner_select = ""
         self.q_generator = q_generator
 
@@ -95,7 +95,7 @@ class HiddenAggregate(GenerationPipeLineBase):
                 self.inner_select = subquery_select
                 return fl, limit
 
-    def __agg_func_check(self, Q_E, attrib,  datatype, limit, prev, query, tab) -> str:
+    def __agg_func_check(self, Q_E, attrib, datatype, limit, prev, query, tab) -> str:
         func_names = ['SUM', 'MAX', 'AVG', 'MIN']
         funcs = [self.__check_for_sum, self.__check_for_max, self.__check_for_avg, self.__check_for_min]
         local_check_list = []
@@ -104,7 +104,7 @@ class HiddenAggregate(GenerationPipeLineBase):
             self.logger.debug(f"{str(fun)} gave {agg_check}")
             local_check_list.append(agg_check)
             if agg_check:
-                for k in range(i+1, len(funcs)):
+                for k in range(i + 1, len(funcs)):
                     local_check_list.append(False)
                 break
         f_i = local_check_list.index(True)
@@ -126,42 +126,9 @@ class HiddenAggregate(GenerationPipeLineBase):
                     if self.comparator.row_count_r_e > self.comparator.row_count_r_h:
                         self.logger.info(" It is a nested aggregate in the WHERE clause. ")
                         inner_filter, value = self.__filter_candidates(tab, query, Q_E)
-                        self.__formulate_query_string(inner_filter, value)
+                        self.Q_E = self.q_generator.formulate_query_string(self.inner_select, inner_filter, value)
                         break
-        return self.inner_query
-
-    def __formulate_query_string(self, inner_filter, value):
-        self.global_filter_predicates.remove(inner_filter)
-        tab = inner_filter[0]
-        other_innser_filters = []
-        for fl in self.global_filter_predicates:
-            if fl[0] == tab:
-                other_innser_filters.append(fl)
-        for fl in other_innser_filters:
-            self.global_filter_predicates.remove(fl)
-
-        inner_from_relations = [tab]
-        outer_from_relations = [table for table in self.core_relations if table not in inner_from_relations]
-        self.logger.debug(f"Inner query tables: {inner_from_relations}, outer query tables: {outer_from_relations}")
-        dependent_join_edges, independent_join_edges = [], []
-        for edge in self.q_generator.join_edges:
-            tabs = [v[0] for v in edge if len(v) == 2]
-            are_all_out = [True if tab in outer_from_relations else False for tab in tabs]
-            if all(out for out in are_all_out):
-                independent_join_edges.append(edge)
-            else:
-                dependent_join_edges.append(edge)
-
-        outer_select = self.q_generator.select_op
-        self.q_generator.select_op = self.inner_select
-        inner_query = self.q_generator.rewrite_query(inner_from_relations, dependent_join_edges, other_innser_filters, False)
-        inner_query = inner_query.replace(';', '')
-        nested_pred = f"({inner_query}) {inner_filter[2]} {value}"
-        self.q_generator.select_op = outer_select
-        self.q_generator.rewrite_query(outer_from_relations, independent_join_edges, self.global_filter_predicates)
-        self.q_generator.where_op += " and " + nested_pred
-        outer_query = self.q_generator.generate_query()
-        self.inner_query = outer_query
+        return self.Q_E
 
     def __revert_two_rows_generation(self, tab):
         self.logger.debug("No effect. Reverting changes!")

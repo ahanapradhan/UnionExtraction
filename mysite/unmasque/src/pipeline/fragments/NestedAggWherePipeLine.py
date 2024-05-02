@@ -32,4 +32,4 @@ class NestedAggWherePipeLine(GenericPipeLine, ABC):
             self.logger.debug("OK")
         else:
             self.logger.debug("Oops!")
-        return ha.inner_query
+        return ha.Q_E
