@@ -167,24 +167,6 @@ class OuterJoin(GenerationPipeLineBase):
         self.logger.debug("new_join_graph: ", new_join_graph)
         return list_of_tables, new_join_graph
 
-    def restore_d_min(self):
-        # preparing D_1
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql(['alter table ' + tabname + ' rename to ' + tabname + '_restore;',
-                                               'create table ' + tabname + ' as select * from ' + tabname + '4;'])
-
-    def backup_relations(self):
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql(['alter table ' + tabname + '_restore rename to ' + tabname + '2;',
-                                               'drop table ' + tabname + ';',
-                                               'alter table ' + tabname + '2 rename to ' + tabname + ';'])
-            # The above command will inherently check if tabname1 exists
-
-    def restore_relations(self):
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql(['drop table ' + tabname + ';',
-                                               'alter table ' + tabname + '_restore rename to ' + tabname + ';'])
-
     def remove_semantically_nonEq_queries(self, new_join_graph, query, set_possible_queries, on_predicates):
         # eliminate semanticamy non-equivalent querie from set_possible_queries
         # this code needs to be finished (27 feb)
@@ -254,26 +236,20 @@ class OuterJoin(GenerationPipeLineBase):
     def FormulateQueries(self, final_edge_seq, query):
         fp_on, fp_where = self.determine_on_and_where_filters(query)
         set_possible_queries = []
-        # flat_list = [item for sublist in self.global_join_graph for item in sublist]
-        # keys_of_tables = [*set(flat_list)]
-        # tables_in_joins = [tab for tab in self.core_relations if
-        #                   any(key in self.global_pk_dict[tab] for key in keys_of_tables)]
-        # tables_not_in_joins = [tab for tab in self.core_relations if tab not in tables_in_joins]
-        # self.logger.debug(tables_in_joins, tables_not_in_joins)
 
         for seq in final_edge_seq:
-            # fp_on = copy.deepcopy(filter_pred_on)
-            # fp_where = copy.deepcopy(filter_pred_where)
-            # self.q_gen.from_op = ", ".join(tables_not_in_joins)
+            self.q_gen.create_new_query()
             flag_first = True
-            # if len(tables_not_in_joins):
-            #    flag_first = False
+            from_op, where_op = '', ''
             for edge in seq:
                 table1, table2 = edge[0][1], edge[1][1]
                 imp_t1, imp_t2 = self.determine_join_edge_type(edge, table1, table2)
-                flag_first = self.generate_from_on_clause(edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2)
-            self.generate_where_clause(fp_where)
+                flag_first, from_op = self.generate_from_on_clause(edge, flag_first, fp_on,
+                                                                   imp_t1, imp_t2, table1, table2, from_op)
+            self.generate_where_clause(fp_where, where_op)
             # assemble the rest of the query
+            self.q_gen.from_op = from_op
+            self.q_gen.where_op = where_op
             q_candidate = self.q_gen.generate_query()
             self.logger.debug("+++++++++++++++++++++")
             if q_candidate.count('OUTER'):
@@ -303,24 +279,23 @@ class OuterJoin(GenerationPipeLineBase):
         self.logger.debug(filter_pred_on, filter_pred_where)
         return filter_pred_on, filter_pred_where
 
-    def generate_where_clause(self, fp_where):
-        self.q_gen.where_op = ''
+    def generate_where_clause(self, fp_where, where_op):
         for elt in fp_where:
-            self.add_where_clause(elt)
+            predicate = self.q_gen.formulate_predicate_from_filter(elt)
+            where_op = predicate if where_op == '' else where_op + " and " + predicate
 
-    def generate_from_on_clause(self, edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2):
-        if flag_first:
-            self.q_gen.from_op = ''
+    def generate_from_on_clause(self, edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2, from_op):
         type_of_join = self.join_map.get((imp_t1, imp_t2))
         join_condition = f"\n\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
         relevant_tables = [table2] if not flag_first else [table1, table2]
         join_part = f"\n{type_of_join} {table2} {join_condition}"
-        self.q_gen.from_op += f" {table1} {join_part}" if flag_first else "" + join_part
+        from_op += f" {table1} {join_part}" if flag_first else "" + join_part
         flag_first = False
         for fp in fp_on:
             if fp[0] in relevant_tables:
-                self.add_on_clause_for_filter(fp)
-        return flag_first
+                predicate = self.q_gen.formulate_predicate_from_filter(fp)
+                from_op += "\n\t and " + predicate
+        return flag_first, from_op
 
     def determine_join_edge_type(self, edge, table1, table2):
         # steps to determine type of join for edge
@@ -338,10 +313,6 @@ class OuterJoin(GenerationPipeLineBase):
     def add_where_clause(self, elt):
         predicate = self.q_gen.formulate_predicate_from_filter(elt)
         self.q_gen.where_op = predicate if self.q_gen.where_op == '' else self.q_gen.where_op + " and " + predicate
-
-    def add_on_clause_for_filter(self, fp):
-        predicate = self.q_gen.formulate_predicate_from_filter(fp)
-        self.q_gen.from_op += "\n\t and " + predicate
 
     def extract_params_from_args(self, args):
         return args[0]

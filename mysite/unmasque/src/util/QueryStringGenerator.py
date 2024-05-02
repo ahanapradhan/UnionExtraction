@@ -136,6 +136,22 @@ class QueryStringGenerator:
         self.logger = Log("Query String Generator", connectionHelper.config.log_level)
 
     @property
+    def from_op(self):
+        return self._workingCopy.from_op
+
+    @from_op.setter
+    def from_op(self, value):
+        self._workingCopy.from_op = value
+
+    @property
+    def where_op(self):
+        return self._workingCopy.where_op
+
+    @where_op.setter
+    def where_op(self, value):
+        self._workingCopy.where_op = value
+
+    @property
     def get_datatype(self):
         return self.__get_datatype
 
@@ -219,18 +235,6 @@ class QueryStringGenerator:
             tab, attrib, op, neg_val = elt[0], elt[1], elt[2], elt[3]
             datatype = self.get_datatype((tab, attrib))
             format_val = get_format(datatype, neg_val)
-            '''
-            neg_op = str(op)
-            if isinstance(elt[3], str):
-                output = self._getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
-                f_output = get_format(datatype, output)
-                neg_op = 'NOT LIKE' if ('%' in f_output or '_' in f_output) else neg_op
-                if '%' in output or '_' in output:
-                    self._remove_exact_NE_string_predicate(elt)
-                format_val = f_output
-            predicate = f"{tab}.{attrib} {neg_op} {format_val} "
-            '''
-
             if datatype == 'str':
                 output = self._getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
                 self.logger.debug(output)
@@ -280,6 +284,11 @@ class QueryStringGenerator:
         self._workingCopy.filter_predicates = filter_predicates
         eq = self.write_query(gaol)
         return eq
+
+    def create_new_query(self):
+        lastQueryDetails = QueryDetails()
+        lastQueryDetails.makeCopy(self._workingCopy)
+        self.write_query()  # take backup of current working copy
 
     def write_query(self, gaol=True) -> str:
 
