@@ -222,6 +222,15 @@ class QueryStringGenerator:
         self._workingCopy.filter_predicates = delivery.global_filter_predicates
 
     @property
+    def all_arithmetic_filters(self):
+        preds = self._workingCopy.filter_predicates + self._workingCopy.filter_in_predicates
+        return preds
+
+    @all_arithmetic_filters.setter
+    def all_arithmetic_filters(self, value):
+        raise NotImplementedError
+
+    @property
     def join_edges(self):
         return self._workingCopy.join_edges
 
