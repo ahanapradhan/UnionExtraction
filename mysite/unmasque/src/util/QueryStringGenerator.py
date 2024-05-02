@@ -85,8 +85,8 @@ def get_join_nodes_from_edge(edge):
     nodes = edge.split("=")
     left_node = nodes[0].split(".")
     right_node = nodes[1].split(".")
-    left = (left_node[0].trim(), left_node[1].trim())
-    right = (right_node[0].trim(), right_node[1].trim())
+    left = (left_node[0].strip(), left_node[1].strip())
+    right = (right_node[0].strip(), right_node[1].strip())
     return (left, right)
 
 
