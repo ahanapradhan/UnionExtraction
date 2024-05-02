@@ -7,78 +7,6 @@ from mysite.unmasque.src.util.constants import COUNT, SUM, max_str_len
 from mysite.unmasque.src.util.utils import get_format, get_datatype_of_val
 
 
-class QueryString:
-
-    def __init__(self):
-        self._select_op = None
-        self._from_op = None
-        self._where_op = None
-        self._group_by_op = None
-        self._order_by_op = None
-        self._limit_op = None
-
-    @property
-    def select_op(self):
-        return self._select_op
-
-    @select_op.setter
-    def select_op(self, value):
-        self._select_op = value
-
-    @property
-    def from_op(self):
-        return self._from_op
-
-    @from_op.setter
-    def from_op(self, value):
-        self._from_op = value
-
-    @property
-    def where_op(self):
-        return self._where_op
-
-    @where_op.setter
-    def where_op(self, value):
-        self._where_op = value
-
-    @property
-    def group_by_op(self):
-        return self._group_by_op
-
-    @group_by_op.setter
-    def group_by_op(self, value):
-        self._group_by_op = value
-
-    @property
-    def order_by_op(self):
-        return self._order_by_op
-
-    @order_by_op.setter
-    def order_by_op(self, value):
-        self._order_by_op = value
-
-    @property
-    def limit_op(self):
-        return self._limit_op
-
-    @limit_op.setter
-    def limit_op(self, value):
-        self._limit_op = value
-
-    def assembleQuery(self):
-        output = f"Select {self.select_op}\n From {self.from_op}"
-        if self.where_op is not None:
-            output = f"{output} \n Where {self.where_op}"
-        if self.group_by_op is not None:
-            output = f"{output} \n Group By {self.group_by_op}"
-        if self.order_by_op is not None:
-            output = f"{output} \n Order By {self.order_by_op}"
-        if self.limit_op is not None:
-            output = f"{output} \n Limit {self.limit_op}"
-        output = f"{output};"
-        return output
-
-
 class QueryDetails:
     def __init__(self):
         self.core_relations = []
@@ -123,6 +51,23 @@ class QueryDetails:
             self.where_op = f'{self.where_op} and {predicate}'
         else:
             self.where_op = predicate
+
+    def append_clause(self, output, clause, param):
+        if param is not None and param != '':
+            output = f"{output} \n {clause} {param}"
+        return output
+
+    def assembleQuery(self, gaol=True):
+        output = ""
+        output = self.append_clause(output, "Select", self.select_op)
+        output = self.append_clause(output, "From", self.from_op)
+        output = self.append_clause(output, "Where", self.where_op)
+        if gaol:
+            output = self.append_clause(output, "Group By", self.group_by_op)
+            output = self.append_clause(output, "Order By", self.order_by_op)
+            output = self.append_clause(output, "Limit", self.limit_op)
+        output = f"{output};"
+        return output
 
 
 class QueryStringGenerator:
@@ -237,7 +182,8 @@ class QueryStringGenerator:
     @join_edges.setter
     def join_edges(self, value):
         self._workingCopy.join_edges = value
-        self._workingCopy.eq_join_predicates.clear()  # when join edges are assigned directly, old equi join predicates are obsolete
+        self._workingCopy.eq_join_predicates.clear()  # when join edges are assigned directly, old equi join
+        # predicates are obsolete
 
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:
@@ -308,25 +254,11 @@ class QueryStringGenerator:
         self.logger.debug(self._workingCopy.order_by_op)
         self.logger.debug(self._workingCopy.limit_op)
 
-        query = QueryString()
-        self.__generate_SPJ_string(query)
-        if gaol:
-            self.__generate_GAOL_string(query)
-        query_string = query.assembleQuery()
+        query_string = self._workingCopy.assembleQuery(gaol)
         key = hash(query_string)
         if key not in self._queries:
-            self._queries[key] = (query, copy.deepcopy(self._workingCopy))
+            self._queries[key] = (query_string, copy.deepcopy(self._workingCopy))
         return query_string
-
-    def __generate_SPJ_string(self, query):
-        query.select_op = self._workingCopy.select_op
-        query.from_op = self._workingCopy.from_op
-        query.where_op = self._workingCopy.where_op if self._workingCopy.where_op != '' else None
-
-    def __generate_GAOL_string(self, query):
-        query.group_by_op = self._workingCopy.group_by_op if self._workingCopy.group_by_op != '' else None
-        query.order_by_op = self._workingCopy.order_by_op if self._workingCopy.order_by_op != '' else None
-        query.limit_op = self._workingCopy.limit_op if self._workingCopy.limit_op != '' else None
 
     def formulate_predicate_from_filter(self, elt):
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[4]
