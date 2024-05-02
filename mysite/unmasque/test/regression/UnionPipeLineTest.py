@@ -80,6 +80,20 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(pstr is not None)
         self.conn.closeConnection()
 
+    def test_unionQuery_ui_caught_case_outerJoin(self):
+        self.conn.connectUsingParams()
+        query = "(SELECT c_custkey as key, c_name as name FROM customer LEFT OUTER JOIN nation on c_nationkey = " \
+                "n_nationkey and " \
+                "n_name = 'UNITED STATES') UNION ALL " \
+                "(SELECT p_partkey as key, p_name as name FROM part RIGHT OUTER JOIN lineitem on p_partkey = l_partkey " \
+                "and l_quantity > 35);"
+
+        db = UnionFromClause(self.conn)
+        p, pstr, _ = algorithm1.algo(db, query)
+        self.assertEqual(p, {frozenset({'customer', 'nation'}), frozenset({'part', 'lineitem'})})
+        self.assertTrue(pstr is not None)
+        self.conn.closeConnection()
+
     def test_random_nonUnion(self):
         query = "SELECT o_orderdate, SUM(l_extendedprice) AS total_price " \
                 "FROM orders, lineitem where o_orderkey = l_orderkey " \
@@ -153,6 +167,22 @@ class MyTestCase(BaseTestCase):
                 "and o_totalprice > 60000 " \
                 "Group By l_shipmode " \
                 "Order By l_shipmode;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_outer_join(self):
+        query = "select n_name from nation FULL OUTER JOIN region on n_regionkey = r_regionkey and r_name = 'AFRICA'" \
+                " UNION ALL " \
+                "select n_name from nation RIGHT OUTER JOIN customer on " \
+                "c_nationkey = n_nationkey and c_acctbal < 1000;"
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = True
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)

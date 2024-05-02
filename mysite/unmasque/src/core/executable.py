@@ -48,8 +48,20 @@ class Executable(Base):
             result.append(tuple(colnames))
         # self.logger.debug("add_header")
 
+    def isQ_result_nonEmpty_nullfree(self, Res):
+        return not self.isQ_result_empty(Res)
+
     def isQ_result_empty(self, Res):
-        # self.logger.debug("isQ_result_empty")
         if len(Res) <= 1:
             return True
         return False
+
+    def isQ_result_has_no_data(self, Res):
+        return self.isQ_result_empty(Res)
+
+    def isQ_result_all_null(self, Res):
+        return self.isQ_result_empty(Res)
+
+    def isQ_result_has_some_data(self, Res):
+        return not self.isQ_result_empty(Res)
+

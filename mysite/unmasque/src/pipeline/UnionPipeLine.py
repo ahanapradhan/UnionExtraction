@@ -1,11 +1,11 @@
 from time import sleep
 
-from .ExtractionPipeLine import ExtractionPipeLine
+from .OuterJoinPipeLine import OuterJoinPipeLine
 from ..core.union import Union
 from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
 
 
-class UnionPipeLine(ExtractionPipeLine):
+class UnionPipeLine(OuterJoinPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper)
