@@ -3,13 +3,15 @@ from datetime import date
 from typing import Tuple, Union
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from ..util.QueryStringGenerator import QueryStringGenerator
 
 
 class OuterJoin(GenerationPipeLineBase):
     join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ' RIGHT OUTER JOIN ',
                 ('h', 'l'): ' LEFT OUTER JOIN ', ('h', 'h'): ' FULL OUTER JOIN '}
 
-    def __init__(self, connectionHelper, global_pk_dict, delivery, projected_attributes, q_gen, projected_names):
+    def __init__(self, connectionHelper, global_pk_dict, delivery, projected_attributes,
+                 q_gen: QueryStringGenerator, projected_names):
         super().__init__(connectionHelper, "Outer Join", delivery)
         self.global_pk_dict = global_pk_dict
         self.check_nep_again = False
@@ -246,12 +248,8 @@ class OuterJoin(GenerationPipeLineBase):
                 imp_t1, imp_t2 = self.determine_join_edge_type(edge, table1, table2)
                 flag_first, from_op = self.generate_from_on_clause(edge, flag_first, fp_on,
                                                                    imp_t1, imp_t2, table1, table2, from_op)
-            self.generate_where_clause(fp_where, where_op)
-            # assemble the rest of the query
-            self.q_gen.from_op = from_op
-            self.q_gen.where_op = where_op
-            self.logger.debug(f"from and where op of q_gen: {self.q_gen.from_op}, {self.q_gen.where_op}")
-            q_candidate = self.q_gen.write_query()
+            where_op = self.generate_where_clause(fp_where, where_op)
+            q_candidate = self.generate_candidate_query(from_op, where_op)
             self.logger.debug("+++++++++++++++++++++")
             if q_candidate.count('OUTER'):
                 set_possible_queries.append(q_candidate)
@@ -260,6 +258,15 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug(q)
 
         return set_possible_queries, fp_on
+
+    def generate_candidate_query(self, from_op, where_op):
+        # assemble the rest of the query
+        self.q_gen.from_op = from_op
+        self.q_gen.where_op = where_op
+        self.logger.debug(f"from and where op of q_gen: {self.q_gen.from_op}, "
+                          f"{self.q_gen.where_op}")
+        q_candidate = self.q_gen.write_query()
+        return q_candidate
 
     def determine_on_and_where_filters(self, query):
         filter_pred_on, filter_pred_where = [], []
@@ -283,6 +290,7 @@ class OuterJoin(GenerationPipeLineBase):
             predicate = self.q_gen.formulate_predicate_from_filter(elt)
             where_op = predicate if where_op == '' else where_op + " and " + predicate
         self.logger.debug(f"Locally generated Where_op: {where_op}")
+        return where_op
 
     def generate_from_on_clause(self, edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2, from_op):
         type_of_join = self.join_map.get((imp_t1, imp_t2))

@@ -257,7 +257,6 @@ class QueryStringGenerator:
         self.write_query()  # take backup of current working copy
 
     def write_query(self, gaol=True) -> str:
-
         self.logger.debug(f"Select: {self._workingCopy.select_op}")
         self.logger.debug(f"From: {self._workingCopy.from_op}")
         self.logger.debug(f"Where: {self._workingCopy.where_op}")
