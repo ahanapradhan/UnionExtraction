@@ -75,7 +75,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.pipeline.time_profile.print()
 
-
     def test_multiple_outer_join(self):
         self.conn.config.detect_or = False
         query = "SELECT p_name, s_phone, ps_supplycost " \

@@ -42,17 +42,25 @@ class MyTestCase(unittest.TestCase):
         sample.print()
 
     def test_remove_NE_string_q_gen(self):
-        conn = ConnectionHelperFactory().createConnectionHelper()
+        self.conn = ConnectionHelperFactory().createConnectionHelper()
         elf = ['partsupp', 'ps_comment', '<>', 'hello world regular mina dependencies']
-        q_gen = QueryStringGenerator(conn)
+        q_gen = QueryStringGenerator(self.conn)
         where_op = 'ps_suppkey = s_suppkey and s_nationkey = n_nationkey and ' \
                          'n_name = \'ARGENTINA\' and ps_comment <> \'dependencies\' ' \
                          'and ps_comment <> \'hello world regular mina dependencies\''
-        q_gen._workingCopy.where_op = where_op
+        q_gen.where_op = where_op
         q_gen._remove_exact_NE_string_predicate(elf)
-        print(q_gen._workingCopy.where_op)
-        self.assertEqual(q_gen._workingCopy.where_op, 'ps_suppkey = s_suppkey and '
+        print(q_gen.where_op)
+        self.assertEqual(q_gen.where_op, 'ps_suppkey = s_suppkey and '
                                          's_nationkey = n_nationkey and n_name = \'ARGENTINA\'')
+
+    def test_qgen(self):
+        self.conn = ConnectionHelperFactory().createConnectionHelper()
+        q_gen = QueryStringGenerator(self.conn)
+        q_gen.where_op = "Hello"
+        self.assertEqual("Hello", q_gen.where_op)
+        self.assertEqual("Hello", q_gen._workingCopy.where_op)
+
 
 
 

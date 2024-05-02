@@ -7,6 +7,12 @@ from mysite.unmasque.src.util.constants import COUNT, SUM, max_str_len
 from mysite.unmasque.src.util.utils import get_format, get_datatype_of_val
 
 
+def append_clause(output, clause, param):
+    if param is not None and param != '':
+        output = f"{output} \n {clause} {param}"
+    return output
+
+
 class QueryDetails:
     def __init__(self):
         self.core_relations = []
@@ -52,20 +58,15 @@ class QueryDetails:
         else:
             self.where_op = predicate
 
-    def append_clause(self, output, clause, param):
-        if param is not None and param != '':
-            output = f"{output} \n {clause} {param}"
-        return output
-
     def assembleQuery(self, gaol=True):
         output = ""
-        output = self.append_clause(output, "Select", self.select_op)
-        output = self.append_clause(output, "From", self.from_op)
-        output = self.append_clause(output, "Where", self.where_op)
+        output = append_clause(output, "Select", self.select_op)
+        output = append_clause(output, "From", self.from_op)
+        output = append_clause(output, "Where", self.where_op)
         if gaol:
-            output = self.append_clause(output, "Group By", self.group_by_op)
-            output = self.append_clause(output, "Order By", self.order_by_op)
-            output = self.append_clause(output, "Limit", self.limit_op)
+            output = append_clause(output, "Group By", self.group_by_op)
+            output = append_clause(output, "Order By", self.order_by_op)
+            output = append_clause(output, "Limit", self.limit_op)
         output = f"{output};"
         return output
 
@@ -257,12 +258,12 @@ class QueryStringGenerator:
 
     def write_query(self, gaol=True) -> str:
 
-        self.logger.debug(self._workingCopy.select_op)
-        self.logger.debug(self._workingCopy.from_op)
-        self.logger.debug(self._workingCopy.where_op)
-        self.logger.debug(self._workingCopy.group_by_op)
-        self.logger.debug(self._workingCopy.order_by_op)
-        self.logger.debug(self._workingCopy.limit_op)
+        self.logger.debug(f"Select: {self._workingCopy.select_op}")
+        self.logger.debug(f"From: {self._workingCopy.from_op}")
+        self.logger.debug(f"Where: {self._workingCopy.where_op}")
+        self.logger.debug(f"Group by: {self._workingCopy.group_by_op}")
+        self.logger.debug(f"Order by: {self._workingCopy.order_by_op}")
+        self.logger.debug(f"Limit: {self._workingCopy.limit_op}")
 
         query_string = self._workingCopy.assembleQuery(gaol)
         key = hash(query_string)

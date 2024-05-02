@@ -250,6 +250,7 @@ class OuterJoin(GenerationPipeLineBase):
             # assemble the rest of the query
             self.q_gen.from_op = from_op
             self.q_gen.where_op = where_op
+            self.logger.debug(f"from and where op of q_gen: {self.q_gen.from_op}, {self.q_gen.where_op}")
             q_candidate = self.q_gen.write_query()
             self.logger.debug("+++++++++++++++++++++")
             if q_candidate.count('OUTER'):
@@ -281,6 +282,7 @@ class OuterJoin(GenerationPipeLineBase):
         for elt in fp_where:
             predicate = self.q_gen.formulate_predicate_from_filter(elt)
             where_op = predicate if where_op == '' else where_op + " and " + predicate
+        self.logger.debug(f"Locally generated Where_op: {where_op}")
 
     def generate_from_on_clause(self, edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2, from_op):
         type_of_join = self.join_map.get((imp_t1, imp_t2))
@@ -307,10 +309,6 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug("error sneha!!!")
         self.logger.debug(imp_t1, imp_t2)
         return imp_t1, imp_t2
-
-    def add_where_clause(self, elt):
-        predicate = self.q_gen.formulate_predicate_from_filter(elt)
-        self.q_gen.where_op = predicate if self.q_gen.where_op == '' else self.q_gen.where_op + " and " + predicate
 
     def extract_params_from_args(self, args):
         return args[0]
