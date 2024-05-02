@@ -70,6 +70,16 @@ class QueryDetails:
         return output
 
 
+def get_formatted_value(datatype, value):
+    if isinstance(value, list):
+        f_value = f"{', '.join(value)}"
+        if len(value) > 1:
+            f_value = f"({f_value})"
+    else:
+        f_value = get_format(datatype, value)
+    return f_value
+
+
 class QueryStringGenerator:
     def __init__(self, connectionHelper):
         self.connectionHelper = connectionHelper
@@ -263,8 +273,8 @@ class QueryStringGenerator:
     def formulate_predicate_from_filter(self, elt):
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[4]
         datatype = self.get_datatype((tab, attrib))
-        f_lb = f"({', '.join(lb)})" if isinstance(lb, list) and len(lb) > 1 else get_format(datatype, lb)
-        f_ub = f"({', '.join(ub)})" if isinstance(ub, list) and len(ub) > 1 else get_format(datatype, ub)
+        f_lb = get_formatted_value(datatype, lb)
+        f_ub = get_formatted_value(datatype, ub)
         if op == 'range':
             predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
         elif op == '>=':
