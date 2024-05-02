@@ -126,7 +126,7 @@ class HiddenAggregate(GenerationPipeLineBase):
                     if self.comparator.row_count_r_e > self.comparator.row_count_r_h:
                         self.logger.info(" It is a nested aggregate in the WHERE clause. ")
                         inner_filter, value = self.__filter_candidates(tab, query, Q_E)
-                        self.Q_E = self.q_generator.formulate_query_string(self.inner_select, inner_filter, value)
+                        self.Q_E = self.q_generator.formulate_nested_query_string(self.inner_select, inner_filter, value)
                         break
         return self.Q_E
 
