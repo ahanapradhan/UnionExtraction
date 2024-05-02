@@ -81,6 +81,15 @@ def get_formatted_value(datatype, value):
     return f_value
 
 
+def get_join_nodes_from_edge(edge):
+    nodes = edge.split("=")
+    left_node = nodes[0].split(".")
+    right_node = nodes[1].split(".")
+    left = (left_node[0].trim(), left_node[1].trim())
+    right = (right_node[0].trim(), right_node[1].trim())
+    return (left, right)
+
+
 class QueryStringGenerator:
     def __init__(self, connectionHelper):
         self.connectionHelper = connectionHelper
@@ -569,8 +578,9 @@ class QueryStringGenerator:
 
         dependent_join_edges, independent_join_edges = [], []
         for edge in self.join_edges:
-            self.logger.debug(f"join edge {edge}")
-            tabs = [v[0] for v in edge if len(v) == 2]
+            s_edge = get_join_nodes_from_edge(edge)
+            self.logger.debug(f"join edge {s_edge}")
+            tabs = [v[0] for v in s_edge if len(v) == 2]
             self.logger.debug(f"tabs: {tabs}")
             are_all_out = [True if tab in outer_from_relations else False for tab in tabs]
             self.logger.debug(f"are_all_out: {are_all_out}")
