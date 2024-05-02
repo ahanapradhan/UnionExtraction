@@ -263,8 +263,8 @@ class QueryStringGenerator:
     def formulate_predicate_from_filter(self, elt):
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[4]
         datatype = self.get_datatype((tab, attrib))
-        f_lb = f"({', '.join(lb)})" if isinstance(lb, list) else get_format(datatype, lb)
-        f_ub = f"({', '.join(ub)})" if isinstance(ub, list) else get_format(datatype, ub)
+        f_lb = f"({', '.join(lb)})" if isinstance(lb, list) and len(lb) > 1 else get_format(datatype, lb)
+        f_ub = f"({', '.join(ub)})" if isinstance(ub, list) and len(ub) > 1 else get_format(datatype, ub)
         if op == 'range':
             predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
         elif op == '>=':
