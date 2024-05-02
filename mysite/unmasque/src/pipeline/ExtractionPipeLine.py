@@ -185,7 +185,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         self.time_profile.update(time_profile)
 
-        # eq = self._extract_nested_aggregate(eq, self.q_generator, query, delivery, self.global_pk_dict)
+        eq = self._extract_nested_aggregate(eq, self.q_generator, query, delivery, self.global_pk_dict)
 
         eq = self._extract_NEP(core_relations, self.all_sizes, query, delivery)
 
