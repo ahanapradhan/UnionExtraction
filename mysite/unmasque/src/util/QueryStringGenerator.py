@@ -573,9 +573,6 @@ class QueryStringGenerator:
         return output
 
     def formulate_nested_query_string(self, inner_select, inner_filter, value):
-        ref_q = self.create_new_query()
-        self.logger.debug("ref_q:", ref_q)
-
         self._workingCopy.filter_predicates.remove(inner_filter)
         tab = inner_filter[0]
         other_innser_filters = []
@@ -606,11 +603,13 @@ class QueryStringGenerator:
 
         outer_query = self.make_nested_query_string(dependent_join_edges, independent_join_edges, inner_filter,
                                                     inner_from_relations, inner_select, other_innser_filters,
-                                                    outer_from_relations, ref_q, value)
+                                                    outer_from_relations, value)
         return outer_query
 
     def make_nested_query_string(self, dependent_join_edges, independent_join_edges, inner_filter, inner_from_relations,
-                                 inner_select, other_innser_filters, outer_from_relations, ref_q, value):
+                                 inner_select, other_innser_filters, outer_from_relations, value):
+        ref_q = self.create_new_query()
+        self.logger.debug("ref_q:", ref_q)
         # make inner query
         self.select_op = inner_select
         inner_query = self.rewrite_query(inner_from_relations,
