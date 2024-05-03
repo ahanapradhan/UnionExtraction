@@ -2,7 +2,7 @@ import configparser
 from pathlib import Path
 
 from .application_type import ApplicationType
-from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
+from .constants import DATABASE_SECTION, DETECT_HAVING, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
     DETECT_OJ
 
@@ -34,6 +34,7 @@ class Config:
         self.detect_or = False
         self.detect_oj = False
         self.use_cs2 = False
+        self.detect_having = False
         self.app_type = ApplicationType.SQL_ERR_FWD
         self.database = "postgres"
 
@@ -95,3 +96,14 @@ class Config:
         elif detect_oj.lower() == "yes":
             self.detect_oj = True
             # self.detect_union = False
+            self.detect_union = False
+        detect_having = config_object.get(FEATURE_SECTION, DETECT_HAVING)
+        if detect_having.lower() == "no":
+            self.detect_having = False
+        elif detect_having.lower() == "yes":
+            print("Warining: Using Having pipeline. All other features [Union, NEP, OR, OJ] are disabled.")
+            self.detect_union = False
+            self.detect_nep = False
+            self.detect_or = False
+            self.detect_oj = False
+            self.detect_having = True
