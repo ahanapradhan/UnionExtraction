@@ -180,7 +180,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.q_generator.aggregate = agg
         self.q_generator.orderby = ob
         self.q_generator.limit = lm
-        eq = self.q_generator.generate_query_string(self.or_predicates)
+        eq = self.q_generator.generate_query_string(all_ors=self.or_predicates)
         self.logger.debug("extracted query:\n", eq)
 
         self.time_profile.update(time_profile)

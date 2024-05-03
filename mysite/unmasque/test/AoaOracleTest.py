@@ -237,7 +237,7 @@ class MyTestCase(unittest.TestCase):
         lm = Limit(self.conn, gb.group_by_attrib, aoa.pipeline_delivery)
         lm.doJob(query)
         self.assertTrue(lm.done)
-        eq = OldQueryStringGenerator(self.conn).generate_query_string(relations, pj, agg, ob, lm, aoa)
+        eq = OldQueryStringGenerator(self.conn).generate_query_string(relations, all_ors=pj)
         return eq
 
     def test_orders_lineitem_aoa(self):

@@ -255,29 +255,33 @@ class QueryStringGenerator:
         self.logger.debug(where_clause)
         return where_clause
 
-    def generate_query_string(self, gaol=True, all_ors=None):
+    def generate_query_string(self, gaol=True, select=True, all_ors=None):
         self._workingCopy.from_op = ", ".join(self._workingCopy.core_relations)
         self._workingCopy.where_op = self.__generate_where_clause(all_ors)
         self.__generate_group_by_clause()
-        self.__generate_select_clause()
+        self.__generate_select_clause(select)
         eq = self.write_query(gaol)
         return eq
 
-    def rewrite_query(self, core_relations, ed_join_edges, filter_predicates, gaol=True):
+    def rewrite_query(self, core_relations, ed_join_edges, filter_predicates, gaol=True, select=True):
         self.from_clause = core_relations
         self.join_edges = ed_join_edges
         self._workingCopy.filter_predicates = filter_predicates
-        eq = self.generate_query_string(gaol)
+        eq = self.generate_query_string(gaol, select, all_ors=None)
         return eq
 
     def create_new_query(self, ref_query=None):
         lastQueryDetails = QueryDetails()
         lastQueryDetails.makeCopy(self._workingCopy)
-        self.write_query()  # take backup of current working copy
+        self.generate_query_string()  # take backup of current working copy
         if ref_query is not None:
             ref_details = self._queries[hash(ref_query)][1]
             self._workingCopy.makeCopy(ref_details)
-        return lastQueryDetails.assembleQuery()
+        lastgen = QueryStringGenerator(self.connectionHelper)
+        lastgen.get_datatype = self.get_datatype
+        lastgen._workingCopy.makeCopy(lastQueryDetails)
+        backup = lastgen.generate_query_string()
+        return backup
 
     def write_query(self, gaol=True) -> str:
         self.logger.debug(f"Select: {self._workingCopy.select_op}")
@@ -289,6 +293,7 @@ class QueryStringGenerator:
 
         query_string = self._workingCopy.assembleQuery(gaol)
         key = hash(query_string)
+        self.logger.debug("hash key: ", key)
         if key not in self._queries:
             self._queries[key] = (query_string, copy.deepcopy(self._workingCopy))
         return query_string
@@ -398,7 +403,9 @@ class QueryStringGenerator:
                 except:
                     pass
 
-    def __generate_select_clause(self):
+    def __generate_select_clause(self, enable=True):
+        if not enable:
+            return
         for i in range(len(self._workingCopy.global_projected_attributes)):
             elt = self._workingCopy.global_projected_attributes[i]
             if self._workingCopy.global_aggregated_attributes[i][1] != '':
@@ -595,7 +602,7 @@ class QueryStringGenerator:
         # make inner query
         self.select_op = inner_select
         inner_query = self.rewrite_query(inner_from_relations,
-                                         dependent_join_edges, other_innser_filters, False)
+                                         dependent_join_edges, other_innser_filters, False, False)
         inner_query = inner_query.replace(';', '')
         nested_pred = f"({inner_query}) {inner_filter[2]} {value}"
 
