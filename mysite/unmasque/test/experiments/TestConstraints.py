@@ -123,16 +123,6 @@ class MyTestCase(unittest.TestCase):
         q_gen.get_datatype = self.get_datatype
 
         q_gen._workingCopy.makeCopy(testDetails)
-
-        eq = q_gen.generate_query_string()
-        print(eq)
-
-        eq = q_gen.write_query()
-        print(eq)
-
-        newq = q_gen.create_new_query()
-        print(newq)
-
         eq = q_gen.formulate_nested_query_string('AVG(o_totalprice)',
                                                  ('orders', 'o_totalprice', "<=", -2147483648.88, 120000), 120000)
         print(eq)

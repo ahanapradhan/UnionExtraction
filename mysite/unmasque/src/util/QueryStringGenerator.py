@@ -281,6 +281,8 @@ class QueryStringGenerator:
         lastgen.get_datatype = self.get_datatype
         lastgen._workingCopy.makeCopy(lastQueryDetails)
         backup = lastgen.generate_query_string()
+        for key in lastgen._queries.keys():
+            self._queries[key] = lastgen._queries[key]
         return backup
 
     def write_query(self, gaol=True) -> str:
@@ -296,6 +298,7 @@ class QueryStringGenerator:
         self.logger.debug("hash key: ", key)
         if key not in self._queries:
             self._queries[key] = (query_string, copy.deepcopy(self._workingCopy))
+        self.logger.debug("query_dict: ", self._queries)
         return query_string
 
     def formulate_predicate_from_filter(self, elt):
@@ -570,6 +573,9 @@ class QueryStringGenerator:
         return output
 
     def formulate_nested_query_string(self, inner_select, inner_filter, value):
+        ref_q = self.create_new_query()
+        self.logger.debug("ref_q:", ref_q)
+
         self._workingCopy.filter_predicates.remove(inner_filter)
         tab = inner_filter[0]
         other_innser_filters = []
@@ -598,18 +604,26 @@ class QueryStringGenerator:
                 dependent_join_edges.append(edge)
                 self.logger.debug("dependent")
 
-        ref_q = self.create_new_query()
+        outer_query = self.make_nested_query_string(dependent_join_edges, independent_join_edges, inner_filter,
+                                                    inner_from_relations, inner_select, other_innser_filters,
+                                                    outer_from_relations, ref_q, value)
+        return outer_query
+
+    def make_nested_query_string(self, dependent_join_edges, independent_join_edges, inner_filter, inner_from_relations,
+                                 inner_select, other_innser_filters, outer_from_relations, ref_q, value):
         # make inner query
         self.select_op = inner_select
         inner_query = self.rewrite_query(inner_from_relations,
                                          dependent_join_edges, other_innser_filters, False, False)
         inner_query = inner_query.replace(';', '')
         nested_pred = f"({inner_query}) {inner_filter[2]} {value}"
-
+        self.logger.debug("nested pred: ", nested_pred)
         # make outer query
         self.create_new_query(ref_q)
-        self.rewrite_query(outer_from_relations, independent_join_edges, self.all_arithmetic_filters)
+        outer_query = self.rewrite_query(outer_from_relations, independent_join_edges, self.all_arithmetic_filters)
+        self.logger.debug("Outer query init: ", outer_query)
         outer_query = self.updateWhereClause(nested_pred)
+        self.logger.debug("Outer query final: ", outer_query)
         return outer_query
 
 
