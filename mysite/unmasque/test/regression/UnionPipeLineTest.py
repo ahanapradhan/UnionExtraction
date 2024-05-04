@@ -181,9 +181,10 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
     def test_outer_join(self):
-        query = "select n_name from nation LEFT OUTER JOIN region on n_regionkey = r_regionkey and r_name = 'AFRICA'" \
+        query = "select n_name, r_comment from nation LEFT OUTER JOIN region " \
+                "on n_regionkey = r_regionkey and r_name = 'AFRICA'" \
                 " UNION ALL " \
-                "select n_name from nation RIGHT OUTER JOIN customer on " \
+                "select n_name, c_comment from nation RIGHT OUTER JOIN customer on " \
                 "c_nationkey = n_nationkey and c_acctbal < 1000;"
         self.conn.config.detect_oj = True
         self.conn.config.detect_union = True

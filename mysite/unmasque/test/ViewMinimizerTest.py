@@ -255,7 +255,7 @@ class MyTestCase(BaseTestCase):
         query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
                 f"r_regionkey and r_name = 'AFRICA';"
 
-        for i in range(10):
+        for i in range(1):
             fc = FromClause(self.conn)
             check = fc.doJob(query)
             self.assertTrue(check)

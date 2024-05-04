@@ -172,7 +172,6 @@ class MyTestCase(BaseTestCase):
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
         db = UnionFromClause(self.conn)
-        #db = TPCH()
 
         p, pstr, _ = algorithm1.algo(db, query)
         self.assertEqual(p, {frozenset({'lineitem', 'part'}), frozenset({'lineitem', 'orders'}),
@@ -180,6 +179,26 @@ class MyTestCase(BaseTestCase):
         self.assertTrue("FROM(q1)" in pstr)
         self.assertTrue("FROM(q2)" in pstr)
         self.assertTrue("FROM(q3)" in pstr)
+        self.conn.closeConnection()
+    def test_outerjoin_case(self):
+        query = "select n_name, r_comment from nation LEFT OUTER JOIN region on n_regionkey = r_regionkey and r_name " \
+                "= 'AFRICA'" \
+                " UNION ALL " \
+                "select n_name, c_comment from nation RIGHT OUTER JOIN customer on " \
+                "c_nationkey = n_nationkey and c_acctbal < 1000;"
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = True
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+        db = UnionFromClause(self.conn)
+
+        p, pstr, _ = algorithm1.algo(db, query)
+        print(p)
+        print(pstr)
+        self.assertEqual(p, {frozenset({'nation', 'region'}),
+                             frozenset({'customer', 'nation'})})
+        self.assertTrue("FROM(q1)" in pstr)
+        self.assertTrue("FROM(q2)" in pstr)
         self.conn.closeConnection()
 
 

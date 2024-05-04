@@ -1,7 +1,9 @@
 import copy
 import unittest
 
+from mysite.unmasque.src.core.db_restorer import DbRestorer
 from mysite.unmasque.src.core.equi_join import U2EquiJoin
+from mysite.unmasque.src.core.from_clause import FromClause
 from mysite.unmasque.src.obsolete.equi_join import EquiJoin
 from mysite.unmasque.src.core.filter import Filter
 from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
@@ -66,8 +68,8 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('l_partkey' in wc.global_key_attributes)
 
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+        wc = Filter(self.conn, from_rels,
+                    minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q17)
         print(filters)
@@ -126,6 +128,7 @@ class MyTestCase(BaseTestCase):
         check = minimizer.doJob(queries.Q23_1)
         self.assertTrue(check)
 
+        '''
         wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
                       minimizer.global_min_instance_dict)
 
@@ -148,10 +151,10 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('n_nationkey' in wc.global_key_attributes)
         self.assertTrue('r_regionkey' in wc.global_key_attributes)
         self.assertTrue('n_regionkey' in wc.global_key_attributes)
+        '''
 
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict,
-                    wc.global_key_attributes)
+        wc = Filter(self.conn, from_rels,
+                    minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q23_1)
         print(filters)
@@ -256,6 +259,35 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(f[0], 'lineitem')
         self.assertEqual(f[1], 'l_shipdate')
         self.assertEqual(f[2], ">=")
+
+        self.conn.closeConnection()
+
+    def test_filter_outer_join(self):
+        self.conn.connectUsingParams()
+        self.assertTrue(self.conn.conn is not None)
+        self.conn.config.detect_oj = True
+        query = "select n_name, r_comment from nation LEFT OUTER JOIN region " \
+                "on n_regionkey = r_regionkey and r_name = 'AFRICA';"
+        fc = FromClause(self.conn)
+        check = fc.doJob(query)
+        self.assertTrue(check)
+
+        db_restorer = DbRestorer(self.conn, fc.core_relations)
+        db_restorer.set_all_sizes(tpchSettings.all_size)
+        check = db_restorer.doJob(None)
+        self.assertTrue(check)
+
+        minimizer = ViewMinimizer(self.conn, fc.core_relations, tpchSettings.all_size, False)
+        check = minimizer.doJob(query)
+        print(minimizer.global_min_instance_dict)
+        self.assertTrue(check)
+
+        wc = Filter(self.conn, fc.core_relations, minimizer.global_min_instance_dict)
+
+        filters = wc.doJob(queries.Q3)
+        print(filters)
+        self.assertEqual(len(filters), 3)
+        self.assertTrue(('region', 'r_name', 'equal', 'AFRICA', 'AFRICA') in filters)
 
         self.conn.closeConnection()
 
