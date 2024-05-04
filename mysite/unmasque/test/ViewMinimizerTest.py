@@ -2,6 +2,7 @@ import unittest
 
 from mysite.unmasque.src.core.cs2 import Cs2
 from mysite.unmasque.src.core.db_restorer import DbRestorer
+from mysite.unmasque.src.core.from_clause import FromClause
 from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -253,15 +254,18 @@ class MyTestCase(BaseTestCase):
         self.conn.config.detect_oj = True
         query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
                 f"r_regionkey and r_name = 'AFRICA';"
-        from_rels = ['region', 'nation']
 
         for i in range(10):
-            db_restorer = DbRestorer(self.conn, from_rels)
+            fc = FromClause(self.conn)
+            check = fc.doJob(query)
+            self.assertTrue(check)
+
+            db_restorer = DbRestorer(self.conn, fc.core_relations)
             db_restorer.set_all_sizes(tpchSettings.all_size)
             check = db_restorer.doJob(None)
             self.assertTrue(check)
 
-            minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
+            minimizer = ViewMinimizer(self.conn, fc.core_relations, tpchSettings.all_size, False)
             check = minimizer.doJob(query)
             print(minimizer.global_min_instance_dict)
 
