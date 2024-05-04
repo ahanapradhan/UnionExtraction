@@ -80,3 +80,4 @@ class TpchSanitizer:
             row_count = self.connectionHelper.execute_sql_fetchone_0(
                 self.connectionHelper.queries.get_row_count(tab))
             self.all_sizes[tab] = row_count
+        return self.all_sizes
