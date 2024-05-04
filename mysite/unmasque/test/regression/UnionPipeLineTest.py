@@ -2,6 +2,7 @@ import unittest
 
 import pytest
 
+from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from ...src.core import algorithm1
 from ...src.core.union_from_clause import UnionFromClause
 from ...src.pipeline.UnionPipeLine import UnionPipeLine
@@ -13,7 +14,12 @@ class MyTestCase(BaseTestCase):
 
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
-        self.pipeline = UnionPipeLine(self.conn)
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_or = False
+        self.conn.config.detect_oj = False
+        self.conn.config.detect_union = True
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
 
     def test_nonUnion_query(self):
         key = 'Q1'

@@ -117,7 +117,8 @@ class Projection(GenerationPipeLineBase):
             diff = find_diff_idx(new_result1, new_result)
             if diff:
                 for d in diff:
-                    projection_dep[d].append((tabname, attrib))
+                    if (tabname, attrib) not in projection_dep[d]:
+                        projection_dep[d].append((tabname, attrib))
         keys_to_skip = keys_to_skip + other_attribs
         for other_attrib in other_attribs:
             s_value_dict[other_attrib] = val
@@ -141,7 +142,8 @@ class Projection(GenerationPipeLineBase):
             self.logger.debug("diff: ", diff)
             if diff:
                 for d in diff:
-                    projection_dep[d].append((tabname, attrib))
+                    if (tabname, attrib) not in projection_dep[d]:
+                        projection_dep[d].append((tabname, attrib))
         else:
             self.logger.debug("Got empty result!!!!")
         return val
@@ -257,7 +259,7 @@ class Projection(GenerationPipeLineBase):
 
             # print(self.app.doJob(query), b)
             exe_result = self.app.doJob(query)
-            if len(exe_result) > 1:
+            if not self.app.isQ_result_empty(exe_result):
                 b[i][0] = exe_result[1][idx]
 
         solution = np.linalg.solve(coeff, b)

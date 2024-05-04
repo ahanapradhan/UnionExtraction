@@ -21,12 +21,10 @@ class UnionPipeLine(OuterJoinPipeLine):
         self.update_state(UNION + RUNNING)
         p, pstr, union_profile = union.doJob(query)
         self.update_state(UNION + DONE)
+        self.all_sizes = union.get_all_sizes()
         self.connectionHelper.closeConnection()
 
-        l = []
-        for ele in p:
-            l.append(list(ele))
-        self.info[UNION] = l
+        self.info[UNION] = [list(ele) for ele in p]
         self.__update_time_profile(union, union_profile)
         self.core_relations = [item for subset in p for item in subset]
         self.all_relations = union.all_relations
@@ -62,11 +60,9 @@ class UnionPipeLine(OuterJoinPipeLine):
         return result
 
     def __post_process(self, pstr, u_eq):
-        u_Q = "\n UNION ALL \n".join(u_eq)
-        u_Q += ";"
-        if "UNION ALL" not in u_Q:
-            if u_Q.startswith('(') and u_Q.endswith(');'):
-                u_Q = u_Q[1:-2] + ';'
+        u_Q = "\n UNION ALL \n".join(u_eq) + ";"
+        if "UNION ALL" not in u_Q and u_Q.startswith('(') and u_Q.endswith(');'):
+            u_Q = u_Q[1:-2] + ';'
         result = ""
         if self.pipeLineError:
             result = f"Could not extract the query due to errors {self.state}." \
@@ -86,7 +82,6 @@ class UnionPipeLine(OuterJoinPipeLine):
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab,
                                                                                                    self.connectionHelper.queries.get_tabname_un(
                                                                                                        tab)), "commit;"], self.logger)
-            sleep(1)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_like(tab,
                                                                                                self.connectionHelper.queries.get_tabname_un(
                                                                                                    tab))], self.logger)
