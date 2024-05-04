@@ -10,8 +10,8 @@ class OuterJoinPipeLine(ExtractionPipeLine):
         self.name = "Outer Join PipeLine"
         self.pipeLineError = False
 
-    def extract(self, query):
-        eq = super().extract(query)
+    def _after_from_clause_extract(self, query, core_relations):
+        eq = super()._after_from_clause_extract(query, core_relations)
 
         self.connectionHelper.connectUsingParams()
         self.update_state(OUTER_JOIN + START)
