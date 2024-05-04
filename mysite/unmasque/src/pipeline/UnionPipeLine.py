@@ -21,17 +21,16 @@ class UnionPipeLine(OuterJoinPipeLine):
         self.update_state(UNION + RUNNING)
         p, pstr, union_profile = union.doJob(query)
         self.update_state(UNION + DONE)
+        self.connectionHelper.closeConnection()
 
         self.info[UNION] = [list(ele) for ele in p]
         self.__update_time_profile(union, union_profile)
         self.core_relations = [item for subset in p for item in subset]
         self.all_relations = union.all_relations
-        self.all_sizes = union.get_all_sizes()
-
+        self.all_sizes = union.all_sizes
         self.key_lists = union.key_lists
-        self.logger.debug(f"all sizes, {self.all_sizes}, key list: {self.key_lists}")
+        self.logger.debug(f"relations, {self.all_relations} all sizes, {self.all_sizes}, key list: {self.key_lists}")
         u_eq = []
-        self.connectionHelper.closeConnection()
 
         for rels in p:
             core_relations = [r for r in rels]
