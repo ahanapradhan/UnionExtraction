@@ -13,6 +13,14 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
+    def test_nonUnion_outerJoin(self):
+        self.conn.config.detect_union = False
+        query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
+                f"r_regionkey and r_name = 'AFRICA';"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
     def test_sneha_outer_join_basic(self):
         self.conn.config.detect_or = False
         query = "Select ps_suppkey, p_name, p_type " \
@@ -74,7 +82,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
         self.pipeline.time_profile.print()
-
 
     def test_multiple_outer_join(self):
         self.conn.config.detect_or = False

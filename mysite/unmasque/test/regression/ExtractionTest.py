@@ -38,11 +38,14 @@ class ExtractionTestCase(BaseTestCase):
     def test_nonUnion_outerJoin(self):
         self.conn.config.detect_oj = True
         self.conn.config.detect_union = False
+        for key, value in vars(self.conn.config).items():
+            print(f"{key}: {value}")
         query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
                 f"r_regionkey and r_name = 'AFRICA';"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(self.pipeline.correct)
+
 
     def test_redundant_selfjoin(self):
         query = "SELECT p.ps_partkey, p.ps_suppkey, p.ps_availqty, p.ps_supplycost, p.ps_comment FROM partsupp AS p " \
