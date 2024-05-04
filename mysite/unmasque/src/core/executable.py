@@ -21,6 +21,12 @@ def is_error(msg):
     return RELATION.lower() in l_msg and REL_ERROR.lower() in l_msg
 
 
+def add_header(description, result):
+    if description is not None and not is_error(description):
+        colnames = [desc[0] for desc in description]
+        result.append(tuple(colnames))
+
+
 class Executable(Base):
 
     def __init__(self, connectionHelper):
@@ -34,7 +40,7 @@ class Executable(Base):
         result = []
         try:
             res, description = self.connectionHelper.execute_sql_fetchall(query, self.logger)
-            self.add_header(description, result)
+            add_header(description, result)
             if res is not None:
                 result = get_result_as_tuple_1(res, result)
         except Exception as error:
@@ -42,11 +48,8 @@ class Executable(Base):
             raise error
         return result
 
-    def add_header(self, description, result):
-        if description is not None and not is_error(description):
-            colnames = [desc[0] for desc in description]
-            result.append(tuple(colnames))
-        # self.logger.debug("add_header")
+    def isQ_result_no_full_nullfree_row(self, Res):
+        return self.isQ_result_empty(Res)
 
     def isQ_result_nonEmpty_nullfree(self, Res):
         return not self.isQ_result_empty(Res)
@@ -64,4 +67,3 @@ class Executable(Base):
 
     def isQ_result_has_some_data(self, Res):
         return not self.isQ_result_empty(Res)
-

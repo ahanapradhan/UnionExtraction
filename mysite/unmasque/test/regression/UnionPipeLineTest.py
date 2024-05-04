@@ -80,19 +80,26 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(pstr is not None)
         self.conn.closeConnection()
 
-    def test_unionQuery_ui_caught_case_outerJoin(self):
-        self.conn.connectUsingParams()
-        query = "(SELECT c_custkey as key, c_name as name FROM customer LEFT OUTER JOIN nation on c_nationkey = " \
-                "n_nationkey and " \
-                "n_name = 'UNITED STATES') UNION ALL " \
-                "(SELECT p_partkey as key, p_name as name FROM part RIGHT OUTER JOIN lineitem on p_partkey = l_partkey " \
-                "and l_quantity > 35);"
+    def test_nonUnion_outerJoin(self):
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = True
+        query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
+                f"r_regionkey and r_name = 'AFRICA';"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
 
-        db = UnionFromClause(self.conn)
-        p, pstr, _ = algorithm1.algo(db, query)
-        self.assertEqual(p, {frozenset({'customer', 'nation'}), frozenset({'part', 'lineitem'})})
-        self.assertTrue(pstr is not None)
-        self.conn.closeConnection()
+    def test_unionQuery_ui_caught_case_outerJoin(self):
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = True
+        query = f"select c_name, n_comment FROM customer FULL OUTER JOIN nation on c_nationkey = " \
+                f"n_nationkey and c_acctbal < 2000 " \
+                f"UNION ALL" \
+                f" select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
+                f"r_regionkey and r_name = 'AFRICA';"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
 
     def test_random_nonUnion(self):
         query = "SELECT o_orderdate, SUM(l_extendedprice) AS total_price " \

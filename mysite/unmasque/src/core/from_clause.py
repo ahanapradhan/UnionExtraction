@@ -38,7 +38,7 @@ class FromClause(AppExtractorBase):
                     [self.connectionHelper.queries.alter_table_rename_to(tabname, "temp"),
                      self.connectionHelper.queries.create_table_like(tabname, "temp")], self.logger)
                 new_result = self.app.doJob(query)
-                if self.app.isQ_result_all_null(new_result):
+                if self.app.isQ_result_no_full_nullfree_row(new_result):
                     self.core_relations.append(tabname)
                     self.logger.info("Table ", tabname, " is in from clause..")
             except Exception as error:

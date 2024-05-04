@@ -6,7 +6,6 @@ import pytest
 
 from mysite.unmasque.src.core.executable import Executable
 from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
-from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.src.Optimizer_config import set_optimizer_params
 from ...test.util import tpchSettings, queries
 from ...test.util.BaseTestCase import BaseTestCase
@@ -35,6 +34,24 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_oj = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+
+    def test_nonUnion_outerJoin(self):
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = False
+        query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
+                f"r_regionkey and r_name = 'AFRICA';"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_redundant_selfjoin(self):
+        query = "SELECT p.ps_partkey, p.ps_suppkey, p.ps_availqty, p.ps_supplycost, p.ps_comment FROM partsupp AS p " \
+                "JOIN (SELECT * FROM partsupp WHERE ps_supplycost < 1000) AS q ON " \
+                "p.ps_partkey = q.ps_partkey;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
 
     def test_for_filter_1(self):
         lower = 11

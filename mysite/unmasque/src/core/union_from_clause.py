@@ -38,7 +38,7 @@ class UnionFromClause(Schema, AppExtractorBase):
         return self.doJob(QH)
 
     def isEmpty(self, Res):
-        return not self.app.isQ_result_has_some_data(Res)
+        return self.app.isQ_result_no_full_nullfree_row(Res)
 
     def extract_params_from_args(self, args):
         return args[0]
