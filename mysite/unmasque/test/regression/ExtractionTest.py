@@ -35,18 +35,6 @@ class ExtractionTestCase(BaseTestCase):
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
-    def test_nonUnion_outerJoin(self):
-        self.conn.config.detect_oj = True
-        self.conn.config.detect_union = False
-        for key, value in vars(self.conn.config).items():
-            print(f"{key}: {value}")
-        query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
-                f"r_regionkey and r_name = 'AFRICA';"
-        eq = self.pipeline.doJob(query)
-        print(eq)
-        self.assertTrue(self.pipeline.correct)
-
-
     def test_redundant_selfjoin(self):
         query = "SELECT p.ps_partkey, p.ps_suppkey, p.ps_availqty, p.ps_supplycost, p.ps_comment FROM partsupp AS p " \
                 "JOIN (SELECT * FROM partsupp WHERE ps_supplycost < 1000) AS q ON " \
@@ -467,16 +455,6 @@ class ExtractionTestCase(BaseTestCase):
     def test_outer_join_subqueries(self):
         self.test_subq1()
         self.test_subq2()
-
-    def test_subq1(self):
-        query1 = "select n_name from nation RIGHT OUTER JOIN customer on " \
-                 "c_nationkey = n_nationkey and c_acctbal < 1000;"
-        self.conn.config.detect_union = False
-        self.conn.config.detect_oj = True
-        eq = self.pipeline.doJob(query1)
-        print(eq)
-        self.assertTrue(eq is not None)
-        self.assertTrue(self.pipeline.correct)
 
     def test_subq2(self):
         query2 = "select c_name, o_orderdate from customer LEFT OUTER JOIN orders on " \

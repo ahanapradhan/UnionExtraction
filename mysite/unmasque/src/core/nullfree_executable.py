@@ -79,9 +79,11 @@ class NullFreeExecutable(Executable):
         return is_result_no_full_nullfree_row(Res, self.logger)
 
     def isQ_result_nonEmpty_nullfree(self, Res):
+        self.logger.debug("nullfree: isQ_result_nonEmpty_nullfree")
         return is_result_nonempty_nullfree(Res, self.logger)
 
     def isQ_result_empty(self, Res):
+        self.logger.debug("nullfree: isQ_result_empty")
         return not is_result_nonempty_nullfree(Res)
 
     def isQ_result_has_no_data(self, Res):

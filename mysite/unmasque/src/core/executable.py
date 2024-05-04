@@ -55,6 +55,7 @@ class Executable(Base):
         return not self.isQ_result_empty(Res)
 
     def isQ_result_empty(self, Res):
+        self.logger.debug("exe: isQ_result_empty")
         if len(Res) <= 1:
             return True
         return False

@@ -34,11 +34,6 @@ class Projection(GenerationPipeLineBase):
         self.param_list = []
 
     def doExtractJob(self, query):
-        res = self.app.doJob(query)
-        if self.app.isQ_result_empty(res):
-            self.logger.error("Cannot do projection. Bye!")
-            return False
-        # return False # test
         s_values = []
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
 
@@ -65,6 +60,7 @@ class Projection(GenerationPipeLineBase):
 
     def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)
+        self.logger.debug("Result: ", new_result)
         if self.app.isQ_result_empty(new_result):
             self.logger.error("Unmasque: \n some error in generating new database. "
                               "Result is empty. Can not identify "
@@ -72,7 +68,7 @@ class Projection(GenerationPipeLineBase):
             return [], [], [], False
 
         projection_names = list(new_result[0])
-        new_result = list(new_result[1])
+        new_result = new_result[1:]
         projected_attrib = []
         keys_to_skip = []
         projection_dep = []
@@ -117,7 +113,7 @@ class Projection(GenerationPipeLineBase):
         self.update_attribs_bulk(join_tabnames, other_attribs, prev)
 
         if not self.app.isQ_result_empty(new_result1):
-            new_result1 = list(new_result1[1])
+            new_result1 = new_result1[1:]
             diff = find_diff_idx(new_result1, new_result)
             if diff:
                 for d in diff:
@@ -137,9 +133,12 @@ class Projection(GenerationPipeLineBase):
             return
         new_result1 = self.app.doJob(query)
         self.update_with_val(attrib, tabname, prev)
+        self.logger.debug("new result: ", new_result1)
         if not self.app.isQ_result_empty(new_result1):
-            new_result1 = list(new_result1[1])
+            new_result1 = new_result1[1:]
+            self.logger.debug("new result: ", new_result1)
             diff = find_diff_idx(new_result1, new_result)
+            self.logger.debug("diff: ", diff)
             if diff:
                 for d in diff:
                     projection_dep[d].append((tabname, attrib))

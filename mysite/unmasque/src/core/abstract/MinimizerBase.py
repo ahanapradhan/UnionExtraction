@@ -97,7 +97,7 @@ class Minimizer(AppExtractorBase, ABC):
             [self.connectionHelper.queries.create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
         new_result = self.app.doJob(query)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(view)])
-        if self.app.isQ_result_nonEmpty_nullfree(new_result):
+        if not self.app.isQ_result_empty(new_result):
             return True  # this half works
         return False  # this half does not work
 
