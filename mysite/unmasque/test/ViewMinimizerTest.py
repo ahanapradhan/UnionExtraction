@@ -270,6 +270,7 @@ class MyTestCase(BaseTestCase):
             print(minimizer.global_min_instance_dict)
 
             self.assertTrue(check)
+        print(self.conn.config)
         self.conn.closeConnection()
 
 
