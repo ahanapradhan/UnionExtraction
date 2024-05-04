@@ -258,7 +258,7 @@ class MyTestCase(BaseTestCase):
         for i in range(10):
             db_restorer = DbRestorer(self.conn, from_rels)
             db_restorer.set_all_sizes(tpchSettings.all_size)
-            check = db_restorer.doJob()
+            check = db_restorer.doJob(None)
             self.assertTrue(check)
 
             minimizer = ViewMinimizer(self.conn, from_rels, tpchSettings.all_size, False)
