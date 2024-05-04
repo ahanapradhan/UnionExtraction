@@ -11,12 +11,12 @@ class UnionFromClause(Schema, AppExtractorBase):
         self.fromtabs = None
         self.to_nullify = None
         self.fromClause = FromClause(connectionHelper)
-        self.relations = []
 
     def get_relations(self):
         if not self.fromClause.init.done:
             self.fromClause.init.doJob()
-        return self.fromClause.all_relations
+        self.set_all_relations(self.fromClause.all_relations)
+        return self.all_relations
 
     def nullify_except(self, s_set):
         self.to_nullify = s_set.difference(self.comtabs)
