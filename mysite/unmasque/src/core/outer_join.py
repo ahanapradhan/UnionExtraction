@@ -168,24 +168,6 @@ class OuterJoin(GenerationPipeLineBase):
         self.logger.debug("new_join_graph: ", new_join_graph)
         return list_of_tables, new_join_graph
 
-    def restore_d_min(self):
-        # preparing D_1
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql(['alter table ' + tabname + ' rename to ' + tabname + '_restore;',
-                                               'create table ' + tabname + ' as select * from ' + tabname + '4;'])
-
-    def backup_relations(self):
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql(['alter table ' + tabname + '_restore rename to ' + tabname + '2;',
-                                               'drop table ' + tabname + ';',
-                                               'alter table ' + tabname + '2 rename to ' + tabname + ';'])
-            # The above command will inherently check if tabname1 exists
-
-    def restore_relations(self):
-        for tabname in self.core_relations:
-            self.connectionHelper.execute_sql(['drop table ' + tabname + ';',
-                                               'alter table ' + tabname + '_restore rename to ' + tabname + ';'])
-
     def remove_semantically_nonEq_queries(self, new_join_graph, query, set_possible_queries, on_predicates):
         # eliminate semanticamy non-equivalent querie from set_possible_queries
         # this code needs to be finished (27 feb)

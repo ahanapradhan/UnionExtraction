@@ -45,8 +45,8 @@ class UnionPipeLine(OuterJoinPipeLine):
             self.__revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
 
-            if time_profile is not None:
-                self.time_profile.update(time_profile)
+            # if time_profile is not None:
+            #    self.time_profile.update(time_profile)
 
             if eq is not None:
                 self.logger.debug(eq)
@@ -80,15 +80,14 @@ class UnionPipeLine(OuterJoinPipeLine):
 
     def __nullify_relations(self, relations):
         for tab in relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab,
-                                                                                                   self.connectionHelper.queries.get_tabname_un(
-                                                                                                       tab)), "commit;"], self.logger)
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_like(tab,
-                                                                                               self.connectionHelper.queries.get_tabname_un(
-                                                                                                   tab))], self.logger)
+            backup_name = self.connectionHelper.queries.get_tabname_un(tab)
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, backup_name),
+                                               self.connectionHelper.queries.create_table_like(tab, backup_name)],
+                                              self.logger)
 
     def __revert_nullifications(self, relations):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
                                                self.connectionHelper.queries.alter_table_rename_to(
-                                                   self.connectionHelper.queries.get_tabname_un(tab), tab)], self.logger)
+                                                   self.connectionHelper.queries.get_tabname_un(tab), tab)],
+                                              self.logger)

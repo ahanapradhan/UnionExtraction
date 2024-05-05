@@ -44,6 +44,11 @@ class ExtractionTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_projection(self):
+        query1 = "select n_name, c_comment from nation RIGHT OUTER JOIN customer on " \
+                 "c_nationkey = n_nationkey and c_acctbal < 1000;"
+
+
 
 if __name__ == '__main__':
     unittest.main()

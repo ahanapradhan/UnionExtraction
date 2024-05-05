@@ -180,7 +180,6 @@ class Filter(UN2WhereClause):
                 self.connectionHelper.execute_sql(
                     [self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)], self.logger)
         new_result = self.app.doJob(query)
-        self.logger.debug(new_result)
         self.revert_filter_changes_in_tabset(attrib_list, prev_values)
         return self.app.isQ_result_nonEmpty_nullfree(new_result)
 

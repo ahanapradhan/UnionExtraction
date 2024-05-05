@@ -19,6 +19,16 @@ def if_dependencies_found_incomplete(projection_names, projection_dep):
     return False
 
 
+def get_index_of_difference(attrib, new_result, new_result1, projection_dep, tabname):
+    new_result1 = new_result1[1:]
+    diff = find_diff_idx(new_result1, new_result)
+    if diff:
+        for d in diff:
+            if (tabname, attrib) not in projection_dep[d]:
+                projection_dep[d].append((tabname, attrib))
+    return projection_dep
+
+
 class Projection(GenerationPipeLineBase):
     def __init__(self, connectionHelper: AbstractConnectionHelper, delivery: PackageForGenPipeline):
         super().__init__(connectionHelper, "Projection", delivery)
@@ -60,7 +70,6 @@ class Projection(GenerationPipeLineBase):
 
     def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)
-        self.logger.debug("Result: ", new_result)
         if self.app.isQ_result_empty(new_result):
             self.logger.error("Unmasque: \n some error in generating new database. "
                               "Result is empty. Can not identify "
@@ -113,12 +122,7 @@ class Projection(GenerationPipeLineBase):
         self.update_attribs_bulk(join_tabnames, other_attribs, prev)
 
         if not self.app.isQ_result_empty(new_result1):
-            new_result1 = new_result1[1:]
-            diff = find_diff_idx(new_result1, new_result)
-            if diff:
-                for d in diff:
-                    if (tabname, attrib) not in projection_dep[d]:
-                        projection_dep[d].append((tabname, attrib))
+            projection_dep = get_index_of_difference(attrib, new_result, new_result1, projection_dep, tabname)
         keys_to_skip = keys_to_skip + other_attribs
         for other_attrib in other_attribs:
             s_value_dict[other_attrib] = val
@@ -135,13 +139,7 @@ class Projection(GenerationPipeLineBase):
         new_result1 = self.app.doJob(query)
         self.update_with_val(attrib, tabname, prev)
         if not self.app.isQ_result_empty(new_result1):
-            new_result1 = new_result1[1:]
-            diff = find_diff_idx(new_result1, new_result)
-            self.logger.debug("diff: ", diff)
-            if diff:
-                for d in diff:
-                    if (tabname, attrib) not in projection_dep[d]:
-                        projection_dep[d].append((tabname, attrib))
+            projection_dep = get_index_of_difference(attrib, new_result, new_result1, projection_dep, tabname)
         else:
             self.logger.debug("Got empty result!!!!")
         return val

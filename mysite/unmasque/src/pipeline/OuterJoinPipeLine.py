@@ -11,7 +11,8 @@ class OuterJoinPipeLine(ExtractionPipeLine):
         self.pipeLineError = False
 
     def _after_from_clause_extract(self, query, core_relations):
-        eq = super()._after_from_clause_extract(query, core_relations)
+        eq, time_profile = super()._after_from_clause_extract(query, core_relations)
+        self.time_profile.update(time_profile)
 
         # self.connectionHelper.connectUsingParams()
         self.update_state(OUTER_JOIN + START)
@@ -30,4 +31,4 @@ class OuterJoinPipeLine(ExtractionPipeLine):
             return eq
         if oj.Q_E is not None:
             eq = oj.Q_E
-        return eq
+        return eq, self.time_profile

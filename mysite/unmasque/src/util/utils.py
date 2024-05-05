@@ -88,14 +88,6 @@ def find_diff_idx(list1, list2):
             if item1 != item2 and i not in diffs:
                 diffs.append(i)
     return diffs
-    '''
-    diffs = []
-    if len(list1) == len(list2):
-        for i in range(len(list1)):
-            if list1[i] != list2[i]:
-                diffs.append(i)
-    return diffs
-    '''
 
 
 def generateCombos(val):
