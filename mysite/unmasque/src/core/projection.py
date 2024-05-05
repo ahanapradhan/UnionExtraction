@@ -134,10 +134,8 @@ class Projection(GenerationPipeLineBase):
             return
         new_result1 = self.app.doJob(query)
         self.update_with_val(attrib, tabname, prev)
-        self.logger.debug("new result: ", new_result1)
         if not self.app.isQ_result_empty(new_result1):
             new_result1 = new_result1[1:]
-            self.logger.debug("new result: ", new_result1)
             diff = find_diff_idx(new_result1, new_result)
             self.logger.debug("diff: ", diff)
             if diff:
