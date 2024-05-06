@@ -58,6 +58,17 @@ class ExtractionTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_union_subq2(self):
+        query = f"select c_name, o_comment, l_discount from orders RIGHT OUTER JOIN customer on " \
+                "c_custkey = o_custkey and c_acctbal < 1000 RIGHT OUTER JOIN lineitem on o_orderkey = l_orderkey " \
+                 "and l_extendedprice > 7000 and o_orderstatus = 'F';"
+        self.conn.config.detect_union = True
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
 
 if __name__ == '__main__':
     unittest.main()

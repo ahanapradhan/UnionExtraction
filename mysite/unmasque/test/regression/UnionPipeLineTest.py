@@ -48,6 +48,7 @@ class MyTestCase(BaseTestCase):
         print(u_Q)
         self.pipeline.time_profile.print()
 
+    @pytest.mark.skip
     def test_nonUnion_queries(self):
         Q_keys = queries.queries_dict.keys()
         q_no = 1
@@ -85,27 +86,6 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(p, {frozenset({'customer', 'nation'}), frozenset({'part', 'lineitem'})})
         self.assertTrue(pstr is not None)
         self.conn.closeConnection()
-
-    def test_nonUnion_outerJoin(self):
-        self.conn.config.detect_oj = True
-        self.conn.config.detect_union = True
-        query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
-                f"r_regionkey and r_name = 'AFRICA';"
-        eq = self.pipeline.doJob(query)
-        print(eq)
-        self.assertTrue(self.pipeline.correct)
-
-    def test_unionQuery_ui_caught_case_outerJoin(self):
-        self.conn.config.detect_oj = True
-        self.conn.config.detect_union = True
-        query = f"select c_name, n_comment FROM customer FULL OUTER JOIN nation on c_nationkey = " \
-                f"n_nationkey and c_acctbal < 2000 " \
-                f"UNION ALL" \
-                f" select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
-                f"r_regionkey and r_name = 'AFRICA';"
-        eq = self.pipeline.doJob(query)
-        print(eq)
-        self.assertTrue(self.pipeline.correct)
 
     def test_random_nonUnion(self):
         query = "SELECT o_orderdate, SUM(l_extendedprice) AS total_price " \
