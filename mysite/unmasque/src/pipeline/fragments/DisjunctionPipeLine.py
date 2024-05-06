@@ -24,6 +24,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.db_restorer = None
         self.global_min_instance_dict = None
         self.key_lists = None
+        self.original_size = {}
 
     def _mutation_pipeline(self, core_relations, query, time_profile, restore_details=None):
         self.update_state(RESTORE_DB + START)
@@ -53,12 +54,13 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             self.logger.info("Sampling failed!")
         else:
             self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
+            self.all_sizes = cs2.sizes
 
         """
             View based Database Minimization
             """
         self.update_state(DB_MINIMIZATION + START)
-        vm = ViewMinimizer(self.connectionHelper, core_relations, cs2.sizes, cs2.passed)
+        vm = ViewMinimizer(self.connectionHelper, core_relations, self.all_sizes, cs2.passed)
         self.update_state(DB_MINIMIZATION + RUNNING)
         check = vm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
@@ -67,6 +69,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             self.logger.error("Cannot do database minimization. ")
             self.info[DB_MINIMIZATION] = None
             return False, time_profile
+        # self.all_sizes = check
         self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
 
@@ -147,6 +150,8 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         raise NotImplementedError("Trouble!")
 
     def _extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
+        self.or_predicates = []
+        # self.original_size = self.all_sizes
         curr_eq_predicates = copy.deepcopy(init_predicates)
         all_eq_predicates = [curr_eq_predicates]
         ids = list(range(len(curr_eq_predicates)))
@@ -159,6 +164,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             '''
             gaining sanity back from nullified attributes
             '''
+            # self.all_sizes = self.original_size
             check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
             if not check:
                 self.logger.error("Error while sanitizing after disjunction. Aborting!")

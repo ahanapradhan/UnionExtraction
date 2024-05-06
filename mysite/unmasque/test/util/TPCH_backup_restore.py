@@ -9,7 +9,7 @@ class TPCHRestore:
 
     def __init__(self, conn: AbstractConnectionHelper):
         self.conn = conn
-        self.relations = tpchSettings.relations
+        self.relations = ['lineitem', 'orders']  # tpchSettings.relations
         self.logger = Log("Test Schema Restore", conn.config.log_level)
 
     def doJob(self):
@@ -19,7 +19,8 @@ class TPCHRestore:
         for tab in self.relations:
             # print(f"Recreating {tab}")
             self.conn.execute_sql(
-                [f"truncate {self.user_schema}.{tab};", f"insert into {self.user_schema}.{tab} select * from {self.backup_schema}.{tab};",
+                [f"truncate {self.user_schema}.{tab};",
+                 f"insert into {self.user_schema}.{tab} select * from {self.backup_schema}.{tab};",
                  f"ALTER TABLE {self.user_schema}.{tab} SET (autovacuum_enabled = false);"
                  "commit;"], self.logger)
         self.conn.closeConnection()
