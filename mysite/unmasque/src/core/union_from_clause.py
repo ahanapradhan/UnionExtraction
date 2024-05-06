@@ -11,12 +11,12 @@ class UnionFromClause(Schema, AppExtractorBase):
         self.fromtabs = None
         self.to_nullify = None
         self.fromClause = FromClause(connectionHelper)
-        self.relations = []
 
     def get_relations(self):
         if not self.fromClause.init.done:
             self.fromClause.init.doJob()
-        return self.fromClause.all_relations
+        self.set_all_relations(self.fromClause.all_relations)
+        return self.all_relations
 
     def nullify_except(self, s_set):
         self.to_nullify = s_set.difference(self.comtabs)
@@ -26,7 +26,6 @@ class UnionFromClause(Schema, AppExtractorBase):
                                                self.connectionHelper.queries.create_table_like(tab, self.connectionHelper.queries.get_tabname_1(tab))])
 
     def run_query(self, QH):
-        # self.app_calls += 1
         return self.app.doJob(QH)
 
     def revert_nullify(self):
@@ -39,7 +38,7 @@ class UnionFromClause(Schema, AppExtractorBase):
         return self.doJob(QH)
 
     def isEmpty(self, Res):
-        return self.app.isQ_result_empty(Res)
+        return self.app.isQ_result_no_full_nullfree_row(Res)
 
     def extract_params_from_args(self, args):
         return args[0]

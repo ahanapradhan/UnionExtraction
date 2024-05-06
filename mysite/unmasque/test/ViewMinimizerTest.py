@@ -1,6 +1,8 @@
 import unittest
 
 from mysite.unmasque.src.core.cs2 import Cs2
+from mysite.unmasque.src.core.db_restorer import DbRestorer
+from mysite.unmasque.src.core.from_clause import FromClause
 from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
 from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -245,6 +247,31 @@ class MyTestCase(BaseTestCase):
         print(minimizer.global_min_instance_dict)
 
         self.assertTrue(check)
+        self.conn.closeConnection()
+
+    def test_nonUnion_outerJoin(self):
+        self.conn.connectUsingParams()
+        self.conn.config.detect_oj = True
+        query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
+                f"r_regionkey and r_name = 'AFRICA';"
+
+        for i in range(1):
+            fc = FromClause(self.conn)
+            check = fc.doJob(query)
+            self.assertTrue(check)
+
+            db_restorer = DbRestorer(self.conn, fc.core_relations)
+            db_restorer.set_all_sizes(tpchSettings.all_size)
+            check = db_restorer.doJob(None)
+            self.assertTrue(check)
+
+            minimizer = ViewMinimizer(self.conn, fc.core_relations, tpchSettings.all_size, False)
+            check = minimizer.doJob(query)
+            print(minimizer.global_min_instance_dict)
+
+            self.assertTrue(check)
+        for key, value in vars(self.conn.config).items():
+            print(f"{key}: {value}")
         self.conn.closeConnection()
 
 

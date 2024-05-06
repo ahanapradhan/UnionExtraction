@@ -19,6 +19,7 @@ class Union(AppExtractorBase):
         db = UnionFromClause(self.connectionHelper)
         p, pstr, union_profile = algorithm1.algo(db, query)
         self.all_relations = db.get_relations()
+        self.all_sizes = db.get_all_sizes()
         self.key_lists = db.fromClause.init.global_key_lists
         return p, pstr, union_profile
 

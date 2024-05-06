@@ -1,11 +1,11 @@
 from time import sleep
 
-from .ExtractionPipeLine import ExtractionPipeLine
+from .OuterJoinPipeLine import OuterJoinPipeLine
 from ..core.union import Union
 from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
 
 
-class UnionPipeLine(ExtractionPipeLine):
+class UnionPipeLine(OuterJoinPipeLine):
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper)
@@ -23,14 +23,13 @@ class UnionPipeLine(ExtractionPipeLine):
         self.update_state(UNION + DONE)
         self.connectionHelper.closeConnection()
 
-        l = []
-        for ele in p:
-            l.append(list(ele))
-        self.info[UNION] = l
+        self.info[UNION] = [list(ele) for ele in p]
         self.__update_time_profile(union, union_profile)
         self.core_relations = [item for subset in p for item in subset]
         self.all_relations = union.all_relations
+        self.all_sizes = union.all_sizes
         self.key_lists = union.key_lists
+        self.logger.debug(f"relations, {self.all_relations} all sizes, {self.all_sizes}, key list: {self.key_lists}")
         u_eq = []
 
         for rels in p:
@@ -46,8 +45,8 @@ class UnionPipeLine(ExtractionPipeLine):
             self.__revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
 
-            if time_profile is not None:
-                self.time_profile.update(time_profile)
+            # if time_profile is not None:
+            #    self.time_profile.update(time_profile)
 
             if eq is not None:
                 self.logger.debug(eq)
@@ -62,11 +61,9 @@ class UnionPipeLine(ExtractionPipeLine):
         return result
 
     def __post_process(self, pstr, u_eq):
-        u_Q = "\n UNION ALL \n".join(u_eq)
-        u_Q += ";"
-        if "UNION ALL" not in u_Q:
-            if u_Q.startswith('(') and u_Q.endswith(');'):
-                u_Q = u_Q[1:-2] + ';'
+        u_Q = "\n UNION ALL \n".join(u_eq) + ";"
+        if "UNION ALL" not in u_Q and u_Q.startswith('(') and u_Q.endswith(');'):
+            u_Q = u_Q[1:-2] + ';'
         result = ""
         if self.pipeLineError:
             result = f"Could not extract the query due to errors {self.state}." \
@@ -83,16 +80,14 @@ class UnionPipeLine(ExtractionPipeLine):
 
     def __nullify_relations(self, relations):
         for tab in relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab,
-                                                                                                   self.connectionHelper.queries.get_tabname_un(
-                                                                                                       tab)), "commit;"], self.logger)
-            sleep(1)
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_like(tab,
-                                                                                               self.connectionHelper.queries.get_tabname_un(
-                                                                                                   tab))], self.logger)
+            backup_name = self.connectionHelper.queries.get_tabname_un(tab)
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, backup_name),
+                                               self.connectionHelper.queries.create_table_like(tab, backup_name)],
+                                              self.logger)
 
     def __revert_nullifications(self, relations):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
                                                self.connectionHelper.queries.alter_table_rename_to(
-                                                   self.connectionHelper.queries.get_tabname_un(tab), tab)], self.logger)
+                                                   self.connectionHelper.queries.get_tabname_un(tab), tab)],
+                                              self.logger)

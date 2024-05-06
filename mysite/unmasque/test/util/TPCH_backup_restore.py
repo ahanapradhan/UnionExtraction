@@ -14,12 +14,12 @@ class TPCHRestore:
 
     def doJob(self):
         self.conn.connectUsingParams()
-        self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
-                              f"create schema {self.user_schema};"], self.logger)
+        # self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
+        #                       f"create schema {self.user_schema};"], self.logger)
         for tab in self.relations:
             # print(f"Recreating {tab}")
             self.conn.execute_sql(
-                [f"create table if not exists {self.user_schema}.{tab} as select * from {self.backup_schema}.{tab};",
+                [f"truncate {self.user_schema}.{tab};", f"insert into {self.user_schema}.{tab} select * from {self.backup_schema}.{tab};",
                  f"ALTER TABLE {self.user_schema}.{tab} SET (autovacuum_enabled = false);"
                  "commit;"], self.logger)
         self.conn.closeConnection()

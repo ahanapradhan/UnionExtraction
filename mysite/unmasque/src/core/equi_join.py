@@ -19,7 +19,7 @@ class U2EquiJoin(FilterHolder):
 
         self.algebraic_eq_predicates = []
         self.arithmetic_eq_predicates = []
-        self.join_graph = []
+        # self.join_graph = []
         self.filter_predicates = filter_predicates
         self.pending_predicates = None
 

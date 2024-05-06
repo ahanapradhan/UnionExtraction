@@ -6,7 +6,6 @@ import pytest
 
 from mysite.unmasque.src.core.executable import Executable
 from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
-from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.src.Optimizer_config import set_optimizer_params
 from ...test.util import tpchSettings, queries
 from ...test.util.BaseTestCase import BaseTestCase
@@ -35,6 +34,15 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_oj = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+
+    def test_redundant_selfjoin(self):
+        query = "SELECT p.ps_partkey, p.ps_suppkey, p.ps_availqty, p.ps_supplycost, p.ps_comment FROM partsupp AS p " \
+                "JOIN (SELECT * FROM partsupp WHERE ps_supplycost < 1000) AS q ON " \
+                "p.ps_partkey = q.ps_partkey;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
 
     def test_for_filter_1(self):
         lower = 11
@@ -397,18 +405,15 @@ class ExtractionTestCase(BaseTestCase):
                 "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
                 "and s_nationkey = n_nationkey Group By s_name " \
                 "Order By numwait desc, s_name Limit 100;"
-        self.conn.connectUsingParams()
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
 
     @pytest.mark.skip
     def test_correlated_nested_query(self):
         query = "select c_name from customer where c_acctbal <= (select MIN(s_acctbal) from supplier);"
 
-        self.conn.connectUsingParams()
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
@@ -418,17 +423,14 @@ class ExtractionTestCase(BaseTestCase):
         eq = Select l_orderkey, l_extendedprice From lineitem Where l_discount <= l_extendedprice; 
         '''
         self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
 
     @pytest.mark.skip
     def test_extreme(self):
         query = "select * from part where p_size + 1 <= 10;"
-        self.conn.connectUsingParams()
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
         self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
 
     @pytest.mark.skip
     def test_diff_res(self):
@@ -444,13 +446,25 @@ class ExtractionTestCase(BaseTestCase):
 
     @pytest.mark.skip
     def test_extreme_1(self):
-        self.conn.connectUsingParams()
         query = "select count(*) from part where p_size >= -2147483647;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
+
+    def test_outer_join_subqueries(self):
+        self.test_subq1()
+        self.test_subq2()
+
+    def test_subq2(self):
+        query2 = "select c_name, o_orderdate from customer LEFT OUTER JOIN orders on " \
+                 "c_custkey = o_custkey and o_orderstatus = 'O' and o_totalprice > 7000 and c_acctbal < 2000;"
+        self.conn.config.detect_union = False
+        self.conn.config.detect_oj = True
+        eq = self.pipeline.doJob(query2)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
 
 
 if __name__ == '__main__':

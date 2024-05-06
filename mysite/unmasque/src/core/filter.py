@@ -161,10 +161,6 @@ class Filter(UN2WhereClause):
 
     def handle_filter_for_nonTextTypes(self, attrib_list, datatype, filter_attribs,
                                        max_val_domain, min_val_domain, query):
-        # self.logger.debug("datatype", datatype)
-        # if datatype == 'int' and self.connectionHelper.config.detect_or:
-        # self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
-        #    return
         if datatype in ['int', 'date', 'integer', 'number']:
             self.handle_point_filter(datatype, filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         elif datatype in ['numeric', 'float']:
@@ -179,13 +175,13 @@ class Filter(UN2WhereClause):
             datatype = self.get_datatype((tabname, attrib))
             if datatype == 'date':
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(tabname, attrib, val)])
+                    [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(tabname, attrib, val)], self.logger)
             else:
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)])
+                    [self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)], self.logger)
         new_result = self.app.doJob(query)
         self.revert_filter_changes_in_tabset(attrib_list, prev_values)
-        return not self.app.isQ_result_empty(new_result)
+        return self.app.isQ_result_nonEmpty_nullfree(new_result)
 
     def revert_filter_changes_in_tabset(self, attrib_list, prev_val_list):
         tab_attrib_set = set()
@@ -195,35 +191,6 @@ class Filter(UN2WhereClause):
             val = prev_val_list[i]
             datatype = self.get_datatype(tab_attrib)
             self.mutate_dmin_with_val(datatype, tab_attrib, val)
-
-    def append_filter_attrib(self, tab, attrib, op, lb, ub, filterAttribs):
-        datatype = self.get_datatype((tab, attrib))
-        i_min, i_max = get_min_and_max_val(datatype)
-        if op == '=':
-            if datatype in ['numeric', 'float']:
-                filterAttribs.append((tab, attrib, '=', float(lb), float(ub)))
-            if datatype == 'int':
-                filterAttribs.append((tab, attrib, '=', int(lb), int(ub)))
-        elif op == '>=':
-            if datatype in ['numeric', 'float']:
-                filterAttribs.append((tab, attrib, '>=', float(lb), i_max))
-            if datatype == 'int':
-                filterAttribs.append((tab, attrib, '>=', int(lb), i_max))
-        elif op == '<=':
-            if datatype in ['numeric', 'float']:
-                filterAttribs.append((tab, attrib, '<=', i_min, float(ub)))
-            if datatype == 'int':
-                filterAttribs.append((tab, attrib, '<=', i_min, int(ub)))
-        elif op == 'range':
-            if datatype in ['numeric', 'float']:
-                filterAttribs.append((tab, attrib, 'range', float(lb), float(ub)))
-            if datatype == 'int':
-                if int(lb) == int(ub):
-                    filterAttribs.append((tab, attrib, '=', int(lb), int(ub)))
-                else:
-                    filterAttribs.append((tab, attrib, 'range', int(lb), int(ub)))
-        else:
-            raise ValueError("Invalid Operator")
 
     def handle_precision_filter(self, filterAttribs, query, attrib_list, min_val_domain, max_val_domain):
         # min_val_domain, max_val_domain = get_min_and_max_val(datatype)
@@ -242,32 +209,25 @@ class Filter(UN2WhereClause):
             equalto_flag = self.get_filter_value(query, 'int', float(d_plus_value[attrib]) - .01,
                                                  float(d_plus_value[attrib]) + .01, '=', attrib_list)
             if equalto_flag:
-                self.append_filter_attrib(tabname, attrib, '=', d_plus_value[attrib], d_plus_value[attrib],
-                                          filterAttribs)
-                # filterAttribs.append(
-                #    (tabname, attrib, '=', float(d_plus_value[attrib]), float(d_plus_value[attrib])))
+                filterAttribs.append(
+                   (tabname, attrib, '=', float(d_plus_value[attrib]), float(d_plus_value[attrib])))
             else:
                 val1 = self.get_filter_value(query, 'float', float(d_plus_value[attrib]), max_val_domain, '<=',
                                              attrib_list)
                 val2 = self.get_filter_value(query, 'float', min_val_domain, math.floor(float(d_plus_value[attrib])),
                                              '>=', attrib_list)
-                # filterAttribs.append((tabname, attrib, 'range', float(val2), float(val1)))
-                self.append_filter_attrib(tabname, attrib, 'range', val2, val1, filterAttribs)
+                filterAttribs.append((tabname, attrib, 'range', float(val2), float(val1)))
         elif min_present and not max_present:
             val = self.get_filter_value(query, 'float', math.ceil(float(d_plus_value[attrib])) - 5, max_val_domain,
                                         '<=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val), float(val) + 0.99, '<=', attrib_list)
-            val1_round_2 = round_floor(val1, 2)
-            # filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, 2))))
-            self.append_filter_attrib(tabname, attrib, '<=', val1_round_2, val1_round_2, filterAttribs)
+            filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, 2))))
 
         elif not min_present and max_present:
             val = self.get_filter_value(query, 'float', min_val_domain, math.floor(float(d_plus_value[attrib]) + 5),
                                         '>=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val) - 1, val, '>=', attrib_list)
-            val1_round_2 = round_ceil(val1, 2)
-            self.append_filter_attrib(tabname, attrib, '>=', val1_round_2, val1_round_2, filterAttribs)
-            # filterAttribs.append((tabname, attrib, '>=', float(round_ceil(val1, 2)), float(max_val_domain)))
+            filterAttribs.append((tabname, attrib, '>=', float(round_ceil(val1, 2)), float(max_val_domain)))
 
     def get_filter_value(self, query, datatype, min_val, max_val, operator, attrib_list):
         query_front_set = set()

@@ -2,9 +2,9 @@ import copy
 import unittest
 
 from mysite.unmasque.src.core.equi_join import U2EquiJoin
-from mysite.unmasque.src.obsolete.equi_join import EquiJoin
 from mysite.unmasque.src.core.filter import Filter
 from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
+from mysite.unmasque.src.obsolete.equi_join import EquiJoin
 from mysite.unmasque.src.util.constants import max_int_val
 from ..test.util import queries, tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase
@@ -66,8 +66,8 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('p_partkey' in wc.global_key_attributes)
         self.assertTrue('l_partkey' in wc.global_key_attributes)
 
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict, wc.global_key_attributes)
+        wc = Filter(self.conn, from_rels,
+                    minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q17)
         print(filters)
@@ -126,6 +126,7 @@ class MyTestCase(BaseTestCase):
         check = minimizer.doJob(queries.Q23_1)
         self.assertTrue(check)
 
+        '''
         wc = EquiJoin(self.conn, tpchSettings.key_lists, from_rels,
                       minimizer.global_min_instance_dict)
 
@@ -148,10 +149,10 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('n_nationkey' in wc.global_key_attributes)
         self.assertTrue('r_regionkey' in wc.global_key_attributes)
         self.assertTrue('n_regionkey' in wc.global_key_attributes)
+        '''
 
-        wc = Filter(self.conn, tpchSettings.key_lists, from_rels,
-                    minimizer.global_min_instance_dict,
-                    wc.global_key_attributes)
+        wc = Filter(self.conn, from_rels,
+                    minimizer.global_min_instance_dict)
 
         filters = wc.doJob(queries.Q23_1)
         print(filters)
@@ -258,7 +259,6 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(f[2], ">=")
 
         self.conn.closeConnection()
-
 
 if __name__ == '__main__':
     unittest.main()

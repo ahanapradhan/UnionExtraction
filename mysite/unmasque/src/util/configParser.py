@@ -94,4 +94,4 @@ class Config:
             self.detect_oj = False
         elif detect_oj.lower() == "yes":
             self.detect_oj = True
-            self.detect_union = False
+            # self.detect_union = False
