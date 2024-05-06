@@ -61,8 +61,11 @@ class GenericPipeLine(ABC):
             self._verify_correctness(query, result)
             self.time_profile.update_for_app(app.method_call_count)
         except Exception as e:
+            import traceback
             self.logger.error("Some problem while Execution!")
-            self.logger.error(e)
+            self.logger.error(f"[ERROR] {e}")
+            for st in traceback.format_tb(e.__traceback__):
+                self.logger.error(f"[STACK TRACE] {st}")
             return result
         else:
             self.logger.info("Valid Execution")
