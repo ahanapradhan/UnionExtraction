@@ -13,6 +13,8 @@ class OuterJoinPipeLine(ExtractionPipeLine):
     def _after_from_clause_extract(self, query, core_relations):
         eq, time_profile = super()._after_from_clause_extract(query, core_relations)
         self.time_profile.update(time_profile)
+        if eq is None:
+            return None, time_profile
 
         # self.connectionHelper.connectUsingParams()
         self.update_state(OUTER_JOIN + START)
