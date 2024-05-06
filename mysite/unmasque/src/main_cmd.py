@@ -2,7 +2,7 @@ import signal
 import sys
 
 from ..src.util.ConnectionFactory import ConnectionHelperFactory
-from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
+from ..src.core.factory.PipeLineFactory import PipeLineFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
 
 
@@ -35,10 +35,6 @@ if __name__ == '__main__':
          "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by " \
          "revenue " \
          "desc, o_orderdate limit 10;"
-
-    hq = "select AVG(l_extendedprice) as avgTOTAL from lineitem,part " \
-         "where p_partkey = l_partkey and (p_brand = 'Brand#52') and " \
-         "(p_container = 'LG CAN');"
 
     # hq = "select c_name from customer UNION ALL select s_name from supplier UNION ALL select n_name from nation;"
 
