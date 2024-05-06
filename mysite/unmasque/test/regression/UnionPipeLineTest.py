@@ -5,7 +5,6 @@ import pytest
 from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from ...src.core import algorithm1
 from ...src.core.union_from_clause import UnionFromClause
-from ...src.pipeline.UnionPipeLine import UnionPipeLine
 from ...test.util import queries
 from ...test.util.BaseTestCase import BaseTestCase
 
@@ -16,7 +15,7 @@ class MyTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = False
         self.conn.config.detect_or = False
-        self.conn.config.detect_oj = False
+        self.conn.config.detect_oj = True
         self.conn.config.detect_union = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
@@ -160,6 +159,19 @@ class MyTestCase(BaseTestCase):
                 "and o_totalprice > 60000 " \
                 "Group By l_shipmode " \
                 "Order By l_shipmode;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+        self.conn.closeConnection()
+
+    def test_Q18(self):
+        query = "Select c_name, o_orderdate, o_totalprice,  sum(l_quantity) " \
+                "From customer, orders, lineitem Where c_phone Like '27-%' " \
+                "and c_custkey = o_custkey " \
+                "and o_orderkey = l_orderkey " \
+                "Group By c_name, o_orderdate, o_totalprice " \
+                "Order by o_orderdate, o_totalprice desc Limit 100;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
