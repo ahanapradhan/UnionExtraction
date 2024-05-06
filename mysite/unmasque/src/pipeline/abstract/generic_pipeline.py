@@ -48,7 +48,9 @@ class GenericPipeLine(ABC):
         self.correct = False
         self.all_sizes = {}
         self.error = None
-        self.core_relations = None
+
+        # FROM CLAUSE EXTRACTION METADATA
+        self.core_relations: list[str] | None = None
 
     def process(self, query: str):
         result = None
