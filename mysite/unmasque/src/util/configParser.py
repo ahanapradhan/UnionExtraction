@@ -99,7 +99,7 @@ class Config:
             self.detect_oj = False
         elif detect_oj.lower() == "yes":
             self.detect_oj = True
-            self.detect_union = False
+            # self.detect_union = False
 
         detect_nested = config_object.get(FEATURE_SECTION, DETECT_NESTED)
         if detect_nested.lower() == "no":

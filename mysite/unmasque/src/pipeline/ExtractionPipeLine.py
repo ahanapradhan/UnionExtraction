@@ -1,7 +1,7 @@
 import copy
 
-from mysite.unmasque.src.pipeline.fragments.DisjunctionPipeLine import DisjunctionPipeLine
-from mysite.unmasque.src.pipeline.fragments.NepPipeLine import NepPipeLine
+from ...src.pipeline.fragments.DisjunctionPipeLine import DisjunctionPipeLine
+from ...src.pipeline.fragments.NepPipeLine import NepPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, PROJECTION, \

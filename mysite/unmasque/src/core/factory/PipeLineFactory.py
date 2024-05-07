@@ -3,11 +3,11 @@ import threading
 import time
 from queue import Queue
 
-from mysite.unmasque.src.experimental.NestedAggWherePipeLine import NestedAggWherePipeLine
-from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
-from mysite.unmasque.src.pipeline.OuterJoinPipeLine import OuterJoinPipeLine
-from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
-from mysite.unmasque.src.util.constants import WAITING
+from ...experimental.NestedAggWherePipeLine import NestedAggWherePipeLine
+from ....src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from ....src.pipeline.OuterJoinPipeLine import OuterJoinPipeLine
+from ....src.pipeline.UnionPipeLine import UnionPipeLine
+from ....src.util.constants import WAITING
 
 
 def raise_exception(id):

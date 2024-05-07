@@ -108,23 +108,6 @@ class MyTestCase(BaseTestCase):
         self.global_min_instance_dict = None
         self.global_attrib_types_dict = {}
 
-    def setUp(self):
-        super().setUp()
-        self.conn.connectUsingParams()
-        for rel in tpchSettings.relations:
-            self.conn.execute_sql(["BEGIN;", f"alter table {rel} rename to {rel}_copy;",
-                                   f"create table {rel} (like {rel}_copy);", "COMMIT;"])
-        self.conn.closeConnection()
-
-    def tearDown(self):
-        self.conn.connectUsingParams()
-        for rel in tpchSettings.relations:
-            self.conn.execute_sql(["BEGIN;",
-                                   f"drop table {rel};",
-                                   f"alter table {rel}_copy rename to {rel};", "COMMIT;"])
-        self.conn.closeConnection()
-        super().tearDown()
-
     def post_process_for_generation_pipeline(self):
         self.pipeline_delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs,
                                                        self.global_attrib_types, self.filter_predicates, [],
@@ -138,21 +121,21 @@ class MyTestCase(BaseTestCase):
         from_rels = tpchSettings.from_rels['Q1']
 
         self.global_attrib_types = [('lineitem', 'l_orderkey', 'integer'),
-                               ('lineitem', 'l_partkey', 'integer'),
-                               ('lineitem', 'l_suppkey', 'integer'),
-                               ('lineitem', 'l_linenumber', 'integer'),
-                               ('lineitem', 'l_quantity', 'numeric'),
-                               ('lineitem', 'l_extendedprice', 'numeric'),
-                               ('lineitem', 'l_discount', 'numeric'),
-                               ('lineitem', 'l_tax', 'numeric'),
-                               ('lineitem', 'l_returnflag', 'character'),
-                               ('lineitem', 'l_linestatus', 'character'),
-                               ('lineitem', 'l_shipdate', 'date'),
-                               ('lineitem', 'l_commitdate', 'date'),
-                               ('lineitem', 'l_receiptdate', 'date'),
-                               ('lineitem', 'l_shipinstruct', 'character'),
-                               ('lineitem', 'l_shipmode', 'character'),
-                               ('lineitem', 'l_comment', 'character varying')]
+                                    ('lineitem', 'l_partkey', 'integer'),
+                                    ('lineitem', 'l_suppkey', 'integer'),
+                                    ('lineitem', 'l_linenumber', 'integer'),
+                                    ('lineitem', 'l_quantity', 'numeric'),
+                                    ('lineitem', 'l_extendedprice', 'numeric'),
+                                    ('lineitem', 'l_discount', 'numeric'),
+                                    ('lineitem', 'l_tax', 'numeric'),
+                                    ('lineitem', 'l_returnflag', 'character'),
+                                    ('lineitem', 'l_linestatus', 'character'),
+                                    ('lineitem', 'l_shipdate', 'date'),
+                                    ('lineitem', 'l_commitdate', 'date'),
+                                    ('lineitem', 'l_receiptdate', 'date'),
+                                    ('lineitem', 'l_shipinstruct', 'character'),
+                                    ('lineitem', 'l_shipmode', 'character'),
+                                    ('lineitem', 'l_comment', 'character varying')]
 
         self.global_all_attribs = [
             ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
@@ -278,20 +261,20 @@ class MyTestCase(BaseTestCase):
             self.test_projections_Q3_1()
 
     def test_projections_Q3_1(self):
-        global_min_instance_dict = {}
+        self.global_min_instance_dict = {}
 
         self.conn.connectUsingParams()
         self.assertTrue(self.conn.conn is not None)
 
-        from_rels = tpchSettings.from_rels['Q3_1']
+        self.core_relations = tpchSettings.from_rels['Q3_1']
         global_key_attribs = ['c_custkey', 'c_nationkey', 'l_orderkey', 'l_partkey', 'l_suppkey',
                               'o_orderkey', 'o_custkey']
 
-        filter_predicates = [('customer', 'c_mktsegment', 'equal', 'BUILDING', 'BUILDING'),
+        self.filter_predicates = [('customer', 'c_mktsegment', 'equal', 'BUILDING', 'BUILDING'),
                              ('orders', 'o_orderdate', '<=', datetime.date(1, 1, 1), datetime.date(1995, 3, 14)),
                              ('lineitem', 'l_shipdate', '>=', datetime.date(1995, 3, 16), datetime.date(9999, 12, 31))]
 
-        global_all_attribs = [
+        self.global_all_attribs = [
             ['c_custkey', 'c_name', 'c_address', 'c_nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment'],
             ['o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority', 'o_clerk',
              'o_shippriority', 'o_comment'],
@@ -299,9 +282,9 @@ class MyTestCase(BaseTestCase):
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
 
-        join_graph = [['c_custkey', 'o_custkey'], ['o_orderkey', 'l_orderkey']]
+        self.join_graph = [['c_custkey', 'o_custkey'], ['o_orderkey', 'l_orderkey']]
 
-        global_attrib_types = [('customer', 'c_custkey', 'integer'),
+        self.global_attrib_types = [('customer', 'c_custkey', 'integer'),
                                ('customer', 'c_name', 'character varying'),
                                ('customer', 'c_address', 'character varying'),
                                ('customer', 'c_nationkey', 'integer'),
@@ -335,17 +318,20 @@ class MyTestCase(BaseTestCase):
                                ('lineitem', 'l_shipmode', 'character'),
                                ('lineitem', 'l_comment', 'character varying')]
 
-        pj = Projection(self.conn, delivery)
+        self.post_process_for_generation_pipeline()
+
+        pj = Projection(self.conn, self.pipeline_delivery)
         pj.mock = True
         pj.do_init()
 
-        create_dmin_for_test(from_rels, pj)
+        create_dmin_for_test(self.core_relations, pj)
 
         check = pj.doJob(queries.Q3_1)
         self.assertTrue(check)
 
-        self.assertEqual(frozenset({'o_orderkey', 'l_extendedprice*(1 - l_discount) + l_quantity', 'o_orderdate', 'o_shippriority'}),
-                         frozenset(set(pj.projected_attribs)))
+        self.assertEqual(
+            frozenset({'o_orderkey', 'l_extendedprice*(1 - l_discount) + l_quantity', 'o_orderdate', 'o_shippriority'}),
+            frozenset(set(pj.projected_attribs)))
 
         self.conn.closeConnection()
 

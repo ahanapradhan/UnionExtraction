@@ -5,8 +5,9 @@ from .abstract.abstractConnection import AbstractConnectionHelper
 class DbRestorer(AppExtractorBase):
     def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list, name="Database Restorer"):
         super().__init__(connectionHelper, name)
-        self.relations = core_relations
+        self.relations = []
         self.last_restored_size = {}
+        self.core_relations = core_relations
 
     def set_all_sizes(self, sizes):
         self.all_sizes = sizes
@@ -35,7 +36,8 @@ class DbRestorer(AppExtractorBase):
     def doActualJob(self, args=None):
         tabs_wheres = self.extract_params_from_args(args)
         if tabs_wheres is None:
-            for tab in self.relations:
+            to_restore = self.core_relations if len(self.core_relations) else self.relations
+            for tab in to_restore:
                 if tab not in self.last_restored_size.keys():
                     self.update_current_sizes(tab)
                 if self.last_restored_size[tab] != self.all_sizes[tab]:

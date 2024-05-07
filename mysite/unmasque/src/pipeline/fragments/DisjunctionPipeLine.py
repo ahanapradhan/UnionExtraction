@@ -1,17 +1,17 @@
 import copy
 from abc import abstractmethod, ABC
 
-from mysite.unmasque.src.core.aoa import AlgebraicPredicate
-from mysite.unmasque.src.core.cs2 import Cs2
-from mysite.unmasque.src.core.db_restorer import DbRestorer
-from mysite.unmasque.src.core.equi_join import U2EquiJoin
-from mysite.unmasque.src.core.filter import Filter
-from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
-from mysite.unmasque.src.pipeline.abstract.generic_pipeline import GenericPipeLine
-from mysite.unmasque.src.util.aoa_utils import get_constants_for
-from mysite.unmasque.src.util.constants import FILTER, INEQUALITY, DONE, RUNNING, START, EQUALITY, DB_MINIMIZATION, \
+from ....src.core.aoa import AlgebraicPredicate
+from ....src.core.cs2 import Cs2
+from ....src.core.db_restorer import DbRestorer
+from ....src.core.equi_join import U2EquiJoin
+from ....src.core.filter import Filter
+from ....src.core.view_minimizer import ViewMinimizer
+from ....src.pipeline.abstract.generic_pipeline import GenericPipeLine
+from ....src.util.aoa_utils import get_constants_for
+from ....src.util.constants import FILTER, INEQUALITY, DONE, RUNNING, START, EQUALITY, DB_MINIMIZATION, \
     SAMPLING, RESTORE_DB
-from mysite.unmasque.src.util.utils import get_format, get_val_plus_delta
+from ....src.util.utils import get_format, get_val_plus_delta
 
 
 class DisjunctionPipeLine(GenericPipeLine, ABC):

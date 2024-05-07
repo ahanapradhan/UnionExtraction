@@ -22,6 +22,7 @@ class OuterJoin(GenerationPipeLineBase):
         self.projected_names = projected_names
         self.Q_E = None
         self.q_gen = q_gen
+        self.enabled = self.connectionHelper.config.detect_oj
 
     def doExtractJob(self, query: str) -> bool:
         list_of_tables, new_join_graph = self.get_tables_list_and_new_join_graph()

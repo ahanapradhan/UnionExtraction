@@ -33,6 +33,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         query = self.extract_params_from_args(args)
         self.do_init()
         check = self.doExtractJob(query)
+        self.do_init()
         return check
 
     def restore_d_min_from_dict(self) -> None:

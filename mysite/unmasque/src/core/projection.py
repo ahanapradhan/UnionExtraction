@@ -19,6 +19,16 @@ def if_dependencies_found_incomplete(projection_names, projection_dep):
     return False
 
 
+def get_index_of_difference(attrib, new_result, new_result1, projection_dep, tabname):
+    new_result1 = new_result1[1:]
+    diff = find_diff_idx(new_result1, new_result)
+    if diff:
+        for d in diff:
+            if (tabname, attrib) not in projection_dep[d]:
+                projection_dep[d].append((tabname, attrib))
+    return projection_dep
+
+
 class Projection(GenerationPipeLineBase):
     def __init__(self, connectionHelper: AbstractConnectionHelper, delivery: PackageForGenPipeline):
         super().__init__(connectionHelper, "Projection", delivery)
@@ -34,11 +44,6 @@ class Projection(GenerationPipeLineBase):
         self.param_list = []
 
     def doExtractJob(self, query):
-        res = self.app.doJob(query)
-        if self.app.isQ_result_empty(res):
-            self.logger.error("Cannot do projection. Bye!")
-            return False
-        # return False # test
         s_values = []
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
 
@@ -72,7 +77,7 @@ class Projection(GenerationPipeLineBase):
             return [], [], [], False
 
         projection_names = list(new_result[0])
-        new_result = list(new_result[1])
+        new_result = new_result[1:]
         projected_attrib = []
         keys_to_skip = []
         projection_dep = []
@@ -117,11 +122,7 @@ class Projection(GenerationPipeLineBase):
         self.update_attribs_bulk(join_tabnames, other_attribs, prev)
 
         if not self.app.isQ_result_empty(new_result1):
-            new_result1 = list(new_result1[1])
-            diff = find_diff_idx(new_result1, new_result)
-            if diff:
-                for d in diff:
-                    projection_dep[d].append((tabname, attrib))
+            projection_dep = get_index_of_difference(attrib, new_result, new_result1, projection_dep, tabname)
         keys_to_skip = keys_to_skip + other_attribs
         for other_attrib in other_attribs:
             s_value_dict[other_attrib] = val
@@ -138,11 +139,7 @@ class Projection(GenerationPipeLineBase):
         new_result1 = self.app.doJob(query)
         self.update_with_val(attrib, tabname, prev)
         if not self.app.isQ_result_empty(new_result1):
-            new_result1 = list(new_result1[1])
-            diff = find_diff_idx(new_result1, new_result)
-            if diff:
-                for d in diff:
-                    projection_dep[d].append((tabname, attrib))
+            projection_dep = get_index_of_difference(attrib, new_result, new_result1, projection_dep, tabname)
         else:
             self.logger.debug("Got empty result!!!!")
         return val
@@ -258,7 +255,7 @@ class Projection(GenerationPipeLineBase):
 
             # print(self.app.doJob(query), b)
             exe_result = self.app.doJob(query)
-            if len(exe_result) > 1:
+            if not self.app.isQ_result_empty(exe_result):
                 b[i][0] = exe_result[1][idx]
 
         solution = np.linalg.solve(coeff, b)
