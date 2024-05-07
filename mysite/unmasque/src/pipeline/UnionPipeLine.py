@@ -41,12 +41,9 @@ class UnionPipeLine(OuterJoinPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.__nullify_relations(nullify)
-            eq, time_profile = self._after_from_clause_extract(query, core_relations)
+            eq = self._after_from_clause_extract(query, core_relations)
             self.__revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
-
-            # if time_profile is not None:
-            #    self.time_profile.update(time_profile)
 
             if eq is not None:
                 self.logger.debug(eq)

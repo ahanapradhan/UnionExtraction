@@ -54,9 +54,8 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         self.key_lists = fc.get_key_lists()
         self.global_pk_dict = fc.init.global_pk_dict
 
-        eq, t = self._after_from_clause_extract(query, self.core_relations)
+        eq = self._after_from_clause_extract(query, self.core_relations)
         self.connectionHelper.closeConnection()
-        self.time_profile.update(t)
         return eq
 
     def _after_from_clause_extract(self, query, core_relations):
@@ -74,6 +73,8 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
             self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
             return None, time_profile
 
+        self.time_profile.update(time_profile)
+
         self.aoa.post_process_for_generation_pipeline(query)
 
         delivery = copy.copy(self.aoa.pipeline_delivery)
@@ -87,7 +88,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         self.update_state(PROJECTION + RUNNING)
         check = self.pj.doJob(query)
         self.update_state(PROJECTION + DONE)
-        time_profile.update_for_projection(self.pj.local_elapsed_time, self.pj.app_calls)
+        self.time_profile.update_for_projection(self.pj.local_elapsed_time, self.pj.app_calls)
         self.info[PROJECTION] = {'names': self.pj.projection_names, 'attribs': self.pj.projected_attribs}
         if not check:
             self.info[PROJECTION] = None
@@ -104,7 +105,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         check = gb.doJob(query)
 
         self.update_state(GROUP_BY + DONE)
-        time_profile.update_for_group_by(gb.local_elapsed_time, gb.app_calls)
+        self.time_profile.update_for_group_by(gb.local_elapsed_time, gb.app_calls)
         self.info[GROUP_BY] = gb.group_by_attrib
         if not check:
             self.info[GROUP_BY] = None
@@ -127,7 +128,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         check = agg.doJob(query)
 
         self.update_state(AGGREGATE + DONE)
-        time_profile.update_for_aggregate(agg.local_elapsed_time, agg.app_calls)
+        self.time_profile.update_for_aggregate(agg.local_elapsed_time, agg.app_calls)
         self.info[AGGREGATE] = agg.global_aggregated_attributes
         if not check:
             self.info[AGGREGATE] = None
@@ -144,7 +145,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         ob.doJob(query)
 
         self.update_state(ORDER_BY + DONE)
-        time_profile.update_for_order_by(ob.local_elapsed_time, ob.app_calls)
+        self.time_profile.update_for_order_by(ob.local_elapsed_time, ob.app_calls)
         self.info[ORDER_BY] = ob.orderBy_string
         if not ob.has_orderBy:
             self.info[ORDER_BY] = None
@@ -159,7 +160,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
         self.update_state(LIMIT + DONE)
-        time_profile.update_for_limit(lm.local_elapsed_time, lm.app_calls)
+        self.time_profile.update_for_limit(lm.local_elapsed_time, lm.app_calls)
         self.info[LIMIT] = lm.limit
         if lm.limit is None:
             self.info[LIMIT] = None
@@ -175,9 +176,10 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         self.logger.debug("extracted query:\n", eq)
 
         eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
+        self.time_profile.update(time_profile)
 
         # last component in the pipeline should do this
         # time_profile.update_for_app(lm.app.method_call_count)
 
         self.update_state(DONE)
-        return eq, time_profile
+        return eq
