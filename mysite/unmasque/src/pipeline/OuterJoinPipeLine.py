@@ -5,9 +5,8 @@ from ...src.util.constants import OUTER_JOIN, START, RUNNING, DONE
 
 class OuterJoinPipeLine(ExtractionPipeLine):
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper)
+        super().__init__(connectionHelper, "Outer Join PipeLine")
         self.all_relations = None
-        self.name = "Outer Join PipeLine"
         self.pipeLineError = False
 
     def _after_from_clause_extract(self, query, core_relations):

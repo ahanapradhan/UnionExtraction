@@ -4,7 +4,7 @@ import unittest
 import pytest as pytest
 
 from mysite.unmasque.src.core.nep import NEP
-from ..src.core.QueryStringGenerator import QueryStringGenerator
+from mysite.unmasque.src.obsolete.OldQueryStringGenerator import OldQueryStringGenerator
 from ..src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ..src.util.constants import max_numeric_val
 from ..test.util import tpchSettings
@@ -62,7 +62,7 @@ class MyTestCase(BaseTestCase):
         self.do_init()
         delivery.doJob()
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'lineitem'
         q_gen.group_by_op = 'l_shipmode'
         q_gen.limit_op = '100'
@@ -142,7 +142,7 @@ class MyTestCase(BaseTestCase):
              "n_comment"], ['c_custkey', 'c_name', 'c_address', 'c_nationkey',
                             'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment']]
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'customer, orders, nation'
         q_gen.group_by_op = ''
         q_gen.limit_op = 10
@@ -202,7 +202,7 @@ class MyTestCase(BaseTestCase):
 
         global_key_attribs = ['l_orderkey', 'l_partkey', 'l_suppkey']
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'lineitem'
         q_gen.group_by_op = 'l_shipmode'
         q_gen.limit_op = None
@@ -276,7 +276,7 @@ class MyTestCase(BaseTestCase):
 
         global_key_attribs = ['l_orderkey', 'l_partkey', 'l_suppkey']
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'lineitem'
         q_gen.group_by_op = 'l_shipmode'
         q_gen.limit_op = '100'
@@ -351,7 +351,7 @@ class MyTestCase(BaseTestCase):
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'lineitem'
         q_gen.group_by_op = 'l_shipmode'
         q_gen.limit_op = '100'
@@ -463,7 +463,7 @@ class MyTestCase(BaseTestCase):
              "n_regionkey",
              "n_comment"]]
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'supplier, lineitem, orders, nation'
         q_gen.group_by_op = 's_name'
         q_gen.limit_op = '100'
@@ -566,7 +566,7 @@ class MyTestCase(BaseTestCase):
                                     "o_comment"]
                                    ]
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'customer, lineitem, orders'
         q_gen.group_by_op = 'c_name, o_orderdate, o_totalprice'
         q_gen.limit_op = '100'
@@ -672,7 +672,7 @@ class MyTestCase(BaseTestCase):
                                     "o_comment"]
                                    ]
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'customer, lineitem, orders'
         q_gen.group_by_op = 'c_phone, o_orderdate, o_totalprice'
         q_gen.limit_op = '100'
@@ -724,7 +724,7 @@ class MyTestCase(BaseTestCase):
                                f"VALUES (136777,\'Customer#000060217\',\'kolkata\',2,\'{rep_str}\',4089.02,"
                                f"\'BUILDING\',\'Nothing\');"])
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'customer1, lineitem, orders'
         q_gen.group_by_op = 'c_phone, o_orderdate, o_totalprice'
         q_gen.limit_op = '100'
@@ -784,7 +784,7 @@ class MyTestCase(BaseTestCase):
                                     "n_regionkey",
                                     "n_comment"]]
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'partsupp, supplier, nation'
         q_gen.group_by_op = 'ps_COMMENT'
         q_gen.limit_op = '100'
@@ -840,7 +840,7 @@ class MyTestCase(BaseTestCase):
             "Group By ps_COMMENT " \
             "Order by value desc Limit 100;"
 
-        q_gen = QueryStringGenerator(self.conn)
+        q_gen = OldQueryStringGenerator(self.conn)
         q_gen.from_op = 'partsupp1, supplier, nation'
         q_gen.group_by_op = 'ps_COMMENT'
         q_gen.limit_op = '100'
@@ -853,17 +853,6 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(rep_str_wildcard, "%regular%dependencies%")
         self.conn.execute_sql(["drop table partsupp1;"])
         self.conn.closeConnection()
-
-    def test_remove_NE_string_q_gen(self):
-        elf = ['partsupp', 'ps_comment', '<>', 'hello world regular mina dependencies']
-        q_gen = QueryStringGenerator(self.conn)
-        q_gen.where_op = 'ps_suppkey = s_suppkey and s_nationkey = n_nationkey and ' \
-                         'n_name = \'ARGENTINA\' and ps_comment <> \'dependencies\' ' \
-                         'and ps_comment <> \'hello world regular mina dependencies\''
-        q_gen.remove_exact_NE_string_predicate(elf)
-        print(q_gen.where_op)
-        self.assertEqual(q_gen.where_op, 'ps_suppkey = s_suppkey and '
-                                         's_nationkey = n_nationkey and n_name = \'ARGENTINA\'')
 
 
 if __name__ == '__main__':

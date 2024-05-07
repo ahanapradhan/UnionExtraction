@@ -3,6 +3,7 @@ import threading
 import time
 from queue import Queue
 
+from ...experimental.NestedAggWherePipeLine import NestedAggWherePipeLine
 from ....src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ....src.pipeline.OuterJoinPipeLine import OuterJoinPipeLine
 from ....src.pipeline.UnionPipeLine import UnionPipeLine
@@ -71,13 +72,16 @@ class PipeLineFactory:
     def create_pipeline(self, connectionHelper):
         detect_union = connectionHelper.config.detect_union
         detect_oj = connectionHelper.config.detect_oj
-        pipe = None
+        detect_nested = connectionHelper.config.detect_nested
         if detect_union:
             pipe = UnionPipeLine(connectionHelper)
             print("Union Pipeline")
         elif detect_oj:
             pipe = OuterJoinPipeLine(connectionHelper)
             print("Outer Join Pipeline")
+        elif detect_nested:
+            pipe = NestedAggWherePipeLine(connectionHelper)
+            print("Nested Query Pipeline")
         else:
             pipe = ExtractionPipeLine(connectionHelper)
             print("Extraction Pipeline")

@@ -6,19 +6,22 @@ class Comparator(AppExtractorBase):
     r_e = "r_e"
     r_h = "r_h"
 
-    def __init__(self, connectionHelper, name, earlyExit, core_relations=None):
+    def __init__(self, connectionHelper, name, earlyExit, core_relations=None, restore_db_before_compare=True):
         super().__init__(connectionHelper, name)
         self.relations = core_relations
         self.earlyExit = earlyExit
         self.row_count_r_e = 0
         self.row_count_r_h = 0
         self.db_restorer = DbRestorer(self.connectionHelper, self.relations)
+        self.restore_db_before_compare = restore_db_before_compare
 
     def extract_params_from_args(self, args):
         return args[0], args[1]
 
-    def doActualJob(self, args=None):
-        Q_h, Q_E = self.extract_params_from_args(args)
+    def _restore_original_db(self, Q_E):
+        if not self.restore_db_before_compare:
+            self.logger.error("Should not reach here!")
+            return False
         for tab in self.relations:
             tab_size = self.db_restorer.restore_table_and_confirm(tab)
             if not tab_size:
@@ -28,14 +31,20 @@ class Comparator(AppExtractorBase):
         if Q_E is None:
             self.logger.info("Got None to compare. Cannot do anything...sorry!")
             return False
-        matched = self.match(Q_h, Q_E)
+        return True
+
+    def doActualJob(self, args=None):
+        Q_h, Q_E = self.extract_params_from_args(args)
+        restored = self._restore_original_db(Q_E) if self.restore_db_before_compare else True
+        matched = self.match(Q_h, Q_E) if restored else False
         return matched
 
     def create_view_from_Q_E(self, Q_E):
         try:
             self.logger.debug(Q_E)
             # Run the extracted query Q_E .
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e), self.connectionHelper.queries.create_view_as(self.r_e, Q_E)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
+                                               self.connectionHelper.queries.create_view_as(self.r_e, Q_E)])
         except ValueError as e:
             self.logger.error(e)
             return False
@@ -47,7 +56,8 @@ class Comparator(AppExtractorBase):
     def run_diff_query_match_and_dropViews(self):
         len1, len2 = self.run_diff_queries()
         self.logger.debug(len1, len2)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e), self.connectionHelper.queries.drop_table(self.r_h)])
+        self.connectionHelper.execute_sql(
+            [self.connectionHelper.queries.drop_view(self.r_e), self.connectionHelper.queries.drop_table(self.r_h)])
         return self.is_match(len1, len2)
 
     def is_match(self, len1, len2):
@@ -58,9 +68,11 @@ class Comparator(AppExtractorBase):
 
     def run_diff_queries(self):
         len1 = self.connectionHelper.execute_sql_fetchone_0(
-            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_e, self.r_h) + " as T;")
+            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_e,
+                                                                                                           self.r_h) + " as T;")
         len2 = self.connectionHelper.execute_sql_fetchone_0(
-            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_h, self.r_e) + " as T;")
+            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_h,
+                                                                                                           self.r_e) + " as T;")
         return len1, len2
 
     def create_table_from_Qh(self, Q_h):
@@ -84,7 +96,8 @@ class Comparator(AppExtractorBase):
         self.create_table_from_Qh(Q_h)
 
         # Size of the table
-        self.row_count_r_h = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(self.r_h))
+        self.row_count_r_h = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.get_row_count(self.r_h))
         self.logger.debug(self.r_h, self.row_count_r_h)
 
         if self.row_count_r_e != self.row_count_r_h:

@@ -1,6 +1,7 @@
+import copy
 from abc import ABC, abstractmethod
 
-from ....src.core.QueryStringGenerator import QueryStringGenerator
+from ....src.util.QueryStringGenerator import QueryStringGenerator
 from ....src.core.nep import NepMinimizer, NEP
 from ....src.pipeline.abstract.generic_pipeline import GenericPipeLine
 from ....src.util.constants import FILTER, DONE, NEP_, RUNNING, START, DB_MINIMIZATION, RESULT_COMPARE
@@ -8,7 +9,7 @@ from ....src.util.constants import FILTER, DONE, NEP_, RUNNING, START, DB_MINIMI
 
 class NepPipeLine(GenericPipeLine, ABC):
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "NEP Pipeline")
+        super().__init__(connectionHelper, "NEP PipeLine")
         self.q_generator = QueryStringGenerator(self.connectionHelper)
 
     @abstractmethod
@@ -24,10 +25,11 @@ class NepPipeLine(GenericPipeLine, ABC):
         raise NotImplementedError("Trouble!")
 
     @abstractmethod
-    def _verify_correctness(self, query, result):
+    def verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
-    def _extract_NEP(self, core_relations, sizes, eq, q_generator, query, time_profile, delivery):
+    def _extract_NEP(self, core_relations, sizes, query, delivery):
+        eq = self.q_generator.write_query()
         if not self.connectionHelper.config.detect_nep:
             return eq
 
@@ -50,7 +52,7 @@ class NepPipeLine(GenericPipeLine, ABC):
                 self.update_state(NEP_ + DB_MINIMIZATION + START)
                 self.update_state(NEP_ + DB_MINIMIZATION + RUNNING)
                 minimized = nep_minimizer.doJob((query, eq, tabname))
-                time_profile.update_for_view_minimization(nep_minimizer.local_elapsed_time, nep_minimizer.app_calls)
+                self.time_profile.update_for_view_minimization(nep_minimizer.local_elapsed_time, nep_minimizer.app_calls)
                 if not minimized:
                     continue
                 self.update_state(NEP_ + DB_MINIMIZATION + DONE)
@@ -62,9 +64,9 @@ class NepPipeLine(GenericPipeLine, ABC):
                 if nep_filters is None or not len(nep_filters):
                     self.logger.info("NEP does not exists.")
                 else:
-                    eq = q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
+                    eq = self.q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
                 self.update_state(NEP_ + FILTER + DONE)
-                time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
+                self.time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
 
         self.logger.debug("returning..", eq)
         return eq

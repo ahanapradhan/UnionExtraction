@@ -176,6 +176,13 @@ class ExtractionTestCase(BaseTestCase):
         print(eq)
         self.pipeline.time_profile.print()
 
+    def test_test(self):
+        query = "select n_name from nation, region where n_regionkey = r_regionkey and r_name = 'AFRICA' order by n_name limit 5;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.pipeline.time_profile.print()
+
     @pytest.mark.skip
     def test_extract_Q3_optimizer_options_off(self):
         self.conn.connectUsingParams()
