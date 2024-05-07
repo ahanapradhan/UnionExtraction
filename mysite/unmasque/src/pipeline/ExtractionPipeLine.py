@@ -65,18 +65,18 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
         if not check:
             self.logger.error("Some problem in Regular mutation pipeline. Aborting extraction!")
-            return None, time_profile
+            self.time_profile.update(time_profile)
+            return None
 
         check, time_profile = self._extract_disjunction(self.aoa.filter_predicates,
                                                         core_relations, query, time_profile)
         if not check:
             self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
-            return None, time_profile
+            self.time_profile.update(time_profile)
+            return None
 
         self.time_profile.update(time_profile)
-
         self.aoa.post_process_for_generation_pipeline(query)
-
         delivery = copy.copy(self.aoa.pipeline_delivery)
 
         '''

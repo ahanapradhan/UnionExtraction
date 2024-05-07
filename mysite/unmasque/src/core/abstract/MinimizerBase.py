@@ -45,12 +45,12 @@ class Minimizer(AppExtractorBase, ABC):
                                           start_ctid,
                                           tabname,
                                           tabname1):
-        if not self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
-            # Take the upper half
-            end_ctid = mid_ctid1
-        else:
+        if self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
             # Take the lower half
             start_ctid = mid_ctid2
+        else:
+            # Take the upper half
+            end_ctid = mid_ctid1
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
         return end_ctid, start_ctid
 

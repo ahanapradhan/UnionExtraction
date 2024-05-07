@@ -31,6 +31,9 @@ class ViewMinimizer(Minimizer):
 
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
+        if not self.sanity_check(query):
+            self.logger.error(" Original database is not giving populated result!")
+            return False
         return self.reduce_Database_Instance(query,
                                              True) if self.cs2_passed else self.reduce_Database_Instance(query, False)
 

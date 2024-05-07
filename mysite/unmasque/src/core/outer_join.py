@@ -228,7 +228,7 @@ class OuterJoin(GenerationPipeLineBase):
     def update_attrib_to_see_impact(self, attrib: str, tabname: str) \
             -> Tuple[Union[int, float, date, str], Union[int, float, date, str]]:
         prev = self.connectionHelper.execute_sql_fetchone_0(
-            self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
+            self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname), self.logger)
         val = 'NULL'
         self.logger.debug(f"update {tabname}.{attrib} with value {val} that had previous value {prev}")
         self.update_with_val(attrib, tabname, val)

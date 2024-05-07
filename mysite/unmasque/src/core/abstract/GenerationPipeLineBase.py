@@ -24,7 +24,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.joined_attribs = delivery.joined_attribs
 
         self.get_datatype = delivery.get_datatype  # method
-        # self.formulate_predicate_from_filter = delivery.formulate_predicate_from_filter  # method
 
     def extract_params_from_args(self, args):
         return args[0]
