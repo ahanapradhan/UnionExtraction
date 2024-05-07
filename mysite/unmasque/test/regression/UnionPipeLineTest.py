@@ -215,13 +215,23 @@ class MyTestCase(BaseTestCase):
         self.conn.config.detect_or = True
         query = "(SELECT l_linenumber, o_shippriority , " \
                 "count(*) as low_line_count  " \
-                "FROM lineitem LEFT OUTER JOIN orders ON l_orderkey = o_orderkey AND o_totalprice > 50000 " \
-                "AND l_shipmode IN ('MAIL', 'AIR', 'TRUCK') AND l_quantity < 30  " \
+                "FROM lineitem , orders WHERE l_orderkey = o_orderkey AND o_totalprice > 50000 " \
+                "AND l_shipmode IN ('MAIL', 'AIR') AND l_quantity < 30  " \
                 "GROUP BY l_linenumber, o_shippriority Order By l_linenumber, o_shippriority desc  Limit 5)" \
                 " UNION ALL " \
                 "(select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on" \
                 " p_partkey = ps_partkey GROUP BY p_size, ps_suppkey ORDER BY p_size desc, " \
                 "ps_suppkey desc LIMIT 7);"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_outer_join_subq2_or(self):
+        self.conn.config.detect_or = True
+        query = "(select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on " \
+                "p_partkey = ps_partkey and p_brand IN ('Brand#52', 'Brand#34', 'Brand#15') and p_container IN ('WRAP " \
+                "BOX', 'MED BOX') GROUP BY p_size, ps_suppkey  ORDER BY ps_suppkey desc LIMIT 30);"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
@@ -235,9 +245,9 @@ class MyTestCase(BaseTestCase):
                 "AND l_shipmode IN ('MAIL', 'AIR') AND l_quantity < 30  " \
                 "GROUP BY l_linenumber, o_shippriority Order By l_linenumber, o_shippriority desc  Limit 5)" \
                 " UNION ALL " \
-                "(select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on" \
-                " p_partkey = ps_partkey GROUP BY p_size, ps_suppkey ORDER BY p_size desc, " \
-                "ps_suppkey desc LIMIT 7);"
+                "(select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on " \
+                "p_partkey = ps_partkey and p_brand IN ('Brand#52', 'Brand#34', 'Brand#15') and p_container IN ('WRAP " \
+                "BOX', 'MED BOX') GROUP BY p_size, ps_suppkey  ORDER BY ps_suppkey desc LIMIT 30);"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)

@@ -48,9 +48,12 @@ class Minimizer(AppExtractorBase, ABC):
         if self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
             # Take the lower half
             start_ctid = mid_ctid2
-        else:
+        elif self.check_result_for_half(start_ctid, mid_ctid1, tabname1, tabname, query):
             # Take the upper half
             end_ctid = mid_ctid1
+        else:
+            self.logger.error("Cannot halve anymore..")
+            return None, None
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
         return end_ctid, start_ctid
 
@@ -93,9 +96,9 @@ class Minimizer(AppExtractorBase, ABC):
 
     def check_result_for_half(self, start_ctid, end_ctid, tab, view, query):
         self.connectionHelper.execute_sql(
-            [self.connectionHelper.queries.create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)])
+            [self.connectionHelper.queries.create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)], self.logger)
         new_result = self.app.doJob(query)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(view)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(view)], self.logger)
         if not self.app.isQ_result_empty(new_result):
             return True  # this half works
         return False  # this half does not work

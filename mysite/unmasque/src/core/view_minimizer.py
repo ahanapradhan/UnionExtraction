@@ -51,6 +51,8 @@ class ViewMinimizer(Minimizer):
             end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid,
                                                                           mid_ctid1, mid_ctid2, query,
                                                                           start_ctid, tabname, tabname1)
+            if end_ctid is None:
+                return core_sizes
             start_ctid2 = start_ctid.split(",")
             start_page = int(start_ctid2[0][1:])
             end_ctid2 = end_ctid.split(",")
