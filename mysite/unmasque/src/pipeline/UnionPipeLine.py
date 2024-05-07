@@ -85,7 +85,7 @@ class UnionPipeLine(OuterJoinPipeLine):
 
     def __revert_nullifications(self, relations):
         for tab in relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(tab),
                                                self.connectionHelper.queries.alter_table_rename_to(
                                                    self.connectionHelper.queries.get_tabname_un(tab), tab)],
                                               self.logger)
