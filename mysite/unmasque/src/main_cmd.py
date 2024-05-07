@@ -36,7 +36,7 @@ if __name__ == '__main__':
          "revenue " \
          "desc, o_orderdate limit 10;"
 
-    # hq = "select c_name from customer UNION ALL select s_name from supplier UNION ALL select n_name from nation;"
+    hq = "select * from nation;"
 
     conn = ConnectionHelperFactory().createConnectionHelper()
     conn.config.detect_union = False

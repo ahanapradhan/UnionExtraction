@@ -41,12 +41,9 @@ class UnionPipeLine(OuterJoinPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.__nullify_relations(nullify)
-            eq, time_profile = self._after_from_clause_extract(query, core_relations)
+            eq = self._after_from_clause_extract(query, core_relations)
             self.__revert_nullifications(nullify)
             self.connectionHelper.closeConnection()
-
-            # if time_profile is not None:
-            #    self.time_profile.update(time_profile)
 
             if eq is not None:
                 self.logger.debug(eq)
@@ -84,10 +81,13 @@ class UnionPipeLine(OuterJoinPipeLine):
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, backup_name),
                                                self.connectionHelper.queries.create_table_like(tab, backup_name)],
                                               self.logger)
+            self.all_sizes[tab] = 0
 
     def __revert_nullifications(self, relations):
         for tab in relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(tab),
                                                self.connectionHelper.queries.alter_table_rename_to(
                                                    self.connectionHelper.queries.get_tabname_un(tab), tab)],
                                               self.logger)
+            self.all_sizes[tab] = self.connectionHelper.execute_sql_fetchone_0(
+                self.connectionHelper.queries.get_row_count(tab))

@@ -74,7 +74,7 @@ class ViewMinimizer(Minimizer):
 
         for tabname in self.core_relations:
             self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_4(tabname)),
+                [self.connectionHelper.queries.drop_table_cascade(self.connectionHelper.queries.get_tabname_4(tabname)),
                  self.connectionHelper.queries.create_table_as_select_star_from(
                      self.connectionHelper.queries.get_tabname_4(tabname), tabname)])
 
