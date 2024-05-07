@@ -1,6 +1,7 @@
 from abc import ABC
 
 from .AppExtractorBase import AppExtractorBase
+from ..nullfree_executable import NullFreeExecutable
 
 
 def calculate_mid_ctids(size):
@@ -45,6 +46,18 @@ class Minimizer(AppExtractorBase, ABC):
                                           start_ctid,
                                           tabname,
                                           tabname1):
+        if isinstance(self.app, NullFreeExecutable):
+            end_ctid, start_ctid = self.check_sanity_when_nullfree_exe(end_ctid, mid_ctid1, mid_ctid2, query,
+                                                                       start_ctid,
+                                                                       tabname, tabname1)
+        else:
+            end_ctid, start_ctid = self.check_sanity_when_base_exe(end_ctid, mid_ctid1, mid_ctid2, query,
+                                                                   start_ctid,
+                                                                   tabname, tabname1)
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
+        return end_ctid, start_ctid
+
+    def check_sanity_when_nullfree_exe(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname, tabname1):
         if self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
             # Take the lower half
             start_ctid = mid_ctid2
@@ -53,8 +66,16 @@ class Minimizer(AppExtractorBase, ABC):
             end_ctid = mid_ctid1
         else:
             self.logger.error("Cannot halve anymore..")
-            return None, None
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
+            start_ctid, end_ctid = None, None
+        return end_ctid, start_ctid
+
+    def check_sanity_when_base_exe(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname, tabname1):
+        if self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
+            # Take the lower half
+            start_ctid = mid_ctid2
+        else:
+            # Take the upper half
+            end_ctid = mid_ctid1
         return end_ctid, start_ctid
 
     def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
@@ -96,7 +117,8 @@ class Minimizer(AppExtractorBase, ABC):
 
     def check_result_for_half(self, start_ctid, end_ctid, tab, view, query):
         self.connectionHelper.execute_sql(
-            [self.connectionHelper.queries.create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)], self.logger)
+            [self.connectionHelper.queries.create_view_as_select_star_where_ctid(end_ctid, start_ctid, view, tab)],
+            self.logger)
         new_result = self.app.doJob(query)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(view)], self.logger)
         if not self.app.isQ_result_empty(new_result):

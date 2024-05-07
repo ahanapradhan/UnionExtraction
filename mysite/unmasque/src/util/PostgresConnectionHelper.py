@@ -73,9 +73,6 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
         for param in params:
-            # print(sql)
-            # print(param)
-            # print(sql.count(","), len(param))
             if logger is not None:
                 logger.debug(sql, param)
             cur.execute(sql, param)
@@ -83,7 +80,8 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def execute_sql_fetchall(self, sql, logger=None):
         cur = self.get_cursor()
-        # print("...", sql, "...")
+        if logger is not None:
+            logger.debug("..cur execute.." + sql)
         try:
             cur.execute(sql)
             res = cur.fetchall()
@@ -135,6 +133,8 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def cur_execute_sql_fetch_one(self, cur, sql, logger=None):
         prev = None
+        if logger is not None:
+            logger.debug("..cur execute.." + sql)
         try:
             cur.execute(sql)
             prev = cur.fetchone()
