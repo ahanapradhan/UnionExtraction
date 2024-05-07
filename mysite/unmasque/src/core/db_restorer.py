@@ -7,7 +7,7 @@ class DbRestorer(AppExtractorBase):
         super().__init__(connectionHelper, name)
         self.relations = []
         self.last_restored_size = {}
-        self.core_relations = core_relations
+        self.core_relations = list(set(core_relations))
 
     def set_all_sizes(self, sizes):
         self.all_sizes = sizes
@@ -34,16 +34,19 @@ class DbRestorer(AppExtractorBase):
                                            self.connectionHelper.queries.drop_table("r_h")])
 
     def doActualJob(self, args=None):
+        self.logger.debug("core relations: ", self.core_relations, " all sizes: ", self.all_sizes)
         tabs_wheres = self.extract_params_from_args(args)
         if tabs_wheres is None:
             to_restore = self.core_relations if len(self.core_relations) else self.relations
             for tab in to_restore:
                 if tab not in self.last_restored_size.keys():
                     self.update_current_sizes(tab)
-                if self.last_restored_size[tab] != self.all_sizes[tab]:
-                    row_count = self.restore_table_and_confirm(tab)
-                    if not row_count:
-                        return False
+                # if self.last_restored_size[tab] == self.all_sizes[tab]:
+                #    self.logger.info("No need to restore table")
+                # else:
+                row_count = self.restore_table_and_confirm(tab)
+                if not row_count:
+                    return False
         else:
             self.logger.debug("All sizes:", self.all_sizes)
             self.logger.debug("Current sizes:", self.last_restored_size)
@@ -53,12 +56,12 @@ class DbRestorer(AppExtractorBase):
                 tab, where = entry[0], entry[1]
                 if tab not in self.last_restored_size.keys():
                     self.update_current_sizes(tab)
-                if where == 'true' and self.last_restored_size[tab] == self.all_sizes[tab]:
-                    self.logger.info("No need to restore table")
-                else:
-                    check = self.restore_table_and_confirm(tab, where)
-                    if not check:
-                        return False
+                # if where == 'true' and self.last_restored_size[tab] == self.all_sizes[tab]:
+                #    self.logger.info("No need to restore table")
+                # else:
+                check = self.restore_table_and_confirm(tab, where)
+                if not check:
+                    return False
         return True
 
     def restore_table_and_confirm(self, tab, where=None):

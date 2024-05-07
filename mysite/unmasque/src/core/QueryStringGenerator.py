@@ -108,6 +108,23 @@ class QueryStringGenerator(AppExtractorBase):
         self.order_by_op = ''
         self.limit_op = None
 
+    def reset(self):
+        self.eq_join_predicates = None
+        self.join_graph = None
+        self.filter_in_predicates = []
+        self.filter_predicates = None
+        self.aoa_less_thans = None
+        self.aoa_predicates = None
+
+        self.get_datatype = None
+
+        self.select_op = ''
+        self.from_op = ''
+        self.where_op = ''
+        self.group_by_op = ''
+        self.order_by_op = ''
+        self.limit_op = None
+
     def formulate_predicate_from_filter(self, elt):
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[4]
         datatype = self.get_datatype((tab, attrib))

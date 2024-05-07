@@ -19,7 +19,7 @@ class NepMinimizer(Minimizer):
         self.nep_comparator = NepComparator(self.connectionHelper, core_relations)
 
     def set_all_relations(self, relations: list[str]):
-        self.all_relations = copy.deepcopy(relations)
+        super().set_all_relations(relations)
         self.nep_comparator.set_all_relations(self.all_relations)
 
     def extract_params_from_args(self, args):

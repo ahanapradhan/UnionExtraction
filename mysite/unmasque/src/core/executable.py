@@ -29,8 +29,8 @@ def add_header(description, result):
 
 class Executable(Base):
 
-    def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "Executable")
+    def __init__(self, connectionHelper, name="Executable"):
+        super().__init__(connectionHelper, name)
 
     def extract_params_from_args(self, args):
         return args[0]

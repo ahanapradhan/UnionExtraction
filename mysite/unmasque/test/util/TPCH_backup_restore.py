@@ -9,15 +9,12 @@ class TPCHRestore:
 
     def __init__(self, conn: AbstractConnectionHelper):
         self.conn = conn
-        self.relations = ['lineitem', 'orders']  # tpchSettings.relations
+        self.relations = ['lineitem', 'orders', 'part', 'partsupp']  # tpchSettings.relations
         self.logger = Log("Test Schema Restore", conn.config.log_level)
 
     def doJob(self):
         self.conn.connectUsingParams()
-        # self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
-        #                       f"create schema {self.user_schema};"], self.logger)
         for tab in self.relations:
-            # print(f"Recreating {tab}")
             self.conn.execute_sql(
                 [f"truncate {self.user_schema}.{tab};",
                  f"insert into {self.user_schema}.{tab} select * from {self.backup_schema}.{tab};",
