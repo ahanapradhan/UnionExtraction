@@ -13,9 +13,8 @@ def calculate_mid_ctids(size):
 class Minimizer(AppExtractorBase, ABC):
 
     def __init__(self, connectionHelper, core_relations, all_sizes, name):
-        AppExtractorBase.__init__(self, connectionHelper, name)
+        AppExtractorBase.__init__(self, connectionHelper, name, all_sizes)
         self.core_relations = core_relations
-        self.all_sizes = all_sizes
         self.mock = False
         self.all_relations = list(all_sizes.keys())
         self.all_relations.sort()

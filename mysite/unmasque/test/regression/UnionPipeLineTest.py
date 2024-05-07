@@ -70,6 +70,8 @@ class MyTestCase(BaseTestCase):
                 "(select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);"
         u_Q = self.pipeline.doJob(query)
         self.assertTrue(u_Q is not None)
+        print(query)
+        print("-----------------------------")
         print(u_Q)
         self.pipeline.time_profile.print()
 

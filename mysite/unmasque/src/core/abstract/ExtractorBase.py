@@ -15,7 +15,7 @@ class Base(TpchSanitizer):
             cls._instance = super(Base, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, all_sizes=None):
         super().__init__(connectionHelper)
         self.connectionHelper = connectionHelper
         self.extractor_name = name
