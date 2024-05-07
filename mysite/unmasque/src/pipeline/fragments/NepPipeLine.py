@@ -9,7 +9,7 @@ from mysite.unmasque.src.util.constants import FILTER, DONE, NEP_, RUNNING, STAR
 
 class NepPipeLine(GenericPipeLine, ABC):
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper)
+        super().__init__(connectionHelper, "NEP PipeLine")
         self.q_generator = QueryStringGenerator(self.connectionHelper)
 
     @abstractmethod

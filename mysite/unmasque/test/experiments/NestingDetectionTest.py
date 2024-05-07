@@ -28,6 +28,17 @@ class MyTestCase(BaseTestCase):
         eq = self.do_test(query)
         self.assertTrue('SUM(o_totalprice)' in eq)
 
+    def test_nested_sum_from_clause(self):
+        query = "select c_name, c_acctbal from customer,  " \
+                 "(select o_custkey, sum(o_totalprice) as total_sum " \
+                 "from orders where o_orderstatus = 'O' group by o_custkey) as avgTable " \
+                 "where avgTable.o_custkey = c_custkey and " \
+                 "avgTable.total_sum < 12000  and c_mktsegment = 'BUILDING' limit 5;"
+        eq = self.do_test(query)
+        self.assertTrue('SUM(o_totalprice)' in eq)
+        self.assertTrue(self.pipeline.correct)
+
+
     def test_nested_avg(self):
         query = "select c_name, c_acctbal from customer " \
                 "where (select avg(o_totalprice) as custom_avg " \

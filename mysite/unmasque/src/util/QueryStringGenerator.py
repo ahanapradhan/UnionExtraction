@@ -63,8 +63,8 @@ class QueryDetails:
         output = append_clause(output, "Select", self.select_op)
         output = append_clause(output, "From", self.from_op)
         output = append_clause(output, "Where", self.where_op)
+        output = append_clause(output, "Group By", self.group_by_op)
         if gaol:
-            output = append_clause(output, "Group By", self.group_by_op)
             output = append_clause(output, "Order By", self.order_by_op)
             output = append_clause(output, "Limit", self.limit_op)
         output = f"{output};"
@@ -156,6 +156,14 @@ class QueryStringGenerator:
     @orderby.setter
     def orderby(self, ob_obj):
         self._workingCopy.order_by_op = ob_obj.orderBy_string
+
+    @property
+    def groupby(self):
+        return NotImplementedError
+
+    @groupby.setter
+    def groupby(self, gb_string):
+        self._workingCopy.group_by_op = gb_string
 
     @property
     def limit(self):
@@ -258,16 +266,17 @@ class QueryStringGenerator:
     def generate_query_string(self, gaol=True, select=True, all_ors=None):
         self._workingCopy.from_op = ", ".join(self._workingCopy.core_relations)
         self._workingCopy.where_op = self.__generate_where_clause(all_ors)
-        self.__generate_group_by_clause()
-        self.__generate_select_clause(select)
+        if gaol:
+            self.__generate_group_by_clause()
+            self.__generate_select_clause(select)
         eq = self.write_query(gaol)
         return eq
 
-    def rewrite_query(self, core_relations, ed_join_edges, filter_predicates, gaol=True, select=True):
+    def rewrite_query(self, core_relations, ed_join_edges, filter_predicates, ol=True, select=True):
         self.from_clause = core_relations
         self.join_edges = ed_join_edges
         self._workingCopy.filter_predicates = filter_predicates
-        eq = self.generate_query_string(gaol, select, all_ors=None)
+        eq = self.generate_query_string(ol, select, all_ors=None)
         return eq
 
     def create_new_query(self, ref_query=None):
@@ -600,6 +609,8 @@ class QueryStringGenerator:
             else:
                 dependent_join_edges.append(edge)
                 self.logger.debug("dependent")
+        self.logger.debug("dependent join edges: ", dependent_join_edges)
+        self.logger.debug("independent_join_edges join edges: ", independent_join_edges)
 
         outer_query = self.make_nested_query_string(dependent_join_edges, independent_join_edges, inner_filter,
                                                     inner_from_relations, inner_select, other_innser_filters,
@@ -611,12 +622,46 @@ class QueryStringGenerator:
         ref_q = self.create_new_query()
         self.logger.debug("ref_q:", ref_q)
         # make inner query
-        self.select_op = inner_select
+        from_alias = f"t_{str('_'.join(inner_from_relations))}"
+        agg_alias = "agg_fn"
+        self.select_op = f"{inner_select} as {agg_alias}"
+
+        independent_joins = []
+        not_dependent_joins = []
+        for edge in dependent_join_edges:
+            self.logger.debug("edge ", edge)
+            s_edge = get_join_nodes_from_edge(edge)
+            self.logger.debug("s_edge ", s_edge)
+            are_all_in = True
+            for es in s_edge:
+                if es[0] in outer_from_relations:
+                    are_all_in = False
+                    break
+            if not are_all_in:
+                new_s_edge = []
+                for es in s_edge:
+                    if es[0] in inner_from_relations:
+                        new_es = f"{from_alias}.{es[1]}"
+                        self.select_op = f"{self.select_op}, {es[1]}"
+                        self.groupby = f"{es[1]}"
+                    else:
+                        new_es = f"{es[0]}.{es[1]}"
+                    new_s_edge.append(new_es)
+                new_outer_edge = " = ".join(new_s_edge)
+                independent_joins.append(new_outer_edge)
+                not_dependent_joins.append(edge)
+        for edge in not_dependent_joins:
+            dependent_join_edges.remove(edge)
+        for edge in independent_joins:
+            independent_join_edges.append(edge)
+
         inner_query = self.rewrite_query(inner_from_relations,
                                          dependent_join_edges, other_innser_filters, False, False)
+        self.groupby = ''
         inner_query = inner_query.replace(';', '')
-        nested_pred = f"({inner_query}) {inner_filter[2]} {value}"
+        nested_pred = f"{from_alias}.{agg_alias} {inner_filter[2]} {value}"
         self.logger.debug("nested pred: ", nested_pred)
+        outer_from_relations.append(f"({inner_query}) as {from_alias}")
         # make outer query
         self.create_new_query(ref_q)
         outer_query = self.rewrite_query(outer_from_relations, independent_join_edges, self.all_arithmetic_filters)

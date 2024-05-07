@@ -4,7 +4,7 @@ from pathlib import Path
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
-    DETECT_OJ
+    DETECT_OJ, DETECT_NESTED
 
 
 class Config:
@@ -34,6 +34,7 @@ class Config:
         self.detect_or = False
         self.detect_oj = False
         self.use_cs2 = False
+        self.detect_nested = False
         self.app_type = ApplicationType.SQL_ERR_FWD
         self.database = "postgres"
 
@@ -74,24 +75,35 @@ class Config:
             self.detect_union = False
         elif detect_union.lower() == "yes":
             self.detect_union = True
+
         detect_nep = config_object.get(FEATURE_SECTION, DETECT_NEP)
         if detect_nep.lower() == "no":
             self.detect_nep = False
         elif detect_nep.lower() == "yes":
             self.detect_nep = True
+
         use_cs2 = config_object.get(FEATURE_SECTION, USE_CS2)
         if use_cs2.lower() == "no":
             self.use_cs2 = False
         elif use_cs2.lower() == "yes":
             self.use_cs2 = True
+
         detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
         if detect_or.lower() == "no":
             self.detect_or = False
         elif detect_or.lower() == "yes":
             self.detect_or = True
+
         detect_oj = config_object.get(FEATURE_SECTION, DETECT_OJ)
         if detect_oj.lower() == "no":
             self.detect_oj = False
         elif detect_oj.lower() == "yes":
             self.detect_oj = True
+            self.detect_union = False
+
+        detect_nested = config_object.get(FEATURE_SECTION, DETECT_NESTED)
+        if detect_nested.lower() == "no":
+            self.detect_nested = False
+        elif detect_nested.lower() == "yes":
+            self.detect_nested = True
             self.detect_union = False

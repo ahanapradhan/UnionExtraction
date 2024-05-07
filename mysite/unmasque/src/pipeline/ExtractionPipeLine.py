@@ -3,9 +3,7 @@ import copy
 from mysite.unmasque.src.pipeline.fragments.DisjunctionPipeLine import DisjunctionPipeLine
 from mysite.unmasque.src.pipeline.fragments.NepPipeLine import NepPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
-from .fragments.NestedAggWherePipeLine import NestedAggWherePipeLine
 from ..core.elapsed_time import create_zero_time_profile
-from ..core.where_aggregate import HiddenAggregate
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, PROJECTION, \
     GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
 from ...src.core.aggregation import Aggregation
@@ -17,11 +15,10 @@ from ...src.core.projection import Projection
 
 
 class ExtractionPipeLine(DisjunctionPipeLine,
-                         NepPipeLine,
-                         NestedAggWherePipeLine):
+                         NepPipeLine):
 
-    def __init__(self, connectionHelper):
-        DisjunctionPipeLine.__init__(self, connectionHelper, "Extraction PipeLine")
+    def __init__(self, connectionHelper, name="Extraction PipeLine"):
+        DisjunctionPipeLine.__init__(self, connectionHelper, name)
         NepPipeLine.__init__(self, connectionHelper)
         self.pj = None
         self.global_pk_dict = None
@@ -79,13 +76,12 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         self.aoa.post_process_for_generation_pipeline(query)
 
-        delivery = copy.copy(self.aoa.pipeline_delivery)
-
         '''
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
-        self.pj = Projection(self.connectionHelper, delivery)
+        self.genPipelineCtx = copy.copy(self.aoa.pipeline_delivery)
+        self.pj = Projection(self.connectionHelper, self.genPipelineCtx)
 
         self.update_state(PROJECTION + RUNNING)
         check = self.pj.doJob(query)
@@ -102,7 +98,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             return None, time_profile
 
         self.update_state(GROUP_BY + START)
-        gb = GroupBy(self.connectionHelper, delivery, self.pj.projected_attribs)
+        gb = GroupBy(self.connectionHelper, self.genPipelineCtx, self.pj.projected_attribs)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
 
@@ -125,7 +121,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         self.update_state(AGGREGATE + START)
         agg = Aggregation(self.connectionHelper, self.pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
-                          self.pj.dependencies, self.pj.solution, self.pj.param_list, delivery)
+                          self.pj.dependencies, self.pj.solution, self.pj.param_list, self.genPipelineCtx)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
 
@@ -142,7 +138,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         self.update_state(ORDER_BY + START)
         ob = OrderBy(self.connectionHelper, self.pj.projected_attribs, self.pj.projection_names, self.pj.dependencies,
-                     agg.global_aggregated_attributes, delivery)
+                     agg.global_aggregated_attributes, self.genPipelineCtx)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
 
@@ -158,7 +154,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             return None, time_profile
 
         self.update_state(LIMIT + START)
-        lm = Limit(self.connectionHelper, gb.group_by_attrib, delivery)
+        lm = Limit(self.connectionHelper, gb.group_by_attrib, self.genPipelineCtx)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
         self.update_state(LIMIT + DONE)
@@ -176,7 +172,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.q_generator.projection = self.pj
         self.q_generator.from_clause = self.core_relations
         self.q_generator.equi_join = self.aoa
-        self.q_generator.where_clause_remnants = delivery
+        self.q_generator.where_clause_remnants = self.genPipelineCtx
         self.q_generator.aggregate = agg
         self.q_generator.orderby = ob
         self.q_generator.limit = lm
@@ -185,12 +181,10 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         self.time_profile.update(time_profile)
 
-        eq = self._extract_nested_aggregate(eq, self.q_generator, query, delivery, self.global_pk_dict)
-
-        # eq = self._extract_NEP(core_relations, self.all_sizes, query, delivery)
+        eq = self._extract_NEP(core_relations, self.all_sizes, query, self.genPipelineCtx)
 
         # last component in the pipeline should do this
-        # time_profile.update_for_app(lm.app.method_call_count)
+        time_profile.update_for_app(lm.app.method_call_count)
 
         self.update_state(DONE)
         return eq, time_profile
