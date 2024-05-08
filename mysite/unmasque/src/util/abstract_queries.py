@@ -173,3 +173,19 @@ class CommonQueries(ABC):
     @abstractmethod
     def create_table_as_select_star_from_limit_1(self, tab, fromtab):
         pass
+
+    def select_attrib_count_from_with_groupby(self, table_name: str, attribute: str) -> str:
+        return f"Select {attribute}, COUNT(*) from {table_name} group by {attribute};"
+
+    def delete_from_where_attrib_not_eq_val(self, table_name: str, attrib_name: str, value) -> str:
+        return f"Delete from {table_name} WHERE {attrib_name} != '{value}';"
+
+    @abstractmethod
+    def delete_from_where_ctid(self, table_name: str, ctid: str) -> str:
+        pass
+
+    @abstractmethod
+    def select_ctid_from(self, table_name: str) -> str:
+        pass
+
+

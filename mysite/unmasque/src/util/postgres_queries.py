@@ -129,3 +129,9 @@ class PostgresQueries(CommonQueries):
 
     def hashtext_query(self, tab):
         return f"select sum(hashtext) from (select hashtext({tab}::TEXT) FROM {tab}) as T;"
+
+    def delete_from_where_ctid(self, table_name: str, ctid: str) -> str:
+        return f"Delete from {table_name} WHERE ctid = '{ctid}';"
+
+    def select_ctid_from(self, table_name: str) -> str:
+        return f"Select ctid from {table_name};"
