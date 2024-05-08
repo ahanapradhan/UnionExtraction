@@ -6,8 +6,10 @@ from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 
 
 class OuterJoin(GenerationPipeLineBase):
-    join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ' RIGHT OUTER JOIN ',
-                ('h', 'l'): ' LEFT OUTER JOIN ', ('h', 'h'): ' FULL OUTER JOIN '}
+    ROJ = ' RIGHT OUTER JOIN '
+    LOJ = ' LEFT OUTER JOIN '
+    join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ROJ,
+                ('h', 'l'): LOJ, ('h', 'h'): ' FULL OUTER JOIN '}
 
     def __init__(self, connectionHelper, global_pk_dict, delivery, projected_attributes, q_gen, projected_names):
         super().__init__(connectionHelper, "Outer Join", delivery)
@@ -292,13 +294,19 @@ class OuterJoin(GenerationPipeLineBase):
             self.add_where_clause(elt)
 
     def generate_from_on_clause(self, edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2):
+        left_table = table1
+        right_table = table2
         if flag_first:
             self.q_gen.from_op = ''
         type_of_join = self.join_map.get((imp_t1, imp_t2))
+        if type_of_join == self.ROJ:
+            type_of_join = self.LOJ
+            left_table = table2
+            right_table = table1
         join_condition = f"\n\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
-        relevant_tables = [table2] if not flag_first else [table1, table2]
-        join_part = f"\n{type_of_join} {table2} {join_condition}"
-        self.q_gen.from_op += f" {table1} {join_part}" if flag_first else "" + join_part
+        relevant_tables = [right_table] if not flag_first else [left_table, right_table]
+        join_part = f"\n{type_of_join} {right_table} {join_condition}"
+        self.q_gen.from_op += f" {left_table} {join_part}" if flag_first else "" + join_part
         flag_first = False
         for fp in fp_on:
             if fp[0] in relevant_tables:

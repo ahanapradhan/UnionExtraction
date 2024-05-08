@@ -41,12 +41,12 @@ class DbRestorer(AppExtractorBase):
             for tab in to_restore:
                 if tab not in self.last_restored_size.keys():
                     self.update_current_sizes(tab)
-                # if self.last_restored_size[tab] == self.all_sizes[tab]:
-                #    self.logger.info("No need to restore table")
-                # else:
-                row_count = self.restore_table_and_confirm(tab)
-                if not row_count:
-                    return False
+                if self.last_restored_size[tab] == self.all_sizes[tab]:
+                    self.logger.info("No need to restore table")
+                else:
+                    row_count = self.restore_table_and_confirm(tab)
+                    if not row_count:
+                        return False
         else:
             self.logger.debug("All sizes:", self.all_sizes)
             self.logger.debug("Current sizes:", self.last_restored_size)

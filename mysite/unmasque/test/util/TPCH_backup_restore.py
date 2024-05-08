@@ -13,7 +13,6 @@ class TPCHRestore:
         self.logger = Log("Test Schema Restore", conn.config.log_level)
 
     def doJob(self):
-        return
         self.conn.connectUsingParams()
         for tab in self.relations:
             self.conn.execute_sql(
