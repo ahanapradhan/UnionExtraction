@@ -144,3 +144,4 @@ class GroupBy(GenerationPipeLineBase):
                 to_remove.append(attrib)
         for r in to_remove:
             self.group_by_attrib.remove(r)
+        self.group_by_attrib.sort()

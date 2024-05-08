@@ -9,7 +9,7 @@ class TPCHRestore:
 
     def __init__(self, conn: AbstractConnectionHelper):
         self.conn = conn
-        self.relations = ['lineitem', 'orders', 'part', 'partsupp']  # tpchSettings.relations
+        self.relations = tpchSettings.relations
         self.logger = Log("Test Schema Restore", conn.config.log_level)
 
     def doJob(self):

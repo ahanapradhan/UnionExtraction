@@ -265,6 +265,17 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
+    @pytest.mark.skip
+    def test_inner_union(self):
+        query = "select n_name, other_name from nation LEFT OUTER JOIN " \
+                "((select c_nationkey as nationkey, c_name as other_name from customer where c_acctbal < 7000) UNION ALL (select s_nationkey as nationkey, s_name as other_name " \
+                "from supplier where s_acctbal > 9000)) as t_customer_supplier " \
+                "on n_nationkey = t_customer_supplier.nationkey and n_regionkey = 1;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
 
 if __name__ == '__main__':
     unittest.main()

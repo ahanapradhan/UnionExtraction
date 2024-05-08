@@ -4,7 +4,7 @@ from .AppExtractorBase import AppExtractorBase
 from ..nullfree_executable import NullFreeExecutable
 
 
-def calculate_mid_ctids(size):
+def mid_ctid_calculate_shortcut(size):
     mid_row = int(size / 2)
     mid_ctid1 = "(" + str(0) + "," + str(mid_row) + ")"
     mid_ctid2 = "(" + str(0) + "," + str(mid_row + 1) + ")"
@@ -101,7 +101,7 @@ class Minimizer(AppExtractorBase, ABC):
         end_page, end_row = self.get_boundary("max", tabname1)
         start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
         end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
-        mid_ctid1, mid_ctid2 = calculate_mid_ctids(core_sizes[tabname])
+        mid_ctid1, mid_ctid2 = mid_ctid_calculate_shortcut(core_sizes[tabname])
         if start_ctid == mid_ctid1:
             mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid
