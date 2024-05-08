@@ -40,6 +40,9 @@ class PostgresQueries(CommonQueries):
     def get_row_count(self, tab):
         return f"select count(*) from {tab};"
 
+    def get_non_null_row_count(self, tab):
+        pass
+
     def get_star(self, tab):
         return f"select * from {tab};"
 

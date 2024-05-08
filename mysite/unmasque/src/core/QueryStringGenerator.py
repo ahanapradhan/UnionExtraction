@@ -302,10 +302,12 @@ class QueryStringGenerator(AppExtractorBase):
             else:
                 predicate = f"{elt[0]}.{elt[1]} {str(elt[2])} {str(elt[3])}"
 
-            if self.where_op and predicate not in self.where_op:
+            if self.where_op != '' and predicate not in self.where_op:
                 self.where_op = f'{self.where_op} and {predicate}'
-            else:
+            elif self.where_op == '':
                 self.where_op = predicate
+            else:
+                pass
 
         Q_E = self.generate_query()
         return Q_E

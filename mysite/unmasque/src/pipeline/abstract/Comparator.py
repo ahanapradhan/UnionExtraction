@@ -47,7 +47,8 @@ class Comparator(AppExtractorBase):
     def run_diff_query_match_and_dropViews(self):
         len1, len2 = self.run_diff_queries()
         self.logger.debug(len1, len2)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e), self.connectionHelper.queries.drop_table(self.r_h)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
+                                           self.connectionHelper.queries.drop_table(self.r_h)])
         return self.is_match(len1, len2)
 
     def is_match(self, len1, len2):
@@ -67,7 +68,7 @@ class Comparator(AppExtractorBase):
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(self.r_h),
                                            f"Create unlogged table {self.r_h} (like {self.r_e});"])
         result = self.app.doJob(Q_h)
-        self.insert_data_into_Qh_table(result)
+        self.insert_data_into_Qh_table(result, self.r_h)
 
     def match(self, Q_h, Q_E):
         if Q_E is None:
@@ -93,7 +94,7 @@ class Comparator(AppExtractorBase):
         check = self.run_diff_query_match_and_dropViews()
         return check
 
-    def insert_into_r_h_values(self, header, values):
+    def insert_into_result_table_values(self, header, values, table):
         header_ = str(header).replace('\'', '')
         header_ = header_.replace(',)', ')')
         str_values = str(values)
@@ -101,10 +102,10 @@ class Comparator(AppExtractorBase):
         str_values = str_values.replace("\'NULL\'", "NULL")
         if not str_values.startswith('('):
             str_values = f"('{str_values}')"
-        self.connectionHelper.execute_sql([f"INSERT INTO {self.r_h}{header_} VALUES {str_values};"])
+        self.connectionHelper.execute_sql([f"INSERT INTO {table}{header_} VALUES {str_values};"])
 
-    def insert_data_into_Qh_table(self, res_Qh):
+    def insert_data_into_Qh_table(self, res_Qh, table):
         # Filling the table temp2
         header = res_Qh[0]
         for i in range(1, len(res_Qh)):
-            self.insert_into_r_h_values(header, res_Qh[i])
+            self.insert_into_result_table_values(header, res_Qh[i], table)

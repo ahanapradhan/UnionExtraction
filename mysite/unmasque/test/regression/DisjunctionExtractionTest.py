@@ -53,6 +53,33 @@ class DisjunctionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.pipeline.time_profile.print()
 
+    def test_sumang_thesis_Q3_nep(self):
+        self.conn.config.detect_or = True
+        query = "select l_shipmode,sum(l_extendedprice) as revenue " \
+                "from lineitem " \
+                "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
+                "and ((l_orderkey > 124 and l_orderkey < 135) or (l_orderkey > 235 and l_orderkey < 370)) group by l_shipmode order by l_shipmode " \
+                 "limit 100;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+        self.pipeline.time_profile.print()
+
+    def test_sumang_thesis_Q3_nep1(self):
+        self.conn.config.detect_or = True
+        self.conn.config.detect_nep = True
+        query = "select l_shipmode,sum(l_extendedprice) as revenue " \
+                "from lineitem " \
+                "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
+                "and ((l_orderkey > 124 and l_orderkey < 370) and l_orderkey NOT IN (133, 134, 135)) group by l_shipmode order by l_shipmode " \
+                 "limit 100;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+        self.pipeline.time_profile.print()
+
     def test_sumang_thesis_Q4(self):
         query = "select AVG(l_extendedprice) as avgTOTAL from lineitem,part " \
                 "where p_partkey = l_partkey and (p_brand = 'Brand#52' or p_brand = 'Brand#12') and " \

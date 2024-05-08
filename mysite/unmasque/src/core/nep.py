@@ -9,6 +9,59 @@ class NepComparator(ResultComparator):
     def __init__(self, connectionHelper, core_relations):
         super().__init__(connectionHelper, True, core_relations)
         self.earlyExit = False
+        self.re_tab = "r_E"
+        self.use_re = self.connectionHelper.config.detect_oj
+
+
+"""
+    def create_view_from_Q_E(self, Q_E):
+        try:
+            self.logger.debug(Q_E)
+            # Run the extracted query Q_E .
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
+                                               self.connectionHelper.queries.create_view_as(self.r_e, Q_E)])
+
+            if self.use_re:
+                self.connectionHelper.execute_sql([f"Create unlogged table {self.re_tab} (like {self.r_e});"])
+                r_E = self.app.doJob(Q_E)
+                self.insert_data_into_Qh_table(r_E, self.re_tab)
+                self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
+                                                   self.connectionHelper.queries.create_view_as(self.r_e,
+                                                                                                f"select * from {self.re_tab};")])
+        except ValueError as e:
+            self.logger.error(e)
+            return False
+
+        # Size of the table
+        res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(self.r_e))
+        return res
+
+    def run_diff_query_match_and_dropViews(self):
+        check = super().run_diff_query_match_and_dropViews()
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(self.re_tab)])
+        return check
+
+    def insert_data_into_Qh_table(self, res_Qh):
+        header = res_Qh[0]
+        res_Qh_ = res_Qh[1:]
+        if res_Qh_:
+            values = []
+            for row in res_Qh_:
+                temp_row = []
+                for val in row:
+                    if val in [None, 'None']:
+                        temp_row.append('NULL')
+                    else:
+                        temp_row.append(str(val))
+                if not all(e == 'NULL' for e in temp_row):
+                    values.append(tuple(temp_row))
+                # skip inserting full-null rows
+            ins = tuple(values)
+            if len(res_Qh_) == 1 and len(res_Qh_[0]) == 1:
+                self.insert_into_r_h_values(header, ins[0])
+            else:
+                self.insert_into_r_h_values(header, ins)
+"""
 
 
 class NepMinimizer(Minimizer):
@@ -82,15 +135,9 @@ class NepMinimizer(Minimizer):
                                           start_ctid,
                                           tabname,
                                           tabname1):
-        if self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
-            # Take the lower half
-            start_ctid = mid_ctid2
-        elif self.check_result_for_half(start_ctid, mid_ctid1, tabname1, tabname, query):
-            # Take the upper half
-            end_ctid = mid_ctid1
-        else:
-            self.logger.error("None of the halves could find out the differentiating tuple! Something is wrong!")
-            return None, None
+        end_ctid, start_ctid = self.check_sanity_when_nullfree_exe(end_ctid, mid_ctid1, mid_ctid2, query,
+                                                                   start_ctid,
+                                                                   tabname, tabname1)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
         return end_ctid, start_ctid
 
