@@ -30,14 +30,22 @@ class MyTestCase(BaseTestCase):
 
     def test_nested_sum_from_clause(self):
         query = "select c_name, c_acctbal from customer,  " \
-                 "(select o_custkey, sum(o_totalprice) as total_sum " \
-                 "from orders where o_orderstatus = 'O' group by o_custkey) as avgTable " \
-                 "where avgTable.o_custkey = c_custkey and " \
-                 "avgTable.total_sum < 12000  and c_mktsegment = 'BUILDING' limit 5;"
+                "(select o_custkey, sum(o_totalprice) as total_sum " \
+                "from orders where o_orderstatus = 'O' group by o_custkey) as avgTable " \
+                "where avgTable.o_custkey = c_custkey and " \
+                "avgTable.total_sum < 12000  and c_mktsegment = 'BUILDING' limit 5;"
         eq = self.do_test(query)
         self.assertTrue('SUM(o_totalprice)' in eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_another_nested_from_clause(self):
+        query = "select o_clerk, o_totalprice from orders, (select l_orderkey, sum(l_extendedprice) as total_sum from " \
+                "lineitem where l_linenumber = 4 group by l_orderkey) as avgTable where avgTable.l_orderkey = " \
+                "o_orderkey and avgTable.total_sum < 12000  and o_orderpriority = '1-URGENT' order by o_totalprice " \
+                "limit 10;"
+
+        eq = self.do_test(query)
+        self.assertTrue(self.pipeline.correct)
 
     def test_nested_avg(self):
         query = "select c_name, c_acctbal from customer " \
