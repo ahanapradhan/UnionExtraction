@@ -293,20 +293,27 @@ class OuterJoin(GenerationPipeLineBase):
         for elt in fp_where:
             self.add_where_clause(elt)
 
+    def __flip(self, flip, type_of_join, left_table, right_table, join_condition, flag_first):
+        if flip:
+            self.q_gen.from_op = f" {left_table} \n{type_of_join} {right_table} {join_condition}" if flag_first \
+                else f"\n{left_table} {type_of_join} {self.q_gen.from_op} {join_condition}"
+        else:
+            self.q_gen.from_op += f" {left_table} \n{type_of_join} {right_table} {join_condition}" if flag_first \
+                else f"\n{type_of_join} {right_table} {join_condition}"
+
     def generate_from_on_clause(self, edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2):
-        left_table = table1
-        right_table = table2
+        join_condition = f"\n\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
+        left_table, right_table = table1, table2
+        flipped = False
         if flag_first:
             self.q_gen.from_op = ''
         type_of_join = self.join_map.get((imp_t1, imp_t2))
-        if type_of_join == self.ROJ:
-            type_of_join = self.LOJ
-            left_table = table2
-            right_table = table1
-        join_condition = f"\n\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
+        # if type_of_join == self.ROJ:
+        #    type_of_join = self.LOJ
+        #    left_table, right_table = table2, table1
+        #    flipped = True
+        self.__flip(flipped, type_of_join, left_table, right_table, join_condition, flag_first)
         relevant_tables = [right_table] if not flag_first else [left_table, right_table]
-        join_part = f"\n{type_of_join} {right_table} {join_condition}"
-        self.q_gen.from_op += f" {left_table} {join_part}" if flag_first else "" + join_part
         flag_first = False
         for fp in fp_on:
             if fp[0] in relevant_tables:
