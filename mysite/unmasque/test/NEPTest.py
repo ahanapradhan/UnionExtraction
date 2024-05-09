@@ -4,7 +4,7 @@ import unittest
 import pytest as pytest
 
 from mysite.unmasque.src.core.nep import NEP
-from ..src.core.QueryStringGenerator import QueryStringGenerator
+from mysite.unmasque.src.util.QueryStringGenerator import QueryStringGenerator
 from ..src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ..src.util.constants import max_numeric_val
 from ..test.util import tpchSettings

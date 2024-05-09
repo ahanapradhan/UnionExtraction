@@ -1,5 +1,3 @@
-from time import sleep
-
 from .OuterJoinPipeLine import OuterJoinPipeLine
 from ..core.union import Union
 from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
@@ -7,11 +5,8 @@ from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
 
 class UnionPipeLine(OuterJoinPipeLine):
 
-    def __init__(self, connectionHelper):
-        super().__init__(connectionHelper)
-        self.all_relations = None
-        self.name = "Union PipeLine"
-        self.pipeLineError = False
+    def __init__(self, connectionHelper, name="Union PipeLine"):
+        super().__init__(connectionHelper, name)
 
     def extract(self, query):
         # opening and closing connection actions are vital.

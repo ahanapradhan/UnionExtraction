@@ -14,7 +14,8 @@ from ...src.core.orderby_clause import OrderBy
 from ...src.core.projection import Projection
 
 
-class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
+class ExtractionPipeLine(DisjunctionPipeLine,
+                         NepPipeLine):
 
     def __init__(self, connectionHelper):
         DisjunctionPipeLine.__init__(self, connectionHelper, "Extraction PipeLine")
@@ -28,8 +29,8 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
     def doJob(self, query, qe=None):
         return GenericPipeLine.doJob(self, query, qe)
 
-    def _verify_correctness(self, query, result):
-        GenericPipeLine._verify_correctness(self, query, result)
+    def verify_correctness(self, query, result):
+        GenericPipeLine.verify_correctness(self, query, result)
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
@@ -49,13 +50,13 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         self.info[FROM_CLAUSE] = fc.core_relations
 
         self.core_relations = fc.core_relations
-
         self.all_sizes = fc.init.all_sizes
         self.key_lists = fc.get_key_lists()
         self.global_pk_dict = fc.init.global_pk_dict
 
         eq = self._after_from_clause_extract(query, self.core_relations)
         self.connectionHelper.closeConnection()
+        # self.time_profile.update(t)
         return eq
 
     def _after_from_clause_extract(self, query, core_relations):
@@ -77,13 +78,13 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
 
         self.time_profile.update(time_profile)
         self.aoa.post_process_for_generation_pipeline(query)
-        delivery = copy.copy(self.aoa.pipeline_delivery)
+        self.genPipelineCtx = copy.copy(self.aoa.nextPipelineCtx)
 
         '''
         Projection Extraction
         '''
         self.update_state(PROJECTION + START)
-        self.pj = Projection(self.connectionHelper, delivery)
+        self.pj = Projection(self.connectionHelper, self.genPipelineCtx)
 
         self.update_state(PROJECTION + RUNNING)
         check = self.pj.doJob(query)
@@ -100,7 +101,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
             return None, time_profile
 
         self.update_state(GROUP_BY + START)
-        gb = GroupBy(self.connectionHelper, delivery, self.pj.projected_attribs)
+        gb = GroupBy(self.connectionHelper, self.genPipelineCtx, self.pj.projected_attribs)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
 
@@ -123,7 +124,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
 
         self.update_state(AGGREGATE + START)
         agg = Aggregation(self.connectionHelper, self.pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
-                          self.pj.dependencies, self.pj.solution, self.pj.param_list, delivery)
+                          self.pj.dependencies, self.pj.solution, self.pj.param_list, self.genPipelineCtx)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
 
@@ -140,7 +141,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
 
         self.update_state(ORDER_BY + START)
         ob = OrderBy(self.connectionHelper, self.pj.projected_attribs, self.pj.projection_names, self.pj.dependencies,
-                     agg.global_aggregated_attributes, delivery)
+                     agg.global_aggregated_attributes, self.genPipelineCtx)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
 
@@ -156,7 +157,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
             return None, time_profile
 
         self.update_state(LIMIT + START)
-        lm = Limit(self.connectionHelper, gb.group_by_attrib, delivery)
+        lm = Limit(self.connectionHelper, gb.group_by_attrib, self.genPipelineCtx)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
         self.update_state(LIMIT + DONE)
@@ -170,17 +171,21 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None, time_profile
 
-        self.q_generator.set_aoa_details(delivery)
-        eq = self.q_generator.generate_query_string(core_relations, self.aoa.algebraic_eq_predicates,
-                                                    self.pj, agg, ob, lm, self.or_predicates)
+        self.q_generator.get_datatype = self.filter_extractor.get_datatype  # method
+        self.q_generator.projection = self.pj
+        self.q_generator.from_clause = self.core_relations
+        self.q_generator.equi_join = self.aoa
+        self.q_generator.where_clause_remnants = self.genPipelineCtx
+        self.q_generator.aggregate = agg
+        self.q_generator.orderby = ob
+        self.q_generator.limit = lm
+        eq = self.q_generator.generate_query_string(all_ors=self.or_predicates)
         self.logger.debug("extracted query:\n", eq)
 
-        eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
         self.time_profile.update(time_profile)
 
-        self.logger.debug("Looking for NEP: ", self.q_generator.filter_predicates)
-        # last component in the pipeline should do this
-        # time_profile.update_for_app(lm.app.method_call_count)
+        eq = self._extract_NEP(core_relations, self.all_sizes, query, self.genPipelineCtx)
 
+        self.time_profile.update_for_app(lm.app.method_call_count)
         self.update_state(DONE)
         return eq

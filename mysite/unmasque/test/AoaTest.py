@@ -470,7 +470,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(check)
         print(aoa.where_clause)
 
-        delivery = aoa.pipeline_delivery
+        delivery = aoa.nextPipelineCtx
         pj = Projection(self.conn, delivery)
         pj.mock = True
         check = pj.doJob(query)
@@ -592,7 +592,7 @@ class MyTestCase(BaseTestCase):
         check = aoa.doJob(query)
         self.assertTrue(check)
         print(aoa.where_clause)
-        delivery = aoa.pipeline_delivery
+        delivery = aoa.nextPipelineCtx
         pj = Projection(self.conn, delivery)
         pj.mock = True
         check = pj.doJob(query)
@@ -648,7 +648,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(aoa.aoa_predicates), 0)
         self.assertEqual(len(aoa.aoa_less_thans), 1)
 
-        delivery = aoa.pipeline_delivery
+        delivery = aoa.nextPipelineCtx
         pj = Projection(self.conn, delivery)
         pj.mock = True
         check = pj.doJob(query)
@@ -710,7 +710,7 @@ class MyTestCase(BaseTestCase):
         print(aoa.where_clause)
         self.assertEqual(4, aoa.where_clause.count("and"))
 
-        delivery = aoa.pipeline_delivery
+        delivery = aoa.nextPipelineCtx
         pj = Projection(self.conn, delivery)
         pj.mock = True
         check = pj.doJob(query)
@@ -767,7 +767,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(aoa.aoa_predicates), 0)
         self.assertEqual(len(aoa.aoa_less_thans), 2)
 
-        delivery = aoa.pipeline_delivery
+        delivery = aoa.nextPipelineCtx
         pj = Projection(self.conn, delivery)
         pj.mock = True
         check = pj.doJob(query)
@@ -834,7 +834,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(len(aoa.aoa_less_thans), 0)
         self.assertEqual(8, aoa.where_clause.count("and"))
 
-        delivery = aoa.pipeline_delivery
+        delivery = aoa.nextPipelineCtx
         pj = Projection(self.conn, delivery)
         pj.mock = True
         check = pj.doJob(query)
@@ -919,20 +919,20 @@ class MyTestCase(BaseTestCase):
         print(aoa.where_clause)
         self.assertEqual(8, aoa.where_clause.count("and"))
 
-        pj = Projection(self.conn, aoa.pipeline_delivery)
+        pj = Projection(self.conn, aoa.nextPipelineCtx)
         check = pj.doJob(query)
         self.assertTrue(check)
         self.assertEqual(3, len(pj.projected_attribs))
 
         ob = OrderBy(self.conn, pj.projected_attribs, pj.projection_names, pj.dependencies,
-                     [('p_brand', ''), ('o_clerk', ''), ('l_shipmode', '')], aoa.pipeline_delivery)
+                     [('p_brand', ''), ('o_clerk', ''), ('l_shipmode', '')], aoa.nextPipelineCtx)
         ob.doJob(query)
         self.assertTrue(ob.has_orderBy)
         self.assertTrue("o_clerk" in ob.orderBy_string)
         print(ob.orderBy_string)
         print(ob.orderby_list)
 
-        lm = Limit(self.conn, [], aoa.pipeline_delivery)
+        lm = Limit(self.conn, [], aoa.nextPipelineCtx)
         lm.doJob(query)
         print(lm.limit)
         self.assertTrue(lm.limit is not None)

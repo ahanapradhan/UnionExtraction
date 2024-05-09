@@ -87,7 +87,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(check)
         aoa.post_process_for_generation_pipeline(query)
 
-        delivery = copy.copy(aoa.pipeline_delivery)
+        delivery = copy.copy(aoa.nextPipelineCtx)
 
         pj = Projection(self.conn, delivery)
         check = pj.doJob(query)

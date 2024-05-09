@@ -4,10 +4,9 @@ from ...src.util.constants import OUTER_JOIN, START, RUNNING, DONE
 
 
 class OuterJoinPipeLine(ExtractionPipeLine):
-    def __init__(self, connectionHelper):
-        super().__init__(connectionHelper)
+    def __init__(self, connectionHelper, name="Outer Join PipeLine"):
+        super().__init__(connectionHelper, name)
         self.all_relations = None
-        self.name = "Outer Join PipeLine"
         self.pipeLineError = False
 
     def _after_from_clause_extract(self, query, core_relations):
@@ -17,7 +16,7 @@ class OuterJoinPipeLine(ExtractionPipeLine):
 
         self.logger.debug(self.q_generator.filter_predicates)
         self.update_state(OUTER_JOIN + START)
-        oj = OuterJoin(self.connectionHelper, self.global_pk_dict, self.aoa.pipeline_delivery,
+        oj = OuterJoin(self.connectionHelper, self.global_pk_dict, self.aoa.nextPipelineCtx,
                        self.pj.projected_attribs, self.q_generator, self.pj.projection_names)
         self.update_state(OUTER_JOIN + RUNNING)
         check = oj.doJob(query)
