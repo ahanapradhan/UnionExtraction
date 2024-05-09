@@ -60,6 +60,18 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
+    def test_Q21_mukul_thesis_oj(self):
+        query = "Select s_name, n_name, l_returnflag, o_clerk, count(*) as numwait " \
+                "From supplier LEFT OUTER JOIN lineitem on s_suppkey = l_suppkey RIGHT OUTER JOIN orders" \
+                " on o_orderkey = l_orderkey and  o_orderstatus = 'F'  LEFT OUTER JOIN nation " \
+                "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
+                "Order By numwait desc, s_name Limit 100;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
     def test_Q16_sql(self):
         query = "Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part               "\
                  "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and "\
