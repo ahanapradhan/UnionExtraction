@@ -9,12 +9,15 @@ class MyTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = True
         self.conn.config.detect_or = False
-        self.conn.config.detect_oj = False
+        self.conn.config.detect_oj = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
     def test_simple(self):
-        query = "select n_regionkey from nation where n_name <> 'GERMANY';"
+        self.conn.config.detect_oj = True
+        query = "select c_name, n_regionkey from nation RIGHT OUTER JOIN customer on n_nationkey = c_nationkey and " \
+                "n_name <> 'GERMANY';"
+        # query = "select n_regionkey from nation where n_name <> 'GERMANY';"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)

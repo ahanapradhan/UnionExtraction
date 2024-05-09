@@ -126,7 +126,7 @@ class QueryStringGenerator(AppExtractorBase):
         self.limit_op = None
 
     def formulate_predicate_from_filter(self, elt):
-        tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[4]
+        tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[-1]
         datatype = self.get_datatype((tab, attrib))
         f_lb = f"({', '.join(lb)})" if isinstance(lb, list) else get_format(datatype, lb)
         f_ub = f"({', '.join(ub)})" if isinstance(ub, list) else get_format(datatype, ub)
@@ -140,6 +140,8 @@ class QueryStringGenerator(AppExtractorBase):
             predicate = f"{tab}.{attrib} {str(op.replace('equal', '='))} {f_ub}"
         elif op == 'in':
             predicate = f"{tab}.{attrib} IN {f_ub}"
+        elif op in ['<>', '!=']:
+            predicate = f"{tab}.{attrib} {op} {f_lb}"
         else:
             predicate = ''
         return predicate
