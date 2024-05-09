@@ -71,6 +71,17 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
+    def test_Q16_sql_outer_join(self):
+        query = "Select p_brand, p_type, p_size, ps_availqty, count(*) as supplier_cnt From partsupp LEFT OUTER JOIN " \
+                "part on p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and "\
+                 "p_size >=  4 Group By p_brand, p_type, p_size, ps_availqty Order by supplier_cnt desc, p_brand, "\
+                 "p_type, p_size, ps_availqty desc;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
 
 if __name__ == '__main__':
     unittest.main()

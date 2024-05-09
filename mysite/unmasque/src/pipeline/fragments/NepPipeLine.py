@@ -1,4 +1,3 @@
-import copy
 from abc import ABC, abstractmethod
 
 from ....src.core.QueryStringGenerator import QueryStringGenerator
@@ -11,7 +10,6 @@ class NepPipeLine(GenericPipeLine, ABC):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "NEP Pipeline")
         self.q_generator = QueryStringGenerator(self.connectionHelper)
-        self.nep_filters = []
 
     @abstractmethod
     def extract(self, query):
@@ -67,8 +65,6 @@ class NepPipeLine(GenericPipeLine, ABC):
                     no_nep += 1
                 else:
                     eq = q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
-                    self.nep_filters.extend(copy.deepcopy(nep_filters))
-                    self.q_generator.filter_predicates.extend(copy.deepcopy(nep_filters))
                 self.update_state(NEP_ + FILTER + DONE)
                 time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
 

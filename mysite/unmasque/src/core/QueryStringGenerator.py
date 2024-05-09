@@ -126,6 +126,7 @@ class QueryStringGenerator(AppExtractorBase):
         self.limit_op = None
 
     def formulate_predicate_from_filter(self, elt):
+        self.logger.debug("predicate to string: ", elt)
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[-1]
         datatype = self.get_datatype((tab, attrib))
         f_lb = f"({', '.join(lb)})" if isinstance(lb, list) else get_format(datatype, lb)
@@ -269,10 +270,8 @@ class QueryStringGenerator(AppExtractorBase):
         temp_list = copy.deepcopy(agg.global_groupby_attributes)
         for attrib in temp_list:
             if attrib not in agg.global_projected_attributes:
-                try:
+                if attrib in agg.global_groupby_attributes:
                     agg.global_groupby_attributes.remove(attrib)
-                except:
-                    pass
                 continue
             remove_flag = True
             for elt in agg.global_aggregated_attributes:
@@ -280,10 +279,8 @@ class QueryStringGenerator(AppExtractorBase):
                     remove_flag = False
                     break
             if remove_flag:
-                try:
+                if attrib in agg.global_groupby_attributes:
                     agg.global_groupby_attributes.remove(attrib)
-                except:
-                    pass
         for i in range(len(agg.global_groupby_attributes)):
             elt = agg.global_groupby_attributes[i]
             # UPDATE OUTPUTS
@@ -293,16 +290,21 @@ class QueryStringGenerator(AppExtractorBase):
         for elt in val:
             if '-' in str(elt[3]):
                 predicate = get_exact_NE_string_predicate(elt, elt[3])
+                self.filter_predicates.append((elt[0], elt[1], elt[2], elt[3], elt[3]))
 
             elif isinstance(elt[3], str):
                 output = self.getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
+                self.logger.debug(output)
                 if '%' in output or '_' in output:
                     predicate = f"{elt[0]}.{elt[1]} NOT LIKE '{str(output)}' "
                     self.remove_exact_NE_string_predicate(elt)
+                    self.filter_predicates.append((elt[0], elt[1], 'NOT LIKE', output, output))
                 else:
                     predicate = get_exact_NE_string_predicate(elt, output)
+                    self.filter_predicates.append((elt[0], elt[1], elt[2], output, output))
             else:
                 predicate = f"{elt[0]}.{elt[1]} {str(elt[2])} {str(elt[3])}"
+                self.filter_predicates.append((elt[0], elt[1], elt[2], elt[3], elt[3]))
 
             if self.where_op != '' and predicate not in self.where_op:
                 self.where_op = f'{self.where_op} and {predicate}'
@@ -367,10 +369,10 @@ class QueryStringGenerator(AppExtractorBase):
                 try:
                     self.connectionHelper.execute_sql([u_query])
                     new_result = self.app.doJob(query)
-                    if len(new_result) <= 1:
+                    if self.app.isQ_result_no_full_nullfree_row(new_result):
                         output = output + '%'
                 except Exception as e:
-                    print(e)
+                    self.logger.error(e)
 
                 output = output + representative[index]
                 index = index + 1
@@ -386,10 +388,10 @@ class QueryStringGenerator(AppExtractorBase):
             try:
                 self.connectionHelper.execute_sql([u_query])
                 new_result = self.app.doJob(query)
-                if len(new_result) <= 1:
+                if self.app.isQ_result_no_full_nullfree_row(new_result):
                     output = output + '%'
             except Exception as e:
-                print(e)
+                self.logger.error(e)
         return output
 
     def __handle_for_wildcard_char_underscore(self, attrib, query, representative, tabname):
@@ -410,7 +412,7 @@ class QueryStringGenerator(AppExtractorBase):
             try:
                 self.connectionHelper.execute_sql([u_query])
                 new_result = self.app.doJob(query)
-                if len(new_result) <= 1:
+                if self.app.isQ_result_no_full_nullfree_row(new_result):
                     temp = copy.deepcopy(representative)
                     temp = temp[:index] + temp[index + 1:]
 
@@ -418,7 +420,7 @@ class QueryStringGenerator(AppExtractorBase):
                     try:
                         self.connectionHelper.execute_sql([u_query])
                         new_result = self.app.doJob(query)
-                        if len(new_result) <= 1:
+                        if self.app.isQ_result_no_full_nullfree_row(new_result):
                             representative = representative[:index] + representative[index + 1:]
                         else:
                             output = output + "_"
@@ -434,7 +436,7 @@ class QueryStringGenerator(AppExtractorBase):
                 else:
                     output = output + representative[index]
             except Exception as e:
-                print(e)
+                self.logger.error(e)
                 output = output + representative[index]
 
             index = index + 1
@@ -452,14 +454,14 @@ class QueryStringGenerator(AppExtractorBase):
             try:
                 self.connectionHelper.execute_sql([u_query])
                 new_result = self.app.doJob(query)
-                if len(new_result) <= 1:
+                if self.app.isQ_result_no_full_nullfree_row(new_result):
                     pass
                 else:
                     output = output + representative[index]
                     temp[index] = representative[index]
 
             except Exception as e:
-                print(e)
+                self.logger.error(e)
                 output = output + representative[index]
                 temp[index] = representative[index]
 
