@@ -178,6 +178,7 @@ class ExtractionPipeLine(DisjunctionPipeLine, NepPipeLine):
         eq = self._extract_NEP(core_relations, self.all_sizes, eq, self.q_generator, query, time_profile, delivery)
         self.time_profile.update(time_profile)
 
+        self.logger.debug("Looking for NEP: ", self.q_generator.filter_predicates)
         # last component in the pipeline should do this
         # time_profile.update_for_app(lm.app.method_call_count)
 

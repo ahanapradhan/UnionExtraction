@@ -34,7 +34,7 @@ class NepPipeLine(GenericPipeLine, ABC):
         nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, sizes)
         nep_extractor = NEP(self.connectionHelper, delivery)
 
-        for i in range(10):
+        for i in range(10):   # to prevent infinite loop
             self.update_state(NEP_ + RESULT_COMPARE + START)
             self.update_state(NEP_ + RESULT_COMPARE + RUNNING)
             matched = nep_minimizer.match(query, eq)
@@ -46,6 +46,7 @@ class NepPipeLine(GenericPipeLine, ABC):
                 self.logger.info("No NEP!")
                 return eq
 
+            no_nep = 0
             for tabname in self.core_relations:
                 self.update_state(NEP_ + DB_MINIMIZATION + START)
                 self.update_state(NEP_ + DB_MINIMIZATION + RUNNING)
@@ -61,10 +62,14 @@ class NepPipeLine(GenericPipeLine, ABC):
                 self.logger.debug(f"Nep filters on {tabname}: {str(nep_filters)}")
                 if nep_filters is None or not len(nep_filters):
                     self.logger.info("NEP does not exists.")
+                    no_nep += 1
                 else:
                     eq = q_generator.updateExtractedQueryWithNEPVal(query, nep_filters)
                 self.update_state(NEP_ + FILTER + DONE)
                 time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
+
+            if no_nep == len(self.core_relations):  # to prevent infinite loop
+                break
 
         self.logger.debug("returning..", eq)
         return eq

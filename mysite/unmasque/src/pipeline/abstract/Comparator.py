@@ -19,15 +19,20 @@ class Comparator(AppExtractorBase):
 
     def doActualJob(self, args=None):
         Q_h, Q_E = self.extract_params_from_args(args)
+        if Q_E is None:
+            self.logger.info("Got None to compare. Cannot do anything...sorry!")
+            return None
+        try:
+            self.app.doJob(Q_E)
+        except:
+            self.logger.error("Q_E is not semantically correct.")
+            return None
+
         for tab in self.relations:
             tab_size = self.db_restorer.restore_table_and_confirm(tab)
             if not tab_size:
                 self.logger.error(f"Could not restore {tab}, cannot run result comparator!")
-                return False
-
-        if Q_E is None:
-            self.logger.info("Got None to compare. Cannot do anything...sorry!")
-            return False
+                return None
         matched = self.match(Q_h, Q_E)
         return matched
 
@@ -35,7 +40,8 @@ class Comparator(AppExtractorBase):
         try:
             self.logger.debug(Q_E)
             # Run the extracted query Q_E .
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e), self.connectionHelper.queries.create_view_as(self.r_e, Q_E)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
+                                               self.connectionHelper.queries.create_view_as(self.r_e, Q_E)])
         except ValueError as e:
             self.logger.error(e)
             return False
@@ -59,9 +65,11 @@ class Comparator(AppExtractorBase):
 
     def run_diff_queries(self):
         len1 = self.connectionHelper.execute_sql_fetchone_0(
-            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_e, self.r_h) + " as T;")
+            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_e,
+                                                                                                           self.r_h) + " as T;", self.logger)
         len2 = self.connectionHelper.execute_sql_fetchone_0(
-            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_h, self.r_e) + " as T;")
+            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_h,
+                                                                                                           self.r_e) + " as T;", self.logger)
         return len1, len2
 
     def create_table_from_Qh(self, Q_h):
@@ -72,7 +80,8 @@ class Comparator(AppExtractorBase):
 
     def match(self, Q_h, Q_E):
         if Q_E is None:
-            self.logger.debug("Q_E is none. Please see why.")
+            self.logger.error("Q_E is none. Please see why.")
+            return False
         self.row_count_r_e = self.create_view_from_Q_E(Q_E)
         self.logger.debug(self.row_count_r_e)
 
@@ -85,7 +94,8 @@ class Comparator(AppExtractorBase):
         self.create_table_from_Qh(Q_h)
 
         # Size of the table
-        self.row_count_r_h = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(self.r_h))
+        self.row_count_r_h = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.get_row_count(self.r_h))
         self.logger.debug(self.r_h, self.row_count_r_h)
 
         if self.row_count_r_e != self.row_count_r_h:
@@ -105,7 +115,6 @@ class Comparator(AppExtractorBase):
         self.connectionHelper.execute_sql([f"INSERT INTO {table}{header_} VALUES {str_values};"])
 
     def insert_data_into_Qh_table(self, res_Qh, table):
-        # Filling the table temp2
         header = res_Qh[0]
         for i in range(1, len(res_Qh)):
             self.insert_into_result_table_values(header, res_Qh[i], table)

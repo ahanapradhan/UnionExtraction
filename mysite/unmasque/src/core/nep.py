@@ -1,5 +1,3 @@
-import copy
-
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
@@ -9,25 +7,27 @@ class NepComparator(ResultComparator):
     def __init__(self, connectionHelper, core_relations):
         super().__init__(connectionHelper, True, core_relations)
         self.earlyExit = False
-        self.re_tab = "r_E"
+        self.re_tab = "re_E"
         self.use_re = self.connectionHelper.config.detect_oj
 
-
-"""
     def create_view_from_Q_E(self, Q_E):
         try:
             self.logger.debug(Q_E)
             # Run the extracted query Q_E .
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
-                                               self.connectionHelper.queries.create_view_as(self.r_e, Q_E)])
+                                               self.connectionHelper.queries.create_view_as(self.r_e, Q_E)],
+                                              self.logger)
 
             if self.use_re:
-                self.connectionHelper.execute_sql([f"Create unlogged table {self.re_tab} (like {self.r_e});"])
+                self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(self.re_tab),
+                                                   f"Create unlogged table {self.re_tab} (like {self.r_e});"],
+                                                  self.logger)
                 r_E = self.app.doJob(Q_E)
                 self.insert_data_into_Qh_table(r_E, self.re_tab)
                 self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
                                                    self.connectionHelper.queries.create_view_as(self.r_e,
-                                                                                                f"select * from {self.re_tab};")])
+                                                                                                f"select * from {self.re_tab};")],
+                                                  self.logger)
         except ValueError as e:
             self.logger.error(e)
             return False
@@ -38,30 +38,31 @@ class NepComparator(ResultComparator):
 
     def run_diff_query_match_and_dropViews(self):
         check = super().run_diff_query_match_and_dropViews()
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(self.re_tab)])
+        if self.use_re:
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(self.re_tab)],
+                                              self.logger)
         return check
 
-    def insert_data_into_Qh_table(self, res_Qh):
+    def insert_data_into_Qh_table(self, res_Qh, table):
         header = res_Qh[0]
         res_Qh_ = res_Qh[1:]
-        if res_Qh_:
-            values = []
+        if res_Qh_ not in [None, 'None']:
             for row in res_Qh_:
-                temp_row = []
+                hasNullVal = False
                 for val in row:
                     if val in [None, 'None']:
-                        temp_row.append('NULL')
-                    else:
-                        temp_row.append(str(val))
-                if not all(e == 'NULL' for e in temp_row):
-                    values.append(tuple(temp_row))
-                # skip inserting full-null rows
-            ins = tuple(values)
-            if len(res_Qh_) == 1 and len(res_Qh_[0]) == 1:
-                self.insert_into_r_h_values(header, ins[0])
-            else:
-                self.insert_into_r_h_values(header, ins)
-"""
+                        hasNullVal = True
+                        break
+                if hasNullVal:
+                    continue
+                temp = []
+                for val in row:
+                    temp.append(str(val))
+                ins = (tuple(temp))
+                if len(res_Qh_) == 1 and len(res_Qh_[0]) == 1:
+                    self.insert_into_result_table_values(header, ins[0], table)
+                else:
+                    self.insert_into_result_table_values(header, ins, table)
 
 
 class NepMinimizer(Minimizer):
@@ -70,6 +71,13 @@ class NepMinimizer(Minimizer):
         super().__init__(connectionHelper, core_relations, all_sizes, "NEP Minimizer")
         self.Q_E = None
         self.nep_comparator = NepComparator(self.connectionHelper, core_relations)
+
+    def sanity_check(self, query):
+        result_e = self.app.doJob(self.Q_E)
+        result_h = self.app.doJob(query)
+        if self.app.isQ_result_no_full_nullfree_row(result_h) and self.app.isQ_result_nonEmpty_nullfree(result_e):
+            return True
+        return False
 
     def set_all_relations(self, relations: list[str]):
         super().set_all_relations(relations)
@@ -80,13 +88,14 @@ class NepMinimizer(Minimizer):
 
     def doActualJob(self, args=None):
         query, self.Q_E, table = self.extract_params_from_args(args)
+        try:
+            self.app.doJob(self.Q_E)
+        except:
+            self.logger.error("Q_E is not semantically correct.")
+            return False
         return self.reduce_Database_Instance(query, table)
 
     def reduce_Database_Instance(self, query, table):
-        # check = self.nep_comparator.db_restorer.restore_table_and_confirm(table)
-        # if not check:
-        #    self.logger.error("Error while restoring table. Aborting NEP minimization!")
-        #    return False
         self.getCoreSizes()
         self.logger.debug("Inside get nep")
         tabname1 = self.connectionHelper.queries.get_tabname_1(table)
@@ -157,7 +166,7 @@ class NepMinimizer(Minimizer):
         if self.nep_comparator.row_count_r_e == 1 and not self.nep_comparator.row_count_r_h:
             return True
         if self.nep_comparator.row_count_r_e > 1 \
-                and self.nep_comparator.row_count_r_h <= self.nep_comparator.row_count_r_e:
+                and self.nep_comparator.row_count_r_h < self.nep_comparator.row_count_r_e:
             return True
         elif not self.nep_comparator.row_count_r_e:
             return False

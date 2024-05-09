@@ -239,20 +239,8 @@ class OuterJoin(GenerationPipeLineBase):
     def FormulateQueries(self, final_edge_seq, query):
         fp_on, fp_where = self.determine_on_and_where_filters(query)
         set_possible_queries = []
-        # flat_list = [item for sublist in self.global_join_graph for item in sublist]
-        # keys_of_tables = [*set(flat_list)]
-        # tables_in_joins = [tab for tab in self.core_relations if
-        #                   any(key in self.global_pk_dict[tab] for key in keys_of_tables)]
-        # tables_not_in_joins = [tab for tab in self.core_relations if tab not in tables_in_joins]
-        # self.logger.debug(tables_in_joins, tables_not_in_joins)
-
         for seq in final_edge_seq:
-            # fp_on = copy.deepcopy(filter_pred_on)
-            # fp_where = copy.deepcopy(filter_pred_where)
-            # self.q_gen.from_op = ", ".join(tables_not_in_joins)
             flag_first = True
-            # if len(tables_not_in_joins):
-            #    flag_first = False
             for edge in seq:
                 table1, table2 = edge[0][1], edge[1][1]
                 imp_t1, imp_t2 = self.determine_join_edge_type(edge, table1, table2)
@@ -315,6 +303,7 @@ class OuterJoin(GenerationPipeLineBase):
         self.__flip(flipped, type_of_join, left_table, right_table, join_condition, flag_first)
         relevant_tables = [right_table] if not flag_first else [left_table, right_table]
         flag_first = False
+        self.logger.debug(self.q_gen.from_op, relevant_tables)
         for fp in fp_on:
             if fp[0] in relevant_tables:
                 self.add_on_clause_for_filter(fp)
