@@ -65,7 +65,7 @@ class MyTestCase(BaseTestCase):
                 "From supplier LEFT OUTER JOIN lineitem on s_suppkey = l_suppkey RIGHT OUTER JOIN orders" \
                 " on o_orderkey = l_orderkey and  o_orderstatus = 'F'  LEFT OUTER JOIN nation " \
                 "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
-                "Order By numwait desc, s_name Limit 100;"
+                "Order By numwait desc, s_name;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.pipeline.time_profile.print()
