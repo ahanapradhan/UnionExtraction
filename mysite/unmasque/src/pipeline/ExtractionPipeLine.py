@@ -17,8 +17,8 @@ from ...src.core.projection import Projection
 class ExtractionPipeLine(DisjunctionPipeLine,
                          NepPipeLine):
 
-    def __init__(self, connectionHelper):
-        DisjunctionPipeLine.__init__(self, connectionHelper, "Extraction PipeLine")
+    def __init__(self, connectionHelper, name="Extraction PipeLine"):
+        DisjunctionPipeLine.__init__(self, connectionHelper, name)
         NepPipeLine.__init__(self, connectionHelper)
         self.pj = None
         self.global_pk_dict = None
