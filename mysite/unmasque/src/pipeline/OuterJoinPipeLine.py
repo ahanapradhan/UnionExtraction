@@ -16,8 +16,8 @@ class OuterJoinPipeLine(ExtractionPipeLine):
 
         self.logger.debug(self.q_generator.filter_predicates)
         self.update_state(OUTER_JOIN + START)
-        oj = OuterJoin(self.connectionHelper, self.global_pk_dict, self.aoa.nextPipelineCtx,
-                       self.pj.projected_attribs, self.q_generator, self.pj.projection_names)
+        oj = OuterJoin(self.connectionHelper, self.global_pk_dict, self.aoa.nextPipelineCtx, self.q_generator,
+                       self.pj)
         self.update_state(OUTER_JOIN + RUNNING)
         check = oj.doJob(query)
         self.update_state(OUTER_JOIN + DONE)

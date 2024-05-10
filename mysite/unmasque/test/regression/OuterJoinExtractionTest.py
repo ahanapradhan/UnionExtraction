@@ -61,9 +61,9 @@ class OuterJoinExtractionTestCase(BaseTestCase):
 
     def test_sumang_thesis_Q6(self):
         self.conn.config.detect_or = True
-        query = "select n_name,SUM(s_acctbal) from supplier RIGHT OUTER JOIN partsupp ON ps_suppkey=s_suppkey AND" \
-                " ps_supplycost < 50 RIGHT OUTER JOIN " \
-                "nation on s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) group by n_name ORDER " \
+        query = "select n_name, s_acctbal, ps_availqty  from supplier RIGHT OUTER JOIN partsupp " \
+                "ON ps_suppkey=s_suppkey AND ps_supplycost < 50 RIGHT OUTER JOIN " \
+                "nation on s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) ORDER " \
                 "BY n_name;"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)

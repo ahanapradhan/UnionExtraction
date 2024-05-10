@@ -12,16 +12,15 @@ class OuterJoin(GenerationPipeLineBase):
     join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ROJ,
                 ('h', 'l'): LOJ, ('h', 'h'): ' FULL OUTER JOIN '}
 
-    def __init__(self, connectionHelper, global_pk_dict, delivery, projected_attributes,
-                 q_gen: QueryStringGenerator, projected_names):
+    def __init__(self, connectionHelper, global_pk_dict, delivery, q_gen: QueryStringGenerator, projection):
         super().__init__(connectionHelper, "Outer Join", delivery)
         self.global_pk_dict = global_pk_dict
         self.check_nep_again = False
         self.sem_eq_queries = None
         self.sem_eq_listdict = {}
         self.importance_dict = {}
-        self.projected_attributes = projected_attributes
-        self.projected_names = projected_names
+        self.projected_attributes = projection.projected_attributes
+        self.projected_names = projection.projected_names
         self.Q_E = None
         self.q_gen = q_gen
         self.enabled = self.connectionHelper.config.detect_oj
@@ -33,6 +32,10 @@ class OuterJoin(GenerationPipeLineBase):
             return True
         final_edge_seq = self.create_final_edge_seq(list_of_tables, new_join_graph)
         table_attr_dict = self.create_table_attrib_dict()
+        if table_attr_dict is None:
+            self.logger.info("I suppose it is fully equi-join query.")
+            self.Q_E = self.q_gen.generate_query_string()
+            return True
         self.create_importance_dict(new_join_graph, query, table_attr_dict)
 
         set_possible_queries, fp_on = self.FormulateQueries(final_edge_seq, query)
@@ -147,6 +150,8 @@ class OuterJoin(GenerationPipeLineBase):
         for tab in self.core_relations:
             if tab not in table_attr_dict.keys():
                 table_attr_dict[tab] = None
+                self.logger.error(f"ERROR: {tab} does not have any direct projection! Cannot verify outer-join! Bye.")
+                return None
         self.logger.debug("table_attr_dict: ", table_attr_dict)
         return table_attr_dict
 

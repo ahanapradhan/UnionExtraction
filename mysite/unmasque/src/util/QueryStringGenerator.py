@@ -293,7 +293,7 @@ class QueryStringGenerator:
         eq = self.generate_query_string(ol, select, all_ors=None)
         return eq
 
-    def create_new_query(self, ref_query=None): # make new query from the last memory
+    def create_new_query(self, ref_query=None):  # make new query from the last memory
         lastQueryDetails = QueryDetails()
         lastQueryDetails.makeCopy(self._workingCopy)
         self.generate_query_string()  # take backup of current working copy
@@ -366,6 +366,8 @@ class QueryStringGenerator:
             predicates.append(pred)
 
     def __generate_arithmetic_conjunctive_disjunctions(self, all_ors, predicates):
+        if all_ors is None:
+            return
         for p in all_ors:
             non_empty_indices = [i for i, t_a in enumerate(p) if t_a]
             tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
