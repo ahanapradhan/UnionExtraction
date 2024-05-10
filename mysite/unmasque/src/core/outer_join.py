@@ -12,15 +12,13 @@ class OuterJoin(GenerationPipeLineBase):
     join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ROJ,
                 ('h', 'l'): LOJ, ('h', 'h'): ' FULL OUTER JOIN '}
 
-    def __init__(self, connectionHelper, global_pk_dict, delivery, q_gen: QueryStringGenerator, projection):
-        super().__init__(connectionHelper, "Outer Join", delivery)
+    def __init__(self, connectionHelper, global_pk_dict, genPipelineCtx, q_gen: QueryStringGenerator, projection):
+        super().__init__(connectionHelper, "Outer Join", genPipelineCtx)
         self.global_pk_dict = global_pk_dict
-        self.check_nep_again = False
         self.sem_eq_queries = None
-        self.sem_eq_listdict = {}
         self.importance_dict = {}
-        self.projected_attributes = projection.projected_attributes
-        self.projected_names = projection.projected_names
+        self.projected_attributes = projection.projected_attribs
+        self.projected_names = projection.projection_names
         self.Q_E = None
         self.q_gen = q_gen
         self.enabled = self.connectionHelper.config.detect_oj

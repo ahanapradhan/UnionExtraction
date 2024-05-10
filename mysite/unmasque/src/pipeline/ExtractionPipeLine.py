@@ -175,11 +175,12 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.q_generator.projection = self.pj
         self.q_generator.from_clause = core_relations
         self.q_generator.equi_join = self.aoa
+        self.q_generator.or_predicates = self.or_predicates
         self.q_generator.where_clause_remnants = self.genPipelineCtx
         self.q_generator.aggregate = agg
         self.q_generator.orderby = ob
         self.q_generator.limit = lm
-        eq = self.q_generator.generate_query_string(all_ors=self.or_predicates)
+        eq = self.q_generator.generate_query_string()
         self.logger.debug("extracted query:\n", eq)
 
         self.time_profile.update(time_profile)

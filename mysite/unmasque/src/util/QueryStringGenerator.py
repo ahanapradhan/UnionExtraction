@@ -23,6 +23,7 @@ class QueryDetails:
         self.aoa_less_thans = []
         self.aoa_predicates = []
         self.join_edges = []
+        self.or_predicates = []
 
         self.projection_names = []
         self.global_projected_attributes = []
@@ -50,6 +51,7 @@ class QueryDetails:
         self.global_projected_attributes = other.global_projected_attributes
         self.global_groupby_attributes = other.global_groupby_attributes
         self.global_aggregated_attributes = other.global_aggregated_attributes
+        self.or_predicates = other.or_predicates
 
     def add_to_where_op(self, predicate):
         if self.where_op and predicate not in self.where_op:
@@ -232,6 +234,14 @@ class QueryStringGenerator:
         self._workingCopy.eq_join_predicates.clear()  # when join edges are assigned directly, old equi join
         # predicates are obsolete
 
+    @property
+    def or_predicates(self):
+        raise NotImplementedError
+
+    @or_predicates.setter
+    def or_predicates(self, value):
+        self._workingCopy.or_predicates = value
+
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:
             tab, attrib, op, neg_val = elt[0], elt[1], elt[2], elt[3]
@@ -260,7 +270,7 @@ class QueryStringGenerator:
         self._workingCopy.add_to_where_op(predicate)
         return self.write_query()
 
-    def __generate_where_clause(self, all_ors=None) -> str:
+    def __generate_where_clause(self) -> str:
         predicates = []
         if not len(self._workingCopy.join_edges):
             self.__generate_algebraice_eualities(predicates)
@@ -269,7 +279,7 @@ class QueryStringGenerator:
         self.__generate_algebraic_inequalities(predicates)
 
         if self.connectionHelper.config.detect_or:
-            self.__generate_arithmetic_conjunctive_disjunctions(all_ors, predicates)
+            self.__generate_arithmetic_conjunctive_disjunctions(predicates)
         else:
             self.__generate_arithmetic_pure_conjunctions(predicates)
 
@@ -277,9 +287,9 @@ class QueryStringGenerator:
         self.logger.debug(where_clause)
         return where_clause
 
-    def generate_query_string(self, gaol=True, select=True, all_ors=None):
+    def generate_query_string(self, gaol=True, select=True):
         self._workingCopy.from_op = ", ".join(self._workingCopy.core_relations)
-        self._workingCopy.where_op = self.__generate_where_clause(all_ors)
+        self._workingCopy.where_op = self.__generate_where_clause()
         if gaol:
             self.__generate_group_by_clause()
             self.__generate_select_clause(select)
@@ -290,7 +300,7 @@ class QueryStringGenerator:
         self.from_clause = core_relations
         self.join_edges = ed_join_edges
         self._workingCopy.filter_predicates = filter_predicates
-        eq = self.generate_query_string(ol, select, all_ors=None)
+        eq = self.generate_query_string(ol, select)
         return eq
 
     def create_new_query(self, ref_query=None):  # make new query from the last memory
@@ -365,10 +375,8 @@ class QueryStringGenerator:
             pred = self.formulate_predicate_from_filter(a_eq)
             predicates.append(pred)
 
-    def __generate_arithmetic_conjunctive_disjunctions(self, all_ors, predicates):
-        if all_ors is None:
-            return
-        for p in all_ors:
+    def __generate_arithmetic_conjunctive_disjunctions(self, predicates):
+        for p in self.or_predicates:
             non_empty_indices = [i for i, t_a in enumerate(p) if t_a]
             tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
             ops = [p[i][2] for i in non_empty_indices]
