@@ -103,6 +103,15 @@ class QueryStringGenerator:
         self._workingCopy = QueryDetails()
 
     @property
+    def filter_predicates(self):
+        return self._workingCopy.filter_predicates
+
+    @filter_predicates.setter
+    def filter_predicates(self, value):
+        if value not in self._workingCopy.filter_predicates:
+            self._workingCopy.filter_predicates.append(value)
+
+    @property
     def select_op(self):
         return self._workingCopy.select_op
 
@@ -234,13 +243,13 @@ class QueryStringGenerator:
                 if '%' in output or '_' in output:
                     predicate = f"{tab}.{attrib} NOT LIKE '{str(output)}' "
                     self._remove_exact_NE_string_predicate(elt)
-                    self._workingCopy.filter_predicates.append((tab, attrib, 'NOT LIKE', output))
+                    self.filter_predicates = (tab, attrib, 'NOT LIKE', output)
                 else:
                     predicate = f"{tab}.{attrib} {str(op)} \'{str(output)}\' "
-                    self._workingCopy.filter_predicates.append((tab, attrib, str(op), output))
+                    self.filter_predicates = (tab, attrib, str(op), output)
             else:
                 predicate = f"{tab}.{attrib} {str(op)} {format_val}"
-                self._workingCopy.filter_predicates.append((tab, attrib, str(op), format_val))
+                self.filter_predicates = (tab, attrib, str(op), format_val)
 
             self._workingCopy.add_to_where_op(predicate)
 
