@@ -173,7 +173,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         self.q_generator.get_datatype = self.filter_extractor.get_datatype  # method
         self.q_generator.projection = self.pj
-        self.q_generator.from_clause = self.core_relations
+        self.q_generator.from_clause = core_relations
         self.q_generator.equi_join = self.aoa
         self.q_generator.where_clause_remnants = self.genPipelineCtx
         self.q_generator.aggregate = agg

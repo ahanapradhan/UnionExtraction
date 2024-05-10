@@ -293,7 +293,7 @@ class QueryStringGenerator:
         eq = self.generate_query_string(ol, select, all_ors=None)
         return eq
 
-    def create_new_query(self, ref_query=None):
+    def create_new_query(self, ref_query=None): # make new query from the last memory
         lastQueryDetails = QueryDetails()
         lastQueryDetails.makeCopy(self._workingCopy)
         self.generate_query_string()  # take backup of current working copy

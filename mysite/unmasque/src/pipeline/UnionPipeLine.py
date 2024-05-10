@@ -36,9 +36,9 @@ class UnionPipeLine(OuterJoinPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.__nullify_relations(nullify)
-            self.q_generator.reset()
             eq = self._after_from_clause_extract(query, core_relations)
             self.__revert_nullifications(nullify)
+            self.q_generator.reset()
             self.connectionHelper.closeConnection()
 
             if eq is not None:
