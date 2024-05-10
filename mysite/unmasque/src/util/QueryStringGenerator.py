@@ -99,6 +99,9 @@ class QueryStringGenerator:
         self._workingCopy = QueryDetails()
         self.logger = Log("Query String Generator", connectionHelper.config.log_level)
 
+    def reset(self):
+        self._workingCopy = QueryDetails()
+
     @property
     def select_op(self):
         return self._workingCopy.select_op
@@ -231,10 +234,13 @@ class QueryStringGenerator:
                 if '%' in output or '_' in output:
                     predicate = f"{tab}.{attrib} NOT LIKE '{str(output)}' "
                     self._remove_exact_NE_string_predicate(elt)
+                    self._workingCopy.filter_predicates.append((tab, attrib, 'NOT LIKE', output))
                 else:
                     predicate = f"{tab}.{attrib} {str(op)} \'{str(output)}\' "
+                    self._workingCopy.filter_predicates.append((tab, attrib, str(op), output))
             else:
                 predicate = f"{tab}.{attrib} {str(op)} {format_val}"
+                self._workingCopy.filter_predicates.append((tab, attrib, str(op), format_val))
 
             self._workingCopy.add_to_where_op(predicate)
 
