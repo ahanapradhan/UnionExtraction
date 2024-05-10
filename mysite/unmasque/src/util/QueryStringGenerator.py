@@ -376,7 +376,7 @@ class QueryStringGenerator:
             predicates.append(pred)
 
     def __generate_arithmetic_conjunctive_disjunctions(self, predicates):
-        for p in self.or_predicates:
+        for p in self._workingCopy.or_predicates:
             non_empty_indices = [i for i, t_a in enumerate(p) if t_a]
             tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
             ops = [p[i][2] for i in non_empty_indices]
