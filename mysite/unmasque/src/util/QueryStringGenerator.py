@@ -344,7 +344,7 @@ class QueryStringGenerator:
         elif op == '>=':
             predicate = f"{tab}.{attrib} {op} {f_lb}"
         elif op in ['<=', '=', 'equal', 'like', 'not like', '<>', '!=', 'in']:
-            predicate = f"{tab}.{attrib} {op} {f_ub}"
+            predicate = f"{tab}.{attrib} {str(op.replace('equal', '=')).upper()} {f_ub}"
         else:
             predicate = ''
         return predicate
