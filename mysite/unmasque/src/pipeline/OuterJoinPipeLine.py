@@ -17,7 +17,7 @@ class OuterJoinPipeLine(ExtractionPipeLine):
         self.logger.debug(self.q_generator.filter_predicates)
         self.update_state(OUTER_JOIN + START)
         oj = OuterJoin(self.connectionHelper, self.global_pk_dict, self.aoa.nextPipelineCtx, self.q_generator,
-                       self.pj)
+                       self.pgao_ctx)
         self.update_state(OUTER_JOIN + RUNNING)
         check = oj.doJob(query)
         self.update_state(OUTER_JOIN + DONE)
@@ -30,4 +30,6 @@ class OuterJoinPipeLine(ExtractionPipeLine):
             return eq
         if oj.Q_E is not None:
             eq = oj.Q_E
+        else:
+            self.logger.info("####..... Could not extract outer join ......####")
         return eq

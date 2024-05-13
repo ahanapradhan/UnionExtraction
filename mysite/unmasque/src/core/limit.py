@@ -4,16 +4,19 @@ import itertools
 
 import frozenlist as frozenlist
 
+from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.pgao_context import PGAOcontext
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 
 class Limit(GenerationPipeLineBase):
 
-    def __init__(self, connectionHelper, global_groupby_attributes, delivery):
-        super().__init__(connectionHelper, "Limit", delivery)
+    def __init__(self, connectionHelper, genPipelineCtx: PackageForGenPipeline,
+                 pgao_ctx: PGAOcontext):
+        super().__init__(connectionHelper, "Limit", genPipelineCtx)
         self.limit = None
-        self.global_groupby_attributes = global_groupby_attributes
+        self.global_groupby_attributes = pgao_ctx.group_by_attrib
         self.joined_attrib_valDict = {}
         self.no_rows = 1000
 

@@ -44,7 +44,7 @@ class MyTestCase(BaseTestCase):
 
         projections = ['l_returnflag', 'l_linestatus', 'l_quantity', 'l_extendedprice', 'l_discount'
             , 'l_tax', 'l_quantity', 'l_extendedprice', 'l_discount', '']
-        gb = GroupBy(self.conn, delivery, projected_attribs)
+        gb = GroupBy(self.conn, delivery, pgao_ctx)
         gb.mock = True
 
         check = gb.doJob(queries.Q1)
@@ -117,7 +117,7 @@ class MyTestCase(BaseTestCase):
 
         projections = ['l_orderkey', 'l_discount', 'o_orderdate', 'o_shippriority']
 
-        gb = GroupBy(self.conn, delivery, projected_attribs)
+        gb = GroupBy(self.conn, delivery, pgao_ctx)
         gb.mock = True
 
         check = gb.doJob(queries.Q3_1)
@@ -157,7 +157,7 @@ class MyTestCase(BaseTestCase):
 
         projections = ['o_orderdate', 'o_orderpriority', '']
 
-        gb = GroupBy(self.conn, delivery, projected_attribs)
+        gb = GroupBy(self.conn, delivery, pgao_ctx)
         gb.mock = True
 
         check = gb.doJob(queries.Q4)
@@ -249,7 +249,7 @@ class MyTestCase(BaseTestCase):
 
         projections = ['n_name', 'l_extendedprice']
 
-        gb = GroupBy(self.conn, delivery, projected_attribs)
+        gb = GroupBy(self.conn, delivery, pgao_ctx)
         gb.mock = True
 
         check = gb.doJob(queries.Q5)

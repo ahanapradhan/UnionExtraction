@@ -86,7 +86,7 @@ class MyTestCase(BaseTestCase):
                                          self.get_dmin_val, self.get_datatype)
         delivery.doJob()
 
-        agg = Aggregation(self.conn, projections, has_groupBy, group_by_attribs, dep, sol, p_list, delivery)
+        agg = Aggregation(self.conn, delivery)
         agg.mock = True
 
         check = agg.doJob(queries.Q1)
@@ -186,7 +186,7 @@ class MyTestCase(BaseTestCase):
                [('identical_expr_nc', 'o_orderdate')], [('identical_expr_nc', 'o_shippriority')]]
         sol = [[], [[1.], [1.], [0.], [0.], [-1.], [-0.], [-0.], [0.]], [], []]
 
-        agg = Aggregation(self.conn, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
+        agg = Aggregation(self.conn, )
         agg.mock = True
 
         check = agg.doJob(queries.Q3)
@@ -289,7 +289,7 @@ class MyTestCase(BaseTestCase):
                                          self.get_dmin_val, self.get_datatype)
         delivery.doJob()
 
-        agg = Aggregation(self.conn, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
+        agg = Aggregation(self.conn, )
         agg.mock = True
 
         check = agg.doJob(queries.Q3_1)
@@ -393,7 +393,7 @@ class MyTestCase(BaseTestCase):
                                          self.get_dmin_val, self.get_datatype)
         delivery.doJob()
 
-        agg = Aggregation(self.conn, projections, has_groupBy, group_by_attribs, dep, sol, delivery)
+        agg = Aggregation(self.conn, )
         agg.mock = True
 
         check = agg.doJob(queries.Q3_2)

@@ -3,6 +3,8 @@ from datetime import date
 from typing import Tuple, Union
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.pgao_context import PGAOcontext
 from ..util.QueryStringGenerator import QueryStringGenerator
 
 
@@ -12,18 +14,24 @@ class OuterJoin(GenerationPipeLineBase):
     join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ROJ,
                 ('h', 'l'): LOJ, ('h', 'h'): ' FULL OUTER JOIN '}
 
-    def __init__(self, connectionHelper, global_pk_dict, genPipelineCtx, q_gen: QueryStringGenerator, projection):
+    def __init__(self, connectionHelper, global_pk_dict,
+                 genPipelineCtx: PackageForGenPipeline,
+                 q_gen: QueryStringGenerator,
+                 pgao_ctx: PGAOcontext):
         super().__init__(connectionHelper, "Outer Join", genPipelineCtx)
         self.global_pk_dict = global_pk_dict
         self.sem_eq_queries = None
         self.importance_dict = {}
-        self.projected_attributes = projection.projected_attribs
-        self.projected_names = projection.projection_names
+        self.projected_attributes = pgao_ctx.projected_attribs
+        self.projected_names = pgao_ctx.projection_names
+        self.group_by_attrib = pgao_ctx.group_by_attrib
+        self.orderby_string = pgao_ctx.orderby_string
         self.Q_E = None
         self.q_gen = q_gen
         self.enabled = self.connectionHelper.config.detect_oj
 
     def doExtractJob(self, query: str) -> bool:
+        # self.__resolve_ambigous_projections(query)
         list_of_tables, new_join_graph = self.__get_tables_list_and_new_join_graph()
         if not len(new_join_graph):
             self.logger.info("No Join clause found.")
@@ -40,6 +48,43 @@ class OuterJoin(GenerationPipeLineBase):
         self.__remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries, fp_on)
         self.Q_E = self.sem_eq_queries[0] if len(self.sem_eq_queries) else None
         return True
+
+    def __resolve_ambigous_projections(self, query):
+        replace_dict = dict()
+        to_replace = []
+        for attrib in self.projected_attributes:
+            idx = self.projected_attributes.index(attrib)
+            name = self.projected_names[idx]
+            if attrib in self.joined_attribs:
+                self.logger.debug("checking for ", attrib)
+                table = self.find_tabname_for_given_attrib(attrib)
+                prev = self.get_dmin_val(attrib, table)
+                self.update_with_val(attrib, table, 'NULL')
+                res = self.app.doJob(query)
+                self.logger.debug(res)
+                self.update_with_val(attrib, table, prev)
+                all_null = self.app.is_attrib_all_null(res, name)
+                if all_null:
+                    to_replace.append(attrib)
+                    other = attrib
+                    for edge in self.global_join_graph:
+                        if attrib in edge:
+                            idx = edge.index(attrib)
+                            other = edge[1 - idx]
+                            break
+                    replace_dict[idx] = other
+                    self.logger.debug(other)
+        for key in replace_dict.keys():
+            attrib = self.projected_attributes[key]
+            if attrib in self.group_by_attrib:
+                self.group_by_attrib[self.group_by_attrib.index(attrib)] = replace_dict[key]
+            self.orderby_string.replace(attrib, replace_dict[key])
+            self.projected_attributes[key] = replace_dict[key]
+
+        self.logger.debug("Rectify with: ", self.projected_attributes, self.group_by_attrib, self.orderby_string)
+        self.q_gen.rectify_projection(self.projected_attributes,
+                                      self.group_by_attrib,
+                                      self.orderby_string)
 
     def __create_final_edge_seq(self, list_of_tables, new_join_graph):
         final_edge_seq = []
@@ -322,4 +367,3 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug("error sneha!!!")
         self.logger.debug(imp_t1, imp_t2)
         return imp_t1, imp_t2
-

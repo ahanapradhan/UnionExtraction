@@ -90,6 +90,18 @@ class NullFreeExecutable(Executable):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Null Free Executable")
 
+    def is_attrib_all_null(self, Res, attrib):
+        idx = Res[0].index(attrib)
+        yes = True
+        for row in Res[1:]:
+            self.logger.debug(f"{attrib} value: ", row[idx])
+            if row[idx] in [None, 'None']:
+                yes = yes and True
+            else:
+                yes = False
+                return yes
+        return yes
+
     def isQ_result_no_full_nullfree_row(self, Res):
         return is_result_no_full_nullfree_row(Res, self.logger)
 

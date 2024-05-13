@@ -163,22 +163,6 @@ class QueryStringGenerator:
         self._workingCopy.eq_join_predicates = aoa.algebraic_eq_predicates
 
     @property
-    def orderby(self):
-        return NotImplementedError
-
-    @orderby.setter
-    def orderby(self, ob_obj):
-        self._workingCopy.order_by_op = ob_obj.orderBy_string
-
-    @property
-    def groupby(self):
-        return NotImplementedError
-
-    @groupby.setter
-    def groupby(self, gb_string):
-        self._workingCopy.group_by_op = gb_string
-
-    @property
     def limit(self):
         return NotImplementedError
 
@@ -187,23 +171,17 @@ class QueryStringGenerator:
         self._workingCopy.limit_op = str(lm_obj.limit) if lm_obj.limit is not None else ''
 
     @property
-    def projection(self):
+    def pgaoCtx(self):
         return NotImplementedError
 
-    @projection.setter
-    def projection(self, pj_obj):
-        self._workingCopy.global_key_attributes = pj_obj.joined_attribs
-        self._workingCopy.projection_names = pj_obj.projection_names
-
-    @property
-    def aggregate(self):
-        return NotImplementedError
-
-    @aggregate.setter
-    def aggregate(self, agg_obj):
-        self._workingCopy.global_aggregated_attributes = agg_obj.global_aggregated_attributes
-        self._workingCopy.global_groupby_attributes = agg_obj.global_groupby_attributes
-        self._workingCopy.global_projected_attributes = agg_obj.global_projected_attributes
+    @pgaoCtx.setter
+    def pgaoCtx(self, value):
+        self._workingCopy.global_key_attributes = value.joined_attribs
+        self._workingCopy.projection_names = value.projection_names
+        self._workingCopy.global_aggregated_attributes = value.aggregated_attributes
+        self._workingCopy.global_groupby_attributes = value.group_by_attrib
+        self._workingCopy.global_projected_attributes = value.projected_attribs
+        self._workingCopy.order_by_op = value.orderby_string
 
     @property
     def where_clause_remnants(self):
@@ -241,6 +219,11 @@ class QueryStringGenerator:
     @or_predicates.setter
     def or_predicates(self, value):
         self._workingCopy.or_predicates = value
+
+    def rectify_projection(self, projected_attributes, group_by_attrib, orderby_string):
+        self._workingCopy.global_projected_attributes = projected_attributes
+        self._workingCopy.group_by_op = group_by_attrib
+        self._workingCopy.order_by_op = orderby_string
 
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:

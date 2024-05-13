@@ -223,11 +223,10 @@ class MyTestCase(unittest.TestCase):
         check = pj.doJob(query)
         self.assertTrue(check)
         print(pj.projected_attribs)
-        gb = GroupBy(self.conn, aoa.nextPipelineCtx, pj.projected_attribs)
+        gb = GroupBy(self.conn, aoa.nextPipelineCtx, pgao_ctx)
         check = gb.doJob(query)
         self.assertTrue(check)
-        agg = Aggregation(self.conn, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
-                          pj.dependencies, pj.solution, pj.param_list, aoa.nextPipelineCtx)
+        agg = Aggregation(self.conn, aoa.nextPipelineCtx)
         agg.doJob(query)
         self.assertTrue(agg.done)
         ob = OrderBy(self.conn, pj.projected_attribs, pj.projection_names, pj.dependencies,

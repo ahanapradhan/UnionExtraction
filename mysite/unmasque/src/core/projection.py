@@ -30,8 +30,8 @@ def get_index_of_difference(attrib, new_result, new_result1, projection_dep, tab
 
 
 class Projection(GenerationPipeLineBase):
-    def __init__(self, connectionHelper: AbstractConnectionHelper, delivery: PackageForGenPipeline):
-        super().__init__(connectionHelper, "Projection", delivery)
+    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: PackageForGenPipeline):
+        super().__init__(connectionHelper, "Projection", genPipelineCtx)
         self.projection_names = None
         self.projected_attribs = None
         self.dependencies = None
