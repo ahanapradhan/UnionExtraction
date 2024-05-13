@@ -31,7 +31,7 @@ class OuterJoin(GenerationPipeLineBase):
         self.enabled = self.connectionHelper.config.detect_oj
 
     def doExtractJob(self, query: str) -> bool:
-        # self.__resolve_ambigous_projections(query)
+        self.__resolve_ambigous_projections(query)
         list_of_tables, new_join_graph = self.__get_tables_list_and_new_join_graph()
         if not len(new_join_graph):
             self.logger.info("No Join clause found.")
@@ -64,7 +64,7 @@ class OuterJoin(GenerationPipeLineBase):
                 self.logger.debug(res)
                 self.update_with_val(attrib, table, prev)
                 all_null = self.app.is_attrib_all_null(res, name)
-                if all_null:
+                if not all_null:
                     to_replace.append(attrib)
                     other = attrib
                     for edge in self.global_join_graph:
@@ -72,14 +72,15 @@ class OuterJoin(GenerationPipeLineBase):
                             idx = edge.index(attrib)
                             other = edge[1 - idx]
                             break
-                    replace_dict[idx] = other
+                    replace_dict[attrib] = other
                     self.logger.debug(other)
-        for key in replace_dict.keys():
-            attrib = self.projected_attributes[key]
+        for attrib in replace_dict.keys():
             if attrib in self.group_by_attrib:
-                self.group_by_attrib[self.group_by_attrib.index(attrib)] = replace_dict[key]
-            self.orderby_string.replace(attrib, replace_dict[key])
-            self.projected_attributes[key] = replace_dict[key]
+                self.group_by_attrib[self.group_by_attrib.index(attrib)] = replace_dict[attrib]
+            else:
+                self.group_by_attrib.append(replace_dict[attrib])
+            self.orderby_string.replace(attrib, replace_dict[attrib])
+            self.projected_attributes[self.projected_attributes.index(attrib)] = replace_dict[attrib]
 
         self.logger.debug("Rectify with: ", self.projected_attributes, self.group_by_attrib, self.orderby_string)
         self.q_gen.rectify_projection(self.projected_attributes,
@@ -141,7 +142,7 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug(loc)
 
             res_hq_dict = {}
-            if len(res_hq) == 1:
+            if self.app.isQ_result_has_no_data(res_hq):  # len(res_hq) == 1:
                 for k in loc.keys():
                     if k not in res_hq_dict.keys():
                         res_hq_dict[k] = [None]
@@ -315,6 +316,7 @@ class OuterJoin(GenerationPipeLineBase):
         self.q_gen.where_op = where_op
         self.logger.debug(f"from and where op of q_gen: {self.q_gen.from_op}, "
                           f"{self.q_gen.where_op}")
+        self.q_gen.generate_select_groupby_string()
         q_candidate = self.q_gen.write_query()
         return q_candidate
 

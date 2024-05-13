@@ -222,7 +222,7 @@ class QueryStringGenerator:
 
     def rectify_projection(self, projected_attributes, group_by_attrib, orderby_string):
         self._workingCopy.global_projected_attributes = projected_attributes
-        self._workingCopy.group_by_op = group_by_attrib
+        self._workingCopy.global_groupby_attributes = group_by_attrib
         self._workingCopy.order_by_op = orderby_string
 
     def updateExtractedQueryWithNEPVal(self, query, val):
@@ -270,12 +270,19 @@ class QueryStringGenerator:
         self.logger.debug(where_clause)
         return where_clause
 
-    def generate_query_string(self, gaol=True, select=True):
+    def generate_select_groupby_string(self):
+        self.__generate_group_by_clause()
+        self.__generate_select_clause()
+
+    def generate_from_where_string(self):
         self._workingCopy.from_op = ", ".join(self._workingCopy.core_relations)
         self._workingCopy.where_op = self.__generate_where_clause()
+
+    def generate_query_string(self, gaol=True, select=True):
+        self.generate_from_where_string()
         if gaol:
             self.__generate_group_by_clause()
-            self.__generate_select_clause(select)
+        self.__generate_select_clause(select)
         eq = self.write_query(gaol)
         return eq
 
