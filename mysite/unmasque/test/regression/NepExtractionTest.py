@@ -62,10 +62,11 @@ class MyTestCase(BaseTestCase):
 
     def test_Q21_mukul_thesis_oj(self):
         query = "Select s_name, n_name, l_returnflag, o_clerk, count(*) as numwait " \
-                "From supplier LEFT OUTER JOIN lineitem on s_suppkey = l_suppkey RIGHT OUTER JOIN orders" \
+                "From supplier LEFT OUTER JOIN lineitem on s_suppkey = l_suppkey " \
+                "and s_acctbal < 5000 RIGHT OUTER JOIN orders" \
                 " on o_orderkey = l_orderkey and  o_orderstatus = 'F'  LEFT OUTER JOIN nation " \
                 "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
-                "Order By numwait desc, s_name Limit 100;"
+                "Order By numwait desc, s_name Limit 1200;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.pipeline.time_profile.print()

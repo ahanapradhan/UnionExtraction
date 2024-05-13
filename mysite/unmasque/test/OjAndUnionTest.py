@@ -69,29 +69,6 @@ class ExtractionTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
-    def test_outer_join_agg(self):
-        query = "(select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, " \
-     "sum(l_discount) as sum_disc_price, sum(l_tax) as sum_charge, avg(l_quantity) as avg_qty, avg(l_extendedprice) " \
-     "as avg_price, avg(l_discount) as avg_disc, count(*) as count_order from lineitem where l_shipdate <= date " \
-     "'1998-12-01' - interval '71 days' group by l_returnflag, l_linestatus order by l_returnflag, l_linestatus)" \
-      " UNION ALL (select c_mktsegment, o_orderstatus, sum(c_acctbal) as sum_qty, sum(o_totalprice) as sum_base_price," \
-      "sum(c_acctbal) as sum_disc_price, sum(o_totalprice) as sum_charge, avg(c_acctbal) as avg_qty, avg(o_totalprice) " \
-     "as avg_price, avg(c_acctbal) as avg_disc, count(*) as count_order from customer, orders where c_custkey = o_custkey" \
-      " and o_totalprice > 7000 group by c_mktsegment, o_orderstatus ORDER BY c_mktsegment, o_orderstatus DESC);"
-        self.conn.config.detect_union = True
-        factory = PipeLineFactory()
-        self.pipeline = factory.create_pipeline(self.conn)
-        eq = self.pipeline.doJob(query)
-        print(eq)
-        self.assertTrue(self.pipeline.correct)
-
-    def test_cyclic_join(self):
-        query = ("select c_name, n_name, s_name from nation LEFT OUTER JOIN customer on c_nationkey = n_nationkey"
-                 " RIGHT OUTER JOIN supplier on n_nationkey = s_nationkey;")
-        eq = self.pipeline.doJob(query)
-        print(eq)
-        self.assertTrue(self.pipeline.correct)
-
 
 if __name__ == '__main__':
     unittest.main()

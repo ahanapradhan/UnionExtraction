@@ -44,7 +44,7 @@ class AlgebraicPredicate(FilterHolder):
         self.filter_predicates = []
 
         self.filter_in_predicates = []
-        self.pipeline_delivery = None
+        self.nextPipelineCtx = None
         self.where_clause = ""
 
         self.prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
@@ -359,14 +359,14 @@ class AlgebraicPredicate(FilterHolder):
                 if pred[:2] == in_pred[:2]:
                     self.filter_predicates[i] = in_pred
 
-        self.pipeline_delivery = PackageForGenPipeline(self.core_relations, self.filter_extractor.global_all_attribs,
-                                                       self.filter_extractor.global_attrib_types,
-                                                       self.filter_predicates, self.aoa_predicates, self.join_graph,
-                                                       self.aoa_less_thans, self.global_min_instance_dict,
-                                                       self.get_dmin_val, self.get_datatype)
-        self.pipeline_delivery.doJob()
-        self.logger.debug(self.pipeline_delivery.global_filter_predicates)
-        self.logger.debug(self.pipeline_delivery.global_join_graph)
+        self.nextPipelineCtx = PackageForGenPipeline(self.core_relations, self.filter_extractor.global_all_attribs,
+                                                     self.filter_extractor.global_attrib_types,
+                                                     self.filter_predicates, self.aoa_predicates, self.join_graph,
+                                                     self.aoa_less_thans, self.global_min_instance_dict,
+                                                     self.get_dmin_val, self.get_datatype)
+        self.nextPipelineCtx.doJob()
+        self.logger.debug(self.nextPipelineCtx.global_filter_predicates)
+        self.logger.debug(self.nextPipelineCtx.global_join_graph)
 
     def do_permanent_mutation(self):
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_less_thans))

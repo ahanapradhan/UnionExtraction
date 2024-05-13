@@ -145,7 +145,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         raise NotImplementedError("Trouble!")
 
     @abstractmethod
-    def _verify_correctness(self, query, result):
+    def verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
     def _extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once

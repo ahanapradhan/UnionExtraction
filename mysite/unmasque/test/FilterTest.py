@@ -50,7 +50,8 @@ class MyTestCase(unittest.TestCase):
 
         self.conn.execute_sql([self.conn.queries.alter_table_rename_to('nation', 'nation_back'),
                                self.conn.queries.create_table_like('nation', 'nation_back'),
-                               "insert into nation select * from nation_back where n_nationkey = 16 and n_regionkey = 0;"])
+                               "insert into nation select * from nation_back where n_nationkey = 16 and n_regionkey = "
+                               "0;"])
         self.conn.execute_sql([self.conn.queries.alter_table_rename_to('region', 'region_back'),
                                self.conn.queries.create_table_like('region', 'region_back'),
                                "insert into region select * from region_back where r_regionkey = 0;"])
@@ -87,7 +88,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(check)
         aoa.post_process_for_generation_pipeline(query)
 
-        delivery = copy.copy(aoa.pipeline_delivery)
+        delivery = copy.copy(aoa.nextPipelineCtx)
 
         pj = Projection(self.conn, delivery)
         check = pj.doJob(query)
