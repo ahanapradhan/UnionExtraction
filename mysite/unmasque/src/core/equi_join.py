@@ -3,11 +3,12 @@ from ...src.core.abstract.filter_holder import FilterHolder
 from ...src.core.filter import Filter
 from ...src.util.aoa_utils import get_op, get_tab, get_attrib, merge_equivalent_paritions
 
+from typing import List, Tuple
 
 class U2EquiJoin(FilterHolder):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 core_relations: list[str],
+                 core_relations: List[str],
                  filter_predicates: list,
                  filter_extractor: Filter,
                  global_min_instance_dict: dict):
@@ -85,7 +86,7 @@ class U2EquiJoin(FilterHolder):
                 break
         return done
 
-    def algo2_preprocessing(self) -> tuple[dict, list]:
+    def algo2_preprocessing(self) -> Tuple[dict, list]:
         eq_groups_dict = {}
         ineq_filter_predicates = []
         for pred in self.filter_predicates:

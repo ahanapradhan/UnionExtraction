@@ -6,54 +6,87 @@
     <link rel="stylesheet" href="{% static 'progress.css' %}">
 </head>
 <body>
-    <div class="title">UNMASQUE</div>
-    <div class="subtitle">Unified Non-invasive MAchine for Sql QUery Extraction</div>
-    <div class="hidQ subtext">
-        <h1>Hidden Query</h1>
-        <textarea readonly class="roArea" id="query" rows="5" cols="100">{{ query }}</textarea>
+    <div class="heading">
+        <div class="title">UNMASQUE</div>
+        <div class="subtitle"><span class="bi">U</span>nified <span class="bi">N</span>on-invasive <span class="bi">MA</span>chine for <span class="bi">S</span>ql <span class="bi">QU</span>ery <span class="bi">E</span>xtraction</div>
     </div>
-    <div class="progress subtext">
-        <h1>Please Wait...</h1>
-        <div id='progress-updates'>{{ progress_message }}</div>
-    </div>
-    <div class="res">
-        <h1>Output</h1>
-        <div class="outContainer">
-            <div>
-                <label class="state_label">SELECT</label>
-                <textarea readonly class="roArea state_sql" id="select" rows="3" cols="50"></textarea>
-            </div>
-            <div>
-                <label class="state_label">FROM</label>
-                <textarea readonly class="roArea state_sql" id="from" rows="3" cols="50"></textarea>
-            </div>
-            <div>
-                <label class="state_label">WHERE</label>
-                <textarea readonly class="roArea state_sql" id="where" rows="3" cols="50"></textarea>
-            </div>
-            <div>
-                <label class="state_label">GROUP BY</label>
-                <textarea readonly class="roArea state_sql" id="group_by" rows="3" cols="50"></textarea>
-            </div>
-            <div>
-                <label class="state_label">ORDER BY</label>
-                <textarea readonly class="roArea state_sql" id="order_by" rows="3" cols="50"></textarea>
-            </div>
-            <div>
-                <label class="state_label">LIMIT</label>
-                <textarea readonly class="roArea state_sql" id="limit" rows="1" cols="50"></textarea>
+    <div class="content_o">
+        <div class="hidQ subtext">
+            <h1>Hidden Query</h1>
+            <textarea readonly class="roArea" id="query" rows="5" cols="100">{{ query }}</textarea>
+        </div>
+        <div class="progress subtext">
+            <h1>Please Wait...</h1>
+            <div id='progress-updates'>{{ progress_message }}</div>
+            <div class="pipeline">
+                {% for row in rows %}
+                <div class="row">
+                    {% for stage in row %}
+                    <div class="stage">
+                        <div class="circle inactive" data-state="{{ stage }}"></div>
+                        <div class="label">{{ stage }}</div>
+                        
+                        </div>
+                        {% if not forloop.last %}
+                        {% if forloop.parentloop.counter0|divisibleby:2 %}
+                        <div class="arrow">&#8594;</div>
+                        {% else %}
+                        <div class="arrow">&#8592;</div>
+                        {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>    
+        </div>
+        <div class="stage_res">
+
+        </div>
+        <div class="res">
+            <h1>Output</h1>
+            <div class="outContainer">
+                <div class="innerContainer1">
+                    <div class="inincont">
+                        <label class="state_label">SELECT</label>
+                        <textarea readonly class="roArea state_sql" id="select" rows="3" cols="50"></textarea>
+                    </div>
+                    <div class="inincont">
+                        <label class="state_label">FROM</label>
+                        <textarea readonly class="roArea state_sql" id="from" rows="3" cols="50"></textarea>
+                    </div>
+                </div>
+                <div class="innerContainer1">
+                    <div class="inincont">
+                        <label class="state_label">WHERE</label>
+                        <textarea readonly class="roArea state_sql" id="where" rows="3" cols="50"></textarea>
+                    </div>
+                    <div class="inincont">
+                        <label class="state_label">GROUP BY</label>
+                        <textarea readonly class="roArea state_sql" id="group_by" rows="3" cols="50"></textarea>
+                    </div>
+                </div>
+                <div class="innerContainer1">
+                    <div class="inincont">
+                        <label class="state_label">ORDER BY</label>
+                        <textarea readonly class="roArea state_sql" id="order_by" rows="3" cols="50"></textarea>
+                    </div>
+                    <div class="inincont">
+                        <label class="state_label">LIMIT</label>
+                        <textarea readonly class="roArea state_sql" id="limit" rows="3" cols="50"></textarea>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="stateinfo">
-        <h1>Output from modules</h1>
-        <div class="actualInfo">
-            
+        <div class="stateinfo">
+            <h1>Output from modules</h1>
+            <div class="actualInfo">
+
+            </div>
         </div>
-    </div>
-    <div class="btnContainer">
-        <a href="{% url 'cancel' token %}" ><button class="submit">Cancel</button></a>
-        <a href="{% url 'result' token %}" ><button class="submit" id="res_btn" disabled>Result</button></a>
+        <div class="btnContainer">
+            <a href="{% url 'cancel' token %}" ><button class="cancel_submit">Cancel</button></a>
+            <a href="{% url 'result' token %}" ><button class="submit" id="res_btn" disabled>Result</button></a>
+        </div>
     </div>
     <!-- Progress updates will be displayed here -->
 
@@ -61,7 +94,22 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
+        
+        let handle_circle_click = (ev) => {
+            const clicked = ev.target;
+            console.log(clicked)
+            switch(clicked.dataset.state){
+                case STATES[2]:
+                    $(".stage_res").html('<div class="input"'+data[STATES[2]].input+'</div>')
+            }
+        }
 
+        let circle_event_adder = () => {
+            let circles = document.getElementsByClassName("circle");
+            for(let circle of circles){
+                circle.addEventListener("click", handle_circle_click);
+            }
+        }
         let where_and_join = (fil, ej) =>{
             let joins = []
             where_op = ""
@@ -121,6 +169,7 @@
             }
         }
         let k = (prev, data) =>{
+            if(STATES.indexOf(data.progress_message) == -1) return;
             for(let i of STATES.slice(1, STATES.indexOf(data.progress_message))){
                 switch(i){
                     case STATES[2]:
@@ -259,6 +308,7 @@
                 success: function(data) {
                     // Update the progress-updates div with the received data
                     console.log(data.progress_message)
+                    console.log(data.state_info)
                     $("#progress-updates").html(data.progress_message);
                     if(data.progress_message == "_WRONG"){
                         console.log("WRONG")
@@ -270,6 +320,22 @@
                         data.progress_message = data.progress_message.replace("_RUNNING", "")
                         if(data.progress_message != "_DONE") data.progress_message = data.progress_message.replace("_DONE", "")
                         if(data.progress_message != curr_state){
+                            let s_idx = STATES.indexOf(data.progress_message);
+                            let circles = document.getElementsByClassName("circle");
+                            if(circles){
+                                for(let circle of circles){
+                                    if(STATES.indexOf(circle.dataset.state) < s_idx){
+                                        circle.classList.remove("inactive")
+                                        circle.classList.remove("running")
+                                        circle.classList.add("done");
+                                    }
+                                    else if(STATES.indexOf(circle.dataset.state) == s_idx){
+                                        circle.classList.remove("inactive")
+                                        circle.classList.remove("done")
+                                        circle.classList.add("running");
+                                    }
+                                }
+                            }
                             $(".actualInfo").empty()
                             for(let i of STATES.slice(1, STATES.indexOf(curr_state)+1)){
                                 if(i == STATES[4]){
@@ -281,9 +347,8 @@
                             //g()
                             k(curr_state, data)
                         }
-                        curr_state = data.progress_message
 
-                        console.log(data.state_info)
+                        curr_state = data.progress_message
                     }
                     if(curr_state == "_DONE"){
                         $("#res_btn").removeAttr("disabled")

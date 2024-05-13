@@ -5,13 +5,25 @@ from ...src.pipeline.fragments.NepPipeLine import NepPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, PROJECTION, \
-    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, UNION
 from ...src.core.aggregation import Aggregation
 from ...src.core.from_clause import FromClause
 from ...src.core.groupby_clause import GroupBy
 from ...src.core.limit import Limit
 from ...src.core.orderby_clause import OrderBy
 from ...src.core.projection import Projection
+
+class IOState:
+    def __init__(self, inp, output):
+        self.input = inp
+        self.output = output
+        self.dic = {
+            "input": self.input,
+            "output": self.output
+        }
+    
+    def get_dic(self):
+        return self.dic
 
 
 class ExtractionPipeLine(DisjunctionPipeLine,
@@ -34,6 +46,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
     def extract(self, query):
         self.connectionHelper.connectUsingParams()
+        self.info[UNION] = "SKIPPED"
         '''
         From Clause Extraction
         '''
@@ -43,18 +56,21 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         check = fc.doJob(query)
         self.update_state(FROM_CLAUSE + DONE)
         self.time_profile.update_for_from_clause(fc.local_elapsed_time, fc.app_calls)
+        io = IOState(query, fc.core_relations)
         if not check or not fc.done:
             self.logger.error("Some problem while extracting from clause. Aborting!")
             self.info[FROM_CLAUSE] = None
+            io.output = ""
             return None, self.time_profile
         self.info[FROM_CLAUSE] = fc.core_relations
-
+        self.IO[FROM_CLAUSE] = io.get_dic()
         self.core_relations = fc.core_relations
         self.all_sizes = fc.init.all_sizes
         self.key_lists = fc.get_key_lists()
         self.global_pk_dict = fc.init.global_pk_dict
 
         eq = self._after_from_clause_extract(query, self.core_relations)
+        self.update_state(DONE)
         self.connectionHelper.closeConnection()
         # self.time_profile.update(t)
         return eq
@@ -188,5 +204,4 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         eq = self._extract_NEP(core_relations, self.all_sizes, query, self.genPipelineCtx)
 
         self.time_profile.update_for_app(lm.app.method_call_count)
-        self.update_state(DONE)
         return eq

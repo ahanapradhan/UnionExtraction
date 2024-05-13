@@ -29,7 +29,7 @@ def check_redundancy(fl_list, a_ineq):
 
 class AlgebraicPredicate(FilterHolder):
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 core_relations: list[str],
+                 core_relations: List[str],
                  pending_predicates, arithmetic_eq_predicates, algebraic_eq_predicates,
                  filter_extractor, global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor,
@@ -461,7 +461,7 @@ class AlgebraicPredicate(FilterHolder):
     def revert_mutation_on_filter_global_min_instance_dict(self) -> None:
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
 
-    def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str) -> list:
+    def do_bound_check_again(self, tab_attrib: Tuple[str, str], datatype: str, query: str) -> list:
         filter_attribs = []
         d_plus_value = copy.deepcopy(self.filter_extractor.global_d_plus_value)
         attrib_max_length = copy.deepcopy(self.filter_extractor.global_attrib_max_length)
@@ -516,7 +516,7 @@ class AlgebraicPredicate(FilterHolder):
                     self.arithmetic_ineq_predicates.remove(pred)
         return filtered_dict
 
-    def mutate_attrib_with_Bound_val(self, tab_attrib: tuple[str, str], datatype: str, val: any,
+    def mutate_attrib_with_Bound_val(self, tab_attrib: Tuple[str, str], datatype: str, val: any,
                                      with_UB: bool, query: str) \
             -> Tuple[Union[int, Decimal, date], Union[int, Decimal, date]]:
         dmin_val = self.get_dmin_val(get_attrib(tab_attrib), get_tab(tab_attrib))

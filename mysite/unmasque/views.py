@@ -1,13 +1,13 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 
-from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
+from .src.core.factory.PipeLineFactory import PipeLineFactory
 from .src.util.ConnectionFactory import ConnectionHelperFactory
 from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMPLING, DB_MINIMIZATION, EQUALITY, \
     FILTER, \
     LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK, UNION, WRONG, RESTORE_DB, INEQUALITY
 
-ALL_STATES = [WAITING, UNION, FROM_CLAUSE, RESTORE_DB, SAMPLING, DB_MINIMIZATION, FILTER, EQUALITY, INEQUALITY,
+ALL_STATES = [WAITING, UNION, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, FILTER, EQUALITY, INEQUALITY,
               PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, DONE]
 
 
@@ -36,12 +36,18 @@ def login_view(request):
         connHelper.config.detect_nep = (request.POST.get("NEP") == "NEP")
         connHelper.config.detect_union = (request.POST.get("union") == "Union")
         connHelper.config.use_cs2 = (request.POST.get("sampling") == "Sampling")
-        print("Checkbox", connHelper.config.detect_nep, connHelper.config.detect_union, connHelper.config.use_cs2)
+        connHelper.config.detect_or = (request.POST.get("Disjunction") == "Disjunction")
+        connHelper.config.detect_oj = (request.POST.get("OuterJoin") == "OuterJoin")
+        #print("Checkbox", connHelper.config.detect_nep, connHelper.config.detect_union, connHelper.config.use_cs2)
 
         token = start_extraction_pipeline_async(connHelper, query, request)
         return redirect(f'progress/{token}')
 
-    return render(request, 'unmasque/login.html')
+    
+
+    return render(request, 'unmasque/login.html', {
+        
+    })
 
 
 def start_extraction_pipeline_async(connHelper, query, request):
@@ -64,8 +70,8 @@ def func_start(connHelper, query, request):
 
 def check_progress(request, token):
     print("...Checking Progress...")
-    state_changed, state_msg, info = func_check_progress(request, token)
-    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg, 'state_info': info}, safe=False)
+    state_changed, state_msg, info, io = func_check_progress(request, token)
+    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg, 'state_info': info, 'io': io}, safe=False)
 
 
 def func_check_progress(request, token):
@@ -83,7 +89,7 @@ def func_check_progress(request, token):
         print("... still doing...", state_msg)
         to_pass = [factory.get_pipeline_query(token), state_msg, 'NA']
     request.session[str(token) + 'partials'] = to_pass
-    return state_changed, state_msg, p.info if p else None
+    return state_changed, state_msg, p.info, p.IO if p else None
 
 
 def prepare_result(query):
@@ -152,11 +158,16 @@ def result_page(request, token):
 def progress_page(request, token):
     partials = request.session.get(str(token) + 'partials')
     print("Partials", partials, str(token) + 'partials')
+    chunk_size = 5  # Number of stages per row
+    stages = ALL_STATES[1:][:-1]
+    rows = [stages[i:i+chunk_size] for i in range(0, len(stages), chunk_size)]
+    reversed_rows = [row[::-1] if index % 2 == 1 else row for index, row in enumerate(rows)]
     return render(request, 'unmasque/progress.html', {'query': partials[0] if partials else "Not Valid Query",
                                                       'progress_message': partials[1] if partials else "_QNF_",
                                                       'profiling': 'NA', 'token': token, 'states': ALL_STATES,
                                                       "start": START,
-                                                      "running": RUNNING, "done": DONE, "union": UNION})
+                                                      "running": RUNNING, "done": DONE, "union": UNION,
+                                                      'stages': ALL_STATES[1:][:-1], 'rows': reversed_rows})
 
 
 def bye_page(request):
