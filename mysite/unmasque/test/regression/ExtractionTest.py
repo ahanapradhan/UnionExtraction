@@ -443,6 +443,14 @@ class ExtractionTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
+    def test_gopinath_bugfix(self):
+        query = "select avg(l_tax), l_linenumber from lineitem " \
+                "where l_extendedprice >= 3520.02 group by l_linenumber;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
 
 if __name__ == '__main__':
     unittest.main()
