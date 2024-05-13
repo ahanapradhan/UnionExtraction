@@ -1,7 +1,5 @@
 * {
     font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    background-color: #d2dae2;
-    text-align: left;
     
 }
 
@@ -9,18 +7,30 @@ body{
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: auto;
-    width: 100%;
-    gap: 12px;
+    overflow-x: hidden;
+    padding: 0;
+    margin: 0;
+    
 }
 
 .title{
-    font-size: 32px;
-    font-weight: 700;
+    padding: 0px 50px;
 }
 
 .subtitle{
-    font-size: 22px;
+    font-size: 48px;
+    padding: 0px 50px;
+}
+
+.content{
+    padding: 50px 50px;
+    width: 100%;
+}
+
+.subtext{
+    padding: 0px 50px;
+    font-size: 36px;
+    font-weight: 700;
 }
 
 #query{
@@ -31,30 +41,30 @@ body{
     width: 100%;
 }
 .hidQ, .extQ{
-    width: 42%;
+    width: 100%;
+    padding: 0px 50px;
 }
 
 .btnContainer{
-    width: 42%;
+    width: 100%;
     display: flex;
     gap: 15px;
 }
 
 .submit{
-    width: 100%;
-    padding: 8px;
     font-size: 16px;
     font-weight: 700;
-    background-color: rgba(51, 51, 51, 0.2);
+    background-color: rgba(0, 0, 0, 1);
     border-radius: 8px;
     border-width: 0;
-    color: #333333;
+    color: #fff;
     cursor: pointer;
     display: inline-block;
     font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
     line-height: 20px;
     list-style: none;
     margin: 0;
+    padding: 20px 30px;
     text-align: center;
     transition: all 200ms;
     vertical-align: baseline;
@@ -62,6 +72,18 @@ body{
     user-select: none;
     -webkit-user-select: none;
     touch-action: manipulation;   
+}
+
+@keyframes buttonAnimation {
+    0% { transform: scale(1); background-color: #000;}
+    50% { transform: scale(1.1); background-color: #5c5c5c;}
+    100% { transform: scale(1);}
+}
+
+/* Apply the animation to the button when hovering */
+.submit:hover {
+    animation: buttonAnimation 0.5s ease-in-out;
+    background-color: #5c5c5c;
 }
 
 table{
@@ -89,5 +111,31 @@ th{
 }
 
 .perf{
-    width: 25%;
+    width: 100%;
+    padding: 0px 50px;
+}
+
+.heading{
+    margin: 0px;
+    font-size: 85px;
+    color: white;
+    background-color: black;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    padding: 30px 50px;
+}
+
+.bi{
+    font-weight: 700;
+    font-style: italic;
+}
+
+.profile{
+    padding: 0px 50px;
+}
+
+a{
+    padding: 50px;
 }

@@ -51,6 +51,9 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         if not check or not cs2.done:
             self.info[SAMPLING] = None
             self.logger.info("Sampling failed!")
+        if not self.connectionHelper.config.use_cs2:
+            self.info[SAMPLING] = SAMPLING + "DISABLED"
+            self.logger.info("Sampling is disabled!")
         else:
             self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
             # self.db_restorer.update_last_restored_size(cs2.sizes)
