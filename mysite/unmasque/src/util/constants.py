@@ -56,6 +56,7 @@ DETECT_NEP = "nep"
 USE_CS2 = "cs2"
 DETECT_OR = "or"
 DETECT_OJ = "outer_join"
+DETECT_HAVING = "having"
 
 
 WAITING = "_WAITING"

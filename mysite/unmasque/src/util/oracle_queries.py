@@ -133,3 +133,9 @@ class OracleQueries(CommonQueries):
         # DBMS_CRYPTO.HASH or a custom implementation. Example using DBMS_CRYPTO (assuming you want to hash the
         # entire row concatenated as text, which needs careful consideration):
         return f"SELECT SUM(ora_hash(row_data)) FROM (SELECT DBMS_CRYPTO.HASH(UTL_RAW.CAST_TO_RAW(TO_CHAR({tab})), 3) AS row_data FROM {tab})"
+
+    def delete_from_where_ctid(self, table_name: str, ctid: str) -> str:
+        return f"Delete from {table_name} WHERE ROWID = '{ctid}';"
+
+    def select_ctid_from(self, table_name: str) -> str:
+        return f"Select ROWID from {table_name};"
