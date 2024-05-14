@@ -308,3 +308,21 @@ table{
     animation: cancelButtonAnimation 0.5s ease-in-out;
     background-color: #f00;
 }
+
+.subtitle{
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.subcontent{
+    font-size: 18px;
+    font-weight: 700;
+    padding: 10px 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 50px;
+}
+
+.subsubcontent{
+    font-weight: 400;
+}
