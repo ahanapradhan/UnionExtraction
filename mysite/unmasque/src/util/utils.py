@@ -2,7 +2,9 @@ import copy
 import datetime
 import itertools
 import math
+import random
 from itertools import combinations
+from random import randint
 
 from dateutil.relativedelta import relativedelta
 
@@ -188,6 +190,15 @@ def get_dummy_val_for(datatype):
         return dummy_date
     else:
         return dummy_char
+
+
+def get_random_number(datatype, lb, ub):
+    if datatype == 'int':
+        return randint(lb, ub)
+    elif datatype == 'numeric':
+        return round(random.uniform(lb, ub), 2)
+    else:
+        raise ValueError
 
 
 def get_val_plus_delta(datatype, min_val, delta):

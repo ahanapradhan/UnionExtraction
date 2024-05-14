@@ -102,6 +102,15 @@ class NullFreeExecutable(Executable):
                 return yes
         return yes
 
+    def is_attrib_equal_val(self, Res, attrib, val):
+        idx = Res[0].index(attrib)
+        for row in Res[1:]:
+            self.logger.debug(f"{attrib} value: ", row[idx])
+            if row[idx] not in [None, 'None'] and row[idx] != val:
+                return False
+        yes = not self.is_attrib_all_null(Res, attrib)
+        return yes
+
     def isQ_result_no_full_nullfree_row(self, Res):
         return is_result_no_full_nullfree_row(Res, self.logger)
 

@@ -67,7 +67,7 @@ class MyTestCase(unittest.TestCase):
         return f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
                f" from orders {self.join_type} OUTER JOIN customer" \
                f" on c_custkey = o_custkey and o_orderstatus = 'F' " \
-               f"group by o_custkey, o_clerk, c_name order by key;"
+               f"group by o_custkey, o_clerk, c_name order by key LIMIT 135;"
 
     def get_inner_join_query(self):
         return f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \

@@ -178,8 +178,8 @@ class NepMinimizer(Minimizer):
 
 class NEP(GenerationPipeLineBase):
 
-    def __init__(self, connectionHelper, delivery):
-        super().__init__(connectionHelper, "NEP Extractor", delivery)
+    def __init__(self, connectionHelper, pgao_ctx):
+        super().__init__(connectionHelper, "NEP Extractor", pgao_ctx)
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]

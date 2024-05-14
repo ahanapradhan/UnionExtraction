@@ -53,27 +53,35 @@ class OuterJoin(GenerationPipeLineBase):
         for attrib in self.projected_attributes:
             idx = self.projected_attributes.index(attrib)
             name = self.projected_names[idx]
+
             if attrib in self.joined_attribs:
                 self.logger.debug("checking for ", attrib)
                 table = self.find_tabname_for_given_attrib(attrib)
                 prev = self.get_dmin_val(attrib, table)
-                self.update_with_val(attrib, table, 'NULL')
+                mut_val = self.get_different_val_for_dmin(attrib, table, prev)
+                self.update_with_val(attrib, table, mut_val)
                 res = self.app.doJob(query)
                 self.logger.debug(res)
                 self.update_with_val(attrib, table, prev)
-                all_null = self.app.is_attrib_all_null(res, name)
-                if not all_null:
-                    other = attrib
-                    for edge in self.global_join_graph:
-                        if attrib in edge:
-                            idx = edge.index(attrib)
-                            other = edge[1 - idx]
-                            break
-                    replace_dict[attrib] = other
-                    self.logger.debug(other)
+
+                if self.app.isQ_result_has_no_data(res):
+                    continue  # cannot do anything as no result is visible
+
+                if not self.app.is_attrib_equal_val(res, name, mut_val):
+                    self.identify_projection_rectification(attrib, replace_dict)
 
         self.logger.debug("Rectify with: ", self.projected_attributes, self.group_by_attrib, self.orderby_string)
         self.q_gen.rectify_projection(replace_dict)
+
+    def identify_projection_rectification(self, attrib, replace_dict):
+        other = attrib
+        for edge in self.global_join_graph:
+            if attrib in edge:
+                idx = edge.index(attrib)
+                other = edge[1 - idx]
+                break
+        replace_dict[attrib] = other
+        self.logger.debug(other)
 
     def __create_final_edge_seq(self, list_of_tables, new_join_graph):
         final_edge_seq = []

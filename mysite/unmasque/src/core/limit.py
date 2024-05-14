@@ -28,6 +28,12 @@ class Limit(GenerationPipeLineBase):
         return _dict
 
     def doExtractJob(self, query):
+        result = self.doLimitExtractJob(query)
+        self.do_init()
+        return result
+
+    def doLimitExtractJob(self, query):
+
         grouping_attribute_values = {}
 
         # notable_filter_attrib_dict = self.construct_filter_dict()
@@ -92,17 +98,17 @@ class Limit(GenerationPipeLineBase):
                     else:
                         self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
                 insert_rows.append(tuple(insert_values))
+                self.logger.debug("Inserted values of ", len(insert_rows), f"rows in table {tabname_inner}")
 
             self.insert_attrib_vals_into_table(att_order, attrib_list_inner,
                                                insert_rows, tabname_inner, insert_logger=False)
-            self.logger.debug("Inserted values of ", len(insert_rows), "rows")
 
         new_result = self.app.doJob(query)
         if self.app.isQ_result_empty(new_result):
             self.logger.error('some error in generating new database. Result is empty. Can not identify Limit.')
             return False
         else:
-            if 4 <= len(new_result) <= 1000:
+            if 4 <= len(new_result) <= self.no_rows:
                 self.limit = len(new_result) - 1
             return True
 
@@ -120,9 +126,9 @@ class Limit(GenerationPipeLineBase):
             tot_values = (self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0]).days + 1
         else:
             tot_values = self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0] + 1
-        if (total_combinations * tot_values) > 1000:
+        if (total_combinations * tot_values) > self.no_rows:
             i = 1
-            while (total_combinations * i) < 1001 and i < tot_values:
+            while (total_combinations * i) < self.no_rows + 1 and i < tot_values:
                 i = i + 1
             tot_values = i
         return tot_values
