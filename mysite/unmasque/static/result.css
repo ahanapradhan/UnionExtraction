@@ -45,6 +45,10 @@ body{
     padding: 0px 50px;
 }
 
+.extQ{
+    margin-right: 50px;
+}
+
 .btnContainer{
     width: 100%;
     display: flex;

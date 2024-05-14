@@ -226,7 +226,7 @@ table{
     margin: 10px auto;
     cursor:grab;
     transition: background-color 0.3s ease;
-    border: 1px solid #000;
+    border: 2px solid #000;
     position: relative;
     z-index: 1;
     transform: scale(1.1);
@@ -237,9 +237,9 @@ table{
   }
   
   .arrow {
-    font-size: 40px;
-    transform: scaleX(1.25);
-    margin-top: 25px;
+    font-size: 83px;
+    transform: scaleX(1.5);
+    margin-top: 5px;
   }
   
   .inactive {
@@ -262,7 +262,7 @@ table{
     display: flex;
     flex-direction: row;
     justify-content: center;
-    width: 80%;
+    width: 100%;
     gap: 20px;
     padding: 0px 90px;
   }
