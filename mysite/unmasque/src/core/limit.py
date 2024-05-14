@@ -11,14 +11,13 @@ from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format,
 
 
 class Limit(GenerationPipeLineBase):
-
     def __init__(self, connectionHelper, genPipelineCtx: PackageForGenPipeline,
                  pgao_ctx: PGAOcontext):
         super().__init__(connectionHelper, "Limit", genPipelineCtx)
         self.limit = None
         self.global_groupby_attributes = pgao_ctx.group_by_attrib
         self.joined_attrib_valDict = {}
-        self.no_rows = 1000
+        self.no_rows = self.connectionHelper.config.limit_limit
 
     def construct_filter_dict(self):
         # get filter values and their allowed minimum and maximum value
@@ -33,17 +32,58 @@ class Limit(GenerationPipeLineBase):
         return result
 
     def doLimitExtractJob(self, query):
-
+        cardinality = len(self.app.doJob(query))
         grouping_attribute_values = {}
-
-        # notable_filter_attrib_dict = self.construct_filter_dict()
-        # notable_attrib_type_dict = self.construct_types_dict()
         pre_assignment = self.get_pre_assignment()
-
         gb_tab_attribs = [(self.find_tabname_for_given_attrib(attrib), attrib)
                           for attrib in self.global_groupby_attributes]
 
         total_combinations = 1
+        self.decide_number_of_rows(gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations)
+
+        for j in range(len(self.core_relations)):
+            table = self.core_relations[j]
+            attrib_list = self.global_all_attribs[j]
+            attrib_list_str = ",".join(attrib_list)
+            att_order = f"({attrib_list_str})"
+            insert_rows = []
+            for k in range(self.no_rows):
+                self.determine_k_insert_rows(attrib_list, gb_tab_attribs, grouping_attribute_values, insert_rows,
+                                             k, table)
+            self.insert_attrib_vals_into_table(att_order, attrib_list,
+                                               insert_rows, table, insert_logger=False)
+
+            new_result = self.app.doJob(query)
+            if self.app.isQ_result_empty(new_result):
+                self.logger.error('some error in generating new database. Result is empty. Can not identify Limit.')
+                return False
+            else:
+                if 4 <= len(new_result) <= self.no_rows:
+                    self.limit = len(new_result) - 1  # excluding the header column
+                    self.logger.debug(f"Limit {self.limit}")
+                else:
+                    self.logger.info(f"Limit may be higher than {self.no_rows}. "
+                                     f"If extraction gets wrong, set config limit to higher number and try again!")
+        return True
+
+    def determine_k_insert_rows(self, attrib_list_inner, gb_tab_attribs, grouping_attribute_values, insert_rows, k,
+                                tabname_inner):
+        insert_values = []
+        for attrib_inner in attrib_list_inner:
+            datatype = self.get_datatype((tabname_inner, attrib_inner))
+            if attrib_inner in grouping_attribute_values.keys():
+                insert_values.append(grouping_attribute_values[attrib_inner][k])
+            elif attrib_inner not in self.joined_attribs \
+                    and (tabname_inner, attrib_inner) not in gb_tab_attribs:
+                insert_values.append(self.get_dmin_val(attrib_inner, tabname_inner))
+            elif datatype in ['date', 'int', 'numeric', 'number']:
+                self.insert_non_text_attrib(datatype, attrib_inner, insert_values, k, tabname_inner)
+            else:
+                self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
+        insert_rows.append(tuple(insert_values))
+        # self.logger.debug("Inserted values of ", len(insert_rows), f"rows in table {tabname_inner}")
+
+    def decide_number_of_rows(self, gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations):
         if pre_assignment:
             # GET LIMITS FOR ALL GROUPBY ATTRIBUTES
             group_lists = []
@@ -74,43 +114,8 @@ class Limit(GenerationPipeLineBase):
                     temp = list(elt)
                     for (val1, val2) in zip(self.global_groupby_attributes, temp):
                         grouping_attribute_values[val1].append(val2)
-
         if pre_assignment:
             self.no_rows = min(self.no_rows, total_combinations)
-
-        for j in range(len(self.core_relations)):
-            tabname_inner = self.core_relations[j]
-            attrib_list_inner = self.global_all_attribs[j]
-            attrib_list_str = ",".join(attrib_list_inner)
-            att_order = f"({attrib_list_str})"
-            insert_rows = []
-            for k in range(self.no_rows):
-                insert_values = []
-                for attrib_inner in attrib_list_inner:
-                    datatype = self.get_datatype((tabname_inner, attrib_inner))
-                    if attrib_inner in grouping_attribute_values.keys():
-                        insert_values.append(grouping_attribute_values[attrib_inner][k])
-                    elif attrib_inner not in self.joined_attribs \
-                            and (tabname_inner, attrib_inner) not in gb_tab_attribs:
-                        insert_values.append(self.get_dmin_val(attrib_inner, tabname_inner))
-                    elif datatype in ['date', 'int', 'numeric', 'number']:
-                        self.insert_non_text_attrib(datatype, attrib_inner, insert_values, k, tabname_inner)
-                    else:
-                        self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
-                insert_rows.append(tuple(insert_values))
-                self.logger.debug("Inserted values of ", len(insert_rows), f"rows in table {tabname_inner}")
-
-            self.insert_attrib_vals_into_table(att_order, attrib_list_inner,
-                                               insert_rows, tabname_inner, insert_logger=False)
-
-        new_result = self.app.doJob(query)
-        if self.app.isQ_result_empty(new_result):
-            self.logger.error('some error in generating new database. Result is empty. Can not identify Limit.')
-            return False
-        else:
-            if 4 <= len(new_result) <= self.no_rows:
-                self.limit = len(new_result) - 1
-            return True
 
     def get_temp_total_values(self, datatype, elt, temp, tot_values):
         if datatype == 'date':

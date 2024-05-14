@@ -4,11 +4,19 @@ from ..src.core.factory.PipeLineFactory import PipeLineFactory
 from ..src.util.ConnectionFactory import ConnectionHelperFactory
 
 
+def get_inner_join_query():
+    return f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
+           f" from orders INNER JOIN customer" \
+           f" on c_custkey = o_custkey and o_orderstatus = 'F' " \
+           f"group by o_custkey, o_clerk, c_name order by key;"
+
+
 class MyTestCase(unittest.TestCase):
 
-    def _do_init(self):
+    def _do_init(self, limit=100):
         self.conn = ConnectionHelperFactory().createConnectionHelper()
         self.conn.config.detect_oj = True
+        self.conn.config.limit_limit = limit
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
         self.relations = ['customer', 'orders']
@@ -42,8 +50,8 @@ class MyTestCase(unittest.TestCase):
                                    f"alter table {rel}_copy rename to {rel};", "COMMIT;"])
         self.conn.closeConnection()
 
-    def do_testJob(self, query):
-        self._do_init()
+    def do_testJob(self, query, limit=102):
+        self._do_init(limit)
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
@@ -61,22 +69,32 @@ class MyTestCase(unittest.TestCase):
 
     def test_right_outer_join(self):
         self.join_type = "RIGHT"
-        self.do_testJob(self.get_outer_join_query())
+        limit = 500
+        self.do_testJob(self.get_outer_join_query(135), limit)
 
-    def get_outer_join_query(self):
+    def test_right_outer_join_higher_limit(self):
+        self.join_type = "RIGHT"
+        limit = 1500
+        self.do_testJob(self.get_outer_join_query(1337), limit)
+
+    def get_outer_join_query(self, limit=100):
         return f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
                f" from orders {self.join_type} OUTER JOIN customer" \
                f" on c_custkey = o_custkey and o_orderstatus = 'F' " \
-               f"group by o_custkey, o_clerk, c_name order by key LIMIT 135;"
+               f"group by o_custkey, o_clerk, c_name order by key LIMIT {limit};"
 
-    def get_inner_join_query(self):
-        return f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
-               f" from orders INNER JOIN customer" \
-               f" on c_custkey = o_custkey and o_orderstatus = 'F' " \
-               f"group by o_custkey, o_clerk, c_name order by key;"
+    def test_limit_upto_100(self):
+        self.join_type = "FULL"
+        for lim in [10, 25, 96, 45, 8, 98]:
+            self.do_testJob(self.get_outer_join_query(lim))
+
+    def test_limit_more_than_default(self):
+        self.join_type = "FULL"
+        for lim in [597, 1233]:
+            self.do_testJob(self.get_outer_join_query(lim), lim + 2)
 
     def test_inner_join(self):
-        eq = self.do_testJob(self.get_inner_join_query())
+        eq = self.do_testJob(get_inner_join_query())
         self.assertEqual(eq.count("INNER"), 0)
 
 

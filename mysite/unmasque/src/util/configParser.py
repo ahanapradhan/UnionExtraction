@@ -4,7 +4,7 @@ from pathlib import Path
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
-    DETECT_OJ
+    DETECT_OJ, LIMIT, OPTIONS_SECTION
 
 
 class Config:
@@ -17,8 +17,9 @@ class Config:
 
     def __init__(self):
         # default values
+        self.limit_limit = 1000
         self.database = "postgres"
-        self.index_maker = "create_indexes.sql"
+        # self.index_maker = "create_indexes.sql"
         self.pkfk = "pkfkrelations.csv"
         self.schema = "public"
         self.dbname = "tpch"
@@ -55,7 +56,7 @@ class Config:
                 self.schema = config_object.get(DATABASE_SECTION, SCHEMA)
 
                 self.pkfk = config_object.get(SUPPORT_SECTION, "pkfk")
-                self.index_maker = config_object.get(SUPPORT_SECTION, "index_maker")
+                # self.index_maker = config_object.get(SUPPORT_SECTION, "index_maker")
 
                 self.log_level = config_object.get(LOGGING_SECTION, LEVEL)
 
@@ -94,4 +95,12 @@ class Config:
             self.detect_oj = False
         elif detect_oj.lower() == "yes":
             self.detect_oj = True
-            # self.detect_union = False
+
+        self.load_limit(config_object)
+
+    def load_limit(self, config_object):
+        try:
+            limit_config = config_object.get(OPTIONS_SECTION, LIMIT.lower())
+            self.limit_limit = int(limit_config)
+        except:
+            pass

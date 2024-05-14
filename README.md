@@ -75,10 +75,21 @@ Please explore the individual directories for more details on the code and its p
 ## Usage
 
 ### Configuration
-inside `mysite` directory, there are three files as follows:  
-config.ini --> This contains database login credentials. Change the fields accordingly.  
-create_indexes.sql --> currently empty.  (do not delete this file.)  
+inside `mysite` directory, there are two files as follows:  
 pkfkrelations.csv --> contains key details for the TPCH schema. If any other schema is to be used, change this file accordingly.
+config.ini --> This contains database login credentials, and flags for optional features. Change the fields accordingly.  
+
+#### Config File Detals:
+`database` section: set your database credentials.  
+
+`support` section: give support file name. The support file should be present in the same directory of this config file.
+
+`logging` section: set logging level. Developer mode is `DEBUG`. Other valid levels are `INFO`, `ERROR`.
+
+`feature` section: set flags for advanced features, as indicated by the flag names. Included features are, `UNION`, `OUTER JOIN`, `<>` or `!=` operator in arithmetic filter predicates and `IN` operator. 
+
+`options` section: extractor options. E.g. Max value for `LIMIT` clause is 1000. If user needs to set higher value, use `limit=value`.
+
 
 ### Running Unmasque
 Open `mysite/unmasque/src/main_cmd.py` file.  
