@@ -9,10 +9,6 @@ from ..util.QueryStringGenerator import QueryStringGenerator
 
 
 class OuterJoin(GenerationPipeLineBase):
-    ROJ = ' RIGHT OUTER JOIN '
-    LOJ = ' LEFT OUTER JOIN '
-    join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ROJ,
-                ('h', 'l'): LOJ, ('h', 'h'): ' FULL OUTER JOIN '}
 
     def __init__(self, connectionHelper, global_pk_dict,
                  genPipelineCtx: PackageForGenPipeline,
@@ -31,7 +27,7 @@ class OuterJoin(GenerationPipeLineBase):
         self.enabled = self.connectionHelper.config.detect_oj
 
     def doExtractJob(self, query: str) -> bool:
-        # self.__resolve_ambigous_projections(query)
+        self.__resolve_ambigous_projections(query)
         list_of_tables, new_join_graph = self.__get_tables_list_and_new_join_graph()
         if not len(new_join_graph):
             self.logger.info("No Join clause found.")
@@ -40,7 +36,7 @@ class OuterJoin(GenerationPipeLineBase):
         table_attr_dict = self.__create_table_attrib_dict()
         if table_attr_dict is None:
             self.logger.info("I suppose it is fully equi-join query.")
-            self.Q_E = self.q_gen.generate_query_string()
+            self.Q_E = self.q_gen.formulate_query_string()
             return True
         self.__create_importance_dict(new_join_graph, query, table_attr_dict)
 
@@ -51,7 +47,6 @@ class OuterJoin(GenerationPipeLineBase):
 
     def __resolve_ambigous_projections(self, query):
         replace_dict = dict()
-        to_replace = []
         for attrib in self.projected_attributes:
             idx = self.projected_attributes.index(attrib)
             name = self.projected_names[idx]
@@ -64,21 +59,18 @@ class OuterJoin(GenerationPipeLineBase):
                 self.logger.debug(res)
                 self.update_with_val(attrib, table, prev)
                 all_null = self.app.is_attrib_all_null(res, name)
-                if all_null:
-                    to_replace.append(attrib)
+                if not all_null:
                     other = attrib
                     for edge in self.global_join_graph:
                         if attrib in edge:
                             idx = edge.index(attrib)
                             other = edge[1 - idx]
                             break
-                    replace_dict[idx] = other
+                    replace_dict[attrib] = other
                     self.logger.debug(other)
         for key in replace_dict.keys():
-            attrib = self.projected_attributes[key]
-            if attrib in self.group_by_attrib:
-                self.group_by_attrib[self.group_by_attrib.index(attrib)] = replace_dict[key]
-            self.orderby_string.replace(attrib, replace_dict[key])
+            self.group_by_attrib[self.group_by_attrib.index(key)] = replace_dict[key]
+            self.orderby_string.replace(key, replace_dict[key])
             self.projected_attributes[key] = replace_dict[key]
 
         self.logger.debug("Rectify with: ", self.projected_attributes, self.group_by_attrib, self.orderby_string)
@@ -290,16 +282,15 @@ class OuterJoin(GenerationPipeLineBase):
         fp_on, fp_where = self.__determine_on_and_where_filters(query)
         set_possible_queries = []
         for seq in final_edge_seq:
-            self.q_gen.create_new_query()
-            flag_first = True
-            from_op, where_op = '', ''
+            self.q_gen.backup_query_before_new_generation()
+            self.q_gen.clear_from_where_ops()
             for edge in seq:
                 table1, table2 = edge[0][1], edge[1][1]
                 imp_t1, imp_t2 = self.__determine_join_edge_type(edge, table1, table2)
-                flag_first, from_op = self.__generate_from_on_clause(edge, flag_first, fp_on,
-                                                                     imp_t1, imp_t2, table1, table2, from_op)
-            where_op = self.__generate_where_clause(fp_where, where_op)
-            q_candidate = self.__generate_candidate_query(from_op, where_op)
+                self.q_gen.generate_from_on_clause(edge, fp_on, imp_t1, imp_t2, table1, table2)
+            self.q_gen.generate_where_clause(fp_where)
+            self.q_gen.generate_groupby_select()
+            q_candidate = self.q_gen.write_query()
             self.logger.debug("+++++++++++++++++++++")
             if q_candidate.count('OUTER'):
                 set_possible_queries.append(q_candidate)
@@ -308,15 +299,6 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug(q)
 
         return set_possible_queries, fp_on
-
-    def __generate_candidate_query(self, from_op, where_op):
-        # assemble the rest of the query
-        self.q_gen.from_op = from_op
-        self.q_gen.where_op = where_op
-        self.logger.debug(f"from and where op of q_gen: {self.q_gen.from_op}, "
-                          f"{self.q_gen.where_op}")
-        q_candidate = self.q_gen.write_query()
-        return q_candidate
 
     def __determine_on_and_where_filters(self, query):
         filter_pred_on, filter_pred_where = [], []
@@ -334,26 +316,6 @@ class OuterJoin(GenerationPipeLineBase):
             self.update_with_val(attrib, tab, prev)
         self.logger.debug(filter_pred_on, filter_pred_where)
         return filter_pred_on, filter_pred_where
-
-    def __generate_where_clause(self, fp_where, where_op):
-        for elt in fp_where:
-            predicate = self.q_gen.formulate_predicate_from_filter(elt)
-            where_op = predicate if where_op == '' else where_op + " and " + predicate
-        self.logger.debug(f"Locally generated Where_op: {where_op}")
-        return where_op
-
-    def __generate_from_on_clause(self, edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2, from_op):
-        type_of_join = self.join_map.get((imp_t1, imp_t2))
-        join_condition = f"\n\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
-        relevant_tables = [table2] if not flag_first else [table1, table2]
-        join_part = f"\n{type_of_join} {table2} {join_condition}"
-        from_op += f" {table1} {join_part}" if flag_first else "" + join_part
-        flag_first = False
-        for fp in fp_on:
-            if fp[0] in relevant_tables:
-                predicate = self.q_gen.formulate_predicate_from_filter(fp)
-                from_op += "\n\t and " + predicate
-        return flag_first, from_op
 
     def __determine_join_edge_type(self, edge, table1, table2):
         # steps to determine type of join for edge

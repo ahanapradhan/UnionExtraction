@@ -59,15 +59,14 @@ class QueryDetails:
         else:
             self.where_op = predicate
 
-    def assembleQuery(self, gaol=True):
+    def assembleQuery(self):
         output = ""
         output = append_clause(output, "Select", self.select_op)
         output = append_clause(output, "From", self.from_op)
         output = append_clause(output, "Where", self.where_op)
         output = append_clause(output, "Group By", self.group_by_op)
-        if gaol:
-            output = append_clause(output, "Order By", self.order_by_op)
-            output = append_clause(output, "Limit", self.limit_op)
+        output = append_clause(output, "Order By", self.order_by_op)
+        output = append_clause(output, "Limit", self.limit_op)
         output = f"{output};"
         return output
 
@@ -92,6 +91,10 @@ def get_join_nodes_from_edge(edge):
 
 
 class QueryStringGenerator:
+    ROJ = ' RIGHT OUTER JOIN '
+    LOJ = ' LEFT OUTER JOIN '
+    join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ROJ,
+                ('h', 'l'): LOJ, ('h', 'h'): ' FULL OUTER JOIN '}
     def __init__(self, connectionHelper):
         self.connectionHelper = connectionHelper
         exeFactory = ExecutableFactory()
@@ -222,7 +225,7 @@ class QueryStringGenerator:
 
     def rectify_projection(self, projected_attributes, group_by_attrib, orderby_string):
         self._workingCopy.global_projected_attributes = projected_attributes
-        self._workingCopy.group_by_op = group_by_attrib
+        self._workingCopy.global_groupby_attributes = group_by_attrib
         self._workingCopy.order_by_op = orderby_string
 
     def updateExtractedQueryWithNEPVal(self, query, val):
@@ -270,38 +273,27 @@ class QueryStringGenerator:
         self.logger.debug(where_clause)
         return where_clause
 
-    def generate_query_string(self, gaol=True, select=True):
+    def formulate_query_string(self):
         self._workingCopy.from_op = ", ".join(self._workingCopy.core_relations)
         self._workingCopy.where_op = self.__generate_where_clause()
-        if gaol:
-            self.__generate_group_by_clause()
-            self.__generate_select_clause(select)
-        eq = self.write_query(gaol)
+        self.generate_groupby_select()
+        eq = self.write_query()
         return eq
 
-    def rewrite_query(self, core_relations, ed_join_edges, filter_predicates, ol=True, select=True):
-        self.from_clause = core_relations
-        self.join_edges = ed_join_edges
-        self._workingCopy.filter_predicates = filter_predicates
-        eq = self.generate_query_string(ol, select)
-        return eq
+    def generate_groupby_select(self):
+        self.__generate_group_by_clause()
+        self.__generate_select_clause()
 
-    def create_new_query(self, ref_query=None):  # make new query from the last memory
+    def backup_query_before_new_generation(self, ref_query=None):  # make new query from the last memory
         lastQueryDetails = QueryDetails()
         lastQueryDetails.makeCopy(self._workingCopy)
-        self.generate_query_string()  # take backup of current working copy
+        last_query = self.formulate_query_string()  # take backup of current working copy
         if ref_query is not None:
             ref_details = self._queries[hash(ref_query)][1]
             self._workingCopy.makeCopy(ref_details)
-        lastgen = QueryStringGenerator(self.connectionHelper)
-        lastgen.get_datatype = self.get_datatype
-        lastgen._workingCopy.makeCopy(lastQueryDetails)
-        backup = lastgen.generate_query_string()
-        for key in lastgen._queries.keys():
-            self._queries[key] = lastgen._queries[key]
-        return backup
+        return last_query
 
-    def write_query(self, gaol=True) -> str:
+    def write_query(self) -> str:
         self.logger.debug(f"Select: {self._workingCopy.select_op}")
         self.logger.debug(f"From: {self._workingCopy.from_op}")
         self.logger.debug(f"Where: {self._workingCopy.where_op}")
@@ -309,7 +301,7 @@ class QueryStringGenerator:
         self.logger.debug(f"Order by: {self._workingCopy.order_by_op}")
         self.logger.debug(f"Limit: {self._workingCopy.limit_op}")
 
-        query_string = self._workingCopy.assembleQuery(gaol)
+        query_string = self._workingCopy.assembleQuery()
         key = hash(query_string)
         self.logger.debug("hash key: ", key)
         if key not in self._queries:
@@ -418,9 +410,7 @@ class QueryStringGenerator:
                 except:
                     pass
 
-    def __generate_select_clause(self, enable=True):
-        if not enable:
-            return
+    def __generate_select_clause(self):
         for i in range(len(self._workingCopy.global_projected_attributes)):
             elt = self._workingCopy.global_projected_attributes[i]
             if self._workingCopy.global_aggregated_attributes[i][1] != '':
@@ -584,94 +574,29 @@ class QueryStringGenerator:
             index = index + 1
         return output
 
-    def formulate_nested_query_string(self, inner_select, inner_filter, value):
-        self._workingCopy.filter_predicates.remove(inner_filter)
-        tab = inner_filter[0]
-        other_innser_filters = []
-        for fl in self.all_arithmetic_filters:
-            if fl[0] == tab:
-                other_innser_filters.append(fl)
-        for fl in other_innser_filters:
-            self._workingCopy.filter_predicates.remove(fl)
+    def generate_where_clause(self, fp_where):
+        for elt in fp_where:
+            predicate = self.formulate_predicate_from_filter(elt)
+            self.where_op = predicate if self.where_op == '' else self.where_op + " and " + predicate
+        self.logger.debug(f"Locally generated Where_op: {self.where_op}")
 
-        inner_from_relations = [tab]
-        outer_from_relations = [table for table in self.from_clause if table not in inner_from_relations]
-        self.logger.debug(f"Inner query tables: {inner_from_relations}, outer query tables: {outer_from_relations}")
+    def generate_from_on_clause(self, edge, fp_on, imp_t1, imp_t2, table1, table2):
+        flag_first = True if self._workingCopy.from_op == '' else False
+        type_of_join = self.join_map.get((imp_t1, imp_t2))
+        join_condition = f"\n\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
+        relevant_tables = [table2] if not flag_first else [table1, table2]
+        join_part = f"\n{type_of_join} {table2} {join_condition}"
+        self.from_op += f" {table1} {join_part}" if flag_first else "" + join_part
+        flag_first = False
+        for fp in fp_on:
+            if fp[0] in relevant_tables:
+                predicate = self.formulate_predicate_from_filter(fp)
+                self.from_op += "\n\t and " + predicate
+        return flag_first
 
-        dependent_join_edges, independent_join_edges = [], []
-        for edge in self.join_edges:
-            s_edge = get_join_nodes_from_edge(edge)
-            self.logger.debug(f"join edge {s_edge}")
-            tabs = [v[0] for v in s_edge if len(v) == 2]
-            self.logger.debug(f"tabs: {tabs}")
-            are_all_out = [True if tab in outer_from_relations else False for tab in tabs]
-            self.logger.debug(f"are_all_out: {are_all_out}")
-            if all(out for out in are_all_out):
-                independent_join_edges.append(edge)
-                self.logger.debug("independent")
-            else:
-                dependent_join_edges.append(edge)
-                self.logger.debug("dependent")
-        self.logger.debug("dependent join edges: ", dependent_join_edges)
-        self.logger.debug("independent_join_edges join edges: ", independent_join_edges)
-
-        outer_query = self.make_nested_query_string(dependent_join_edges, independent_join_edges, inner_filter,
-                                                    inner_from_relations, inner_select, other_innser_filters,
-                                                    outer_from_relations, value)
-        return outer_query
-
-    def make_nested_query_string(self, dependent_join_edges, independent_join_edges, inner_filter, inner_from_relations,
-                                 inner_select, other_innser_filters, outer_from_relations, value):
-        ref_q = self.create_new_query()
-        self.logger.debug("ref_q:", ref_q)
-        # make inner query
-        from_alias = f"t_{str('_'.join(inner_from_relations))}"
-        agg_alias = "agg_fn"
-        self.select_op = f"{inner_select} as {agg_alias}"
-
-        independent_joins = []
-        not_dependent_joins = []
-        for edge in dependent_join_edges:
-            self.logger.debug("edge ", edge)
-            s_edge = get_join_nodes_from_edge(edge)
-            self.logger.debug("s_edge ", s_edge)
-            are_all_in = True
-            for es in s_edge:
-                if es[0] in outer_from_relations:
-                    are_all_in = False
-                    break
-            if not are_all_in:
-                new_s_edge = []
-                for es in s_edge:
-                    if es[0] in inner_from_relations:
-                        new_es = f"{from_alias}.{es[1]}"
-                        self.select_op = f"{self.select_op}, {es[1]}"
-                        self.groupby = f"{es[1]}"
-                    else:
-                        new_es = f"{es[0]}.{es[1]}"
-                    new_s_edge.append(new_es)
-                new_outer_edge = " = ".join(new_s_edge)
-                independent_joins.append(new_outer_edge)
-                not_dependent_joins.append(edge)
-        for edge in not_dependent_joins:
-            dependent_join_edges.remove(edge)
-        for edge in independent_joins:
-            independent_join_edges.append(edge)
-
-        inner_query = self.rewrite_query(inner_from_relations,
-                                         dependent_join_edges, other_innser_filters, False, False)
-        self.groupby = ''
-        inner_query = inner_query.replace(';', '')
-        nested_pred = f"{from_alias}.{agg_alias} {inner_filter[2]} {value}"
-        self.logger.debug("nested pred: ", nested_pred)
-        outer_from_relations.append(f"({inner_query}) as {from_alias}")
-        # make outer query
-        self.create_new_query(ref_q)
-        outer_query = self.rewrite_query(outer_from_relations, independent_join_edges, self.all_arithmetic_filters)
-        self.logger.debug("Outer query init: ", outer_query)
-        outer_query = self.updateWhereClause(nested_pred)
-        self.logger.debug("Outer query final: ", outer_query)
-        return outer_query
+    def clear_from_where_ops(self):
+        self._workingCopy.from_op = ''
+        self._workingCopy.where_op = ''
 
 
 def add_pred_for(aoa_l, pred):

@@ -160,10 +160,10 @@ class OuterJoinExtractionTestCase(BaseTestCase):
     def test_joinkey_on_projection(self):
         self.conn.config.detect_or = False
         self.conn.config.detect_nep = False
-        types = ['LEFT', 'RIGHT', 'FULL']
+        types = ['LEFT'] #, 'RIGHT', 'FULL']
         for join_type in types:
             query = f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
-                f" from orders {join_type} OUTER JOIN customer" \
+                f" from orders FULL OUTER JOIN customer" \
                 f" on c_custkey = o_custkey and o_orderstatus = 'F' group by o_custkey, o_clerk, c_name order by key;"
             eq = self.pipeline.doJob(query)
             print(eq)

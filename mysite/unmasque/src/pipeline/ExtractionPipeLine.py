@@ -173,7 +173,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.q_generator.where_clause_remnants = self.genPipelineCtx
         self.q_generator.pgaoCtx = self.pgao_ctx
         self.q_generator.limit = lm
-        eq = self.q_generator.generate_query_string()
+        eq = self.q_generator.formulate_query_string()
         self.logger.debug("extracted query:\n", eq)
 
         self.time_profile.update(time_profile)
