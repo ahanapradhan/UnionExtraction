@@ -2,6 +2,8 @@ from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .abstract.MinimizerBase import Minimizer
 from .result_comparator import ResultComparator
 
+from typing import List
+
 
 class NepComparator(ResultComparator):
     def __init__(self, connectionHelper, core_relations):
@@ -79,7 +81,7 @@ class NepMinimizer(Minimizer):
             return True
         return False
 
-    def set_all_relations(self, relations: list[str]):
+    def set_all_relations(self, relations: List[str]):
         super().set_all_relations(relations)
         self.nep_comparator.set_all_relations(self.all_relations)
 

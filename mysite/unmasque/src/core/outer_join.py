@@ -70,6 +70,7 @@ class OuterJoin(GenerationPipeLineBase):
                 if not self.app.is_attrib_equal_val(res, name, mut_val):
                     self.identify_projection_rectification(attrib, replace_dict)
 
+
         self.logger.debug("Rectify with: ", self.projected_attributes, self.group_by_attrib, self.orderby_string)
         self.q_gen.rectify_projection(replace_dict)
 
@@ -138,7 +139,7 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug(loc)
 
             res_hq_dict = {}
-            if len(res_hq) == 1:
+            if self.app.isQ_result_has_no_data(res_hq):  # len(res_hq) == 1:
                 for k in loc.keys():
                     if k not in res_hq_dict.keys():
                         res_hq_dict[k] = [None]

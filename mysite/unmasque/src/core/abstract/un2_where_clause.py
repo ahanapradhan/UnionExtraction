@@ -3,7 +3,7 @@ import copy
 from ....src.core.abstract.MutationPipeLineBase import MutationPipeLineBase
 from ....src.util.aoa_utils import get_tab, get_attrib, get_constants_for
 from ....src.util.utils import get_format, get_min_and_max_val
-
+from typing import Tuple
 
 class UN2WhereClause(MutationPipeLineBase):
     SUPPORTED_DATATYPES = ['int', 'date', 'numeric', 'number']
@@ -68,7 +68,7 @@ class UN2WhereClause(MutationPipeLineBase):
         self.connectionHelper.execute_sql_with_params(
             self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tabname), [vals])
 
-    def get_datatype(self, tab_attrib: tuple[str, str]) -> str:
+    def get_datatype(self, tab_attrib: Tuple[str, str]) -> str:
         if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
             return 'int'
         elif 'date' in self.global_attrib_types_dict[tab_attrib]:

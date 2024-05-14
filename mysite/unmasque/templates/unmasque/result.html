@@ -6,8 +6,10 @@
     <link rel="stylesheet" href="{% static 'result.css' %}">
 </head>
 <body>
-    <div class="title">UNMASQUE</div>
-    <div class="subtitle">Unified Non-invasive MAchine for Sql QUery Extraction</div>
+    <div class="heading">
+        <div class="title">UNMASQUE</div>
+        <div class="subtitle"><span class="bi">U</span>nified <span class="bi">N</span>on-invasive <span class="bi">MA</span>chine for <span class="bi">S</span>ql <span class="bi">QU</span>ery <span class="bi">E</span>xtraction</div>
+    </div>
     <div class="queriesHolder">
         <div class="hidQ">
             <h1>Hidden Query</h1>
@@ -19,9 +21,9 @@
         </div>
     </div>
     <div class="perf">
-        <h1>Performance</h1>
+        <h1 class="profile">Performance</h1>
         <!-- Use innerHTML to render HTML content -->
-        <pre>{{ profiling | safe }}</pre>
+        <pre class="profile">{{ profiling | safe }}</pre>
     </div>
 
     <div class="btnContainer">

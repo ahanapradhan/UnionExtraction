@@ -1,9 +1,10 @@
 import copy
 
-from mysite.unmasque.src.core.factory.ExecutableFactory import ExecutableFactory
-from mysite.unmasque.src.util.Log import Log
-from mysite.unmasque.src.util.constants import COUNT, SUM, max_str_len, MAX, MIN, AVG
-from mysite.unmasque.src.util.utils import get_format, get_datatype_of_val
+
+from ..core.factory.ExecutableFactory import ExecutableFactory
+from ..util.Log import Log
+from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX
+from ..util.utils import get_format, get_datatype_of_val
 
 
 def append_clause(output, clause, param):

@@ -40,6 +40,7 @@ class GenericPipeLine(ABC):
     def __init__(self, connectionHelper, name):
         self.update_state(WAITING)
         self.info = {}
+        self.IO = {}
         self.connectionHelper = connectionHelper
         self.pipeline_name = name
         self.time_profile = create_zero_time_profile()
