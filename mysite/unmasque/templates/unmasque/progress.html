@@ -40,7 +40,17 @@
             </div>    
         </div>
         <div class="stage_res">
-
+            <div class="subtitle">Select a pipeline stage</div>
+            <div class="subcontent" style="display: none;">
+                <div class="input">
+                    <div class="subtext">Input</div>
+                    <div class="subsubcontent"></div>
+                </div>
+                <div class="output">
+                    <div class="subtext">Output</div>
+                    <div class="subsubcontent"></div>
+                </div>
+            </div>
         </div>
         <div class="res">
             <h1>Output</h1>
@@ -94,13 +104,24 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        
+        var data;
         let handle_circle_click = (ev) => {
             const clicked = ev.target;
             console.log(clicked)
+            if(!$(".subcontent").is(":visible")){
+                $(".subcontent").show();
+            }
+            $(".stage_res").get(0).scrollIntoView({behavior: 'smooth'});
             switch(clicked.dataset.state){
                 case STATES[2]:
-                    $(".stage_res").html('<div class="input"'+data[STATES[2]].input+'</div>')
+                    $(".input > .subsubcontent").html(data.io[STATES[2]].input)
+                    $(".output > .subsubcontent").html(data.io[STATES[2]].output)
+                    break
+                
+                default:
+                    $(".input > .subsubcontent").html("No info found for the selected stage")
+                    $(".output > .subsubcontent").html("No info found for the selected stage")
+                    break
             }
         }
 
@@ -255,6 +276,7 @@
         var LIMIT = null 
         onOrOff.fill(0)
         STATES.push("DUMMY")
+        circle_event_adder()
         console.log(STATES)
         var curr_state = STATES[0]
         // Function to fetch progress updates using AJAX
@@ -305,10 +327,11 @@
                 url: "{% url 'check_progress' token %}", // Update with your view's URL
                 type: "GET",
                 dataType: "json", // Change data type if necessary
-                success: function(data) {
+                success: function(dat) {
                     // Update the progress-updates div with the received data
+                    data = dat
                     console.log(data.progress_message)
-                    console.log(data.state_info)
+                    console.log(data.io)
                     $("#progress-updates").html(data.progress_message);
                     if(data.progress_message == "_WRONG"){
                         console.log("WRONG")
