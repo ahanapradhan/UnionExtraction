@@ -28,21 +28,24 @@ class OuterJoin(GenerationPipeLineBase):
 
     def doExtractJob(self, query: str) -> bool:
         self.__resolve_ambigous_projections(query)
+        self.Q_E = self.q_gen.formulate_query_string()
         list_of_tables, new_join_graph = self.__get_tables_list_and_new_join_graph()
         if not len(new_join_graph):
             self.logger.info("No Join clause found.")
-            return True
+            return False
         final_edge_seq = self.__create_final_edge_seq(list_of_tables, new_join_graph)
         table_attr_dict = self.__create_table_attrib_dict()
         if table_attr_dict is None:
             self.logger.info("I suppose it is fully equi-join query.")
             self.Q_E = self.q_gen.formulate_query_string()
-            return True
+            return False
         self.__create_importance_dict(new_join_graph, query, table_attr_dict)
 
         set_possible_queries, fp_on = self.__formulateQueries(final_edge_seq, query)
         self.__remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries, fp_on)
-        self.Q_E = self.sem_eq_queries[0] if len(self.sem_eq_queries) else None
+        if not len(self.sem_eq_queries):
+            return False
+        self.Q_E = self.sem_eq_queries[0]
         return True
 
     def __resolve_ambigous_projections(self, query):
@@ -68,15 +71,9 @@ class OuterJoin(GenerationPipeLineBase):
                             break
                     replace_dict[attrib] = other
                     self.logger.debug(other)
-        for key in replace_dict.keys():
-            self.group_by_attrib[self.group_by_attrib.index(key)] = replace_dict[key]
-            self.orderby_string.replace(key, replace_dict[key])
-            self.projected_attributes[key] = replace_dict[key]
 
         self.logger.debug("Rectify with: ", self.projected_attributes, self.group_by_attrib, self.orderby_string)
-        self.q_gen.rectify_projection(self.projected_attributes,
-                                      self.group_by_attrib,
-                                      self.orderby_string)
+        self.q_gen.rectify_projection(replace_dict)
 
     def __create_final_edge_seq(self, list_of_tables, new_join_graph):
         final_edge_seq = []

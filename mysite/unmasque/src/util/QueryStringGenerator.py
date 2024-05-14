@@ -2,7 +2,7 @@ import copy
 
 from mysite.unmasque.src.core.factory.ExecutableFactory import ExecutableFactory
 from mysite.unmasque.src.util.Log import Log
-from mysite.unmasque.src.util.constants import COUNT, SUM, max_str_len
+from mysite.unmasque.src.util.constants import COUNT, SUM, max_str_len, MAX, MIN, AVG
 from mysite.unmasque.src.util.utils import get_format, get_datatype_of_val
 
 
@@ -95,6 +95,9 @@ class QueryStringGenerator:
     LOJ = ' LEFT OUTER JOIN '
     join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ROJ,
                 ('h', 'l'): LOJ, ('h', 'h'): ' FULL OUTER JOIN '}
+
+    AGGREGATES = [SUM, AVG, MIN, MAX, COUNT]
+
     def __init__(self, connectionHelper):
         self.connectionHelper = connectionHelper
         exeFactory = ExecutableFactory()
@@ -223,10 +226,22 @@ class QueryStringGenerator:
     def or_predicates(self, value):
         self._workingCopy.or_predicates = value
 
-    def rectify_projection(self, projected_attributes, group_by_attrib, orderby_string):
-        self._workingCopy.global_projected_attributes = projected_attributes
-        self._workingCopy.global_groupby_attributes = group_by_attrib
-        self._workingCopy.order_by_op = orderby_string
+    def rectify_projection(self, replace_dict):
+        for key in replace_dict.keys():
+            self._workingCopy.global_groupby_attributes[self._workingCopy.global_groupby_attributes.index(key)] \
+                = replace_dict[key]
+            self._workingCopy.order_by_op.replace(key, replace_dict[key])
+            self._workingCopy.global_projected_attributes[self._workingCopy.global_projected_attributes.index(key)] \
+                = replace_dict[key]
+
+        agg_replace_dict = {}
+        for i, agg_tuple in enumerate(self._workingCopy.global_aggregated_attributes):
+            attrib = agg_tuple[0]
+            if attrib in replace_dict.keys():
+                replace_attrib = replace_dict[attrib]
+                agg_replace_dict[i] = (replace_attrib, agg_tuple[1])
+        for key in agg_replace_dict.keys():
+            self._workingCopy.global_aggregated_attributes[key] = agg_replace_dict[key]
 
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:
@@ -387,8 +402,8 @@ class QueryStringGenerator:
             attrib = self._workingCopy.global_projected_attributes[i]
             if (attrib in self._workingCopy.global_key_attributes
                     and attrib in self._workingCopy.global_groupby_attributes):
-                if not (SUM in self._workingCopy.global_aggregated_attributes[i][1] or COUNT in
-                        self._workingCopy.global_aggregated_attributes[i][1]):
+                agg_op = self._workingCopy.global_aggregated_attributes[i][1]
+                if agg_op not in self.AGGREGATES:
                     self._workingCopy.global_aggregated_attributes[i] = (
                         self._workingCopy.global_aggregated_attributes[i][0], '')
         temp_list = copy.deepcopy(self._workingCopy.global_groupby_attributes)
@@ -401,7 +416,7 @@ class QueryStringGenerator:
                 continue
             remove_flag = True
             for elt in self._workingCopy.global_aggregated_attributes:
-                if elt[0] == attrib and (not (SUM in elt[1] or COUNT in elt[1])):
+                if elt[0] == attrib and elt[1] not in self.AGGREGATES:
                     remove_flag = False
                     break
             if remove_flag:
