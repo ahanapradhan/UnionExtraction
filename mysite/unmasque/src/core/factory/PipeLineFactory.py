@@ -71,15 +71,16 @@ class PipeLineFactory:
     def create_pipeline(self, connectionHelper):
         detect_union = connectionHelper.config.detect_union
         detect_oj = connectionHelper.config.detect_oj
-        if detect_union:
+        if not detect_union:
+            if detect_oj:
+                pipe = OuterJoinPipeLine(connectionHelper)
+                print("Outer Join Pipeline")
+            else:
+                pipe = ExtractionPipeLine(connectionHelper)
+                print("Extraction Pipeline")
+        else:  # detect_union:
             pipe = UnionPipeLine(connectionHelper)
             print("Union Pipeline")
-        elif detect_oj:
-            pipe = OuterJoinPipeLine(connectionHelper)
-            print("Outer Join Pipeline")
-        else:
-            pipe = ExtractionPipeLine(connectionHelper)
-            print("Extraction Pipeline")
         self.pipeline = pipe
         return pipe
 

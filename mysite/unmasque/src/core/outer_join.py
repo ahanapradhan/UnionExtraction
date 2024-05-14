@@ -37,7 +37,6 @@ class OuterJoin(GenerationPipeLineBase):
         table_attr_dict = self.__create_table_attrib_dict()
         if table_attr_dict is None:
             self.logger.info("I suppose it is fully equi-join query.")
-            self.Q_E = self.q_gen.formulate_query_string()
             return False
         self.__create_importance_dict(new_join_graph, query, table_attr_dict)
 
@@ -69,10 +68,7 @@ class OuterJoin(GenerationPipeLineBase):
 
                 if not self.app.is_attrib_equal_val(res, name, mut_val):
                     self.identify_projection_rectification(attrib, replace_dict)
-
-
-        self.logger.debug("Rectify with: ", self.projected_attributes, self.group_by_attrib, self.orderby_string)
-        self.q_gen.rectify_projection(replace_dict)
+        self.projected_attributes, self.group_by_attrib, _, self.orderby_string = self.q_gen.rectify_projection(replace_dict)
 
     def identify_projection_rectification(self, attrib, replace_dict):
         other = attrib
@@ -91,7 +87,6 @@ class OuterJoin(GenerationPipeLineBase):
             edge_seq = []
             temp_njg = copy.deepcopy(new_join_graph)
             queue.append(tab)
-            # table_t=tab
             while len(queue) != 0:
                 remove_edge = []
                 table_t = queue.pop(0)
@@ -139,7 +134,7 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug(loc)
 
             res_hq_dict = {}
-            if self.app.isQ_result_has_no_data(res_hq):  # len(res_hq) == 1:
+            if self.app.isQ_result_has_no_data(res_hq):
                 for k in loc.keys():
                     if k not in res_hq_dict.keys():
                         res_hq_dict[k] = [None]

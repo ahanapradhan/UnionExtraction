@@ -36,10 +36,16 @@ if __name__ == '__main__':
          "revenue " \
          "desc, o_orderdate limit 10;"
 
-    hq = "select * from nation;"
+    hq = f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
+         f" from orders LEFT OUTER JOIN customer" \
+         f" on c_custkey = o_custkey and o_orderstatus = 'F' " \
+         f"group by o_custkey, o_clerk, c_name order by key LIMIT 95;"
 
     conn = ConnectionHelperFactory().createConnectionHelper()
-    conn.config.detect_union = False
+    conn.config.detect_union = True
+    conn.config.detect_oj = True
+    conn.config.detect_nep = False
+    conn.config.detect_or = True
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     factory = PipeLineFactory()
@@ -52,6 +58,6 @@ if __name__ == '__main__':
         print(result)
         print("============= Profile ===================")
         pipe = factory.get_pipeline_obj(token)
-        print(pipe.time_profile.print())
+        pipe.time_profile.print()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

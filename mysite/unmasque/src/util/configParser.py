@@ -75,21 +75,25 @@ class Config:
             self.detect_union = False
         elif detect_union.lower() == "yes":
             self.detect_union = True
+
         detect_nep = config_object.get(FEATURE_SECTION, DETECT_NEP)
         if detect_nep.lower() == "no":
             self.detect_nep = False
         elif detect_nep.lower() == "yes":
             self.detect_nep = True
+
         use_cs2 = config_object.get(FEATURE_SECTION, USE_CS2)
         if use_cs2.lower() == "no":
             self.use_cs2 = False
         elif use_cs2.lower() == "yes":
             self.use_cs2 = True
+
         detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
         if detect_or.lower() == "no":
             self.detect_or = False
         elif detect_or.lower() == "yes":
             self.detect_or = True
+
         detect_oj = config_object.get(FEATURE_SECTION, DETECT_OJ)
         if detect_oj.lower() == "no":
             self.detect_oj = False

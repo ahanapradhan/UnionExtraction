@@ -1,6 +1,5 @@
 import copy
 
-
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
 from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX
@@ -88,7 +87,7 @@ def get_join_nodes_from_edge(edge):
     right_node = nodes[1].split(".")
     left = (left_node[0].strip(), left_node[1].strip())
     right = (right_node[0].strip(), right_node[1].strip())
-    return (left, right)
+    return left, right
 
 
 class QueryStringGenerator:
@@ -195,15 +194,16 @@ class QueryStringGenerator:
         return NotImplementedError
 
     @where_clause_remnants.setter
-    def where_clause_remnants(self, delivery):
-        self._workingCopy.aoa_predicates = delivery.global_aoa_le_predicates
-        self._workingCopy.aoa_less_thans = delivery.global_aoa_l_predicates
-        self._workingCopy.filter_predicates = delivery.global_filter_predicates
+    def where_clause_remnants(self, remnants):
+        self._workingCopy.aoa_predicates = remnants.global_aoa_le_predicates
+        self._workingCopy.aoa_less_thans = remnants.global_aoa_l_predicates
+        self._workingCopy.filter_predicates = remnants.global_filter_predicates
 
     @property
     def all_arithmetic_filters(self):
         preds = self._workingCopy.filter_predicates + self._workingCopy.filter_in_predicates
-        return preds
+        uniq_preds = list(set(preds))
+        return uniq_preds
 
     @all_arithmetic_filters.setter
     def all_arithmetic_filters(self, value):
@@ -243,6 +243,9 @@ class QueryStringGenerator:
                 agg_replace_dict[i] = (replace_attrib, agg_tuple[1])
         for key in agg_replace_dict.keys():
             self._workingCopy.global_aggregated_attributes[key] = agg_replace_dict[key]
+
+        return self._workingCopy.global_projected_attributes, self._workingCopy.global_groupby_attributes, \
+            self._workingCopy.global_aggregated_attributes, self._workingCopy.order_by_op
 
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:

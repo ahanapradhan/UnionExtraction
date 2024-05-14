@@ -6,7 +6,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
 
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
-        self.conn.config.detect_nep = False
+        self.conn.config.detect_union = False
         self.conn.config.detect_oj = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
@@ -158,14 +158,13 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_joinkey_on_projection(self):
-        self.conn.config.detect_or = False
+        self.conn.config.detect_or = True
         self.conn.config.detect_nep = False
-        types = ['LEFT'] #, 'RIGHT', 'FULL']
-        for join_type in types:
-            query = f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
+        query = f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
                 f" from orders FULL OUTER JOIN customer" \
-                f" on c_custkey = o_custkey and o_orderstatus = 'F' group by o_custkey, o_clerk, c_name order by key;"
-            eq = self.pipeline.doJob(query)
-            print(eq)
-            self.assertTrue(eq is not None)
-            self.assertTrue(self.pipeline.correct)
+                f" on c_custkey = o_custkey and o_orderstatus = 'F' " \
+                "group by o_custkey, o_clerk, c_name order by key limit 35;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
