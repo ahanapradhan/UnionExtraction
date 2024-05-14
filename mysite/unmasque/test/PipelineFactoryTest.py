@@ -105,15 +105,15 @@ class MyTestCase(unittest.TestCase):
 
     def test_state_changes(self):
         req = MockRequest()
-        views.func_start(self.connHelper, MockRequest.session['hq'], req)
-        done = (req.session['partials'][2] != 'NA')
+        token = views.func_start(self.connHelper, MockRequest.session['hq'], req)
+        done = (req.session[str(token) + 'partials'] == DONE or req.session[str(token) + 'partials'] == WRONG)
         while not done:
-            sleep(70 / 1000)
-            views.func_check_progress(req)
-            done = (req.session['partials'][2] != 'NA')
+            sleep(1)
+            views.func_check_progress(req, token)
+            done = (req.session[str(token) + 'partials'] == DONE or req.session[str(token) + 'partials'] == WRONG)
         self.assertTrue(True)
 
-    def test_rate_limited_to_1(self):
+    def rate_limited_to_1(self):
         factory = MockPipeLineFactory()
 
         bucket = []

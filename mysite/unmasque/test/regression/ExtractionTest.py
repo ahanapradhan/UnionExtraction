@@ -442,6 +442,7 @@ class ExtractionTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
+        
     def test_gopinath_bugfix(self):
         query = "select avg(l_tax), l_linenumber from lineitem " \
                 "where l_extendedprice >= 3520.02 group by l_linenumber;"
@@ -454,10 +455,12 @@ class ExtractionTestCase(BaseTestCase):
         query = "SELECT l_orderkey, l_shipdate FROM lineitem, orders " \
                 "where l_orderkey = o_orderkey and o_orderdate < '1994-01-01' " \
                 "AND l_quantity > 20 AND l_extendedprice > 1000;"
+
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
+
 
 if __name__ == '__main__':
     unittest.main()

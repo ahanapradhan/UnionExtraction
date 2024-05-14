@@ -12,28 +12,46 @@
     </script>
 </head>
 <body>
-    <div class="title">UNMASQUE</div>
-    <div class="subtitle">Unified Non-invasive MAchine for Sql QUery Extraction</div>
+    <div class="heading">
+        <div class="title">UNMASQUE</div>
+        <div class="subtitle"><span class="bi">U</span>nified <span class="bi">N</span>on-invasive <span class="bi">MA</span>chine for <span class="bi">S</span>ql <span class="bi">QU</span>ery <span class="bi">E</span>xtraction</div>
+    </div>
     {% if error_message %}
         <h3 style="color:Tomato;">{{ error_message }}</h3>
     {% endif %}
     <hr>
-    <h2>Enter the Query to be Extracted</h2>
-    <hr>
-    <form method="post">
-        {% csrf_token %}
-        <br>
-        <label for="query" id="hidden_label">Hidden Query:</label><br>
-        <textarea name="query" id = "query" rows="5" cols="100" required></textarea><br><br>
-        <input type="checkbox" id="sampling" name="sampling" value="Sampling" checked></input>
-        <label for="sampling">Sampling</label>
-        <input type="checkbox" id="union" name="union" value="Union"></input>
-        <label for="union">Union</label>
-        <input type="checkbox" id="nep" name="NEP" value="NEP"></input>
-        <label for="nep">NEP</label>
-        <br/>
-        <br/>
-        <input type="submit" class="submit" value="Extract">
-    </form>
+    <div class="content">
+        <div class="subtext">Enter the Query to be Extracted</div>
+        <form class="inp_f" method="post">
+            {% csrf_token %}
+            <br>
+            <label for="query" id="hidden_label">Hidden Query:</label><br>
+            <textarea name="query" id = "query" rows="5" cols="100" required></textarea><br><br>
+            <div class="checkboxes">
+                <div>
+                    <input type="checkbox" id="sampling" name="sampling" value="Sampling" checked></input>
+                    <label for="sampling">Sampling</label>
+                </div>
+                <div><input type="checkbox" id="union" name="union" value="Union"></input>
+                <label for="union">Union</label></div>
+                <div><input type="checkbox" id="nep" name="NEP" value="NEP"></input>
+                <label for="nep">NEP</label></div>
+                <div>
+                    <input type="checkbox" id="outer_join" name="outer_join" value="OuterJoin"></input>
+                    <label for="outer_join">Outer Join</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="disjunction" name="disjunction" value="Disjunction"></input>
+                    <label for="disjunction">Disjunction</label>
+                </div>
+                
+            </div>
+            <br/>
+            <br/>
+            <input type="submit" class="submit" value="Extract">
+
+        </form>
+    </div>
+      
 </body>
 </html>
