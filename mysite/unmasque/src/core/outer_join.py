@@ -13,15 +13,15 @@ class OuterJoin(GenerationPipeLineBase):
     def __init__(self, connectionHelper, global_pk_dict,
                  genPipelineCtx: PackageForGenPipeline,
                  q_gen: QueryStringGenerator,
-                 pgao_ctx: PGAOcontext):
+                 genCtx: PGAOcontext):
         super().__init__(connectionHelper, "Outer Join", genPipelineCtx)
         self.global_pk_dict = global_pk_dict
         self.sem_eq_queries = None
         self.importance_dict = {}
-        self.projected_attributes = pgao_ctx.projected_attribs
-        self.projected_names = pgao_ctx.projection_names
-        self.group_by_attrib = pgao_ctx.group_by_attrib
-        self.orderby_string = pgao_ctx.orderby_string
+        self.projected_attributes = genCtx.projected_attribs
+        self.projected_names = genCtx.projection_names
+        self.group_by_attrib = genCtx.group_by_attrib
+        self.orderby_string = genCtx.orderby_string
         self.Q_E = None
         self.q_gen = q_gen
         self.enabled = self.connectionHelper.config.detect_oj

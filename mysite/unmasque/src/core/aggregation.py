@@ -116,15 +116,15 @@ def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner,
 class Aggregation(GenerationPipeLineBase):
     def __init__(self, connectionHelper,
                  genPipelineCtx: PackageForGenPipeline,
-                 pgao_ctx):
+                 pgao_Ctx):
         super().__init__(connectionHelper, "Aggregation", genPipelineCtx)
         self.global_aggregated_attributes = None
-        self.global_projected_attributes = pgao_ctx.projected_attribs
-        self.has_groupby = pgao_ctx.has_groupby
-        self.global_groupby_attributes = pgao_ctx.group_by_attrib
-        self.dependencies = pgao_ctx.projection_dependencies
-        self.solution = pgao_ctx.projection_solution
-        self.param_list = pgao_ctx.projection_param_list
+        self.global_projected_attributes = pgao_Ctx.projected_attribs
+        self.has_groupby = pgao_Ctx.has_groupby
+        self.global_groupby_attributes = pgao_Ctx.group_by_attrib
+        self.dependencies = pgao_Ctx.projection_dependencies
+        self.solution = pgao_Ctx.projection_solution
+        self.param_list = pgao_Ctx.projection_param_list
 
     def doExtractJob(self, query):
         # AsSUMing NO DISTINCT IN AGGREGATION

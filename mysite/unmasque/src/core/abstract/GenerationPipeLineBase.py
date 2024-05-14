@@ -15,17 +15,17 @@ NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number']
 
 class GenerationPipeLineBase(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, pgao_ctx: PackageForGenPipeline):
-        super().__init__(connectionHelper, pgao_ctx.core_relations, pgao_ctx.global_min_instance_dict, name)
-        self.global_all_attribs = pgao_ctx.global_all_attribs
-        self.global_attrib_types = pgao_ctx.global_attrib_types
-        self.global_join_graph = pgao_ctx.global_join_graph
-        self.global_filter_predicates = pgao_ctx.global_filter_predicates
-        self.filter_attrib_dict = pgao_ctx.filter_attrib_dict
-        self.attrib_types_dict = pgao_ctx.attrib_types_dict
-        self.joined_attribs = pgao_ctx.joined_attribs
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: PackageForGenPipeline):
+        super().__init__(connectionHelper, genCtx.core_relations, genCtx.global_min_instance_dict, name)
+        self.global_all_attribs = genCtx.global_all_attribs
+        self.global_attrib_types = genCtx.global_attrib_types
+        self.global_join_graph = genCtx.global_join_graph
+        self.global_filter_predicates = genCtx.global_filter_predicates
+        self.filter_attrib_dict = genCtx.filter_attrib_dict
+        self.attrib_types_dict = genCtx.attrib_types_dict
+        self.joined_attribs = genCtx.joined_attribs
 
-        self.get_datatype = pgao_ctx.get_datatype  # method
+        self.get_datatype = genCtx.get_datatype  # method
 
     def extract_params_from_args(self, args):
         return args[0]

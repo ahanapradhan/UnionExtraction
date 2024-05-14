@@ -12,10 +12,10 @@ from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format,
 
 class Limit(GenerationPipeLineBase):
     def __init__(self, connectionHelper, genPipelineCtx: PackageForGenPipeline,
-                 pgao_ctx: PGAOcontext):
+                 genCtx: PGAOcontext):
         super().__init__(connectionHelper, "Limit", genPipelineCtx)
         self.limit = None
-        self.global_groupby_attributes = pgao_ctx.group_by_attrib
+        self.global_groupby_attributes = genCtx.group_by_attrib
         self.joined_attrib_valDict = {}
         self.no_rows = self.connectionHelper.config.limit_limit
 
