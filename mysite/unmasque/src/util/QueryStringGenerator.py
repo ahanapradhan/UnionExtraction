@@ -264,13 +264,14 @@ class QueryStringGenerator:
                 if '%' in output or '_' in output:
                     predicate = f"{tab}.{attrib} NOT LIKE '{str(output)}' "
                     self._remove_exact_NE_string_predicate(elt)
-                    self.filter_predicates = (tab, attrib, 'NOT LIKE', output)
+                    predicate_tuple = (tab, attrib, 'NOT LIKE', output)
                 else:
                     predicate = f"{tab}.{attrib} {str(op)} \'{str(output)}\' "
-                    self.filter_predicates = (tab, attrib, str(op), output)
+                    predicate_tuple = (tab, attrib, str(op), output)
             else:
                 predicate = f"{tab}.{attrib} {str(op)} {format_val}"
-                self.filter_predicates = (tab, attrib, str(op), format_val)
+                predicate_tuple = (tab, attrib, str(op), format_val)
+            self.filter_predicates = predicate_tuple
 
             self._workingCopy.add_to_where_op(predicate)
 
@@ -291,8 +292,7 @@ class QueryStringGenerator:
 
         if self.connectionHelper.config.detect_or:
             self.__generate_arithmetic_conjunctive_disjunctions(predicates)
-        else:
-            self.__generate_arithmetic_pure_conjunctions(predicates)
+        self.__generate_arithmetic_pure_conjunctions(predicates)
 
         where_clause = "\n and ".join(predicates)
         self.logger.debug(where_clause)
@@ -373,7 +373,8 @@ class QueryStringGenerator:
     def __generate_arithmetic_pure_conjunctions(self, predicates):
         for a_eq in self._workingCopy.filter_predicates:
             pred = self.formulate_predicate_from_filter(a_eq)
-            predicates.append(pred)
+            if pred not in predicates:
+                predicates.append(pred)
 
     def __generate_arithmetic_conjunctive_disjunctions(self, predicates):
         for p in self._workingCopy.or_predicates:
@@ -525,10 +526,11 @@ class QueryStringGenerator:
         try:
             self.connectionHelper.execute_sql([u_query], self.logger)
             new_result = self.app.doJob(query)
-            if self.app.isQ_result_empty(new_result):
+            if self.app.isQ_result_no_full_nullfree_row(new_result):
                 output = output + '%'
         except Exception as e:
             self.logger.debug(e)
+            self.connectionHelper.rollback_transaction()
         return output
 
     def __handle_for_wildcard_char_underscore(self, attrib, query, representative, tabname):
@@ -557,7 +559,7 @@ class QueryStringGenerator:
                     try:
                         self.connectionHelper.execute_sql([u_query])
                         new_result = self.app.doJob(query)
-                        if self.app.isQ_result_empty(new_result):
+                        if self.app.isQ_result_no_full_nullfree_row(new_result):
                             representative = representative[:index] + representative[index + 1:]
                         else:
                             output = output + "_"
@@ -590,7 +592,7 @@ class QueryStringGenerator:
             try:
                 self.connectionHelper.execute_sql([u_query])
                 new_result = self.app.doJob(query)
-                if self.app.isQ_result_empty(new_result):
+                if self.app.isQ_result_no_full_nullfree_row(new_result):
                     pass
                 else:
                     output = output + representative[index]

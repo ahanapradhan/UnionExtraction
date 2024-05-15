@@ -656,6 +656,8 @@ class ExtractionTestCase(BaseTestCase):
         record_file.write(query)
         record_file.write("\n")
         record_file.write(" --- extracted query:\n ")
+        if u_Q is None:
+            u_Q = '--- Extraction Failed! Nothing to show! '
         record_file.write(u_Q)
         record_file.write("\n --- END OF ONE EXTRACTION EXPERIMENT\n")
         self.pipeline.time_profile.print()
