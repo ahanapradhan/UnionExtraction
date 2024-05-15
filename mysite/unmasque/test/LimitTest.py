@@ -82,7 +82,7 @@ class MyTestCase(BaseTestCase):
         check = aoa.doJob(query)
         self.assertTrue(check)
         print(aoa.where_clause)
-        lm = Limit(self.conn, [], aoa.pipeline_delivery)
+        lm = Limit(self.conn, [], aoa.nextPipelineCtx)
         lm.doJob(query)
         self.assertEqual(10, lm.limit)
 

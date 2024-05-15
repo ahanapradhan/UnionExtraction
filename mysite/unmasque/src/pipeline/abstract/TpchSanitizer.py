@@ -7,13 +7,15 @@ from typing import List
 
 class TpchSanitizer:
 
-    def __init__(self, connectionHelper: AbstractConnectionHelper):
-        self.all_sizes = {}
+    def __init__(self, connectionHelper: AbstractConnectionHelper, all_sizes=None):
+        if all_sizes is None:
+            all_sizes = {}
+        self.all_sizes = all_sizes
         self.all_relations = []
         self.connectionHelper = connectionHelper
         self.logger = Log("TpchSanitizer", connectionHelper.config.log_level)
 
-    def set_all_relations(self, relations: list[str]):
+    def set_all_relations(self, relations: List[str]):
         self.all_relations.extend(copy.copy(relations))
 
     def take_backup(self):

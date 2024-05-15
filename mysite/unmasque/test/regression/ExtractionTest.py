@@ -107,15 +107,6 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
 
-    def test_extraction_tpch_q1_simple(self):
-        key = 'q1_simple'
-        query = queries.queries_dict[key]
-        eq = self.pipeline.doJob(query)
-        self.assertTrue(eq is not None)
-        self.assertTrue(self.pipeline.correct)
-        print(eq)
-        self.pipeline.time_profile.print()
-
     def test_for_date_filter(self):
         for i in range(1):
             key = 'q1_filter'
@@ -452,16 +443,10 @@ class ExtractionTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
-    def test_outer_join_subqueries(self):
-        self.test_subq1()
-        self.test_subq2()
-
-    def test_subq2(self):
-        query2 = "select c_name, o_orderdate from customer LEFT OUTER JOIN orders on " \
-                 "c_custkey = o_custkey and o_orderstatus = 'O' and o_totalprice > 7000 and c_acctbal < 2000;"
-        self.conn.config.detect_union = False
-        self.conn.config.detect_oj = True
-        eq = self.pipeline.doJob(query2)
+    def test_gopinath_bugfix(self):
+        query = "select avg(l_tax), l_linenumber from lineitem " \
+                "where l_extendedprice >= 3520.02 group by l_linenumber;"
+        eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)

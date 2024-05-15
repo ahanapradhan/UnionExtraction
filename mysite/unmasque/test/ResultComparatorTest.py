@@ -195,6 +195,53 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(matched_hash)
         self.conn.closeConnection()
 
+    def test_correlated_nestedquery_vs_cte(self):
+        query = "with subq as (select l_orderkey, sum(l_extendedprice) as total_sum " \
+                "from lineitem " \
+                "where l_linenumber >= 3 " \
+                "group by l_orderkey) " \
+                "select o_clerk, o_totalprice " \
+                "from orders, subq " \
+                "where subq.l_orderkey = o_orderkey " \
+                "and subq.total_sum < 12000 " \
+                "and o_orderpriority = '1-URGENT' " \
+                "order by o_totalprice limit 10;"
+        query1 = "with subq as (select l_orderkey, l_linenumber, sum(l_extendedprice) as total_sum " \
+                 "from lineitem " \
+                 "group by l_orderkey, l_linenumber) " \
+                 "select o_clerk, o_totalprice " \
+                 "from orders, subq " \
+                 "where subq.l_orderkey = o_orderkey " \
+                 "and subq.l_linenumber >= 3 " \
+                 "and subq.total_sum < 12000 " \
+                 "and o_orderpriority = '1-URGENT' " \
+                 "order by o_totalprice limit 10;"
+        query2 = "with subq as (select l_orderkey, sum(l_extendedprice) as total_sum " \
+                 "from lineitem where l_linenumber >= 3 " \
+                 "group by l_orderkey having sum(l_extendedprice) < 12000) " \
+                 "select o_clerk, o_totalprice " \
+                 "from orders, subq " \
+                 "where subq.l_orderkey = o_orderkey " \
+                 "and o_orderpriority = '1-URGENT' " \
+                 "order by o_totalprice limit 10;"
+        self.conn.connectUsingParams()
+        self.conn.execute_sql([self.conn.queries.create_table_as_select_star_from('lineitem_backup', 'lineitem'),
+                               self.conn.queries.create_table_as_select_star_from('orders_backup', 'orders'),
+                               'commit;'])
+        rc_hash = ResultComparator(self.conn, True, ['lineitem', 'orders'])
+        # matched_hash = rc_hash.doJob(query, query1)
+        # self.assertTrue(matched_hash)
+        self.conn.closeConnection()
+
+        self.conn.connectUsingParams()
+        rc_hash = ResultComparator(self.conn, True, ['lineitem', 'orders'])
+        matched_hash = rc_hash.doJob(query2, query)
+        self.assertTrue(matched_hash)
+        self.conn.execute_sql([self.conn.queries.drop_table('lineitem_backup'),
+                               self.conn.queries.drop_table('orders_backup'),
+                               'commit;'])
+        self.conn.closeConnection()
+
     @pytest.mark.skip
     def test_UQ12_sql(self):
         self.conn.connectUsingParams()

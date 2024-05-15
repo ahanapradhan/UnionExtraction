@@ -24,7 +24,6 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.db_restorer = None
         self.global_min_instance_dict = None
         self.key_lists = None
-        self.original_size = {}
 
     def _mutation_pipeline(self, core_relations, query, time_profile, restore_details=None):
         self.update_state(RESTORE_DB + START)
@@ -52,15 +51,18 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         if not check or not cs2.done:
             self.info[SAMPLING] = None
             self.logger.info("Sampling failed!")
+        if not self.connectionHelper.config.use_cs2:
+            self.info[SAMPLING] = SAMPLING + "DISABLED"
+            self.logger.info("Sampling is disabled!")
         else:
             self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
-            self.all_sizes = cs2.sizes
+            # self.db_restorer.update_last_restored_size(cs2.sizes)
 
         """
             View based Database Minimization
             """
         self.update_state(DB_MINIMIZATION + START)
-        vm = ViewMinimizer(self.connectionHelper, core_relations, self.all_sizes, cs2.passed)
+        vm = ViewMinimizer(self.connectionHelper, core_relations, self.db_restorer.last_restored_size, cs2.passed)
         self.update_state(DB_MINIMIZATION + RUNNING)
         check = vm.doJob(query)
         self.update_state(DB_MINIMIZATION + DONE)
@@ -69,7 +71,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             self.logger.error("Cannot do database minimization. ")
             self.info[DB_MINIMIZATION] = None
             return False, time_profile
-        # self.all_sizes = check
+        self.db_restorer.update_last_restored_size(vm.all_sizes)
         self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
 
@@ -146,7 +148,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         raise NotImplementedError("Trouble!")
 
     @abstractmethod
-    def _verify_correctness(self, query, result):
+    def verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
     def _extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once

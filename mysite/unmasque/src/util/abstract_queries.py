@@ -43,6 +43,10 @@ class CommonQueries(ABC):
         pass
 
     @abstractmethod
+    def get_non_null_row_count(self, tab):
+        pass
+
+    @abstractmethod
     def get_star(self, tab):
         pass
 

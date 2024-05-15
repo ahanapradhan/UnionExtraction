@@ -143,7 +143,7 @@ class MyTestCase(BaseTestCase):
 
     def run_pipeline_till_projection(self, core_rels, query):
         aoa, check = self.run_pipeline(core_rels, query)
-        delivery = aoa.pipeline_delivery
+        delivery = aoa.nextPipelineCtx
         pj = Projection(self.conn, delivery)
 
         check = pj.doJob(query)

@@ -2,7 +2,7 @@ import unittest
 
 from mysite.unmasque.src.core.limit import Limit
 from mysite.unmasque.src.core.orderby_clause import OrderBy
-from ..src.core.QueryStringGenerator import QueryStringGenerator
+from mysite.unmasque.src.util.QueryStringGenerator import QueryStringGenerator
 from mysite.unmasque.src.core.aggregation import Aggregation
 from mysite.unmasque.src.core.groupby_clause import GroupBy
 from mysite.unmasque.src.core.projection import Projection
@@ -218,23 +218,23 @@ class MyTestCase(unittest.TestCase):
         check = aoa.doJob(query)
         self.assertTrue(check)
         print(aoa.where_clause)
-        pj = Projection(self.conn, aoa.pipeline_delivery)
+        pj = Projection(self.conn, aoa.nextPipelineCtx)
         pj.mock = True
         check = pj.doJob(query)
         self.assertTrue(check)
         print(pj.projected_attribs)
-        gb = GroupBy(self.conn, aoa.pipeline_delivery, pj.projected_attribs)
+        gb = GroupBy(self.conn, aoa.nextPipelineCtx, pj.projected_attribs)
         check = gb.doJob(query)
         self.assertTrue(check)
         agg = Aggregation(self.conn, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
-                          pj.dependencies, pj.solution, pj.param_list, aoa.pipeline_delivery)
+                          pj.dependencies, pj.solution, pj.param_list, aoa.nextPipelineCtx)
         agg.doJob(query)
         self.assertTrue(agg.done)
         ob = OrderBy(self.conn, pj.projected_attribs, pj.projection_names, pj.dependencies,
-                     agg.global_aggregated_attributes, aoa.pipeline_delivery)
+                     agg.global_aggregated_attributes, aoa.nextPipelineCtx)
         ob.doJob(query)
         self.assertTrue(ob.done)
-        lm = Limit(self.conn, gb.group_by_attrib, aoa.pipeline_delivery)
+        lm = Limit(self.conn, gb.group_by_attrib, aoa.nextPipelineCtx)
         lm.doJob(query)
         self.assertTrue(lm.done)
         eq = QueryStringGenerator(self.conn).generate_query_string(relations, pj, agg, ob, lm, aoa)

@@ -9,12 +9,15 @@ class MyTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = True
         self.conn.config.detect_or = False
-        self.conn.config.detect_oj = False
+        self.conn.config.detect_oj = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
     def test_simple(self):
-        query = "select n_regionkey from nation where n_name <> 'GERMANY';"
+        self.conn.config.detect_oj = True
+        query = "select c_name, n_regionkey from nation RIGHT OUTER JOIN customer on n_nationkey = c_nationkey and " \
+                "n_name <> 'GERMANY';"
+        # query = "select n_regionkey from nation where n_name <> 'GERMANY';"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
         print(eq)
@@ -57,11 +60,35 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
+    def test_Q21_mukul_thesis_oj(self):
+        query = "Select s_name, n_name, l_returnflag, o_clerk, count(*) as numwait " \
+                "From supplier LEFT OUTER JOIN lineitem on s_suppkey = l_suppkey " \
+                "and s_acctbal < 5000 RIGHT OUTER JOIN orders" \
+                " on o_orderkey = l_orderkey and  o_orderstatus = 'F'  LEFT OUTER JOIN nation " \
+                "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
+                "Order By numwait desc, s_name Limit 1200;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
     def test_Q16_sql(self):
-        query = ("Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part               "
-                 "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and "
-                 "p_size >=  4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, "
-                 "p_type, p_size;")
+        query = "Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part               "\
+                 "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and "\
+                 "p_size >=  4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, "\
+                 "p_type, p_size;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.pipeline.time_profile.print()
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_Q16_sql_outer_join(self):
+        query = "Select p_brand, p_type, p_size, ps_availqty, count(*) as supplier_cnt From partsupp LEFT OUTER JOIN " \
+                "part on p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and "\
+                 "p_size >=  4 Group By p_brand, p_type, p_size, ps_availqty Order by supplier_cnt desc, p_brand, "\
+                 "p_type, p_size, ps_availqty desc;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.pipeline.time_profile.print()

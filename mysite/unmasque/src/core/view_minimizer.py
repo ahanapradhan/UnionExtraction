@@ -31,6 +31,9 @@ class ViewMinimizer(Minimizer):
 
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
+        if not self.sanity_check(query):
+            self.logger.error(" Original database is not giving populated result!")
+            return False
         return self.reduce_Database_Instance(query,
                                              True) if self.cs2_passed else self.reduce_Database_Instance(query, False)
 
@@ -48,6 +51,8 @@ class ViewMinimizer(Minimizer):
             end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid,
                                                                           mid_ctid1, mid_ctid2, query,
                                                                           start_ctid, tabname, tabname1)
+            if end_ctid is None:
+                return core_sizes
             start_ctid2 = start_ctid.split(",")
             start_page = int(start_ctid2[0][1:])
             end_ctid2 = end_ctid.split(",")

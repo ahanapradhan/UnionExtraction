@@ -29,7 +29,7 @@ def check_redundancy(fl_list, a_ineq):
 
 class AlgebraicPredicate(FilterHolder):
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 core_relations: list[str],
+                 core_relations: List[str],
                  pending_predicates, arithmetic_eq_predicates, algebraic_eq_predicates,
                  filter_extractor, global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor,
@@ -44,7 +44,7 @@ class AlgebraicPredicate(FilterHolder):
         self.filter_predicates = []
 
         self.filter_in_predicates = []
-        self.pipeline_delivery = None
+        self.nextPipelineCtx = None
         self.where_clause = ""
 
         self.prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
@@ -359,14 +359,14 @@ class AlgebraicPredicate(FilterHolder):
                 if pred[:2] == in_pred[:2]:
                     self.filter_predicates[i] = in_pred
 
-        self.pipeline_delivery = PackageForGenPipeline(self.core_relations, self.filter_extractor.global_all_attribs,
-                                                       self.filter_extractor.global_attrib_types,
-                                                       self.filter_predicates, self.aoa_predicates, self.join_graph,
-                                                       self.aoa_less_thans, self.global_min_instance_dict,
-                                                       self.get_dmin_val, self.get_datatype)
-        self.pipeline_delivery.doJob()
-        self.logger.debug(self.pipeline_delivery.global_filter_predicates)
-        self.logger.debug(self.pipeline_delivery.global_join_graph)
+        self.nextPipelineCtx = PackageForGenPipeline(self.core_relations, self.filter_extractor.global_all_attribs,
+                                                     self.filter_extractor.global_attrib_types,
+                                                     self.filter_predicates, self.aoa_predicates, self.join_graph,
+                                                     self.aoa_less_thans, self.global_min_instance_dict,
+                                                     self.get_dmin_val, self.get_datatype)
+        self.nextPipelineCtx.doJob()
+        self.logger.debug(self.nextPipelineCtx.global_filter_predicates)
+        self.logger.debug(self.nextPipelineCtx.global_join_graph)
 
     def do_permanent_mutation(self):
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_less_thans))
@@ -461,7 +461,7 @@ class AlgebraicPredicate(FilterHolder):
     def revert_mutation_on_filter_global_min_instance_dict(self) -> None:
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
 
-    def do_bound_check_again(self, tab_attrib: tuple[str, str], datatype: str, query: str) -> list:
+    def do_bound_check_again(self, tab_attrib: Tuple[str, str], datatype: str, query: str) -> list:
         filter_attribs = []
         d_plus_value = copy.deepcopy(self.filter_extractor.global_d_plus_value)
         attrib_max_length = copy.deepcopy(self.filter_extractor.global_attrib_max_length)
@@ -516,7 +516,7 @@ class AlgebraicPredicate(FilterHolder):
                     self.arithmetic_ineq_predicates.remove(pred)
         return filtered_dict
 
-    def mutate_attrib_with_Bound_val(self, tab_attrib: tuple[str, str], datatype: str, val: any,
+    def mutate_attrib_with_Bound_val(self, tab_attrib: Tuple[str, str], datatype: str, val: any,
                                      with_UB: bool, query: str) \
             -> Tuple[Union[int, Decimal, date], Union[int, Decimal, date]]:
         dmin_val = self.get_dmin_val(get_attrib(tab_attrib), get_tab(tab_attrib))

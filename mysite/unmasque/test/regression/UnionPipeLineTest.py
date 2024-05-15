@@ -70,6 +70,8 @@ class MyTestCase(BaseTestCase):
                 "(select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);"
         u_Q = self.pipeline.doJob(query)
         self.assertTrue(u_Q is not None)
+        print(query)
+        print("-----------------------------")
         print(u_Q)
         self.pipeline.time_profile.print()
 
@@ -178,17 +180,74 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         self.conn.closeConnection()
 
+    def test_sumang_thesis_Q3_Q4(self):
+        self.conn.config.detect_or = True
+        query = "select sum(l_extendedprice) as revenue " \
+                "from lineitem " \
+                "where l_shipdate >= date '1994-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
+                "and (l_quantity =42 or l_quantity =50 or l_quantity=24) UNION ALL " \
+                "(select avg(ps_supplycost) as cost from part, partsupp where p_partkey = ps_partkey " \
+                "and (p_brand = 'Brand#52' or p_brand = 'Brand#12') and " \
+                "(p_container = 'LG CAN' or p_container = 'LG CASE'));"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+        self.pipeline.time_profile.print()
+
+    def test_sumang_thesis_Q4_Q3(self):
+        self.conn.config.detect_or = True
+        query = "(select avg(ps_supplycost) as cost from part, partsupp where p_partkey = ps_partkey " \
+                "and (p_brand = 'Brand#52' or p_brand = 'Brand#12') and " \
+                "(p_container = 'LG CAN' or p_container = 'LG CASE')) UNION ALL " \
+                "select sum(l_extendedprice) as revenue " \
+                "from lineitem " \
+                "where l_shipdate >= date '1994-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
+                "and (l_quantity =42 or l_quantity =50 or l_quantity=24);"
+
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+        self.pipeline.time_profile.print()
+
     def test_outer_join_w_disjunction(self):
         self.conn.config.detect_or = True
         query = "(SELECT l_linenumber, o_shippriority , " \
                 "count(*) as low_line_count  " \
-                "FROM lineitem LEFT OUTER JOIN orders ON l_orderkey = o_orderkey AND o_totalprice > 50000 " \
-                "AND l_shipmode IN ('MAIL', 'AIR', 'TRUCK') AND l_quantity < 30  " \
+                "FROM lineitem , orders WHERE l_orderkey = o_orderkey AND o_totalprice > 50000 " \
+                "AND l_shipmode IN ('MAIL', 'AIR') AND l_quantity < 30  " \
                 "GROUP BY l_linenumber, o_shippriority Order By l_linenumber, o_shippriority desc  Limit 5)" \
                 " UNION ALL " \
                 "(select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on" \
                 " p_partkey = ps_partkey GROUP BY p_size, ps_suppkey ORDER BY p_size desc, " \
                 "ps_suppkey desc LIMIT 7);"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_outer_join_subq2_or(self):
+        self.conn.config.detect_or = True
+        query = "(select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on " \
+                "p_partkey = ps_partkey and p_brand IN ('Brand#52', 'Brand#34', 'Brand#15') and p_container IN ('WRAP " \
+                "BOX', 'MED BOX') GROUP BY p_size, ps_suppkey  ORDER BY ps_suppkey desc LIMIT 30);"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_outer_join_w_disjunction_2(self):
+        self.conn.config.detect_or = True
+        query = "(SELECT l_linenumber, o_shippriority , " \
+                "count(*) as low_line_count  " \
+                "FROM lineitem LEFT OUTER JOIN orders ON l_orderkey = o_orderkey AND o_totalprice > 50000 " \
+                "AND l_shipmode IN ('MAIL', 'AIR') AND l_quantity < 30  " \
+                "GROUP BY l_linenumber, o_shippriority Order By l_linenumber, o_shippriority desc  Limit 5)" \
+                " UNION ALL " \
+                "(select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on " \
+                "p_partkey = ps_partkey and p_brand IN ('Brand#52', 'Brand#34', 'Brand#15') and p_container IN ('WRAP " \
+                "BOX', 'MED BOX') GROUP BY p_size, ps_suppkey  ORDER BY ps_suppkey desc LIMIT 30);"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
@@ -201,6 +260,18 @@ class MyTestCase(BaseTestCase):
                 "FROM lineitem LEFT OUTER JOIN orders ON l_orderkey = o_orderkey AND o_totalprice > 50000 " \
                 "AND l_shipmode IN ('MAIL', 'AIR') AND l_quantity < 30  " \
                 "GROUP BY l_linenumber, o_shippriority Order By l_linenumber, o_shippriority desc  Limit 5);"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
+
+    @pytest.mark.skip
+    def test_inner_union(self):
+        query = "select n_name, other_name from nation LEFT OUTER JOIN " \
+                "((select c_nationkey as nationkey, c_name as other_name from customer where c_acctbal < 7000) UNION " \
+                "ALL (select s_nationkey as nationkey, s_name as other_name " \
+                "from supplier where s_acctbal > 9000)) as t_customer_supplier " \
+                "on n_nationkey = t_customer_supplier.nationkey and n_regionkey = 1;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)

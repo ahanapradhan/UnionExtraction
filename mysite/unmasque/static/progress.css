@@ -1,6 +1,5 @@
 * {
     font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    background-color: #d2dae2;
     text-align: left;
 }
 
@@ -8,13 +7,37 @@ body{
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    padding: 0;
+    margin: 0;
+    overflow-x: hidden;
     
 }
 
+.heading{
+    margin: 0px;
+    font-size: 85px;
+    color: white;
+    background-color: black;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    padding: 30px 50px;
+}
+
+
 .title{
-    font-size: 32px;
-    font-weight: 700;
+    padding: 0px 50px;
+}
+
+.subtitle{
+    font-size: 48px;
+    padding: 0px 50px;
+}
+
+.content_o{
+    padding: 50px 50px;
+    width: 100%;
 }
 
 .roArea{
@@ -26,13 +49,29 @@ body{
     width: 100%;
 }
 
-.subtitle{
-    font-size: 22px;
+
+
+.hidQ, .btnContainer, .stateinfo{
+    padding: 20px 50px;
+    width: 75%;
 }
 
+.btnContainer{
+    width: 100%;
+    gap: 50px;
+}
 
-.hidQ, .progress, .btnContainer, .res, .stateinfo{
-    width: 52%;
+.res{
+    width: 100%;
+    padding: 50px 50px;
+}
+
+.progress{
+    padding: 0px 50px;
+}
+
+.pipeline{
+    padding: 0px 50px;
 }
 
 .state_label{
@@ -80,15 +119,15 @@ a{
     width: 100%;
 }
 
-.submit{
+.submit, .cancel_submit{
     width: 10%;
-    padding: 8px;
+    padding: 20px 30px;
     font-size: 16px;
     font-weight: 700;
-    background-color: rgba(51, 51, 51, 0.2);
+    background-color: rgba(0, 0, 0, 1);
     border-radius: 8px;
     border-width: 0;
-    color: #333333;
+    color: #fff;
     cursor: pointer;
     display: inline-block;
     font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -114,6 +153,7 @@ a{
     display: flex;
     flex-direction: column;
     gap: 20px;
+    margin-right: 60px;
 }
 
 .min_tab{
@@ -149,4 +189,122 @@ table{
 
 .sample_table{
     font-size: 18px;
+}
+
+
+
+.innerContainer1{
+    display: flex;
+    justify-content: space-between;
+    padding: 0px 50px;
+    margin: 0px 80px 0px 0px;
+}
+
+
+.pipeline {
+    display: flex;
+    flex-wrap: wrap; /* Allow flex items to wrap to the next row */
+    align-items: center;
+    gap: 75px;
+    text-align: center;
+  }
+
+.label{
+    text-align: center;
+}
+
+  .stage {
+    position: relative;
+    text-align: center;
+    flex: 0 0 auto; /* Ensure stages do not grow or shrink */
+    width: 15%;
+  }
+  
+  .circle {
+    height: 100px;
+    background-color: gray;
+    margin: 10px auto;
+    cursor:grab;
+    transition: background-color 0.3s ease;
+    border: 1px solid #000;
+    position: relative;
+    z-index: 1;
+    transform: scale(1.1);
+  }
+  
+  .label {
+    font-size: 24px;
+  }
+  
+  .arrow {
+    font-size: 40px;
+    transform: scaleX(1.25);
+    margin-top: 25px;
+  }
+  
+  .inactive {
+    background-color: #f0f0f0;
+    border-color: #000;
+    border-width: 1px;
+
+  }
+  
+  .running {
+    background-color: #ffcc00;
+    animation: pulse 1s infinite alternate;
+  }
+  
+  .done {
+    background-color: #339933;
+  }
+
+  .row{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 80%;
+    gap: 20px;
+    padding: 0px 90px;
+  }
+  
+
+  @keyframes pulse {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.2);
+    }
+  }
+  
+.bi{
+    font-weight: 700;
+    font-style: italic;
+}
+
+.inincont{
+    width: 630px;
+}
+
+@keyframes buttonAnimation {
+    0% { transform: scale(1); background-color: #000;}
+    50% { transform: scale(1.1); background-color: #5c5c5c;}
+    100% { transform: scale(1);}
+}
+
+/* Apply the animation to the button when hovering */
+.submit:hover {
+    animation: buttonAnimation 0.5s ease-in-out;
+    background-color: #5c5c5c;
+}
+
+@keyframes cancelButtonAnimation {
+    0% { transform: scale(1); background-color: #000;}
+    50% { transform: scale(1.1); background-color: #f00;}
+    100% { transform: scale(1);}
+}
+
+.cancel_submit:hover {
+    animation: cancelButtonAnimation 0.5s ease-in-out;
+    background-color: #f00;
 }

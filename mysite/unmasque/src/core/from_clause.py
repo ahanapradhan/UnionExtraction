@@ -48,12 +48,15 @@ class FromClause(AppExtractorBase):
 
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
-
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
                     [self.connectionHelper.queries.alter_table_rename_to(tabname, "temp")], self.logger)
+
+                if self.timeout:
+                    self.connectionHelper.execute_sql([self.connectionHelper.set_timeout_to_2s()])
                 self.app.doJob(query)  # slow
+                self.connectionHelper.execute_sql([self.connectionHelper.reset_timeout()])
             except Exception as error:
                 self.logger.info(str(error))
                 if REL_ERROR in str(error):
@@ -83,8 +86,6 @@ class FromClause(AppExtractorBase):
         if not setup_done:
             return False
 
-        if self.timeout:
-            self.connectionHelper.execute_sql([self.connectionHelper.set_timeout_to_2s()])
         query, method = self.extract_params_from_args(args)
         if not method:
             method = self.method
@@ -93,7 +94,6 @@ class FromClause(AppExtractorBase):
             self.get_core_relations_by_rename(query)
         else:
             self.get_core_relations_by_error(query)
-        self.connectionHelper.execute_sql([self.connectionHelper.reset_timeout()])
         return self.core_relations
 
     def get_key_lists(self):

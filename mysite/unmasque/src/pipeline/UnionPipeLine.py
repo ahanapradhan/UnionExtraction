@@ -1,5 +1,3 @@
-from time import sleep
-
 from .OuterJoinPipeLine import OuterJoinPipeLine
 from ..core.union import Union
 from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
@@ -7,11 +5,8 @@ from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
 
 class UnionPipeLine(OuterJoinPipeLine):
 
-    def __init__(self, connectionHelper):
-        super().__init__(connectionHelper)
-        self.all_relations = None
-        self.name = "Union PipeLine"
-        self.pipeLineError = False
+    def __init__(self, connectionHelper, name="Union PipeLine"):
+        super().__init__(connectionHelper, name)
 
     def extract(self, query):
         # opening and closing connection actions are vital.
@@ -33,6 +28,8 @@ class UnionPipeLine(OuterJoinPipeLine):
         u_eq = []
 
         for rels in p:
+            # self.info = {}
+            self.info[UNION] = [list(ele) for ele in p]
             core_relations = [r for r in rels]
             self.logger.debug(core_relations)
             self.info[FROM_CLAUSE] = core_relations
@@ -43,6 +40,7 @@ class UnionPipeLine(OuterJoinPipeLine):
             self.__nullify_relations(nullify)
             eq = self._after_from_clause_extract(query, core_relations)
             self.__revert_nullifications(nullify)
+            self.q_generator.reset()
             self.connectionHelper.closeConnection()
 
             if eq is not None:
@@ -55,6 +53,7 @@ class UnionPipeLine(OuterJoinPipeLine):
                 break
 
         result = self.__post_process(pstr, u_eq)
+        self.update_state(DONE)
         return result
 
     def __post_process(self, pstr, u_eq):

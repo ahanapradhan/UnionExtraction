@@ -27,15 +27,15 @@ class ResultComparator(Comparator):
         len2 = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.hashtext_query(self.r_h))
         return len1, len2
 
-    def insert_data_into_Qh_table(self, res_Qh):
+    def insert_data_into_Qh_table(self, res_Qh, table):
         header = res_Qh[0]
         res_Qh_ = res_Qh[1:]
-        if res_Qh_ is not None:
+        if res_Qh_ not in [None, 'None']:
             for row in res_Qh_:
                 # CHECK IF THE WHOLE ROW IN NONE (SPJA Case)
                 nullrow = True
                 for val in row:
-                    if val is not None:
+                    if val not in [None, 'None']:
                         nullrow = False
                         break
                 if nullrow:
@@ -47,8 +47,7 @@ class ResultComparator(Comparator):
                     else:
                         temp.append(str(val))
                 ins = (tuple(temp))
-                # print(ins)
                 if len(res_Qh_) == 1 and len(res_Qh_[0]) == 1:
-                    self.insert_into_r_h_values(header, ins[0])
+                    self.insert_into_result_table_values(header, ins[0], table)
                 else:
-                    self.insert_into_r_h_values(header, ins)
+                    self.insert_into_result_table_values(header, ins, table)

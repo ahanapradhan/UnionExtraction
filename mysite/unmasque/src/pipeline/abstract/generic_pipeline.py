@@ -40,6 +40,7 @@ class GenericPipeLine(ABC):
     def __init__(self, connectionHelper, name):
         self.update_state(WAITING)
         self.info = {}
+        self.IO = {}
         self.connectionHelper = connectionHelper
         self.pipeline_name = name
         self.time_profile = create_zero_time_profile()
@@ -58,7 +59,7 @@ class GenericPipeLine(ABC):
             app = exe_factory.create_exe(self.connectionHelper)
             app.method_call_count = 0
             result = self.extract(query)
-            self._verify_correctness(query, result)
+            self.verify_correctness(query, result)
             self.time_profile.update_for_app(app.method_call_count)
         except Exception as e:
             self.logger.error("Some problem while Execution!")
@@ -81,7 +82,7 @@ class GenericPipeLine(ABC):
         self.time_profile.update_for_total_time(local_end_time - local_start_time)
         return result
 
-    def _verify_correctness(self, query, result):
+    def verify_correctness(self, query, result):
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams()
         rc = ResultComparator(self.connectionHelper, True, self.core_relations)

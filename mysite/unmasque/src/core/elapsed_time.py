@@ -189,7 +189,7 @@ class ElapsedTime:
                 self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(times[i]) + '</td><td>' +str(app[i])+ '</td></tr>'
             else:
                 self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(
-                    round(times[i])) + '</td><td>' + str(app[i]) + '</td></tr>'
+                    round(times[i])) + '</td><td>' + str(sum(app)) + '</td></tr>'
         self.table_string += '</table>'
         return self.table_string
 

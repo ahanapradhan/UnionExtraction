@@ -6,8 +6,8 @@ from ..factory.ExecutableFactory import ExecutableFactory
 
 class AppExtractorBase(Base, ABC):
 
-    def __init__(self, connectionHelper, name):
-        super().__init__(connectionHelper, name)
+    def __init__(self, connectionHelper, name, all_sizes=None):
+        super().__init__(connectionHelper, name, all_sizes)
         exe_factory = ExecutableFactory()
         self.app = exe_factory.create_exe(self.connectionHelper)
         self.app_calls = 0
