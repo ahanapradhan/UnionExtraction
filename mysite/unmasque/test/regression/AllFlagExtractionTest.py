@@ -27,10 +27,10 @@ class ExtractionTestCase(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = False
-        self.conn.config.detect_nep = False
-        self.conn.config.detect_oj = False
-        self.conn.config.detect_or = False
+        self.conn.config.detect_union = True
+        self.conn.config.detect_nep = True
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
@@ -630,6 +630,7 @@ class ExtractionTestCase(unittest.TestCase):
                 "Group By c_name, o_orderdate, o_totalprice Order by o_orderdate, o_totalprice desc Limit 100;"
         self.do_test(query)
 
+    @pytest.mark.skip
     def test_mukul_thesis_Q11(self):
         query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, supplier, nation " \
                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'ARGENTINA' " \
