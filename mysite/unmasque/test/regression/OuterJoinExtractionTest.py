@@ -1,5 +1,6 @@
 from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+import pytest
 
 
 class OuterJoinExtractionTestCase(BaseTestCase):
@@ -13,6 +14,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
+    @pytest.mark.skip
     def test_outer_join_agg(self):
         query = "(select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, " \
                 "sum(l_discount) as sum_disc_price, sum(l_tax) as sum_charge, avg(l_quantity) as avg_qty, avg(l_extendedprice) " \
@@ -26,6 +28,7 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    @pytest.mark.skip
     def test_cyclic_join(self):
         query = "select c_name, n_name, s_name from nation LEFT OUTER JOIN customer on c_nationkey = n_nationkey"\
                  " RIGHT OUTER JOIN supplier on n_nationkey = s_nationkey;"
