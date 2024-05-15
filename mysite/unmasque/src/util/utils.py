@@ -6,8 +6,6 @@ from itertools import combinations
 
 from dateutil.relativedelta import relativedelta
 
-from decimal import Decimal, localcontext, ROUND_DOWN
-
 from ...src.util import constants
 from ...src.util.constants import dummy_int, dummy_date, dummy_char
 
@@ -251,15 +249,6 @@ def add_two(one, two, datatype):
         return one + two
 
 
-def truncate(num, places):
-    if not isinstance(places, int):
-        return num
-
-    with localcontext() as context:
-        context.rounding = ROUND_DOWN
-        exponent = Decimal(str(10 ** - places))
-        return Decimal(str(num)).quantize(exponent).to_eng_string()
-
 def get_mid_val(datatype, high, low, div=2):
     if datatype == 'date':
         mid_val = low + datetime.timedelta(days=int(math.floor((high - low).days / div)))
@@ -267,8 +256,7 @@ def get_mid_val(datatype, high, low, div=2):
         mid_val = low + int((high - low) / div)
     else:  # numeric
         mid_val = (high + low) / div
-        mid_val = float(truncate(mid_val, 2))
-        #mid_val = round(mid_val, 3)
+        mid_val = round(mid_val, 3)
     return mid_val
 
 
