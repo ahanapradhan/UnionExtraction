@@ -60,3 +60,26 @@
  Order By l_shipmode desc 
  Limit 100);
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ Select l_shipmode, sum(l_extendedprice) as revenue From lineitem Where l_shipdate  < '1994-01-01' and l_quantity < 24 and l_linenumber <> 4 and l_returnflag <> 'R' Group By l_shipmode Limit 100; 
+ --- extracted query:
+  
+ (Select l_shipmode, Sum(l_extendedprice) as revenue 
+ From lineitem 
+ Where lineitem.l_quantity <= 23.99
+ and lineitem.l_shipdate <= '1993-12-31'
+ and lineitem.l_returnflag <> 'R'
+ and lineitem.l_linenumber <> 4 
+ Group By l_shipmode 
+ Order By l_shipmode desc 
+ Limit 100);
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, supplier, nation Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'ARGENTINA' and ps_COMMENT not like '%regular%dependencies%' and s_acctbal <> 2177.90 Group By ps_COMMENT Order by value desc Limit 100;
+ --- extracted query:
+ --- Extraction Failed! Nothing to show! 
+ --- END OF ONE EXTRACTION EXPERIMENT
