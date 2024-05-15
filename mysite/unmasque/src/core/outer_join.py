@@ -303,8 +303,9 @@ class OuterJoin(GenerationPipeLineBase):
 
     def __determine_on_and_where_filters(self, query):
         filter_pred_on, filter_pred_where = [], []
-        self.logger.debug("all_arithmetic_filters: ", self.q_gen.all_arithmetic_filters)
-        for fp in self.q_gen.all_arithmetic_filters:
+        all_arithmetic_filters = self.q_gen.all_arithmetic_filters
+        self.logger.debug("all_arithmetic_filters: ", all_arithmetic_filters)
+        for fp in all_arithmetic_filters:
             self.logger.debug(f"fp from global filter predicates: {fp}")
             tab, attrib = fp[0], fp[1]
             _, prev = self.update_attrib_to_see_impact(attrib, tab)

@@ -1,5 +1,7 @@
 import copy
 
+from frozenlist._frozenlist import FrozenList
+
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
 from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX
@@ -72,7 +74,12 @@ class QueryDetails:
 
 
 def get_formatted_value(datatype, value):
-    if isinstance(value, list):
+    if isinstance(value, FrozenList):
+        v_list = list(value)
+        f_value = f"{', '.join(v_list)}"
+        if len(v_list) > 1:
+            f_value = f"({v_list})"
+    elif isinstance(value, list):
         f_value = f"{', '.join(value)}"
         if len(value) > 1:
             f_value = f"({f_value})"
@@ -201,8 +208,7 @@ class QueryStringGenerator:
 
     @property
     def all_arithmetic_filters(self):
-        preds = self._workingCopy.filter_predicates + self._workingCopy.filter_in_predicates
-        uniq_preds = list(set(preds))
+        uniq_preds = list(set(self._workingCopy.filter_predicates + self._workingCopy.filter_in_predicates))
         return uniq_preds
 
     @all_arithmetic_filters.setter
@@ -392,7 +398,10 @@ class QueryStringGenerator:
 
     def __adjust_for_in_predicates(self, attrib, tab, values):
         in_pred = [tab, attrib, 'IN', values, values] if len(values) > 1 else [tab, attrib, '=', values, values]
-        self._workingCopy.filter_in_predicates.append(tuple(in_pred))
+        frozen_values = FrozenList(values)
+        frozen_values.freeze()
+        frozen_in_pred = (in_pred[0], in_pred[1], in_pred[2], frozen_values, frozen_values)
+        self._workingCopy.filter_in_predicates.append(frozen_in_pred)
         remove_eq_filter_predicate = []
         for eq_pred in self._workingCopy.filter_predicates:
             if eq_pred[0] == tab and eq_pred[1] == attrib and eq_pred[2] in ['equal', '=']:
