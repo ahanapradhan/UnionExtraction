@@ -33,6 +33,11 @@ def round_floor(num, places):
     #return round(num + adder, places)
     return num
 
+def truncate_value(num):
+    num = num * 1000
+    num = math.trunc(num)
+    num = num / 1000
+    return num
 
 class Filter(UN2WhereClause):
 
@@ -225,18 +230,14 @@ class Filter(UN2WhereClause):
             val = self.get_filter_value(query, 'float', math.ceil(float(d_plus_value[attrib])) - 5, max_val_domain,
                                         '<=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val), float(val) + 0.99, '<=', attrib_list)
-            val1 = val1 * 100
-            val1 = math.trunc(val1)
-            val1 = val1 / 100
+            val1 = truncate_value(val1)
             filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, 2))))
 
         elif not min_present and max_present:
             val = self.get_filter_value(query, 'float', min_val_domain, math.floor(float(d_plus_value[attrib]) + 5),
                                         '>=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val) - 1, val, '>=', attrib_list)
-            val1 = val1*100
-            val1 = math.trunc(val1)
-            val1 = val1 / 100
+            val1 = truncate_value(val1)
             filterAttribs.append((tabname, attrib, '>=', float(round_ceil(val1, 2)), float(max_val_domain)))
 
     def get_filter_value(self, query, datatype, min_val, max_val, operator, attrib_list):
