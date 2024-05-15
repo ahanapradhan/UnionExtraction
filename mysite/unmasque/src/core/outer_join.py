@@ -3,43 +3,82 @@ from datetime import date
 from typing import Tuple, Union
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.pgao_context import PGAOcontext
 from ..util.QueryStringGenerator import QueryStringGenerator
 
 
 class OuterJoin(GenerationPipeLineBase):
-    ROJ = ' RIGHT OUTER JOIN '
-    LOJ = ' LEFT OUTER JOIN '
-    join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ROJ,
-                ('h', 'l'): LOJ, ('h', 'h'): ' FULL OUTER JOIN '}
 
-    def __init__(self, connectionHelper, global_pk_dict, genPipelineCtx, q_gen: QueryStringGenerator, projection):
+    def __init__(self, connectionHelper, global_pk_dict,
+                 genPipelineCtx: PackageForGenPipeline,
+                 q_gen: QueryStringGenerator,
+                 genCtx: PGAOcontext):
         super().__init__(connectionHelper, "Outer Join", genPipelineCtx)
         self.global_pk_dict = global_pk_dict
         self.sem_eq_queries = None
         self.importance_dict = {}
-        self.projected_attributes = projection.projected_attribs
-        self.projected_names = projection.projection_names
+        self.projected_attributes = genCtx.projected_attribs
+        self.projected_names = genCtx.projection_names
+        self.group_by_attrib = genCtx.group_by_attrib
+        self.orderby_string = genCtx.orderby_string
         self.Q_E = None
         self.q_gen = q_gen
         self.enabled = self.connectionHelper.config.detect_oj
 
     def doExtractJob(self, query: str) -> bool:
+        self.__resolve_ambigous_projections(query)
+        self.Q_E = self.q_gen.formulate_query_string()
         list_of_tables, new_join_graph = self.__get_tables_list_and_new_join_graph()
         if not len(new_join_graph):
             self.logger.info("No Join clause found.")
-            return True
+            return False
         final_edge_seq = self.__create_final_edge_seq(list_of_tables, new_join_graph)
         table_attr_dict = self.__create_table_attrib_dict()
         if table_attr_dict is None:
             self.logger.info("I suppose it is fully equi-join query.")
-            self.Q_E = self.q_gen.generate_query_string()
-            return True
+            return False
         self.__create_importance_dict(new_join_graph, query, table_attr_dict)
 
         set_possible_queries, fp_on = self.__formulateQueries(final_edge_seq, query)
         self.__remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries, fp_on)
-        self.Q_E = self.sem_eq_queries[0] if len(self.sem_eq_queries) else None
+        if not len(self.sem_eq_queries):
+            return False
+        self.Q_E = self.sem_eq_queries[0]
         return True
+
+    def __resolve_ambigous_projections(self, query):
+        replace_dict = dict()
+        for attrib in self.projected_attributes:
+            idx = self.projected_attributes.index(attrib)
+            name = self.projected_names[idx]
+
+            if attrib in self.joined_attribs:
+                self.logger.debug("checking for ", attrib)
+                table = self.find_tabname_for_given_attrib(attrib)
+                prev = self.get_dmin_val(attrib, table)
+                mut_val = self.get_different_val_for_dmin(attrib, table, prev)
+                self.update_with_val(attrib, table, mut_val)
+                res = self.app.doJob(query)
+                self.logger.debug(res)
+                self.update_with_val(attrib, table, prev)
+
+                if self.app.isQ_result_has_no_data(res):
+                    continue  # cannot do anything as no result is visible
+
+                if not self.app.is_attrib_equal_val(res, name, mut_val):
+                    self.identify_projection_rectification(attrib, replace_dict)
+        self.projected_attributes, self.group_by_attrib, _, self.orderby_string = self.q_gen.rectify_projection(replace_dict)
+
+    def identify_projection_rectification(self, attrib, replace_dict):
+        other = attrib
+        for edge in self.global_join_graph:
+            if attrib in edge:
+                idx = edge.index(attrib)
+                other = edge[1 - idx]
+                break
+        replace_dict[attrib] = other
+        self.logger.debug(other)
 
     def __create_final_edge_seq(self, list_of_tables, new_join_graph):
         final_edge_seq = []
@@ -48,7 +87,6 @@ class OuterJoin(GenerationPipeLineBase):
             edge_seq = []
             temp_njg = copy.deepcopy(new_join_graph)
             queue.append(tab)
-            # table_t=tab
             while len(queue) != 0:
                 remove_edge = []
                 table_t = queue.pop(0)
@@ -96,7 +134,7 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug(loc)
 
             res_hq_dict = {}
-            if len(res_hq) == 1:
+            if self.app.isQ_result_has_no_data(res_hq):
                 for k in loc.keys():
                     if k not in res_hq_dict.keys():
                         res_hq_dict[k] = [None]
@@ -245,16 +283,15 @@ class OuterJoin(GenerationPipeLineBase):
         fp_on, fp_where = self.__determine_on_and_where_filters(query)
         set_possible_queries = []
         for seq in final_edge_seq:
-            self.q_gen.create_new_query()
-            flag_first = True
-            from_op, where_op = '', ''
+            self.q_gen.backup_query_before_new_generation()
+            self.q_gen.clear_from_where_ops()
             for edge in seq:
                 table1, table2 = edge[0][1], edge[1][1]
                 imp_t1, imp_t2 = self.__determine_join_edge_type(edge, table1, table2)
-                flag_first, from_op = self.__generate_from_on_clause(edge, flag_first, fp_on,
-                                                                     imp_t1, imp_t2, table1, table2, from_op)
-            where_op = self.__generate_where_clause(fp_where, where_op)
-            q_candidate = self.__generate_candidate_query(from_op, where_op)
+                self.q_gen.generate_from_on_clause(edge, fp_on, imp_t1, imp_t2, table1, table2)
+            self.q_gen.generate_where_clause(fp_where)
+            self.q_gen.generate_groupby_select()
+            q_candidate = self.q_gen.write_query()
             self.logger.debug("+++++++++++++++++++++")
             if q_candidate.count('OUTER'):
                 set_possible_queries.append(q_candidate)
@@ -264,19 +301,11 @@ class OuterJoin(GenerationPipeLineBase):
 
         return set_possible_queries, fp_on
 
-    def __generate_candidate_query(self, from_op, where_op):
-        # assemble the rest of the query
-        self.q_gen.from_op = from_op
-        self.q_gen.where_op = where_op
-        self.logger.debug(f"from and where op of q_gen: {self.q_gen.from_op}, "
-                          f"{self.q_gen.where_op}")
-        q_candidate = self.q_gen.write_query()
-        return q_candidate
-
     def __determine_on_and_where_filters(self, query):
         filter_pred_on, filter_pred_where = [], []
-        self.logger.debug("all_arithmetic_filters: ", self.q_gen.all_arithmetic_filters)
-        for fp in self.q_gen.all_arithmetic_filters:
+        all_arithmetic_filters = self.q_gen.all_arithmetic_filters
+        self.logger.debug("all_arithmetic_filters: ", all_arithmetic_filters)
+        for fp in all_arithmetic_filters:
             self.logger.debug(f"fp from global filter predicates: {fp}")
             tab, attrib = fp[0], fp[1]
             _, prev = self.update_attrib_to_see_impact(attrib, tab)
@@ -290,26 +319,6 @@ class OuterJoin(GenerationPipeLineBase):
         self.logger.debug(filter_pred_on, filter_pred_where)
         return filter_pred_on, filter_pred_where
 
-    def __generate_where_clause(self, fp_where, where_op):
-        for elt in fp_where:
-            predicate = self.q_gen.formulate_predicate_from_filter(elt)
-            where_op = predicate if where_op == '' else where_op + " and " + predicate
-        self.logger.debug(f"Locally generated Where_op: {where_op}")
-        return where_op
-
-    def __generate_from_on_clause(self, edge, flag_first, fp_on, imp_t1, imp_t2, table1, table2, from_op):
-        type_of_join = self.join_map.get((imp_t1, imp_t2))
-        join_condition = f"\n\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
-        relevant_tables = [table2] if not flag_first else [table1, table2]
-        join_part = f"\n{type_of_join} {table2} {join_condition}"
-        from_op += f" {table1} {join_part}" if flag_first else "" + join_part
-        flag_first = False
-        for fp in fp_on:
-            if fp[0] in relevant_tables:
-                predicate = self.q_gen.formulate_predicate_from_filter(fp)
-                from_op += "\n\t and " + predicate
-        return flag_first, from_op
-
     def __determine_join_edge_type(self, edge, table1, table2):
         # steps to determine type of join for edge
         if tuple(edge) in self.importance_dict.keys():
@@ -322,4 +331,3 @@ class OuterJoin(GenerationPipeLineBase):
             self.logger.debug("error sneha!!!")
         self.logger.debug(imp_t1, imp_t2)
         return imp_t1, imp_t2
-

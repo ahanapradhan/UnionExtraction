@@ -33,7 +33,7 @@ class Minimizer(AppExtractorBase, ABC):
     def sanity_check(self, query):
         # SANITY CHECK
         new_result = self.app.doJob(query)
-        if self.app.isQ_result_empty(new_result):
+        if self.app.isQ_result_no_full_nullfree_row(new_result):
             self.logger.error("Error: Query out of extractable domain\n")
             return False
         return True
@@ -121,7 +121,7 @@ class Minimizer(AppExtractorBase, ABC):
             self.logger)
         new_result = self.app.doJob(query)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(view)], self.logger)
-        if not self.app.isQ_result_empty(new_result):
+        if not self.app.isQ_result_no_full_nullfree_row(new_result):
             return True  # this half works
         return False  # this half does not work
 

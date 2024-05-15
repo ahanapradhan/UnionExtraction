@@ -111,7 +111,7 @@ class MyTestCase(BaseTestCase):
         self.assertEqual(frozenset({'o_orderkey', 'l_quantity+l_extendedprice-1.0*l_extendedprice*l_discount'
                                        , 'o_orderdate', 'o_shippriority'}), frozenset(set(pj.projected_attribs)))
 
-        gb = GroupBy(self.conn, delivery, projected_attribs)
+        gb = GroupBy(self.conn, delivery, pgao_ctx)
         gb.mock = True
         check = gb.doJob(query)
         self.assertTrue(check)
@@ -166,8 +166,7 @@ class MyTestCase(BaseTestCase):
                                 or 'l_extendedprice*l_discount*l_quantity' in p)
         self.assertEqual(3, empty_p)
 
-        agg = Aggregation(self.conn, join_graph, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
-                          pj.dependencies, pj.solution, delivery)
+        agg = Aggregation(self.conn, delivery)
         agg.mock = True
 
         check = agg.doJob(query)

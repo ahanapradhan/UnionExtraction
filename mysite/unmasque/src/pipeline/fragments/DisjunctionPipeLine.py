@@ -56,7 +56,6 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             self.logger.info("Sampling is disabled!")
         else:
             self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
-            # self.db_restorer.update_last_restored_size(cs2.sizes)
 
         """
             View based Database Minimization
@@ -153,7 +152,6 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
 
     def _extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
         self.or_predicates = []
-        # self.original_size = self.all_sizes
         curr_eq_predicates = copy.deepcopy(init_predicates)
         all_eq_predicates = [curr_eq_predicates]
         ids = list(range(len(curr_eq_predicates)))
@@ -165,13 +163,11 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
                 return False, time_profile
             '''
             gaining sanity back from nullified attributes
-            '''
-            # self.all_sizes = self.original_size
             check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
             if not check:
                 self.logger.error("Error while sanitizing after disjunction. Aborting!")
                 return False, time_profile
-
+            '''
         self.or_predicates = list(zip(*all_eq_predicates))
         return True, time_profile
 

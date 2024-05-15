@@ -13,6 +13,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(config.port, "5432")  # add assertion here
         self.assertEqual(config.schema, "public")  # add assertion here
         self.assertEqual(config.log_level, "INFO")
+        self.assertEqual(config.limit_limit, 1000)
 
         config.parse_config()
         self.assertEqual(config.dbname, "tpch")  # add assertion here
@@ -22,6 +23,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(config.port, "5432")  # add assertion here
         self.assertEqual(config.schema, "public")  # add assertion here
         self.assertEqual(config.log_level, "DEBUG")
+        self.assertEqual(config.limit_limit, 1000)
 
 
 if __name__ == '__main__':

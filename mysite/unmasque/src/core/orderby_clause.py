@@ -2,10 +2,11 @@ import copy
 
 import frozenlist
 
-from ...src.util.utils import get_unused_dummy_val, get_dummy_val_for, \
-    get_val_plus_delta, get_format, get_char
+from .dataclass.generation_pipeline_package import PackageForGenPipeline
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.util.constants import COUNT, NO_ORDER, SUM
+from ...src.util.utils import get_unused_dummy_val, get_dummy_val_for, \
+    get_val_plus_delta, get_format, get_char
 
 
 class CandidateAttribute:
@@ -60,15 +61,16 @@ def check_sort_order(logger, lst):
 
 class OrderBy(GenerationPipeLineBase):
 
-    def __init__(self, connectionHelper, projected_attribs, global_projection_names, global_dependencies,
-                 global_aggregated_attributes, delivery):
-        super().__init__(connectionHelper, "Order By", delivery)
+    def __init__(self, connectionHelper,
+                 genPipelineCtx: PackageForGenPipeline,
+                 pgao_Ctx):
+        super().__init__(connectionHelper, "Order By", genPipelineCtx)
         self.values_used = []
-        self.global_projection_names = global_projection_names
-        self.projected_attribs = projected_attribs
-        self.global_aggregated_attributes = global_aggregated_attributes
+        self.global_projection_names = pgao_Ctx.projection_names
+        self.projected_attribs = pgao_Ctx.projected_attribs
+        self.global_aggregated_attributes = pgao_Ctx.aggregated_attributes
         self.orderby_list = []
-        self.global_dependencies = global_dependencies
+        self.global_dependencies = pgao_Ctx.projection_dependencies
         self.orderBy_string = ''
         self.has_orderBy = True
         self.joined_attrib_valDict = {}
