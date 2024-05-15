@@ -9,6 +9,14 @@ from ..src.util.PostgresConnectionHelper import PostgresConnectionHelper
 
 class MyTestCase(unittest.TestCase):
 
+    def test_swap(self):
+        insert_values2 = [1,2]
+        insert_values1 = [3,4,5]
+        insert_values2[-1], insert_values1[-1] = insert_values1[-1], insert_values2[-1]
+        self.assertEqual(insert_values1[-1], 2)
+        self.assertEqual(insert_values2[-1], 5)
+
+
     def test_nullfree_exe(self):
         res1 = [('col1', 'col2', 'col3'), (None, 1, None)]
         res2 = [('col1', 'col2', 'col3'), (1, 1, 2)]

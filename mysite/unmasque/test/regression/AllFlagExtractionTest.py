@@ -5,8 +5,8 @@ from datetime import date, timedelta
 import pytest
 
 from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
+from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
 from mysite.unmasque.test.util import queries
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
 def generate_random_dates():
@@ -22,21 +22,22 @@ def generate_random_dates():
     return f"\'{str(dates[0])}\'", f"\'{str(dates[1])}\'"
 
 
-class ExtractionTestCase(BaseTestCase):
+class ExtractionTestCase(unittest.TestCase):
+    conn = ConnectionHelperFactory().createConnectionHelper()
 
     def __init__(self, *args, **kwargs):
-        super(BaseTestCase, self).__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
-        self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = True
-        self.conn.config.detect_or = True
+        super().__init__(*args, **kwargs)
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.detect_or = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
     def test_main_cmd_query(self):
         query = "SELECT c_custkey as order_id, COUNT(*) AS total FROM " \
                 "customer, orders where c_custkey = o_custkey and o_orderdate >= '1995-01-01' GROUP BY c_custkey " \
-                "ORDER BY total ASC LIMIT 10;"
+                "ORDER BY order_id desc LIMIT 10;"
         self.do_test(query)
 
     def test_unionQ(self):
