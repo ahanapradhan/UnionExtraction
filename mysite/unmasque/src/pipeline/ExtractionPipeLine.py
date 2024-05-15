@@ -96,7 +96,6 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.time_profile.update(time_profile)
             return None
 
-        self.global_min_instance_dict = self.genPipelineCtx.global_min_instance_dict
         self.time_profile.update(time_profile)
 
         '''

@@ -11,7 +11,7 @@ class DisjunctionTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = False
         self.conn.config.detect_or = True
-        self.conn.config.detect_oj = False
+        self.conn.config.detect_oj = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 

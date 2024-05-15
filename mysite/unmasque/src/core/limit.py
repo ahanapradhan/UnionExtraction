@@ -32,7 +32,6 @@ class Limit(GenerationPipeLineBase):
         return result
 
     def doLimitExtractJob(self, query):
-        cardinality = len(self.app.doJob(query))
         grouping_attribute_values = {}
         pre_assignment = self.get_pre_assignment()
         gb_tab_attribs = [(self.find_tabname_for_given_attrib(attrib), attrib)
