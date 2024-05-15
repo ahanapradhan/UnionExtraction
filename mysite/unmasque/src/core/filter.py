@@ -1,6 +1,5 @@
 import copy
 import math
-import decimal
 from typing import List
 
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
@@ -23,15 +22,12 @@ def parse_for_int(val):
 
 def round_ceil(num, places):
     adder = 5 / (10 ** (places + 1))
-    ans = decimal.Decimal(num - adder)
-    ans = ((ans * (10 ** places)).to_integral_exact(rounding=decimal.ROUND_CEILING))/(10 ** places)
-    return ans
+    return round(num + adder, places)
 
 
 def round_floor(num, places):
     adder = 5 / (10 ** (places + 1))
-    #return round(num + adder, places)
-    return num
+    return round(num - adder, places)
 
 
 class Filter(UN2WhereClause):
@@ -225,18 +221,12 @@ class Filter(UN2WhereClause):
             val = self.get_filter_value(query, 'float', math.ceil(float(d_plus_value[attrib])) - 5, max_val_domain,
                                         '<=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val), float(val) + 0.99, '<=', attrib_list)
-            val1 = val1 * 100
-            val1 = math.trunc(val1)
-            val1 = val1 / 100
             filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, 2))))
 
         elif not min_present and max_present:
             val = self.get_filter_value(query, 'float', min_val_domain, math.floor(float(d_plus_value[attrib]) + 5),
                                         '>=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val) - 1, val, '>=', attrib_list)
-            val1 = val1*100
-            val1 = math.trunc(val1)
-            val1 = val1 / 100
             filterAttribs.append((tabname, attrib, '>=', float(round_ceil(val1, 2)), float(max_val_domain)))
 
     def get_filter_value(self, query, datatype, min_val, max_val, operator, attrib_list):
@@ -337,12 +327,12 @@ class Filter(UN2WhereClause):
         elif min_present and not max_present:
             val = self.get_filter_value(query, datatype, get_cast_value(datatype, d_plus_value[attrib]),
                                         get_val_plus_delta(datatype,
-                                                           get_cast_value(datatype, max_val_domain), 1), '<=',
+                                                           get_cast_value(datatype, max_val_domain), -1), '<=',
                                         attrib_list)
             filterAttribs.append((tabname, attrib, '<=', min_val_domain, val))
         elif not min_present and max_present:
             val = self.get_filter_value(query, datatype,
-                                        get_val_plus_delta(datatype, get_cast_value(datatype, min_val_domain), -1),
+                                        get_val_plus_delta(datatype, get_cast_value(datatype, min_val_domain), 1),
                                         get_cast_value(datatype, d_plus_value[attrib]), '>=', attrib_list)
             filterAttribs.append((tabname, attrib, '>=', val, max_val_domain))
 
