@@ -26,7 +26,7 @@ class ExtractionTestCase(BaseTestCase):
 
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
-        self.conn.config.detect_union = False
+        self.conn.config.detect_union = True
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = True
         self.conn.config.detect_or = True
@@ -611,6 +611,40 @@ class ExtractionTestCase(BaseTestCase):
         query = "select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
                 "s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) and (s_acctbal > 2000 or " \
                 "s_acctbal < 700) group by n_name ORDER BY n_name LIMIT 10;"
+        self.do_test(query)
+
+    def test_two_neps_one_table(self):
+        self.conn.config.detect_nep = True
+        query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
+                "From lineitem " \
+                "Where l_shipdate  < '1994-01-01' " \
+                "and l_quantity < 24 " \
+                "and l_linenumber <> 4 and l_returnflag <> 'R' " \
+                "Group By l_shipmode Limit 100; "
+        self.do_test(query)
+
+    def test_mukul_thesis_Q18(self):
+        self.conn.config.detect_nep = True
+        query = "Select c_name, o_orderdate, o_totalprice, sum(l_quantity) From customer, orders, lineitem " \
+                "Where c_phone Like '27-_%' and c_custkey = o_custkey and o_orderkey = l_orderkey and " \
+                "c_name <> 'Customer#000060217'" \
+                "Group By c_name, o_orderdate, o_totalprice Order by o_orderdate, o_totalprice desc Limit 100;"
+        self.do_test(query)
+
+    def test_mukul_thesis_Q11(self):
+        self.conn.config.detect_nep = True
+        query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, supplier, nation " \
+                "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'ARGENTINA' " \
+                "and ps_COMMENT not like '%regular%dependencies%' and s_acctbal <> 2177.90 " \
+                "Group By ps_COMMENT " \
+                "Order by value desc Limit 100;"
+        self.do_test(query)
+
+    def test_for_numeric_filter_NEP(self):
+        self.conn.config.detect_nep = True
+        query = "select c_mktsegment as segment from customer,nation,orders where " \
+                "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
+                "and n_name not LIKE 'B%' limit 10;"
         self.do_test(query)
 
     def do_test(self, query):
