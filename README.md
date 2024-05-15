@@ -1,4 +1,4 @@
-# UNMASQUE
+# UNMASQUE THEORY
 
 UNMASQUE is a tool for hidden query extraction (HQE).
 
@@ -18,7 +18,7 @@ Negation Predicates, Result Comparator, View based DB minimizer: https://dsl.cds
 
 Outer Join: https://dsl.cds.iisc.ac.in/publications/thesis/sneha.pdf  
 
-Based on the above theoretical ideas, the code has been freshly designed.  
+Based on the above ideas, the code has been freshly designed.  
 
 
 # Setting Up the Database
@@ -40,7 +40,7 @@ Follow the link https://www.postgresql.org/download/ to download and install the
 2. Follow the `tpch-pgsql` project Readme to prepare and load the data.  
 3. (In case the above command gives error as `malloc.h` not found, showing the filenames, go inside dbgen folder, open the file and replace `malloc.h` with `stdlib.h`)  
 
-# Setting up IDE  
+# Setting up IDE
 A developement environment for python project is required next. Here is the link to PyCharm Community Edition: https://www.jetbrains.com/pycharm/download/  (Any other IDE is also fine)
 
 ### Requirements
@@ -72,13 +72,24 @@ The `test` directory houses unit test cases for each extractor module. These tes
 
 Please explore the individual directories for more details on the code and its purpose.
 
-## Usage
+# Usage
 
-### Configuration
-inside `mysite` directory, there are three files as follows:  
-config.ini --> This contains database login credentials. Change the fields accordingly.  
-create_indexes.sql --> currently empty.  (do not delete this file.)  
+## Configuration
+inside `mysite` directory, there are two files as follows:  
 pkfkrelations.csv --> contains key details for the TPCH schema. If any other schema is to be used, change this file accordingly.
+config.ini --> This contains database login credentials, and flags for optional features. Change the fields accordingly.  
+
+### Config File Detals:
+`database` section: set your database credentials.  
+
+`support` section: give support file name. The support file should be present in the same directory of this config file.
+
+`logging` section: set logging level. Developer mode is `DEBUG`. Other valid levels are `INFO`, `ERROR`.
+
+`feature` section: set flags for advanced features, as indicated by the flag names. Included features are, `UNION`, `OUTER JOIN`, `<>` or `!=` operator in arithmetic filter predicates and `IN` operator. 
+
+`options` section: extractor options. E.g. Max value for `LIMIT` clause is 1000. If user needs to set higher value, use `limit=value`.
+
 
 ### Running Unmasque
 Open `mysite/unmasque/src/main_cmd.py` file.  

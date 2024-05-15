@@ -6,8 +6,10 @@ class OuterJoinExtractionTestCase(BaseTestCase):
 
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
+        self.conn.config.detect_union = False
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = True
+        self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
@@ -20,22 +22,18 @@ class OuterJoinExtractionTestCase(BaseTestCase):
                 "sum(c_acctbal) as sum_disc_price, sum(o_totalprice) as sum_charge, avg(c_acctbal) as avg_qty, avg(o_totalprice) " \
                 "as avg_price, avg(c_acctbal) as avg_disc, count(*) as count_order from customer, orders where c_custkey = o_custkey" \
                 " and o_totalprice > 7000 group by c_mktsegment, o_orderstatus ORDER BY c_mktsegment, o_orderstatus DESC);"
-        self.conn.config.detect_union = True
-        factory = PipeLineFactory()
-        self.pipeline = factory.create_pipeline(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
     def test_cyclic_join(self):
-        query = ("select c_name, n_name, s_name from nation LEFT OUTER JOIN customer on c_nationkey = n_nationkey"
-                 " RIGHT OUTER JOIN supplier on n_nationkey = s_nationkey;")
+        query = "select c_name, n_name, s_name from nation LEFT OUTER JOIN customer on c_nationkey = n_nationkey"\
+                 " RIGHT OUTER JOIN supplier on n_nationkey = s_nationkey;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
     def test_nonUnion_outerJoin(self):
-        self.conn.config.detect_union = False
         query = f"select n_name, r_comment FROM nation FULL OUTER JOIN region on n_regionkey = " \
                 f"r_regionkey and r_name = 'AFRICA';"
         eq = self.pipeline.doJob(query)
@@ -43,7 +41,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_sneha_outer_join_basic(self):
-        self.conn.config.detect_or = False
         query = "Select ps_suppkey, p_name, p_type " \
                 "from part RIGHT outer join partsupp on p_partkey=ps_partkey and p_size>4 " \
                 "and ps_availqty>3350;"
@@ -53,7 +50,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_outer_join_on_where_filters(self):
-        self.conn.config.detect_or = False
         query = "SELECT l_shipmode, " \
                 "o_shippriority ," \
                 "count(*) as low_line_count " \
@@ -69,7 +65,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
 
     # @pytest.mark.skip
     def test_outer_join_w_disjunction(self):
-        self.conn.config.detect_or = True
         query = "SELECT l_linenumber, o_shippriority , " \
                 "count(*) as low_line_count  " \
                 "FROM lineitem INNER JOIN orders ON l_orderkey = o_orderkey AND o_totalprice > 50000 " \
@@ -81,7 +76,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_sumang_thesis_Q6(self):
-        self.conn.config.detect_or = True
         query = "select n_name, s_acctbal, ps_availqty  from supplier RIGHT OUTER JOIN partsupp " \
                 "ON ps_suppkey=s_suppkey AND ps_supplycost < 50 RIGHT OUTER JOIN " \
                 "nation on s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) ORDER " \
@@ -93,7 +87,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
 
     def test_sumang_thesis_Q6_1(self):
-        self.conn.config.detect_or = True
         query = "select n_name,SUM(s_acctbal) from supplier, nation, partsupp where ps_suppkey=s_suppkey AND" \
                 " ps_supplycost < 50 and s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) " \
                 "group by n_name ORDER " \
@@ -105,7 +98,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
 
     def test_multiple_outer_join(self):
-        self.conn.config.detect_or = False
         query = "SELECT p_name, s_phone, ps_supplycost " \
                 "FROM part INNER JOIN partsupp ON p_partkey = ps_partkey AND p_size > 7 " \
                 "LEFT OUTER JOIN supplier ON ps_suppkey = s_suppkey AND s_acctbal < 2000;"
@@ -115,7 +107,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_multiple_outer_join1(self):
-        self.conn.config.detect_or = False
         query = "SELECT p_name, s_phone, ps_supplycost " \
                 "FROM part LEFT OUTER JOIN partsupp ON p_partkey = ps_partkey AND p_size > 7 " \
                 "RIGHT OUTER JOIN supplier ON ps_suppkey = s_suppkey AND s_acctbal < 2000;"
@@ -125,7 +116,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_multiple_outer_join2(self):
-        self.conn.config.detect_or = False
         query = "SELECT p_name, s_phone, ps_supplycost, n_name " \
                 "FROM part RIGHT OUTER JOIN partsupp ON p_partkey = ps_partkey AND p_size > 7 " \
                 "RIGHT OUTER JOIN supplier ON ps_suppkey = s_suppkey AND s_acctbal < 2000 " \
@@ -136,7 +126,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_multiple_outer_join3(self):
-        self.conn.config.detect_or = False
         query = "SELECT p_name, s_phone, ps_supplycost, n_name " \
                 "FROM part LEFT OUTER JOIN partsupp ON p_partkey = ps_partkey AND p_size > 7 " \
                 "LEFT OUTER JOIN supplier ON ps_suppkey = s_suppkey AND s_acctbal < 2000 " \
@@ -147,7 +136,6 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_multiple_outer_join4(self):
-        self.conn.config.detect_or = False
         query = "SELECT p_name, s_phone, ps_supplycost, n_name " \
                 "FROM part RIGHT OUTER JOIN partsupp ON p_partkey = ps_partkey AND p_size > 7 " \
                 "LEFT OUTER JOIN supplier ON ps_suppkey = s_suppkey AND s_acctbal < 2000 " \
@@ -158,11 +146,10 @@ class OuterJoinExtractionTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_joinkey_on_projection(self):
-        self.conn.config.detect_or = False
-        self.conn.config.detect_nep = False
-        query = "SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
-                " from orders RIGHT OUTER JOIN customer" \
-                " on c_custkey = o_custkey and o_orderstatus = 'F' group by o_custkey, o_clerk, c_name order by key;"
+        query = f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
+                f" from orders FULL OUTER JOIN customer" \
+                f" on c_custkey = o_custkey and o_orderstatus = 'F' " \
+                "group by o_custkey, o_clerk, c_name order by key limit 35;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)

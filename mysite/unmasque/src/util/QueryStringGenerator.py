@@ -1,8 +1,10 @@
 import copy
 
+from frozenlist._frozenlist import FrozenList
+
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
-from ..util.constants import COUNT, SUM, max_str_len
+from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX
 from ..util.utils import get_format, get_datatype_of_val
 
 
@@ -59,21 +61,25 @@ class QueryDetails:
         else:
             self.where_op = predicate
 
-    def assembleQuery(self, gaol=True):
+    def assembleQuery(self):
         output = ""
         output = append_clause(output, "Select", self.select_op)
         output = append_clause(output, "From", self.from_op)
         output = append_clause(output, "Where", self.where_op)
         output = append_clause(output, "Group By", self.group_by_op)
-        if gaol:
-            output = append_clause(output, "Order By", self.order_by_op)
-            output = append_clause(output, "Limit", self.limit_op)
+        output = append_clause(output, "Order By", self.order_by_op)
+        output = append_clause(output, "Limit", self.limit_op)
         output = f"{output};"
         return output
 
 
 def get_formatted_value(datatype, value):
-    if isinstance(value, list):
+    if isinstance(value, FrozenList):
+        v_list = list(value)
+        f_value = f"{', '.join(v_list)}"
+        if len(v_list) > 1:
+            f_value = f"({v_list})"
+    elif isinstance(value, list):
         f_value = f"{', '.join(value)}"
         if len(value) > 1:
             f_value = f"({f_value})"
@@ -88,10 +94,17 @@ def get_join_nodes_from_edge(edge):
     right_node = nodes[1].split(".")
     left = (left_node[0].strip(), left_node[1].strip())
     right = (right_node[0].strip(), right_node[1].strip())
-    return (left, right)
+    return left, right
 
 
 class QueryStringGenerator:
+    ROJ = ' RIGHT OUTER JOIN '
+    LOJ = ' LEFT OUTER JOIN '
+    join_map = {('l', 'l'): ' INNER JOIN ', ('l', 'h'): ROJ,
+                ('h', 'l'): LOJ, ('h', 'h'): ' FULL OUTER JOIN '}
+
+    AGGREGATES = [SUM, AVG, MIN, MAX, COUNT]
+
     def __init__(self, connectionHelper):
         self.connectionHelper = connectionHelper
         exeFactory = ExecutableFactory()
@@ -163,22 +176,6 @@ class QueryStringGenerator:
         self._workingCopy.eq_join_predicates = aoa.algebraic_eq_predicates
 
     @property
-    def orderby(self):
-        return NotImplementedError
-
-    @orderby.setter
-    def orderby(self, ob_obj):
-        self._workingCopy.order_by_op = ob_obj.orderBy_string
-
-    @property
-    def groupby(self):
-        return NotImplementedError
-
-    @groupby.setter
-    def groupby(self, gb_string):
-        self._workingCopy.group_by_op = gb_string
-
-    @property
     def limit(self):
         return NotImplementedError
 
@@ -187,38 +184,32 @@ class QueryStringGenerator:
         self._workingCopy.limit_op = str(lm_obj.limit) if lm_obj.limit is not None else ''
 
     @property
-    def projection(self):
+    def pgaoCtx(self):
         return NotImplementedError
 
-    @projection.setter
-    def projection(self, pj_obj):
-        self._workingCopy.global_key_attributes = pj_obj.joined_attribs
-        self._workingCopy.projection_names = pj_obj.projection_names
-
-    @property
-    def aggregate(self):
-        return NotImplementedError
-
-    @aggregate.setter
-    def aggregate(self, agg_obj):
-        self._workingCopy.global_aggregated_attributes = agg_obj.global_aggregated_attributes
-        self._workingCopy.global_groupby_attributes = agg_obj.global_groupby_attributes
-        self._workingCopy.global_projected_attributes = agg_obj.global_projected_attributes
+    @pgaoCtx.setter
+    def pgaoCtx(self, value):
+        self._workingCopy.global_key_attributes = value.joined_attribs
+        self._workingCopy.projection_names = value.projection_names
+        self._workingCopy.global_aggregated_attributes = value.aggregated_attributes
+        self._workingCopy.global_groupby_attributes = value.group_by_attrib
+        self._workingCopy.global_projected_attributes = value.projected_attribs
+        self._workingCopy.order_by_op = value.orderby_string
 
     @property
     def where_clause_remnants(self):
         return NotImplementedError
 
     @where_clause_remnants.setter
-    def where_clause_remnants(self, delivery):
-        self._workingCopy.aoa_predicates = delivery.global_aoa_le_predicates
-        self._workingCopy.aoa_less_thans = delivery.global_aoa_l_predicates
-        self._workingCopy.filter_predicates = delivery.global_filter_predicates
+    def where_clause_remnants(self, remnants):
+        self._workingCopy.aoa_predicates = remnants.global_aoa_le_predicates
+        self._workingCopy.aoa_less_thans = remnants.global_aoa_l_predicates
+        self._workingCopy.filter_predicates = remnants.global_filter_predicates
 
     @property
     def all_arithmetic_filters(self):
-        preds = self._workingCopy.filter_predicates + self._workingCopy.filter_in_predicates
-        return preds
+        uniq_preds = list(set(self._workingCopy.filter_predicates + self._workingCopy.filter_in_predicates))
+        return uniq_preds
 
     @all_arithmetic_filters.setter
     def all_arithmetic_filters(self, value):
@@ -241,6 +232,26 @@ class QueryStringGenerator:
     @or_predicates.setter
     def or_predicates(self, value):
         self._workingCopy.or_predicates = value
+
+    def rectify_projection(self, replace_dict):
+        for key in replace_dict.keys():
+            self._workingCopy.global_groupby_attributes[self._workingCopy.global_groupby_attributes.index(key)] \
+                = replace_dict[key]
+            self._workingCopy.order_by_op.replace(key, replace_dict[key])
+            self._workingCopy.global_projected_attributes[self._workingCopy.global_projected_attributes.index(key)] \
+                = replace_dict[key]
+
+        agg_replace_dict = {}
+        for i, agg_tuple in enumerate(self._workingCopy.global_aggregated_attributes):
+            attrib = agg_tuple[0]
+            if attrib in replace_dict.keys():
+                replace_attrib = replace_dict[attrib]
+                agg_replace_dict[i] = (replace_attrib, agg_tuple[1])
+        for key in agg_replace_dict.keys():
+            self._workingCopy.global_aggregated_attributes[key] = agg_replace_dict[key]
+
+        return self._workingCopy.global_projected_attributes, self._workingCopy.global_groupby_attributes, \
+            self._workingCopy.global_aggregated_attributes, self._workingCopy.order_by_op
 
     def updateExtractedQueryWithNEPVal(self, query, val):
         for elt in val:
@@ -287,38 +298,27 @@ class QueryStringGenerator:
         self.logger.debug(where_clause)
         return where_clause
 
-    def generate_query_string(self, gaol=True, select=True):
+    def formulate_query_string(self):
         self._workingCopy.from_op = ", ".join(self._workingCopy.core_relations)
         self._workingCopy.where_op = self.__generate_where_clause()
-        if gaol:
-            self.__generate_group_by_clause()
-            self.__generate_select_clause(select)
-        eq = self.write_query(gaol)
+        self.generate_groupby_select()
+        eq = self.write_query()
         return eq
 
-    def rewrite_query(self, core_relations, ed_join_edges, filter_predicates, ol=True, select=True):
-        self.from_clause = core_relations
-        self.join_edges = ed_join_edges
-        self._workingCopy.filter_predicates = filter_predicates
-        eq = self.generate_query_string(ol, select)
-        return eq
+    def generate_groupby_select(self):
+        self.__generate_group_by_clause()
+        self.__generate_select_clause()
 
-    def create_new_query(self, ref_query=None):  # make new query from the last memory
+    def backup_query_before_new_generation(self, ref_query=None):  # make new query from the last memory
         lastQueryDetails = QueryDetails()
         lastQueryDetails.makeCopy(self._workingCopy)
-        self.generate_query_string()  # take backup of current working copy
+        last_query = self.formulate_query_string()  # take backup of current working copy
         if ref_query is not None:
             ref_details = self._queries[hash(ref_query)][1]
             self._workingCopy.makeCopy(ref_details)
-        lastgen = QueryStringGenerator(self.connectionHelper)
-        lastgen.get_datatype = self.get_datatype
-        lastgen._workingCopy.makeCopy(lastQueryDetails)
-        backup = lastgen.generate_query_string()
-        for key in lastgen._queries.keys():
-            self._queries[key] = lastgen._queries[key]
-        return backup
+        return last_query
 
-    def write_query(self, gaol=True) -> str:
+    def write_query(self) -> str:
         self.logger.debug(f"Select: {self._workingCopy.select_op}")
         self.logger.debug(f"From: {self._workingCopy.from_op}")
         self.logger.debug(f"Where: {self._workingCopy.where_op}")
@@ -326,7 +326,7 @@ class QueryStringGenerator:
         self.logger.debug(f"Order by: {self._workingCopy.order_by_op}")
         self.logger.debug(f"Limit: {self._workingCopy.limit_op}")
 
-        query_string = self._workingCopy.assembleQuery(gaol)
+        query_string = self._workingCopy.assembleQuery()
         key = hash(query_string)
         self.logger.debug("hash key: ", key)
         if key not in self._queries:
@@ -398,7 +398,10 @@ class QueryStringGenerator:
 
     def __adjust_for_in_predicates(self, attrib, tab, values):
         in_pred = [tab, attrib, 'IN', values, values] if len(values) > 1 else [tab, attrib, '=', values, values]
-        self._workingCopy.filter_in_predicates.append(tuple(in_pred))
+        frozen_values = FrozenList(values)
+        frozen_values.freeze()
+        frozen_in_pred = (in_pred[0], in_pred[1], in_pred[2], frozen_values, frozen_values)
+        self._workingCopy.filter_in_predicates.append(frozen_in_pred)
         remove_eq_filter_predicate = []
         for eq_pred in self._workingCopy.filter_predicates:
             if eq_pred[0] == tab and eq_pred[1] == attrib and eq_pred[2] in ['equal', '=']:
@@ -412,8 +415,8 @@ class QueryStringGenerator:
             attrib = self._workingCopy.global_projected_attributes[i]
             if (attrib in self._workingCopy.global_key_attributes
                     and attrib in self._workingCopy.global_groupby_attributes):
-                if not (SUM in self._workingCopy.global_aggregated_attributes[i][1] or COUNT in
-                        self._workingCopy.global_aggregated_attributes[i][1]):
+                agg_op = self._workingCopy.global_aggregated_attributes[i][1]
+                if agg_op not in self.AGGREGATES:
                     self._workingCopy.global_aggregated_attributes[i] = (
                         self._workingCopy.global_aggregated_attributes[i][0], '')
         temp_list = copy.deepcopy(self._workingCopy.global_groupby_attributes)
@@ -426,7 +429,7 @@ class QueryStringGenerator:
                 continue
             remove_flag = True
             for elt in self._workingCopy.global_aggregated_attributes:
-                if elt[0] == attrib and (not (SUM in elt[1] or COUNT in elt[1])):
+                if elt[0] == attrib and elt[1] not in self.AGGREGATES:
                     remove_flag = False
                     break
             if remove_flag:
@@ -435,9 +438,7 @@ class QueryStringGenerator:
                 except:
                     pass
 
-    def __generate_select_clause(self, enable=True):
-        if not enable:
-            return
+    def __generate_select_clause(self):
         for i in range(len(self._workingCopy.global_projected_attributes)):
             elt = self._workingCopy.global_projected_attributes[i]
             if self._workingCopy.global_aggregated_attributes[i][1] != '':
@@ -601,94 +602,29 @@ class QueryStringGenerator:
             index = index + 1
         return output
 
-    def formulate_nested_query_string(self, inner_select, inner_filter, value):
-        self._workingCopy.filter_predicates.remove(inner_filter)
-        tab = inner_filter[0]
-        other_innser_filters = []
-        for fl in self.all_arithmetic_filters:
-            if fl[0] == tab:
-                other_innser_filters.append(fl)
-        for fl in other_innser_filters:
-            self._workingCopy.filter_predicates.remove(fl)
+    def generate_where_clause(self, fp_where):
+        for elt in fp_where:
+            predicate = self.formulate_predicate_from_filter(elt)
+            self.where_op = predicate if self.where_op == '' else self.where_op + " and " + predicate
+        self.logger.debug(f"Locally generated Where_op: {self.where_op}")
 
-        inner_from_relations = [tab]
-        outer_from_relations = [table for table in self.from_clause if table not in inner_from_relations]
-        self.logger.debug(f"Inner query tables: {inner_from_relations}, outer query tables: {outer_from_relations}")
+    def generate_from_on_clause(self, edge, fp_on, imp_t1, imp_t2, table1, table2):
+        flag_first = True if self._workingCopy.from_op == '' else False
+        type_of_join = self.join_map.get((imp_t1, imp_t2))
+        join_condition = f"\n\t ON {edge[0][1]}.{edge[0][0]} = {edge[1][1]}.{edge[1][0]}"
+        relevant_tables = [table2] if not flag_first else [table1, table2]
+        join_part = f"\n{type_of_join} {table2} {join_condition}"
+        self.from_op += f" {table1} {join_part}" if flag_first else "" + join_part
+        flag_first = False
+        for fp in fp_on:
+            if fp[0] in relevant_tables:
+                predicate = self.formulate_predicate_from_filter(fp)
+                self.from_op += "\n\t and " + predicate
+        return flag_first
 
-        dependent_join_edges, independent_join_edges = [], []
-        for edge in self.join_edges:
-            s_edge = get_join_nodes_from_edge(edge)
-            self.logger.debug(f"join edge {s_edge}")
-            tabs = [v[0] for v in s_edge if len(v) == 2]
-            self.logger.debug(f"tabs: {tabs}")
-            are_all_out = [True if tab in outer_from_relations else False for tab in tabs]
-            self.logger.debug(f"are_all_out: {are_all_out}")
-            if all(out for out in are_all_out):
-                independent_join_edges.append(edge)
-                self.logger.debug("independent")
-            else:
-                dependent_join_edges.append(edge)
-                self.logger.debug("dependent")
-        self.logger.debug("dependent join edges: ", dependent_join_edges)
-        self.logger.debug("independent_join_edges join edges: ", independent_join_edges)
-
-        outer_query = self.make_nested_query_string(dependent_join_edges, independent_join_edges, inner_filter,
-                                                    inner_from_relations, inner_select, other_innser_filters,
-                                                    outer_from_relations, value)
-        return outer_query
-
-    def make_nested_query_string(self, dependent_join_edges, independent_join_edges, inner_filter, inner_from_relations,
-                                 inner_select, other_innser_filters, outer_from_relations, value):
-        ref_q = self.create_new_query()
-        self.logger.debug("ref_q:", ref_q)
-        # make inner query
-        from_alias = f"t_{str('_'.join(inner_from_relations))}"
-        agg_alias = "agg_fn"
-        self.select_op = f"{inner_select} as {agg_alias}"
-
-        independent_joins = []
-        not_dependent_joins = []
-        for edge in dependent_join_edges:
-            self.logger.debug("edge ", edge)
-            s_edge = get_join_nodes_from_edge(edge)
-            self.logger.debug("s_edge ", s_edge)
-            are_all_in = True
-            for es in s_edge:
-                if es[0] in outer_from_relations:
-                    are_all_in = False
-                    break
-            if not are_all_in:
-                new_s_edge = []
-                for es in s_edge:
-                    if es[0] in inner_from_relations:
-                        new_es = f"{from_alias}.{es[1]}"
-                        self.select_op = f"{self.select_op}, {es[1]}"
-                        self.groupby = f"{es[1]}"
-                    else:
-                        new_es = f"{es[0]}.{es[1]}"
-                    new_s_edge.append(new_es)
-                new_outer_edge = " = ".join(new_s_edge)
-                independent_joins.append(new_outer_edge)
-                not_dependent_joins.append(edge)
-        for edge in not_dependent_joins:
-            dependent_join_edges.remove(edge)
-        for edge in independent_joins:
-            independent_join_edges.append(edge)
-
-        inner_query = self.rewrite_query(inner_from_relations,
-                                         dependent_join_edges, other_innser_filters, False, False)
-        self.groupby = ''
-        inner_query = inner_query.replace(';', '')
-        nested_pred = f"{from_alias}.{agg_alias} {inner_filter[2]} {value}"
-        self.logger.debug("nested pred: ", nested_pred)
-        outer_from_relations.append(f"({inner_query}) as {from_alias}")
-        # make outer query
-        self.create_new_query(ref_q)
-        outer_query = self.rewrite_query(outer_from_relations, independent_join_edges, self.all_arithmetic_filters)
-        self.logger.debug("Outer query init: ", outer_query)
-        outer_query = self.updateWhereClause(nested_pred)
-        self.logger.debug("Outer query final: ", outer_query)
-        return outer_query
+    def clear_from_where_ops(self):
+        self._workingCopy.from_op = ''
+        self._workingCopy.where_op = ''
 
 
 def add_pred_for(aoa_l, pred):

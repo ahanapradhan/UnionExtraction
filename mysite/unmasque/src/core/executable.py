@@ -48,6 +48,9 @@ class Executable(Base):
             raise error
         return result
 
+    def is_attrib_all_null(self, Res, attrib):
+        return self.isQ_result_empty(Res)
+
     def isQ_result_no_full_nullfree_row(self, Res):
         return self.isQ_result_empty(Res)
 

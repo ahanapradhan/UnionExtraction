@@ -1,5 +1,5 @@
 import unittest
-
+from frozenlist import FrozenList
 from mysite.unmasque.src.core.orderby_clause import check_sort_order
 from mysite.unmasque.src.util.configParser import Config
 from ..src.core.nullfree_executable import is_result_nonempty_nullfree
@@ -88,6 +88,23 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(res)
         print(res)
         conn.closeConnection()
+
+    def test_set_of_lists(self):
+        f_preds = [('lineitem', 'l_orderkey', '<=', -5000, 5000), ('orders', 'o_orderstatus', 'equal', 'F', 'F')]
+        in_val = FrozenList([22, 32])
+        in_val.freeze()
+        f_in_preds = [('lineitem', 'l_partkey', 'IN', in_val, in_val), ('lineitem', 'l_orderkey', '<=', -5000, 5000)]
+        preds = set()
+        for pred in f_preds:
+            preds.add(pred)
+        for pred in f_in_preds:
+            preds.add(pred)
+        uniq_preds = list(preds)
+        self.assertEqual(3, len(uniq_preds))
+        in_pred = f_in_preds[0]
+        val_lb = in_pred[3]
+        self.assertEqual(22, val_lb[0])
+        self.assertEqual(32, val_lb[1])
 
 
 if __name__ == '__main__':

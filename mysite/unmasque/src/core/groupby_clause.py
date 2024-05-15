@@ -1,9 +1,9 @@
 import ast
 
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 NON_TEXT_TYPES = ['date', 'int', 'integer', 'numeric', 'float']
 
@@ -14,9 +14,10 @@ def has_attrib_key_condition(attrib, attrib_inner, key_list):
 
 class GroupBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 delivery: PackageForGenPipeline, projected_attribs: list):
-        super().__init__(connectionHelper, "Group By", delivery)
-        self.projected_attribs = projected_attribs
+                 genPipelineCtx: PackageForGenPipeline,
+                 pgao_ctx):
+        super().__init__(connectionHelper, "Group By", genPipelineCtx)
+        self.projected_attribs = pgao_ctx.projected_attribs
         self.has_groupby = False
         self.group_by_attrib = []
 
@@ -79,6 +80,11 @@ class GroupBy(GenerationPipeLineBase):
                     self.has_groupby = True
 
         self.remove_duplicates()
+
+        for elt in self.global_filter_predicates:
+            if elt[1] not in self.group_by_attrib and elt[1] in self.projected_attribs and (
+                    elt[2] == '=' or elt[2] == 'equal'):
+                self.group_by_attrib.append(elt[1])
         self.logger.debug(self.group_by_attrib)
         return True
 

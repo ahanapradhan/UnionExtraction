@@ -1,10 +1,12 @@
 import ast
 import copy
+import random
 from datetime import date
 from typing import Union, Tuple
 
 from .MutationPipeLineBase import MutationPipeLineBase
-from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
+from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string, \
+    get_random_number
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ....src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
@@ -13,17 +15,17 @@ NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number']
 
 class GenerationPipeLineBase(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, delivery: PackageForGenPipeline):
-        super().__init__(connectionHelper, delivery.core_relations, delivery.global_min_instance_dict, name)
-        self.global_all_attribs = delivery.global_all_attribs
-        self.global_attrib_types = delivery.global_attrib_types
-        self.global_join_graph = delivery.global_join_graph
-        self.global_filter_predicates = delivery.global_filter_predicates
-        self.filter_attrib_dict = delivery.filter_attrib_dict
-        self.attrib_types_dict = delivery.attrib_types_dict
-        self.joined_attribs = delivery.joined_attribs
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: PackageForGenPipeline):
+        super().__init__(connectionHelper, genCtx.core_relations, genCtx.global_min_instance_dict, name)
+        self.global_all_attribs = genCtx.global_all_attribs
+        self.global_attrib_types = genCtx.global_attrib_types
+        self.global_join_graph = genCtx.global_join_graph
+        self.global_filter_predicates = genCtx.global_filter_predicates
+        self.filter_attrib_dict = genCtx.filter_attrib_dict
+        self.attrib_types_dict = genCtx.attrib_types_dict
+        self.joined_attribs = genCtx.joined_attribs
 
-        self.get_datatype = delivery.get_datatype  # method
+        self.get_datatype = genCtx.get_datatype  # method
 
     def extract_params_from_args(self, args):
         return args[0]
@@ -32,7 +34,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         query = self.extract_params_from_args(args)
         self.do_init()
         check = self.doExtractJob(query)
-        self.do_init()
         return check
 
     def restore_d_min_from_dict(self) -> None:
@@ -138,13 +139,28 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return val
 
     def get_different_val_for_dmin(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
-        if prev == self.filter_attrib_dict[(tabname, attrib)][0]:
-            val = self.filter_attrib_dict[(tabname, attrib)][1]
-        elif prev == self.filter_attrib_dict[(tabname, attrib)][1]:
-            val = self.filter_attrib_dict[(tabname, attrib)][0]
+        datatype = self.get_datatype((tabname, attrib))
+        key = (tabname, attrib)
+        if key not in self.filter_attrib_dict:
+            return get_dummy_val_for(datatype)
+
+        if len(self.filter_attrib_dict[key]) == 1:
+            self.logger.info("Cannot generate a new s-val. Giving the old one!")
+            return prev
+
+        lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
+        if datatype in NUMBER_TYPES:
+            num = get_random_number(datatype, lb, ub)
+            while num == prev:
+                num = get_random_number(datatype, lb, ub)
+            return num
+
+        if prev == lb:
+            val = ub
+        elif prev == ub:
+            val = lb
         else:
-            val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                      self.filter_attrib_dict[(tabname, attrib)][1])
+            val = min(lb, ub)
         return val
 
     def get_different_s_val(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:

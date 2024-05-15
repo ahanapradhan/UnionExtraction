@@ -26,9 +26,6 @@ class ViewMinimizer(Minimizer):
         self.cs2_passed = sampling_status
         self.global_min_instance_dict = {}
 
-    def extract_params_from_args(self, args):
-        return args[0]
-
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         if not self.sanity_check(query):

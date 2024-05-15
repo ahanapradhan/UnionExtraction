@@ -2,11 +2,12 @@ import ast
 import copy
 import math
 
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .projection import get_param_values_external
 from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ...src.util.constants import min_int_val, max_int_val
-from .projection import get_param_values_external
 
 
 def get_k_value_for_number(a, b):
@@ -113,16 +114,17 @@ def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner,
 
 
 class Aggregation(GenerationPipeLineBase):
-    def __init__(self, connectionHelper, projected_attribs, has_groupby, groupby_attribs, dependencies, solution,
-                 param_list, delivery):
-        super().__init__(connectionHelper, "Aggregation", delivery)
+    def __init__(self, connectionHelper,
+                 genPipelineCtx: PackageForGenPipeline,
+                 pgao_Ctx):
+        super().__init__(connectionHelper, "Aggregation", genPipelineCtx)
         self.global_aggregated_attributes = None
-        self.global_projected_attributes = projected_attribs
-        self.has_groupby = has_groupby
-        self.global_groupby_attributes = groupby_attribs
-        self.dependencies = dependencies
-        self.solution = solution
-        self.param_list = param_list
+        self.global_projected_attributes = pgao_Ctx.projected_attribs
+        self.has_groupby = pgao_Ctx.has_groupby
+        self.global_groupby_attributes = pgao_Ctx.group_by_attrib
+        self.dependencies = pgao_Ctx.projection_dependencies
+        self.solution = pgao_Ctx.projection_solution
+        self.param_list = pgao_Ctx.projection_param_list
 
     def doExtractJob(self, query):
         # AsSUMing NO DISTINCT IN AGGREGATION

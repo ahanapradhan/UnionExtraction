@@ -1,5 +1,6 @@
 import copy
 
+from ..core.dataclass.pgao_context import PGAOcontext
 from ...src.pipeline.fragments.DisjunctionPipeLine import DisjunctionPipeLine
 from ...src.pipeline.fragments.NepPipeLine import NepPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
@@ -34,6 +35,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         NepPipeLine.__init__(self, connectionHelper)
         self.pj = None
         self.global_pk_dict = None
+        self.genPipelineCtx = None
+        self.pgao_ctx = PGAOcontext()
 
     def process(self, query: str):
         return GenericPipeLine.process(self, query)
@@ -72,7 +75,6 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         eq = self._after_from_clause_extract(query, self.core_relations)
         self.update_state(DONE)
         self.connectionHelper.closeConnection()
-        # self.time_profile.update(t)
         return eq
 
     def _after_from_clause_extract(self, query, core_relations):
@@ -85,6 +87,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.time_profile.update(time_profile)
             return None
 
+        self.aoa.post_process_for_generation_pipeline(query)
+        self.genPipelineCtx = copy.copy(self.aoa.nextPipelineCtx)
         check, time_profile = self._extract_disjunction(self.aoa.filter_predicates,
                                                         core_relations, query, time_profile)
         if not check:
@@ -93,8 +97,6 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             return None
 
         self.time_profile.update(time_profile)
-        self.aoa.post_process_for_generation_pipeline(query)
-        self.genPipelineCtx = copy.copy(self.aoa.nextPipelineCtx)
 
         '''
         Projection Extraction
@@ -110,40 +112,33 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         if not check:
             self.info[PROJECTION] = None
             self.logger.error("Cannot find projected attributes. ")
-            return None, time_profile
+            return None
         if not self.pj.done:
             self.info[PROJECTION] = None
             self.logger.error("Some error while projection extraction. Aborting extraction!")
-            return None, time_profile
+            return None
+        self.pgao_ctx.projection = self.pj
 
         self.update_state(GROUP_BY + START)
-        gb = GroupBy(self.connectionHelper, self.genPipelineCtx, self.pj.projected_attribs)
+        gb = GroupBy(self.connectionHelper, self.genPipelineCtx, self.pgao_ctx)
         self.update_state(GROUP_BY + RUNNING)
         check = gb.doJob(query)
-
         self.update_state(GROUP_BY + DONE)
         self.time_profile.update_for_group_by(gb.local_elapsed_time, gb.app_calls)
         self.info[GROUP_BY] = gb.group_by_attrib
         if not check:
             self.info[GROUP_BY] = None
             self.logger.info("Cannot find group by attributes. ")
-
         if not gb.done:
             self.info[GROUP_BY] = None
             self.logger.error("Some error while group by extraction. Aborting extraction!")
-            return None, time_profile
-
-        for elt in self.aoa.filter_predicates:
-            if elt[1] not in gb.group_by_attrib and elt[1] in self.pj.projected_attribs and (
-                    elt[2] == '=' or elt[2] == 'equal'):
-                gb.group_by_attrib.append(elt[1])
+            return None
+        self.pgao_ctx.group_by = gb
 
         self.update_state(AGGREGATE + START)
-        agg = Aggregation(self.connectionHelper, self.pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
-                          self.pj.dependencies, self.pj.solution, self.pj.param_list, self.genPipelineCtx)
+        agg = Aggregation(self.connectionHelper, self.genPipelineCtx, self.pgao_ctx)
         self.update_state(AGGREGATE + RUNNING)
         check = agg.doJob(query)
-
         self.update_state(AGGREGATE + DONE)
         self.time_profile.update_for_aggregate(agg.local_elapsed_time, agg.app_calls)
         self.info[AGGREGATE] = agg.global_aggregated_attributes
@@ -153,14 +148,13 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         if not agg.done:
             self.info[AGGREGATE] = None
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
-            return None, time_profile
+            return None
+        self.pgao_ctx.aggregate = agg
 
         self.update_state(ORDER_BY + START)
-        ob = OrderBy(self.connectionHelper, self.pj.projected_attribs, self.pj.projection_names, self.pj.dependencies,
-                     agg.global_aggregated_attributes, self.genPipelineCtx)
+        ob = OrderBy(self.connectionHelper, self.genPipelineCtx, self.pgao_ctx)
         self.update_state(ORDER_BY + RUNNING)
         ob.doJob(query)
-
         self.update_state(ORDER_BY + DONE)
         self.time_profile.update_for_order_by(ob.local_elapsed_time, ob.app_calls)
         self.info[ORDER_BY] = ob.orderBy_string
@@ -170,10 +164,11 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         if not ob.done:
             self.info[ORDER_BY] = None
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
-            return None, time_profile
+            return None
+        self.pgao_ctx.order_by = ob
 
         self.update_state(LIMIT + START)
-        lm = Limit(self.connectionHelper, gb.group_by_attrib, self.genPipelineCtx)
+        lm = Limit(self.connectionHelper, self.genPipelineCtx, self.pgao_ctx)
         self.update_state(LIMIT + RUNNING)
         lm.doJob(query)
         self.update_state(LIMIT + DONE)
@@ -185,18 +180,16 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         if not lm.done:
             self.info[LIMIT] = None
             self.logger.error("Some error while extracting limit. Aborting extraction!")
-            return None, time_profile
+            return None
 
         self.q_generator.get_datatype = self.filter_extractor.get_datatype  # method
-        self.q_generator.projection = self.pj
         self.q_generator.from_clause = core_relations
         self.q_generator.equi_join = self.aoa
         self.q_generator.or_predicates = self.or_predicates
         self.q_generator.where_clause_remnants = self.genPipelineCtx
-        self.q_generator.aggregate = agg
-        self.q_generator.orderby = ob
+        self.q_generator.pgaoCtx = self.pgao_ctx
         self.q_generator.limit = lm
-        eq = self.q_generator.generate_query_string()
+        eq = self.q_generator.formulate_query_string()
         self.logger.debug("extracted query:\n", eq)
 
         self.time_profile.update(time_profile)
