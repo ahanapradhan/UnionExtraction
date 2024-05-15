@@ -36,7 +36,7 @@ class TpchSanitizer:
         backup_name = self.connectionHelper.queries.get_backup(table)
         self.connectionHelper.execute_sql([drop_fn(table),
                                            self.connectionHelper.queries.create_table_as_select_star_from(table,
-                                                                                                          backup_name)],
+                                                                                                          backup_name), "commit;"],
                                           self.logger)
 
     def backup_one_table(self, table):
