@@ -667,7 +667,7 @@ class ExtractionTestCase(BaseTestCase):
     def test_for_numeric_filter_NEP(self):
         query = "select c_mktsegment as segment from customer,nation,orders where " \
                 "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
-                "and n_name not LIKE 'J%' limit 10;"
+                "and n_name not LIKE 'MO%' limit 40;"
         self.do_test(query)
 
     def do_test(self, query):
