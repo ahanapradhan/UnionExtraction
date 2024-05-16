@@ -5,7 +5,7 @@ import math
 from .dataclass.generation_pipeline_package import PackageForGenPipeline
 from .projection import get_param_values_external
 from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES
 from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ...src.util.constants import min_int_val, max_int_val
 
@@ -133,9 +133,8 @@ class Aggregation(GenerationPipeLineBase):
         if not self.has_groupby:
             return False
         break_cond = False
-        for i in range(len(self.core_relations)):
-            tabname = self.core_relations[i]
-            attrib_list = copy.deepcopy(self.global_all_attribs[i])
+        for tabname in self.core_relations:
+            attrib_list = copy.deepcopy(self.global_all_attribs[tabname])
             for attrib in attrib_list:
                 # check if it is a key attribute
                 key_list = next((elt for elt in self.global_join_graph if attrib in elt), [])
@@ -187,8 +186,7 @@ class Aggregation(GenerationPipeLineBase):
                         for ele in self.dependencies[result_index]:
                             local_tabname = ele[0]
                             local_attrib = ele[1]
-                            local_attrib_index = self.global_all_attribs[
-                                self.core_relations.index(local_tabname)].index(local_attrib)
+                            local_attrib_index = self.global_all_attribs[local_tabname].index(local_attrib)
                             vals_sp = temp_vals[self.core_relations.index(local_tabname)]
                             l = []
                             for row in vals_sp:
@@ -246,12 +244,9 @@ class Aggregation(GenerationPipeLineBase):
     def insert_for_inner(self, a, attrib, b, k_value, key_list, tabname, temp_vals, result_index):
         max_no_of_rows = 0
         # For this table (tabname) and this attribute (attrib), fill all tables now
-        for j in range(len(self.core_relations)):
-            tabname_inner = self.core_relations[j]
-            attrib_list_inner = self.global_all_attribs[j]
-
+        for tabname_inner in self.core_relations:
+            attrib_list_inner = self.global_all_attribs[tabname_inner]
             insert_rows = []
-
             no_of_rows = get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner, result_index,
                                         self.dependencies)
 
@@ -259,7 +254,6 @@ class Aggregation(GenerationPipeLineBase):
                 max_no_of_rows = no_of_rows
 
             self.logger.debug("tabname ", tabname, " tabname_inner ", tabname_inner, " no_of_rows ", no_of_rows)
-
             attrib_list_str = ",".join(attrib_list_inner)
             att_order = f"({attrib_list_str})"
 
@@ -282,7 +276,7 @@ class Aggregation(GenerationPipeLineBase):
                         else:
                             date_val = get_val_plus_delta('date', get_dummy_val_for('date'), 2)
                         insert_values.append(ast.literal_eval(get_format('date', date_val)))
-                    elif datatype in ['int', 'numeric', 'number']:
+                    elif datatype in NUMBER_TYPES:
                         # check for filter
                         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                             number_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]

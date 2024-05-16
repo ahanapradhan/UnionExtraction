@@ -78,7 +78,7 @@ def get_formatted_value(datatype, value):
         v_list = list(value)
         f_value = f"{', '.join(v_list)}"
         if len(v_list) > 1:
-            f_value = f"({v_list})"
+            f_value = f"({f_value})"
     elif isinstance(value, list):
         f_value = f"{', '.join(value)}"
         if len(value) > 1:
@@ -290,8 +290,7 @@ class QueryStringGenerator:
             predicates.extend(self._workingCopy.join_edges)
         self.__generate_algebraic_inequalities(predicates)
 
-        if self.connectionHelper.config.detect_or:
-            self.__generate_arithmetic_conjunctive_disjunctions(predicates)
+        self.__generate_arithmetic_conjunctive_disjunctions(predicates)
         self.__generate_arithmetic_pure_conjunctions(predicates)
 
         where_clause = "\n and ".join(predicates)

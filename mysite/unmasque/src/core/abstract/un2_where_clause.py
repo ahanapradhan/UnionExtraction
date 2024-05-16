@@ -5,6 +5,7 @@ from ....src.util.aoa_utils import get_tab, get_attrib, get_constants_for
 from ....src.util.utils import get_format, get_min_and_max_val
 from typing import Tuple
 
+
 class UN2WhereClause(MutationPipeLineBase):
     SUPPORTED_DATATYPES = ['int', 'date', 'numeric', 'number']
     TEXT_EQUALITY_OP = 'equal'
@@ -16,7 +17,7 @@ class UN2WhereClause(MutationPipeLineBase):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, name)
         # init data
         self.global_attrib_types = []
-        self.global_all_attribs = []
+        self.global_all_attribs = {}
         self.global_d_plus_value = {}  # this is the tuple from D_min
         self.global_attrib_max_length = {}
 
@@ -107,5 +108,3 @@ class UN2WhereClause(MutationPipeLineBase):
                                               self.logger)
         self.mutate_global_min_instance_dict(get_tab(t_a), get_attrib(t_a), val)
         self.global_d_plus_value[get_attrib(t_a)] = val
-
-

@@ -34,6 +34,10 @@ class ExtractionTestCase(unittest.TestCase):
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
+    def test_projection_date(self):
+        query = "select l_shipdate, l_receiptdate from lineitem;"
+        self.do_test(query)
+
     def test_main_cmd_query(self):
         query = "SELECT c_custkey as order_id, COUNT(*) AS total FROM " \
                 "customer, orders where c_custkey = o_custkey and o_orderdate >= '1995-01-01' GROUP BY c_custkey " \
@@ -82,6 +86,28 @@ class ExtractionTestCase(unittest.TestCase):
                 " partsupp.ps_suppkey = orders.o_custkey " \
                 "AND orders.o_orderdate >= DATE '1994-01-01' AND orders.o_orderdate < DATE '1995-01-01' " \
                 "AND partsupp.ps_supplycost < 100;"
+        self.do_test(query)
+
+    def test_disjunction_and_outerJoin(self):
+        query = f"SELECT c_name, max(c_acctbal) as max_balance,  " \
+                f"o_clerk FROM customer LEFT OUTER JOIN orders ON " \
+                f"c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
+                f"and o_orderdate <= DATE '1995-10-23' and o_orderstatus NOT IN ('P', 'O') and c_acctbal > 20" \
+                f" group by c_name, o_clerk order by c_name, o_clerk desc LIMIT 42;"
+        self.do_test(query)
+
+    def test_another_outerJoin(self):
+        query = "(SELECT l_orderkey as key, avg(l_quantity) as dummy, " \
+                "l_partkey as s_key FROM lineitem WHERE l_shipdate >= DATE '1994-01-01'" \
+                " AND l_shipdate < DATE '1995-01-01' AND l_shipmode IN ('AIR', 'FOB', 'RAIL', 'MAIL') " \
+                "AND l_quantity > 30 GROUP BY l_orderkey, l_partkey ORDER BY dummy asc LIMIT 17) UNION ALL " \
+                "(SELECT ps_partkey as key, max(ps_supplycost) as dummy, " \
+                "o_custkey as s_key FROM partsupp LEFT OUTER JOIN orders ON " \
+                "ps_suppkey = o_custkey AND o_orderdate >= DATE '1994-01-01' " \
+                "AND o_orderdate < DATE '1995-01-01' AND ps_supplycost < 100 " \
+                "AND o_totalprice NOT IN (65140.40, 263187.43, 281325.05) AND ps_availqty " \
+                "IN (3711, 619, 6600) " \
+                "GROUP BY ps_partkey, o_custkey ORDER BY dummy LIMIT 26);"
         self.do_test(query)
 
     @pytest.mark.skip
@@ -344,7 +370,7 @@ class ExtractionTestCase(unittest.TestCase):
         self.do_test(query)
 
     def test_Q16_sql(self):
-        query = "Select p_brand, p_type, p_size, count(ps_suppkey) as supplier_cnt From partsupp, part               " \
+        query = "Select p_brand, p_type, p_size, count(*) as supplier_cnt From partsupp, part               " \
                 "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and " \
                 "p_size >=  4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, " \
                 "p_type, p_size;"

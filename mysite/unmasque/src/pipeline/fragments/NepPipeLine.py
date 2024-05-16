@@ -30,6 +30,7 @@ class NepPipeLine(GenericPipeLine, ABC):
     def _extract_NEP(self, core_relations, sizes, query, delivery):
         eq = self.q_generator.write_query()
         if not self.connectionHelper.config.detect_nep:
+            self.logger.info("NEP check is disabled by config.")
             return eq
 
         nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, sizes)
@@ -47,7 +48,7 @@ class NepPipeLine(GenericPipeLine, ABC):
                 self.logger.info("No NEP!")
                 return eq
 
-            for tabname in self.core_relations:
+            for tabname in core_relations:
                 self.update_state(NEP_ + DB_MINIMIZATION + START)
                 self.update_state(NEP_ + DB_MINIMIZATION + RUNNING)
                 minimized = nep_minimizer.doJob((query, eq, tabname))

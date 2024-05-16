@@ -40,9 +40,8 @@ class Limit(GenerationPipeLineBase):
         total_combinations = 1
         self.decide_number_of_rows(gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations)
 
-        for j in range(len(self.core_relations)):
-            table = self.core_relations[j]
-            attrib_list = self.global_all_attribs[j]
+        for table in self.core_relations:
+            attrib_list = self.global_all_attribs[table]
             attrib_list_str = ",".join(attrib_list)
             att_order = f"({attrib_list_str})"
             insert_rows = []

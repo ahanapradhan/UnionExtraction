@@ -22,9 +22,8 @@ class GroupBy(GenerationPipeLineBase):
         self.group_by_attrib = []
 
     def doExtractJob(self, query):
-        for i in range(len(self.core_relations)):
-            tabname = self.core_relations[i]
-            attrib_list = self.global_all_attribs[i]
+        for tabname in self.core_relations:
+            attrib_list = self.global_all_attribs[tabname]
 
             for attrib in attrib_list:
                 self.truncate_core_relations()
@@ -35,9 +34,8 @@ class GroupBy(GenerationPipeLineBase):
                 key_list = next((elt for elt in self.global_join_graph if attrib in elt), [])
 
                 # For this table (tabname) and this attribute (attrib), fill all tables now
-                for j in range(len(self.core_relations)):
-                    tabname_inner = self.core_relations[j]
-                    attrib_list_inner = self.global_all_attribs[j]
+                for tabname_inner in self.core_relations:
+                    attrib_list_inner = self.global_all_attribs[tabname_inner]
 
                     insert_rows = []
 

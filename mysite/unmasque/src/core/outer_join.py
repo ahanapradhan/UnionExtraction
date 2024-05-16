@@ -57,7 +57,7 @@ class OuterJoin(GenerationPipeLineBase):
                 self.logger.debug("checking for ", attrib)
                 table = self.find_tabname_for_given_attrib(attrib)
                 prev = self.get_dmin_val(attrib, table)
-                mut_val = self.get_different_val_for_dmin(attrib, table, prev)
+                mut_val = self.get_other_than_dmin_val_nonText(attrib, table, prev)
                 self.update_with_val(attrib, table, mut_val)
                 res = self.app.doJob(query)
                 self.logger.debug(res)
