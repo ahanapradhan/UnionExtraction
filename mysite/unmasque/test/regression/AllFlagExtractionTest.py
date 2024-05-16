@@ -7,6 +7,7 @@ import pytest
 from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
 from mysite.unmasque.test.util import queries
+from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
 def generate_random_dates():
@@ -22,9 +23,7 @@ def generate_random_dates():
     return f"\'{str(dates[0])}\'", f"\'{str(dates[1])}\'"
 
 
-class ExtractionTestCase(unittest.TestCase):
-    conn = ConnectionHelperFactory().createConnectionHelper()
-
+class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = True
