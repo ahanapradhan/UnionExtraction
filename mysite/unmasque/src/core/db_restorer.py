@@ -7,7 +7,8 @@ class DbRestorer(AppExtractorBase):
         super().__init__(connectionHelper, name)
         self.relations = []
         self.last_restored_size = {}
-        self.core_relations = list(set(core_relations))
+        self.core_relations = core_relations
+        self.core_relations = list(set(self.core_relations))
 
     def set_all_sizes(self, sizes):
         self.all_sizes = sizes
