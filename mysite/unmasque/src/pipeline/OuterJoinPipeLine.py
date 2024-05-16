@@ -27,5 +27,6 @@ class OuterJoinPipeLine(ExtractionPipeLine):
             return eq
         if not check:
             self.logger.info("No outer join")
-        eq = oj.Q_E
+        if oj.Q_E is not None:
+            eq = oj.Q_E
         return eq
