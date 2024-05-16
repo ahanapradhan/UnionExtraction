@@ -329,10 +329,10 @@ class Filter(UN2WhereClause):
             else:
                 val1 = self.get_filter_value(query, datatype, get_cast_value(datatype, d_plus_value[attrib]),
                                              get_val_plus_delta(datatype,
-                                                                get_cast_value(datatype, max_val_domain), -1), '<=',
+                                                                get_cast_value(datatype, max_val_domain), 1), '<=',
                                              attrib_list)
                 val2 = self.get_filter_value(query, datatype,
-                                             get_val_plus_delta(datatype, get_cast_value(datatype, min_val_domain), 1),
+                                             get_val_plus_delta(datatype, get_cast_value(datatype, min_val_domain), -1),
                                              get_cast_value(datatype, d_plus_value[attrib]), '>=', attrib_list)
                 filterAttribs.append((tabname, attrib, 'range', val2, val1))
         elif min_present and not max_present:
