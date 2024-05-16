@@ -187,12 +187,11 @@ class NEP(GenerationPipeLineBase):
         return args[0][0], args[0][1]
 
     def extract_NEP_for_table(self, tabname, query, is_for_joined):
-        i = self.core_relations.index(tabname)
         self.logger.debug("Inside get nep")
         res = self.app.doJob(query)
         filterAttribs = []
         if self.app.isQ_result_empty(res):
-            attrib_list = self.global_all_attribs[i]
+            attrib_list = self.global_all_attribs[tabname]
             self.logger.debug("attrib list: ", attrib_list)
             filterAttribs = self.check_per_attrib(attrib_list,
                                                   tabname,

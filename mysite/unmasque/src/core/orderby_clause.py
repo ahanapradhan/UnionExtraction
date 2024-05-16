@@ -205,9 +205,8 @@ class OrderBy(GenerationPipeLineBase):
             for k in range(no_of_db):
                 self.truncate_core_relations()
                 self.values_used.clear()
-                for j in range(len(self.core_relations)):
-                    tabname_inner = self.core_relations[j]
-                    attrib_list_inner = self.global_all_attribs[j]
+                for tabname_inner in self.core_relations:
+                    attrib_list_inner = self.global_all_attribs[tabname_inner]
                     insert_rows, insert_values1, insert_values2 = [], [], []
                     attrib_list_str = ",".join(attrib_list_inner)
                     att_order = f"({attrib_list_str})"

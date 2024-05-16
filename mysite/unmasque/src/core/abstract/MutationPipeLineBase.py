@@ -23,7 +23,6 @@ class MutationPipeLineBase(AppExtractorBase, ABC):
     def see_d_min(self):
         self.logger.debug("======================")
         for tab in self.core_relations:
-            pass
             res, des = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(tab))
             self.logger.debug(f"-----  {tab} ------")
             self.logger.debug(res)
@@ -48,13 +47,13 @@ class MutationPipeLineBase(AppExtractorBase, ABC):
             val = res[0][0]
         except ValueError as e:
             data_problem = True
-            self.logger.debug(e)
+            self.logger.debug(e, "Could not fetch data from d_min, getting it from local dmin_instance_dict")
         except IndexError as e:
             data_problem = True
-            self.logger.debug(e)
+            self.logger.debug(e, "Could not fetch data from d_min, getting it from local dmin_instance_dict")
         except Exception as e:
             data_problem = True
-            self.logger.debug(e)
+            self.logger.debug(e, "Could not fetch data from d_min, getting it from local dmin_instance_dict")
         if data_problem:
             values = self.global_min_instance_dict[tab]
             attribs, vals = values[0], values[1]

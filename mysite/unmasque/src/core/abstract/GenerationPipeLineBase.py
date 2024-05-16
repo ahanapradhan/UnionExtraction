@@ -1,7 +1,7 @@
 import ast
 import copy
 import random
-from datetime import date
+from datetime import date, timedelta
 from typing import Union, Tuple
 
 from .MutationPipeLineBase import MutationPipeLineBase
@@ -11,6 +11,15 @@ from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ....src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
 NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number']
+NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
+
+
+def generate_random_date(lb, ub):
+    start_date = lb
+    end_date = ub
+    # Generate two random dates
+    random_date1 = start_date + timedelta(days=random.randint(0, (end_date - start_date).days))
+    return random_date1
 
 
 class GenerationPipeLineBase(MutationPipeLineBase):
@@ -47,7 +56,9 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def do_init(self) -> None:
         for tab in self.core_relations:
             self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.create_table_as_select_star_from_limit_1(f"{tab}__temp", tab),
+                [self.connectionHelper.queries.create_table_as_select_star_from_limit_1(f"{tab}__temp",
+                                                                                        self.connectionHelper.queries.get_backup(
+                                                                                            tab)),
                  self.connectionHelper.queries.drop_table(tab),
                  self.connectionHelper.queries.alter_table_rename_to(f"{tab}__temp", tab)])
         self.restore_d_min_from_dict()
@@ -105,7 +116,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)
         else:
             datatype = self.get_datatype((tabname, attrib))
-            if datatype == 'date' or datatype in NUMBER_TYPES:
+            if datatype in NON_TEXT_TYPES:
                 update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib,
                                                                                       get_format(datatype, val))
             else:
@@ -114,21 +125,13 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def get_s_val(self, attrib: str, tabname: str) -> Union[int, float, date, str]:
         datatype = self.get_datatype((tabname, attrib))
-        if datatype == 'date':
+        if datatype in NON_TEXT_TYPES:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = min(self.filter_attrib_dict[(tabname, attrib)][0],
                           self.filter_attrib_dict[(tabname, attrib)][1])
             else:
                 val = get_dummy_val_for(datatype)
             # val = ast.literal_eval(get_format(datatype, val))
-
-        elif datatype in NUMBER_TYPES:
-            # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
-            else:
-                val = get_dummy_val_for(datatype)
         else:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = self.get_s_val_for_textType(attrib, tabname)
@@ -138,7 +141,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                 val = get_char(get_dummy_val_for('char'))
         return val
 
-    def get_different_val_for_dmin(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
+    def get_other_than_dmin_val_nonText(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
         datatype = self.get_datatype((tabname, attrib))
         key = (tabname, attrib)
         if key not in self.filter_attrib_dict:
@@ -149,11 +152,17 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             return prev
 
         lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
+        self.logger.debug(f"lb {lb}, ub {ub}")
         if datatype in NUMBER_TYPES:
             num = get_random_number(datatype, lb, ub)
             while num == prev:
                 num = get_random_number(datatype, lb, ub)
             return num
+        elif datatype == 'date':
+            d_date = generate_random_date(lb, ub)
+            while d_date == prev:
+                d_date = generate_random_date(lb, ub)
+            return d_date
 
         if prev == lb:
             val = ub
@@ -165,19 +174,14 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def get_different_s_val(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
         datatype = self.get_datatype((tabname, attrib))
-        if datatype == 'date':
+        self.logger.debug(f"datatype of {attrib} is {datatype}")
+        if datatype in NON_TEXT_TYPES:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = self.get_different_val_for_dmin(attrib, tabname, prev)
+                val = self.get_other_than_dmin_val_nonText(attrib, tabname, prev)
             else:
                 val = get_unused_dummy_val(datatype, [prev])
-            val = ast.literal_eval(get_format(datatype, val))
-
-        elif datatype in NUMBER_TYPES:
-            # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = self.get_different_val_for_dmin(attrib, tabname, prev)
-            else:
-                val = get_unused_dummy_val(datatype, [prev])
+            if datatype == 'date':
+                val = ast.literal_eval(get_format(datatype, val))
         else:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = self.get_s_val_for_textType(attrib, tabname)

@@ -9,6 +9,7 @@ from ....src.util.constants import FILTER, DONE, NEP_, RUNNING, START, DB_MINIMI
 class NepPipeLine(GenericPipeLine, ABC):
     def __init__(self, connectionHelper, name="NEP PipeLine"):
         super().__init__(connectionHelper, name)
+        self.NEP_CUTOFF = 10
         self.q_generator = QueryStringGenerator(self.connectionHelper)
 
     @abstractmethod
@@ -30,12 +31,13 @@ class NepPipeLine(GenericPipeLine, ABC):
     def _extract_NEP(self, core_relations, sizes, query, delivery):
         eq = self.q_generator.write_query()
         if not self.connectionHelper.config.detect_nep:
+            self.logger.info("NEP check is disabled by config.")
             return eq
 
         nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, sizes)
         nep_extractor = NEP(self.connectionHelper, delivery)
 
-        for i in range(10):
+        for i in range(self.NEP_CUTOFF):
             self.update_state(NEP_ + RESULT_COMPARE + START)
             self.update_state(NEP_ + RESULT_COMPARE + RUNNING)
             matched = nep_minimizer.match(query, eq)
