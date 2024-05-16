@@ -244,9 +244,9 @@ class Projection(GenerationPipeLineBase):
                     update_multi = []
                     for val in join:
                         update_multi.append(val)
-                        for l, ele in enumerate(self.global_all_attribs):
-                            if val in ele:
-                                update_multi.append(self.core_relations[l])
+                        for tab_key in self.global_all_attribs.keys():
+                            if val in self.global_all_attribs[tab_key]:
+                                update_multi.append(tab_key)
                                 break
                         update_multi.append(value)
                     for inner_i in range(0, len(update_multi), 3):

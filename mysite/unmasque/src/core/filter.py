@@ -24,20 +24,22 @@ def parse_for_int(val):
 def round_ceil(num, places):
     adder = 5 / (10 ** (places + 1))
     ans = decimal.Decimal(num - adder)
-    ans = ((ans * (10 ** places)).to_integral_exact(rounding=decimal.ROUND_CEILING))/(10 ** places)
+    ans = ((ans * (10 ** places)).to_integral_exact(rounding=decimal.ROUND_CEILING)) / (10 ** places)
     return ans
 
 
 def round_floor(num, places):
     adder = 5 / (10 ** (places + 1))
-    #return round(num + adder, places)
+    # return round(num + adder, places)
     return num
+
 
 def truncate_value(num, places):
     num = num * (10 ** (places + 1))
     num = math.trunc(num)
     num = num / (10 ** (places + 1))
     return num
+
 
 class Filter(UN2WhereClause):
 
@@ -47,7 +49,7 @@ class Filter(UN2WhereClause):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Filter")
         # init data
         self.global_attrib_types = []
-        self.global_all_attribs = []
+        self.global_all_attribs = {}
         self.global_d_plus_value = {}  # this is the tuple from D_min
         self.global_attrib_max_length = {}
 
@@ -62,9 +64,8 @@ class Filter(UN2WhereClause):
                 self.connectionHelper.queries.get_column_details_for_table(self.connectionHelper.config.schema,
                                                                            tabname))
 
-            tab_attribs = []
-            tab_attribs.extend(row[0].lower() for row in res)
-            self.global_all_attribs.append(copy.deepcopy(tab_attribs))
+            tab_attribs = [row[0].lower() for row in res]
+            self.global_all_attribs[tabname] = tab_attribs
 
             this_attribs = [(tabname, row[0].lower(), row[1].lower()) for row in res]
             self.global_attrib_types.extend(this_attribs)
@@ -107,9 +108,8 @@ class Filter(UN2WhereClause):
         d_plus_value = copy.deepcopy(self.global_d_plus_value)
         attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
 
-        for i in range(len(self.core_relations)):
-            tabname = self.core_relations[i]
-            attrib_list = self.global_all_attribs[i]
+        for tabname in self.core_relations:
+            attrib_list = self.global_all_attribs[tabname]
             total_attribs = total_attribs + len(attrib_list)
             for attrib in attrib_list:
                 datatype = self.get_datatype((tabname, attrib))
@@ -184,7 +184,8 @@ class Filter(UN2WhereClause):
             datatype = self.get_datatype((tabname, attrib))
             if datatype == 'date':
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(tabname, attrib, val)], self.logger)
+                    [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(tabname, attrib, val)],
+                    self.logger)
             else:
                 self.connectionHelper.execute_sql(
                     [self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)], self.logger)
@@ -219,7 +220,7 @@ class Filter(UN2WhereClause):
                                                  float(d_plus_value[attrib]) + .01, '=', attrib_list)
             if equalto_flag:
                 filterAttribs.append(
-                   (tabname, attrib, '=', float(d_plus_value[attrib]), float(d_plus_value[attrib])))
+                    (tabname, attrib, '=', float(d_plus_value[attrib]), float(d_plus_value[attrib])))
             else:
                 val1 = self.get_filter_value(query, 'float', float(d_plus_value[attrib]), max_val_domain, '<=',
                                              attrib_list)
@@ -440,5 +441,3 @@ class Filter(UN2WhereClause):
         new_result = self.app.doJob(query)
         self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)
         return new_result
-
-
