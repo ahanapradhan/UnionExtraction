@@ -254,7 +254,7 @@ class Filter(UN2WhereClause):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front_set)
                 if mid_val == low or high == mid_val:
                     break
-                if self.app.isQ_result_no_full_nullfree_row(new_result):
+                if self.app.isQ_result_empty(new_result):
                     high = mid_val
                 else:
                     low = mid_val
@@ -266,7 +266,7 @@ class Filter(UN2WhereClause):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front_set)
                 if mid_val == high or low == mid_val:
                     break
-                if self.app.isQ_result_no_full_nullfree_row(new_result):
+                if self.app.isQ_result_empty(new_result):
                     low = mid_val
                 else:
                     high = mid_val
@@ -285,7 +285,7 @@ class Filter(UN2WhereClause):
             low_query = self.connectionHelper.queries.form_update_query_with_value(query_front, datatype, low)
             self.connectionHelper.execute_sql([low_query])
         new_result = self.app.doJob(query)
-        return not self.app.isQ_result_no_full_nullfree_row(new_result)
+        return not self.app.isQ_result_empty(new_result)
 
     def run_app_with_mid_val(self, datatype, high, low, query, query_front_set):
         mid_val = get_mid_val(datatype, high, low)
@@ -367,8 +367,8 @@ class Filter(UN2WhereClause):
             0] == 'a') else 'a'
         val_result = self.run_updateQ_with_temp_str(attrib, query, tabname, val)
         empty_result = self.run_updateQ_with_temp_str(attrib, query, tabname, "" "")
-        effect = self.app.isQ_result_no_full_nullfree_row(val_result) \
-                 or self.app.isQ_result_no_full_nullfree_row(empty_result)
+        effect = self.app.isQ_result_empty(val_result) \
+                 or self.app.isQ_result_empty(empty_result)
         # update table so that result is not empty
         self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)
         return effect
@@ -386,11 +386,11 @@ class Filter(UN2WhereClause):
                 temp[index] = 'a'
             temp = ''.join(temp)
             new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
-            if not self.app.isQ_result_no_full_nullfree_row(new_result):
+            if not self.app.isQ_result_empty(new_result):
                 temp = copy.deepcopy(representative)
                 temp = temp[:index] + temp[index + 1:]
                 new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
-                if not self.app.isQ_result_no_full_nullfree_row(new_result):
+                if not self.app.isQ_result_empty(new_result):
                     representative = representative[:index] + representative[index + 1:]
                 else:
                     output = output + "_"
@@ -416,7 +416,7 @@ class Filter(UN2WhereClause):
                     temp.insert(index, 'a')
                 temp = ''.join(temp)
                 new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
-                if not self.app.isQ_result_no_full_nullfree_row(new_result):
+                if not self.app.isQ_result_empty(new_result):
                     output = output + '%'
                 output = output + representative[index]
                 index = index + 1
@@ -427,7 +427,7 @@ class Filter(UN2WhereClause):
                 temp.append('a')
             temp = ''.join(temp)
             new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
-            if not self.app.isQ_result_no_full_nullfree_row(new_result):
+            if not self.app.isQ_result_empty(new_result):
                 output = output + '%'
         return output
 
