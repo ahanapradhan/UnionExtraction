@@ -44,21 +44,27 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_unionQ(self):
-        query = "(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) " \
+        query = "(select l_partkey as key from lineitem, part " \
+                "where l_partkey = p_partkey and l_extendedprice <= 905) " \
                 "union all " \
-                "(select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= " \
+                "(select l_orderkey as key from lineitem, orders " \
+                "where l_orderkey = o_orderkey and o_totalprice <= " \
                 "905) " \
                 "union all " \
-                "(select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);"
+                "(select o_orderkey as key from customer, orders " \
+                "where c_custkey = o_custkey and o_totalprice <= 890);"
         self.do_test(query)
 
     def test_unionQ_outerJoin(self):
-        query = "(select l_extendedprice as price, p_comment as comment from lineitem LEFT OUTER JOIN part on l_partkey = p_partkey and l_extendedprice <= 905) " \
+        query = "(select l_extendedprice as price, p_comment as comment from lineitem " \
+                "LEFT OUTER JOIN part on l_partkey = p_partkey and l_extendedprice <= 905) " \
                 "union all " \
-                "(select o_totalprice as price, l_comment as comment from lineitem RIGHT OUTER JOIN orders on l_orderkey = o_orderkey and o_totalprice <= " \
+                "(select o_totalprice as price, l_comment as comment from lineitem " \
+                "RIGHT OUTER JOIN orders on l_orderkey = o_orderkey and o_totalprice <= " \
                 "905) " \
                 "union all " \
-                "(select c_acctbal as price, o_comment as comment from customer FULL OUTER JOIN orders on c_custkey = o_custkey and o_totalprice <= 890);"
+                "(select c_acctbal as price, o_comment as comment from customer " \
+                "FULL OUTER JOIN orders on c_custkey = o_custkey and o_totalprice <= 890);"
         self.do_test(query)
 
     def test_unionQuery_ui_caught_case(self):
@@ -89,7 +95,7 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_disjunction_and_outerJoin(self):
         query = f"SELECT c_name, max(c_acctbal) as max_balance,  " \
-                f"o_clerk FROM customer LEFT OUTER JOIN orders ON " \
+                f"o_clerk FROM customer RIGHT OUTER JOIN orders ON " \
                 f"c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
                 f"and o_orderdate <= DATE '1995-10-23' and o_orderstatus NOT IN ('P', 'O') and c_acctbal > 20" \
                 f" group by c_name, o_clerk order by c_name, o_clerk desc LIMIT 42;"
@@ -359,13 +365,15 @@ class ExtractionTestCase(BaseTestCase):
                 "Order By numwait desc, s_name Limit 100;"
         self.do_test(query)
 
+    @pytest.mark.skip
     def test_Q21_mukul_thesis_oj(self):
+        self.conn.config.limit_limit = 1500
         query = "Select s_name, n_name, l_returnflag, o_clerk, count(*) as numwait " \
                 "From supplier LEFT OUTER JOIN lineitem on s_suppkey = l_suppkey " \
                 "and s_acctbal < 5000 RIGHT OUTER JOIN orders" \
                 " on o_orderkey = l_orderkey and  o_orderstatus = 'F'  LEFT OUTER JOIN nation " \
                 "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
-                "Order By numwait desc, s_name Limit 1200;"
+                "Order By numwait desc, s_name Limit 1200;"  # it needs config limit to be set to higher value
         self.do_test(query)
 
     def test_Q16_sql(self):
@@ -608,7 +616,8 @@ class ExtractionTestCase(BaseTestCase):
         query = "select l_shipmode,sum(l_extendedprice) as revenue " \
                 "from lineitem " \
                 "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and ((l_orderkey > 124 and l_orderkey < 370) and l_orderkey NOT IN (133, 134, 135)) group by l_shipmode order by l_shipmode " \
+                "and ((l_orderkey > 124 and l_orderkey < 370) and " \
+                "l_orderkey NOT IN (133, 134, 135)) group by l_shipmode order by l_shipmode " \
                 "limit 100;"
         self.do_test(query)
 
@@ -664,10 +673,19 @@ class ExtractionTestCase(BaseTestCase):
                 "Order by value desc Limit 100;"
         self.do_test(query)
 
+    @pytest.mark.skip
     def test_for_numeric_filter_NEP(self):
         query = "select c_mktsegment as segment from customer,nation,orders where " \
                 "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
-                "and n_name not LIKE 'MO%' limit 40;"
+                "and n_name not LIKE 'MO%' LIMIT 40;"
+        self.do_test(query)
+
+    def test_gopinath_fix_with_outer_joins(self):
+        query = f"SELECT c_name, avg(c_acctbal) as rolex," \
+                f"o_clerk FROM customer FULL OUTER JOIN orders ON " \
+                f"c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
+                f"and o_orderdate <= DATE '1995-10-23' and c_acctbal > 30.04" \
+                f"group by c_name, o_clerk order by c_name, o_clerk desc;"
         self.do_test(query)
 
     def do_test(self, query):

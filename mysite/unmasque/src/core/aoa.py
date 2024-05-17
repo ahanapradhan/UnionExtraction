@@ -27,14 +27,14 @@ def check_redundancy(fl_list, a_ineq):
     return False
 
 
-class AlgebraicPredicate(FilterHolder):
+class InequalityPredicate(FilterHolder):
     def __init__(self, connectionHelper: AbstractConnectionHelper,
                  core_relations: List[str],
                  pending_predicates, arithmetic_eq_predicates, algebraic_eq_predicates,
                  filter_extractor, global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor,
                          "AlgebraicPredicate")
-        self.ineaoa_enabled = False
+        self.__ineaoa_enabled = False
         self.arithmetic_eq_predicates = arithmetic_eq_predicates
         self.algebraic_eq_predicates = algebraic_eq_predicates
         self.arithmetic_ineq_predicates = pending_predicates
@@ -45,11 +45,10 @@ class AlgebraicPredicate(FilterHolder):
 
         self.filter_in_predicates = []
         self.nextPipelineCtx = None
-        self.where_clause = ""
 
-        self.prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
-        self.extract_filter_on_attrib_set = self.filter_extractor.extract_filter_on_attrib_set
-        self.handle_filter_for_subrange = self.filter_extractor.handle_filter_for_subrange
+        self.__prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
+        self.__extract_filter_on_attrib_set = self.filter_extractor.extract_filter_on_attrib_set
+        self.__handle_filter_for_subrange = self.filter_extractor.handle_filter_for_subrange
 
     def set_global_min_instance_dict(self, min_db):
         self.global_min_instance_dict_bkp = copy.deepcopy(min_db)
@@ -59,7 +58,7 @@ class AlgebraicPredicate(FilterHolder):
     def doActualJob(self, args=None):
         query = super().doActualJob(args)
         self.restore_d_min_from_dict()
-        if self.ineaoa_enabled:
+        if self.__ineaoa_enabled:
             self.extract_aoa_core(query)
             self.cleanup_predicates()
         self.fill_in_internal_predicates()
@@ -442,9 +441,9 @@ class AlgebraicPredicate(FilterHolder):
                                                         get_max(self.constants_dict[datatype]),
                                                         tab_attrib, a_Bs, is_UB)
 
-        prep = self.prepare_attrib_list(joined_tab_attrib)
-        self.handle_filter_for_subrange(prep, datatype, filter_attribs, max_val, min_val,
-                                        query)
+        prep = self.__prepare_attrib_list(joined_tab_attrib)
+        self.__handle_filter_for_subrange(prep, datatype, filter_attribs, max_val, min_val,
+                                          query)
         val = get_val_bound_for_chain(get_min(self.constants_dict[datatype]),
                                       get_max(self.constants_dict[datatype]),
                                       filter_attribs, is_UB)
@@ -470,7 +469,7 @@ class AlgebraicPredicate(FilterHolder):
         for attrib in joined_attribs:
             one_attrib = (get_tab(attrib), get_attrib(attrib), attrib_max_length, d_plus_value)
             candidates.append(one_attrib)
-        self.extract_filter_on_attrib_set(filter_attribs, query, candidates, datatype)
+        self.__extract_filter_on_attrib_set(filter_attribs, query, candidates, datatype)
         return filter_attribs
 
     def is_dmin_val_leq_LB(self, myself, other) -> bool:

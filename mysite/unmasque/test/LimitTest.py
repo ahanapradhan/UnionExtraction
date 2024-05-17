@@ -2,7 +2,7 @@ import datetime
 import unittest
 
 from mysite.unmasque.src.core.limit import Limit
-from ..src.core.aoa import AlgebraicPredicate
+from ..src.core.aoa import InequalityPredicate
 from ..test.util import tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase
 
@@ -77,7 +77,7 @@ class MyTestCase(BaseTestCase):
                           'riously final instructions. pinto beans cajole. idly even packages haggle doggedly '
                           'furiously regular ')]}
 
-        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor, global_min_instance_dict)
+        aoa = InequalityPredicate(self.conn, core_rels, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)

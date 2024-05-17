@@ -10,7 +10,7 @@ def log_result(Res, logger):
 
 def is_result_nonempty_nullfree(res, logger=None):
     if logger is not None:
-        logger.debug("is_result_nonempty_nullfree")
+        # logger.debug("is_result_nonempty_nullfree")
         log_result(res, logger)
         # logger.debug(res[1:])
     if res[1:] is None:
@@ -27,7 +27,7 @@ def is_result_nonempty_nullfree(res, logger=None):
 
 def is_result_all_null(res, logger=None):
     if logger is not None:
-        logger.debug("is_result_all_null")
+        # logger.debug("is_result_all_null")
         log_result(res, logger)
 
     if res[1:] is None:
@@ -44,7 +44,7 @@ def is_result_all_null(res, logger=None):
 
 def is_result_has_no_data(res, logger=None):
     if logger is not None:
-        logger.debug("is_result_has_no_data")
+        # logger.debug("is_result_has_no_data")
         log_result(res, logger)
 
     if len(res) <= 1:
@@ -54,7 +54,7 @@ def is_result_has_no_data(res, logger=None):
 
 def is_result_has_some_data(res, logger=None):
     if logger is not None:
-        logger.debug("is_result_has_some_data")
+        # logger.debug("is_result_has_some_data")
         log_result(res, logger)
 
     if res[1:] is None:
@@ -71,7 +71,7 @@ def is_result_has_some_data(res, logger=None):
 
 def is_result_no_full_nullfree_row(res, logger):
     if logger is not None:
-        logger.debug("is_result_no_full_nullfree_row")
+        # logger.debug("is_result_no_full_nullfree_row")
         log_result(res, logger)
 
     if res[1:] is None:
@@ -118,7 +118,7 @@ class NullFreeExecutable(Executable):
         return is_result_nonempty_nullfree(Res, self.logger)
 
     def isQ_result_empty(self, Res):
-        return not is_result_nonempty_nullfree(Res, self.logger)
+        return is_result_no_full_nullfree_row(Res, self.logger)
 
     def isQ_result_has_no_data(self, Res):
         return is_result_has_no_data(Res, self.logger)

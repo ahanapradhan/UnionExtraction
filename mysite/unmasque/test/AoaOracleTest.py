@@ -6,7 +6,7 @@ from mysite.unmasque.src.util.QueryStringGenerator import QueryStringGenerator
 from mysite.unmasque.src.core.aggregation import Aggregation
 from mysite.unmasque.src.core.groupby_clause import GroupBy
 from mysite.unmasque.src.core.projection import Projection
-from ..src.core.aoa import AlgebraicPredicate
+from ..src.core.aoa import InequalityPredicate
 from ..src.util.Oracle_connectionHelper import OracleConnectionHelper
 from ..src.util.configParser import Config
 
@@ -213,7 +213,7 @@ class MyTestCase(unittest.TestCase):
 
     def run_pipeline(self, global_min_instance_dict, query, relations):
         print(global_min_instance_dict)
-        aoa = AlgebraicPredicate(self.conn, relations, pending_predicates, filter_extractor, global_min_instance_dict)
+        aoa = InequalityPredicate(self.conn, relations, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)

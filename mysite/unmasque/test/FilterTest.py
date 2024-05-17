@@ -2,7 +2,7 @@ import copy
 import unittest
 from _decimal import Decimal
 
-from mysite.unmasque.src.core.aoa import AlgebraicPredicate
+from mysite.unmasque.src.core.aoa import InequalityPredicate
 from mysite.unmasque.src.core.equi_join import U2EquiJoin
 from mysite.unmasque.src.core.filter import Filter
 from mysite.unmasque.src.core.projection import Projection
@@ -80,10 +80,10 @@ class MyTestCase(unittest.TestCase):
         print(equi_join.arithmetic_eq_predicates)
         # print(equi_join.join_graph)
 
-        aoa = AlgebraicPredicate(self.conn, from_rels, equi_join.pending_predicates,
-                                 equi_join.arithmetic_eq_predicates,
-                                 equi_join.algebraic_eq_predicates, wc,
-                                 minimizer.global_min_instance_dict)
+        aoa = InequalityPredicate(self.conn, from_rels, equi_join.pending_predicates,
+                                  equi_join.arithmetic_eq_predicates,
+                                  equi_join.algebraic_eq_predicates, wc,
+                                  minimizer.global_min_instance_dict)
         check = aoa.doJob(query)
         self.assertTrue(check)
         aoa.post_process_for_generation_pipeline(query)

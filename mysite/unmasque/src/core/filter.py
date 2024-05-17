@@ -114,10 +114,7 @@ class Filter(UN2WhereClause):
             for attrib in attrib_list:
                 datatype = self.get_datatype((tabname, attrib))
                 one_attrib = (tabname, attrib, attrib_max_length, d_plus_value)
-                # if attrib not in self.global_key_attributes:  # filter is allowed only on non-key attribs
                 self.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
-
-                # self.logger.debug("filter_attribs", filter_attribs)
         return filter_attribs
 
     def extract_filter_on_attrib_set(self, filter_attribs, query, attrib_list, datatype):
@@ -134,7 +131,6 @@ class Filter(UN2WhereClause):
 
     def handle_filter_for_subrange(self, attrib_list, datatype, filter_attribs,
                                    max_val_domain, min_val_domain, query):
-        # self.see_d_min()
         delta, _ = get_constants_for(datatype)
         min_present = self.checkAttribValueEffect(query, get_format(datatype, min_val_domain),
                                                   attrib_list)  # True implies row
@@ -371,7 +367,8 @@ class Filter(UN2WhereClause):
             0] == 'a') else 'a'
         val_result = self.run_updateQ_with_temp_str(attrib, query, tabname, val)
         empty_result = self.run_updateQ_with_temp_str(attrib, query, tabname, "" "")
-        effect = self.app.isQ_result_empty(val_result) or self.app.isQ_result_empty(empty_result)
+        effect = self.app.isQ_result_empty(val_result) \
+                 or self.app.isQ_result_empty(empty_result)
         # update table so that result is not empty
         self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)
         return effect

@@ -35,15 +35,16 @@ def get_k_value_for_number(a, b):
 
 
 def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag, tabname):
-    if groupby_key_flag and ('int' in attrib_types_dict[(tabname, attrib)] or 'number' in attrib_types_dict[(tabname, attrib)]
-                             or 'numeric' in attrib_types_dict[(tabname, attrib)]):
+    if groupby_key_flag and (
+            'int' in attrib_types_dict[(tabname, attrib)] or 'number' in attrib_types_dict[(tabname, attrib)]
+            or 'numeric' in attrib_types_dict[(tabname, attrib)]):
         a = b = 3
         k_value = 1
         agg_array = [SUM, k_value * a + b, AVG, a, MIN, a, MAX, a, COUNT, k_value + 1]
     elif (tabname, attrib) in filter_attrib_dict.keys():
         if ('int' in attrib_types_dict[(tabname, attrib)]
                 or 'numeric' in attrib_types_dict[(tabname, attrib)]
-        or 'number' in attrib_types_dict[(tabname, attrib)]):
+                or 'number' in attrib_types_dict[(tabname, attrib)]):
             # PRECISION TO BE TAKEN CARE FOR NUMERIC
             a = filter_attrib_dict[(tabname, attrib)][0]
             b = min(filter_attrib_dict[(tabname, attrib)][0] + 1, filter_attrib_dict[(tabname, attrib)][1])
@@ -132,7 +133,6 @@ class Aggregation(GenerationPipeLineBase):
         self.global_aggregated_attributes = [(element, '') for element in self.global_projected_attributes]
         if not self.has_groupby:
             return False
-        break_cond = False
         for tabname in self.core_relations:
             attrib_list = copy.deepcopy(self.global_all_attribs[tabname])
             for attrib in attrib_list:
