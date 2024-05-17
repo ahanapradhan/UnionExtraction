@@ -209,7 +209,9 @@ class QueryStringGenerator:
 
     @property
     def all_arithmetic_filters(self):
-        uniq_preds = list(set(self._workingCopy.filter_predicates + self._workingCopy.filter_in_predicates))
+        uniq_preds = list(set(self._workingCopy.filter_predicates
+                              + self._workingCopy.filter_in_predicates
+                              + self._workingCopy.filter_not_in_predicates))
         return uniq_preds
 
     @all_arithmetic_filters.setter
@@ -283,23 +285,26 @@ class QueryStringGenerator:
         t_remove = []
         nep_dict = {}
         for elt in self._workingCopy.filter_predicates:
-            datatype = self.get_datatype((elt[0], elt[1]))
             if elt[2] not in ['!=', '<>']:
                 continue
             key = (elt[0], elt[1], elt[2])
             value = elt[3]
             if key not in nep_dict.keys():
-                nep_dict[key] = [get_format(datatype, value)]
+                nep_dict[key] = [value]
             else:
-                nep_dict[key].append(get_format(datatype, value))
+                nep_dict[key].append(value)
         for key in nep_dict.keys():
             value = nep_dict[key]
+            datatype = self.get_datatype((key[0], key[1]))
             if len(value) > 1:
+                self.logger.debug("NOT IN FOUND..")
                 for v in value:
                     t_remove.append((key[0], key[1], key[2], v))
-                f_value = FrozenList(value)
+                f_value = FrozenList([get_format(datatype, v) for v in value])
                 f_value.freeze()
                 self._workingCopy.filter_not_in_predicates.append((key[0], key[1], 'NOT IN', f_value, f_value))
+                self.logger.debug(self._workingCopy.filter_not_in_predicates)
+
         for pred in t_remove:
             self._workingCopy.filter_predicates.remove(pred)
         return t_remove
@@ -406,7 +411,8 @@ class QueryStringGenerator:
             predicates.append(" < ".join(pred))
 
     def __generate_arithmetic_pure_conjunctions(self, predicates):
-        for a_eq in self._workingCopy.filter_predicates:
+        apc_predicates = self._workingCopy.filter_predicates + self._workingCopy.filter_not_in_predicates
+        for a_eq in apc_predicates:
             pred = self.formulate_predicate_from_filter(a_eq)
             if pred not in predicates:
                 predicates.append(pred)
