@@ -34,7 +34,7 @@ class InequalityPredicate(FilterHolder):
                  filter_extractor, global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor,
                          "InequalityPredicate")
-        self.__ineaoa_enabled = True
+        self.__ineaoa_enabled = False
         self.arithmetic_eq_predicates = arithmetic_eq_predicates
         self.algebraic_eq_predicates = algebraic_eq_predicates
         self.arithmetic_ineq_predicates = pending_predicates
@@ -42,18 +42,9 @@ class InequalityPredicate(FilterHolder):
         self.aoa_less_thans = []
         self.join_graph = []
         self.filter_predicates = []
-
         self.filter_in_predicates = []
         self.nextPipelineCtx = None
-
-        self.__prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
-        self.__extract_filter_on_attrib_set = self.filter_extractor.extract_filter_on_attrib_set
         self.__handle_filter_for_subrange = self.filter_extractor.handle_filter_for_subrange
-
-    def set_global_min_instance_dict(self, min_db):
-        self.global_min_instance_dict_bkp = copy.deepcopy(min_db)
-        self.filter_extractor.global_min_instance_dict = copy.deepcopy(min_db)
-        self.global_min_instance_dict = copy.deepcopy(min_db)
 
     def __cast_for_decimals(self):
         casted = []
@@ -286,8 +277,8 @@ class InequalityPredicate(FilterHolder):
     def extract_dormant_LBs(self, E, absorbed_LBs, col_src, datatype, query, L):
         lb_dot = self.mutate_with_boundary_value(absorbed_LBs, E, datatype, query, col_src, False)
         min_val = self.what_is_possible_min_val(E, L, col_src, datatype)
-        check = lb_dot != min_val #do_numeric_drama(lb_dot, datatype, min_val, get_delta(self.constants_dict[datatype]),
-                            #     True if lb_dot != min_val else False)
+        check = lb_dot != min_val  # do_numeric_drama(lb_dot, datatype, min_val, get_delta(self.constants_dict[datatype]),
+        #     True if lb_dot != min_val else False)
         check = (check and not is_equal(lb_dot, get_min(self.constants_dict[datatype]), datatype)
                  and not is_equal(lb_dot, get_max(self.constants_dict[datatype]), datatype))
         for e in E:
@@ -334,8 +325,8 @@ class InequalityPredicate(FilterHolder):
                 col_i = path[i]
                 ub_dot = self.mutate_with_boundary_value(absorbed_UBs, E, datatype, query, col_i, True)
                 max_val = self.what_is_possible_max_val(E, L, col_i, datatype)
-                check = ub_dot != max_val #do_numeric_drama(ub_dot, datatype, max_val, get_delta(self.constants_dict[datatype]),
-                                         #True if ub_dot != max_val else False)
+                check = ub_dot != max_val  # do_numeric_drama(ub_dot, datatype, max_val, get_delta(self.constants_dict[datatype]),
+                # True if ub_dot != max_val else False)
                 check = (check and not is_equal(ub_dot, get_max(self.constants_dict[datatype]), datatype)
                          and not is_equal(ub_dot, get_min(self.constants_dict[datatype]), datatype))
                 for e in E:
@@ -448,14 +439,11 @@ class InequalityPredicate(FilterHolder):
         int, Decimal, date]:
         filter_attribs = []
         joined_tab_attrib = self.get_equi_join_group(tab_attrib)
-
         min_val, max_val = get_min_max_for_chain_bounds(get_min(self.constants_dict[datatype]),
                                                         get_max(self.constants_dict[datatype]),
                                                         tab_attrib, a_Bs, is_UB)
-
-        prep = self.__prepare_attrib_list(joined_tab_attrib)
-        self.__handle_filter_for_subrange(prep, datatype, filter_attribs, max_val, min_val,
-                                          query)
+        # prep = self._prepare_attrib_list(joined_tab_attrib)
+        self.__handle_filter_for_subrange(joined_tab_attrib, datatype, filter_attribs, max_val, min_val, query)
         val = get_val_bound_for_chain(get_min(self.constants_dict[datatype]),
                                       get_max(self.constants_dict[datatype]),
                                       filter_attribs, is_UB)
@@ -474,14 +462,10 @@ class InequalityPredicate(FilterHolder):
 
     def do_bound_check_again(self, tab_attrib: Tuple[str, str], datatype: str, query: str) -> list:
         filter_attribs = []
-        d_plus_value = copy.deepcopy(self.filter_extractor.global_d_plus_value)
-        attrib_max_length = copy.deepcopy(self.filter_extractor.global_attrib_max_length)
         joined_attribs = self.get_equi_join_group(tab_attrib)
-        candidates = []
-        for attrib in joined_attribs:
-            one_attrib = (get_tab(attrib), get_attrib(attrib), attrib_max_length, d_plus_value)
-            candidates.append(one_attrib)
-        self.__extract_filter_on_attrib_set(filter_attribs, query, candidates, datatype)
+        # candidates = [] for attrib in joined_attribs: one_attrib = (get_tab(attrib), get_attrib(attrib),
+        # self.global_attrib_max_legth, self.global_d_plus_values) candidates.append(attrib)
+        self._extract_filter_on_attrib_set(filter_attribs, query, joined_attribs, datatype)
         return filter_attribs
 
     def is_dmin_val_leq_LB(self, myself, other) -> bool:
@@ -489,8 +473,9 @@ class InequalityPredicate(FilterHolder):
         val = round(Decimal(val), 2)
         other_lb = round(get_LB(other), 2)
         datatype = self.get_datatype((get_tab(myself), get_attrib(myself)))
-        delta = get_delta(self.constants_dict[datatype])
-        satisfied = val <= other_lb # do_numeric_drama(get_LB(other), datatype, val, delta, True if val <= get_LB(other) else False)
+        # delta = get_delta(self.constants_dict[datatype])
+        satisfied = val <= other_lb  # do_numeric_drama(get_LB(other), datatype, val, delta, True if val <= get_LB(
+        # other) else False)
         return satisfied
 
     def create_dashed_edges(self, ineq_group, edge_set) -> None:
