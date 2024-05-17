@@ -17,7 +17,7 @@ class U2EquiJoin(FilterHolder):
 
         # method from filter object
         self.__prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
-        self.__extract_filter_on_attrib_set = self.filter_extractor.__extract_filter_on_attrib_set
+        self.__extract_filter_on_attrib_set = self.filter_extractor.extract_filter_on_attrib_set
 
         self.algebraic_eq_predicates = []
         self.arithmetic_eq_predicates = []

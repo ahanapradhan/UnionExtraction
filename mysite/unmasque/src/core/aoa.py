@@ -47,8 +47,8 @@ class InequalityPredicate(FilterHolder):
         self.nextPipelineCtx = None
 
         self.__prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
-        self.__extract_filter_on_attrib_set = self.filter_extractor.__extract_filter_on_attrib_set
-        self.__handle_filter_for_subrange = self.filter_extractor.__handle_filter_for_subrange
+        self.__extract_filter_on_attrib_set = self.filter_extractor.extract_filter_on_attrib_set
+        self.__handle_filter_for_subrange = self.filter_extractor.handle_filter_for_subrange
 
     def set_global_min_instance_dict(self, min_db):
         self.global_min_instance_dict_bkp = copy.deepcopy(min_db)
