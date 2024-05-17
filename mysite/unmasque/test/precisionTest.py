@@ -29,6 +29,28 @@ class MyTestCase(unittest.TestCase):
                 self.assertTrue(self.pipeline.correct)
                 # self.sanitizer.doJob()
 
+    def test_repeat(self):
+        self.create_pipeline()
+        total = 20
+
+        query = f"SELECT c_name, avg(c_acctbal) as max_balance,  o_clerk FROM customer, orders where  " \
+                f"c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
+                f"and o_orderdate <= DATE '1995-10-23' and c_acctbal > 30.04 " \
+                f"group by c_name, o_clerk order by c_name, o_clerk desc;"
+        point_zero_five_counter = 0
+        point_zero_six_counter = 0
+
+        for i in range(total):
+            eq = self.pipeline.doJob(query)
+            print("extracted query:", eq)
+            self.assertTrue(self.pipeline.correct)
+            point_zero_six_counter += eq.count("30.06")
+            point_zero_five_counter += eq.count("30.05")
+            # self.sanitizer.doJob()
+
+        self.assertEqual(point_zero_six_counter, 0)
+        self.assertEqual(point_zero_five_counter, total)
+
 
 if __name__ == '__main__':
     unittest.main()
