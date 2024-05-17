@@ -198,7 +198,9 @@ def get_random_number(datatype, lb, ub):
     if datatype == 'int':
         return randint(lb, ub)
     elif datatype == 'numeric':
-        return round(random.uniform(lb, ub), 2)
+        lb, ub = round(Decimal(lb), 2) * 100, round(Decimal(ub), 2) * 100
+        num = round(Decimal(random.randrange(lb, ub)/100), 2)
+        return num
     else:
         raise ValueError
 

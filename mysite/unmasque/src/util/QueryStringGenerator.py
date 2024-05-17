@@ -1,11 +1,13 @@
 import copy
+from _decimal import Decimal
 
 from frozenlist._frozenlist import FrozenList
 
+from ..core.abstract.GenerationPipeLineBase import NUMBER_TYPES
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
 from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX
-from ..util.utils import get_format, get_datatype_of_val
+from ..util.utils import get_format, get_datatype_of_val, get_min_and_max_val
 
 
 def append_clause(output, clause, param):
@@ -380,7 +382,19 @@ class QueryStringGenerator:
         f_lb = get_formatted_value(datatype, lb)
         f_ub = get_formatted_value(datatype, ub)
         if op == 'range':
-            predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
+            predicate = ''
+            i_min, i_max = get_min_and_max_val(datatype)
+            if datatype == 'numeric':
+                f_lb, f_ub = round(Decimal(lb), 2), round(Decimal(ub), 2)
+                i_min, i_max = round(Decimal(i_min), 2), round(Decimal(i_max), 2)
+            if lb <= i_min:
+                predicate = f"{tab}.{attrib} <= {f_ub}"
+            if ub >= i_max:
+                predicate = f"{tab}.{attrib} >= {f_lb}"
+            if predicate == '':
+                predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
+            if lb <= i_min and ub >= i_max:
+                predicate = ''
         elif op == '>=':
             predicate = f"{tab}.{attrib} {op} {f_lb}"
         elif op in ['<=', '=', 'equal', 'like', 'not like', '<>', '!=', 'in', 'not in']:

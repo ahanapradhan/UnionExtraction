@@ -1,4 +1,5 @@
 import datetime
+from _decimal import Decimal
 from datetime import date
 from typing import Union, List, Tuple
 
@@ -94,37 +95,37 @@ def get_all_two_combs2(items):
     return seq
 
 
-def get_LB(pred: Tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
+def get_LB(pred: Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]]):
     return pred[3]
 
 
-def get_UB(pred: Tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
+def get_UB(pred: Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]]):
     return pred[4]
 
 
 def get_attrib(pred: Union[
-    Tuple[str, str, str, Union[int, float, date], Union[int, float, date]],
+    Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]],
     Tuple[str, str]
 ]):
     return pred[1]
 
 
 def get_tab(pred: Union[
-    Tuple[str, str, str, Union[int, float, date], Union[int, float, date]],
+    Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]],
     Tuple[str, str]
 ]):
     return pred[0]
 
 
-def get_op(pred: Tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
+def get_op(pred: Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]]):
     return pred[2]
 
 
-def get_max(pred: Tuple[Union[int, float, date], Union[int, float, date], Union[int, float, date]]):
+def get_max(pred: Tuple[Union[int, Decimal, date], Union[int, Decimal, date], Union[int, Decimal, date]]):
     return pred[1]
 
 
-def get_min(pred: Tuple[Union[int, float, date], Union[int, float, date], Union[int, float, date]]):
+def get_min(pred: Tuple[Union[int, Decimal, date], Union[int, Decimal, date], Union[int, Decimal, date]]):
     return pred[0]
 
 
@@ -235,8 +236,8 @@ def merge_equivalent_paritions(arr):
     return my_list
 
 
-def is_same_tab_attrib(one: Union[Tuple[str, str], Union[int, float, date]],
-                       two: Union[Tuple[str, str], Union[int, float, date]]) -> bool:
+def is_same_tab_attrib(one: Union[Tuple[str, str], Union[int, Decimal, date]],
+                       two: Union[Tuple[str, str], Union[int, Decimal, date]]) -> bool:
     check = False
     try:
         check = get_tab(one) == get_tab(two) and get_attrib(one) == get_attrib(two)
@@ -503,7 +504,7 @@ def find_concrete_bound_from_filter_bounds(attrib, edge_set, prev_bound, is_uppe
 def do_numeric_drama(other_LB, datatype, my_val, delta, satisfied) -> bool:
     # all the following DRAMA is to handle "numeric" datatype
     if datatype == 'numeric':
-        bck_diff_1 = float(my_val) - other_LB
+        bck_diff_1 = Decimal(my_val) - other_LB
         alt_sat = True
         if not satisfied:
             if bck_diff_1 > 0:
@@ -513,12 +514,14 @@ def do_numeric_drama(other_LB, datatype, my_val, delta, satisfied) -> bool:
 
 
 def is_equal(one, other, datatype):
+    '''
     if datatype == 'numeric':
         diff = abs(one - other)
         delta, _ = get_constants_for(datatype)
         return diff <= delta
     else:
-        return one == other
+    '''
+    return one == other
 
 
 def conseq(nums):
@@ -545,10 +548,10 @@ def need_permanent_mutation(datatype, diffs: list) -> bool:
 
 
 def get_constants_for(datatype):
-    if datatype in ('int', 'date', 'number'):
+    if datatype in ['int', 'date', 'number']:
         while_cut_off = 0
         delta = 1
-    elif datatype in ('float', 'numeric'):
+    elif datatype in ['numeric', 'float']:
         while_cut_off = 0.00
         delta = 0.01
     else:

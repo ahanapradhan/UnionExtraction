@@ -10,7 +10,7 @@ from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, g
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ....src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
-NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number']
+NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number', 'Decimal']
 NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
 
 
