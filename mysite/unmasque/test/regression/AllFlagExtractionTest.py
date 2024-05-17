@@ -95,7 +95,7 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_disjunction_and_outerJoin(self):
         query = f"SELECT c_name, max(c_acctbal) as max_balance,  " \
-                f"o_clerk FROM customer, orders WHERE " \
+                f"o_clerk FROM customer RIGHT OUTER JOIN orders ON " \
                 f"c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
                 f"and o_orderdate <= DATE '1995-10-23' and o_orderstatus NOT IN ('P', 'O') and c_acctbal > 20" \
                 f" group by c_name, o_clerk order by c_name, o_clerk desc LIMIT 42;"
@@ -616,7 +616,8 @@ class ExtractionTestCase(BaseTestCase):
         query = "select l_shipmode,sum(l_extendedprice) as revenue " \
                 "from lineitem " \
                 "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and ((l_orderkey > 124 and l_orderkey < 370) and l_orderkey NOT IN (133, 134, 135)) group by l_shipmode order by l_shipmode " \
+                "and ((l_orderkey > 124 and l_orderkey < 370) and " \
+                "l_orderkey NOT IN (133, 134, 135)) group by l_shipmode order by l_shipmode " \
                 "limit 100;"
         self.do_test(query)
 

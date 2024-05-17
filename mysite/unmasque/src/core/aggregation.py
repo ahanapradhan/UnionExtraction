@@ -133,7 +133,6 @@ class Aggregation(GenerationPipeLineBase):
         self.global_aggregated_attributes = [(element, '') for element in self.global_projected_attributes]
         if not self.has_groupby:
             return False
-        break_cond = False
         for tabname in self.core_relations:
             attrib_list = copy.deepcopy(self.global_all_attribs[tabname])
             for attrib in attrib_list:
