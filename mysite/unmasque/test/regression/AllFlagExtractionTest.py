@@ -44,21 +44,27 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_unionQ(self):
-        query = "(select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) " \
+        query = "(select l_partkey as key from lineitem, part " \
+                "where l_partkey = p_partkey and l_extendedprice <= 905) " \
                 "union all " \
-                "(select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= " \
+                "(select l_orderkey as key from lineitem, orders " \
+                "where l_orderkey = o_orderkey and o_totalprice <= " \
                 "905) " \
                 "union all " \
-                "(select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);"
+                "(select o_orderkey as key from customer, orders " \
+                "where c_custkey = o_custkey and o_totalprice <= 890);"
         self.do_test(query)
 
     def test_unionQ_outerJoin(self):
-        query = "(select l_extendedprice as price, p_comment as comment from lineitem LEFT OUTER JOIN part on l_partkey = p_partkey and l_extendedprice <= 905) " \
+        query = "(select l_extendedprice as price, p_comment as comment from lineitem " \
+                "LEFT OUTER JOIN part on l_partkey = p_partkey and l_extendedprice <= 905) " \
                 "union all " \
-                "(select o_totalprice as price, l_comment as comment from lineitem RIGHT OUTER JOIN orders on l_orderkey = o_orderkey and o_totalprice <= " \
+                "(select o_totalprice as price, l_comment as comment from lineitem " \
+                "RIGHT OUTER JOIN orders on l_orderkey = o_orderkey and o_totalprice <= " \
                 "905) " \
                 "union all " \
-                "(select c_acctbal as price, o_comment as comment from customer FULL OUTER JOIN orders on c_custkey = o_custkey and o_totalprice <= 890);"
+                "(select c_acctbal as price, o_comment as comment from customer " \
+                "FULL OUTER JOIN orders on c_custkey = o_custkey and o_totalprice <= 890);"
         self.do_test(query)
 
     def test_unionQuery_ui_caught_case(self):
@@ -89,7 +95,7 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_disjunction_and_outerJoin(self):
         query = f"SELECT c_name, max(c_acctbal) as max_balance,  " \
-                f"o_clerk FROM customer LEFT OUTER JOIN orders ON " \
+                f"o_clerk FROM customer, orders WHERE " \
                 f"c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
                 f"and o_orderdate <= DATE '1995-10-23' and o_orderstatus NOT IN ('P', 'O') and c_acctbal > 20" \
                 f" group by c_name, o_clerk order by c_name, o_clerk desc LIMIT 42;"

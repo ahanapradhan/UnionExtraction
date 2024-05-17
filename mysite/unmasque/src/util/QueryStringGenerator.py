@@ -22,6 +22,7 @@ class QueryDetails:
         self.join_graph = []
         self.filter_in_predicates = []
         self.filter_predicates = []
+        self.filter_not_in_predicates = []
         self.aoa_less_thans = []
         self.aoa_predicates = []
         self.join_edges = []
@@ -278,6 +279,41 @@ class QueryStringGenerator:
         Q_E = self.write_query()
         return Q_E
 
+    def consolidate_nep_filters_for_not_in(self):
+        t_remove = []
+        nep_dict = {}
+        for elt in self._workingCopy.filter_predicates:
+            datatype = self.get_datatype((elt[0], elt[1]))
+            if elt[2] not in ['!=', '<>']:
+                continue
+            key = (elt[0], elt[1], elt[2])
+            value = elt[3]
+            if key not in nep_dict.keys():
+                nep_dict[key] = [get_format(datatype, value)]
+            else:
+                nep_dict[key].append(get_format(datatype, value))
+        for key in nep_dict.keys():
+            value = nep_dict[key]
+            if len(value) > 1:
+                for v in value:
+                    t_remove.append((key[0], key[1], key[2], v))
+                f_value = FrozenList(value)
+                f_value.freeze()
+                self._workingCopy.filter_not_in_predicates.append((key[0], key[1], 'NOT IN', f_value, f_value))
+        for pred in t_remove:
+            self._workingCopy.filter_predicates.remove(pred)
+        return t_remove
+
+    def rewrite_for_not_in(self):
+        t_remove = self.consolidate_nep_filters_for_not_in()
+        for pred in t_remove:
+            self._remove_exact_NE_string_predicate(pred)
+        for notInPred in self._workingCopy.filter_not_in_predicates:
+            pred = self.formulate_predicate_from_filter(notInPred)
+            self._workingCopy.add_to_where_op(pred)
+        Q_E = self.write_query()
+        return Q_E
+
     def updateWhereClause(self, predicate):
         self._workingCopy.add_to_where_op(predicate)
         return self.write_query()
@@ -342,7 +378,7 @@ class QueryStringGenerator:
             predicate = f"{tab}.{attrib} between {f_lb} and {f_ub}"
         elif op == '>=':
             predicate = f"{tab}.{attrib} {op} {f_lb}"
-        elif op in ['<=', '=', 'equal', 'like', 'not like', '<>', '!=', 'in']:
+        elif op in ['<=', '=', 'equal', 'like', 'not like', '<>', '!=', 'in', 'not in']:
             predicate = f"{tab}.{attrib} {str(op.replace('equal', '=')).upper()} {f_ub}"
         else:
             predicate = ''
@@ -461,7 +497,7 @@ class QueryStringGenerator:
     def _remove_exact_NE_string_predicate(self, elt):
         while elt[1] in self._workingCopy.where_op:
             where_parts = self._workingCopy.where_op.split()
-            attrib_index = where_parts.index(elt[1])
+            attrib_index = where_parts.index(f"{elt[0]}.{elt[1]}")
 
             val = where_parts[attrib_index + 2]
             self.logger.debug(f"=== val: {val} to delete ===")

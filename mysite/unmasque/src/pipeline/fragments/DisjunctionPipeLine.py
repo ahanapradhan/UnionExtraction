@@ -1,7 +1,7 @@
 import copy
 from abc import abstractmethod, ABC
 
-from ....src.core.aoa import AlgebraicPredicate
+from ....src.core.aoa import InequalityPredicate
 from ....src.core.cs2 import Cs2
 from ....src.core.db_restorer import DbRestorer
 from ....src.core.equi_join import U2EquiJoin
@@ -117,15 +117,15 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         AOA Extraction
         '''
         self.update_state(INEQUALITY + START)
-        self.aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.equi_join.pending_predicates,
-                                      self.equi_join.arithmetic_eq_predicates,
-                                      self.equi_join.algebraic_eq_predicates, self.filter_extractor,
-                                      self.global_min_instance_dict)
+        self.aoa = InequalityPredicate(self.connectionHelper, core_relations, self.equi_join.pending_predicates,
+                                       self.equi_join.arithmetic_eq_predicates,
+                                       self.equi_join.algebraic_eq_predicates, self.filter_extractor,
+                                       self.global_min_instance_dict)
         self.update_state(INEQUALITY + RUNNING)
         check = self.aoa.doJob(query)
         self.update_state(INEQUALITY + DONE)
         time_profile.update_for_where_clause(self.aoa.local_elapsed_time, self.aoa.app_calls)
-        self.info[INEQUALITY] = self.aoa.where_clause
+        self.info[INEQUALITY] = self.aoa.aoa_predicates + self.aoa.aoa_less_thans + self.aoa.arithmetic_ineq_predicates
         if not check:
             self.info[INEQUALITY] = None
             self.logger.info("Cannot find inequality Predicates.")
