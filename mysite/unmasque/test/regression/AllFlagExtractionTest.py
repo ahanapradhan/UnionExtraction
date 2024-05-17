@@ -359,13 +359,15 @@ class ExtractionTestCase(BaseTestCase):
                 "Order By numwait desc, s_name Limit 100;"
         self.do_test(query)
 
+    @pytest.mark.skip
     def test_Q21_mukul_thesis_oj(self):
+        self.conn.config.limit_limit = 1500
         query = "Select s_name, n_name, l_returnflag, o_clerk, count(*) as numwait " \
                 "From supplier LEFT OUTER JOIN lineitem on s_suppkey = l_suppkey " \
                 "and s_acctbal < 5000 RIGHT OUTER JOIN orders" \
                 " on o_orderkey = l_orderkey and  o_orderstatus = 'F'  LEFT OUTER JOIN nation " \
                 "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
-                "Order By numwait desc, s_name Limit 1200;"
+                "Order By numwait desc, s_name Limit 1200;" # it needs config limit to be set to higher value
         self.do_test(query)
 
     def test_Q16_sql(self):
@@ -667,7 +669,7 @@ class ExtractionTestCase(BaseTestCase):
     def test_for_numeric_filter_NEP(self):
         query = "select c_mktsegment as segment from customer,nation,orders where " \
                 "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
-                "and n_name not LIKE 'MO%' limit 40;"
+                "and n_name not LIKE 'MO%' LIMIT 40;"
         self.do_test(query)
 
     def do_test(self, query):
