@@ -6,7 +6,7 @@ import frozenlist as frozenlist
 
 from .dataclass.generation_pipeline_package import PackageForGenPipeline
 from .dataclass.pgao_context import PGAOcontext
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 
@@ -74,7 +74,7 @@ class Limit(GenerationPipeLineBase):
             elif attrib_inner not in self.joined_attribs \
                     and (tabname_inner, attrib_inner) not in gb_tab_attribs:
                 insert_values.append(self.get_dmin_val(attrib_inner, tabname_inner))
-            elif datatype in ['date', 'int', 'numeric', 'number']:
+            elif datatype in NON_TEXT_TYPES:
                 self.insert_non_text_attrib(datatype, attrib_inner, insert_values, k, tabname_inner)
             else:
                 self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
@@ -91,7 +91,7 @@ class Limit(GenerationPipeLineBase):
                     pre_assignment = False
                     break
                 datatype = self.get_datatype(elt)
-                if datatype in ['date', 'int', 'numeric']:
+                if datatype in NON_TEXT_TYPES:
                     tot_values = self.compute_total_values(datatype, elt, total_combinations)
                     self.get_temp_total_values(datatype, elt, temp, tot_values)
                 else:
