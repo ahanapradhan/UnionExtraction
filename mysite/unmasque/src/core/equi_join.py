@@ -61,8 +61,8 @@ class U2EquiJoin(FilterHolder):
         self._extract_filter_on_attrib_set(filter_attribs, query, equi_join_group, datatype)
         self.logger.debug("join group check", equi_join_group, filter_attribs)
         if len(filter_attribs) > 0:
-            if self.is_it_equality_op(get_op(filter_attribs[0])):
-                return False
+            # if self.is_it_equality_op(get_op(filter_attribs[0])):
+            #    return False
             equi_join_group.extend(filter_attribs)
         self.algebraic_eq_predicates.append(equi_join_group)
         return True

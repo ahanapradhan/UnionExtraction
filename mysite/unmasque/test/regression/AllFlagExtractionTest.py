@@ -28,9 +28,15 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_union = False
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
-        self.conn.config.detect_or = False
+        self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+
+    def test_in(self):
+        query = "select n_name, c_acctbal from nation, customer " \
+                "WHERE n_nationkey = c_nationkey and " \
+                "n_nationkey IN (1, 5, 3, 10) and c_acctbal < 7000;"
+        self.do_test(query)
 
     def test_projection_date(self):
         query = "select l_shipdate, l_receiptdate from lineitem;"

@@ -24,4 +24,4 @@ class FilterHolder(UN2WhereClause):
         self.get_dmin_val_of_attrib_list = self.filter_extractor.get_dmin_val_of_attrib_list
 
     def get_dmin_val(self, attrib: str, tab: str):
-        return self.global_d_plus_values[attrib] # short-cut works since tpch has all relations distinct attrib name
+        return self.global_d_plus_values[attrib]  # short-cut works since tpch has all relations distinct attrib name

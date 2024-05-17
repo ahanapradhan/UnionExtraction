@@ -37,7 +37,7 @@ class InequalityPredicate(FilterHolder):
         self.__ineaoa_enabled = False
         self.arithmetic_eq_predicates = arithmetic_eq_predicates
         self.algebraic_eq_predicates = algebraic_eq_predicates
-        self.arithmetic_ineq_predicates = pending_predicates
+        self.arithmetic_ineq_predicates = copy.deepcopy(pending_predicates)
         self.aoa_predicates = []
         self.aoa_less_thans = []
         self.join_graph = []
