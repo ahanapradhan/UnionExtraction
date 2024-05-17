@@ -347,7 +347,7 @@ class InequalityPredicate(FilterHolder):
             edge_set_dict[datatype] = edge_set
         return edge_set_dict
 
-    def post_process_for_generation_pipeline(self, query) -> None:
+    def post_process_for_generation_pipeline(self, query, or_predicates) -> None:
         self.logger.debug("aoa post-process.")
         self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
         self.restore_d_min_from_dict()

@@ -153,6 +153,10 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
         lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
         self.logger.debug(f"lb {lb}, ub {ub}")
+        if lb == ub:
+            self.logger.info("Cannot generate a new s-val. Giving the old one!")
+            return lb
+
         if datatype in NUMBER_TYPES:
             num = get_random_number(datatype, lb, ub)
             while num == prev:
