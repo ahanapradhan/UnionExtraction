@@ -44,8 +44,9 @@ class ExtractionTestCase(BaseTestCase):
                 "n_nationkey < 20 and c_nationkey != 10 and c_acctbal < 7000 LIMIT 200;"
         self.do_test(query)
 
-    def test_projection_date(self):
-        query = "select l_shipdate, l_receiptdate from lineitem;"
+    def test_no_filter_outer_join(self):
+        query = "select c_name, n_name, count(*) as total from nation RIGHT OUTER JOIN customer " \
+                "ON c_nationkey = n_nationkey GROUP BY c_name, n_name;"
         self.do_test(query)
 
     def test_main_cmd_query(self):
@@ -214,7 +215,7 @@ class ExtractionTestCase(BaseTestCase):
         query = "select p_size, ps_suppkey, sum(ps_supplycost), count(*) as low_line_number" \
                 " from part RIGHT OUTER JOIN partsupp ON " \
                 " p_partkey = ps_partkey GROUP BY p_size, ps_suppkey ORDER BY p_size desc, " \
-                "ps_suppkey desc LIMIT 200;"
+                "ps_suppkey desc LIMIT 300;"
         self.do_test(query)
 
     def test_outer_join_subq2_or(self):
