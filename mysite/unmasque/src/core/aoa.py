@@ -57,6 +57,47 @@ class InequalityPredicate(FilterHolder):
             ub = round(Decimal(get_UB(pred)), 2)
             casted.append((get_tab(pred), get_attrib(pred), pred[2], lb, ub))
         self.arithmetic_ineq_predicates = casted
+        casted = []
+        for pred in self.arithmetic_eq_predicates:
+            datatype = self.get_datatype((get_tab(pred), get_attrib(pred)))
+            if datatype != 'numeric':
+                casted.append(pred)
+                continue
+            lb = round(Decimal(get_LB(pred)), 2)
+            ub = round(Decimal(get_UB(pred)), 2)
+            casted.append((get_tab(pred), get_attrib(pred), pred[2], lb, ub))
+        self.arithmetic_eq_predicates = casted
+
+    def __cast_for_floats(self):
+        casted = []
+        for pred in self.arithmetic_ineq_predicates:
+            datatype = self.get_datatype((get_tab(pred), get_attrib(pred)))
+            if datatype != 'numeric':
+                casted.append(pred)
+                continue
+            lb = float(get_LB(pred))
+            ub = float(get_UB(pred))
+            casted.append((get_tab(pred), get_attrib(pred), pred[2], lb, ub))
+        self.arithmetic_ineq_predicates = casted
+        casted = []
+        for pred in self.aoa_predicates:
+            if isinstance(pred[0], Decimal):
+                casted.append((float(pred[0]), pred[1]))
+            elif isinstance(pred[1], Decimal):
+                casted.append((pred[0], float(pred[1])))
+            else:
+                casted.append(pred)
+        self.aoa_predicates = casted
+        casted = []
+        for pred in self.arithmetic_eq_predicates:
+            datatype = self.get_datatype((get_tab(pred), get_attrib(pred)))
+            if datatype != 'numeric':
+                casted.append(pred)
+                continue
+            lb = float(get_LB(pred))
+            ub = float(get_UB(pred))
+            casted.append((get_tab(pred), get_attrib(pred), pred[2], lb, ub))
+        self.arithmetic_eq_predicates = casted
 
     def doActualJob(self, args=None):
         self.__cast_for_decimals()
@@ -65,6 +106,7 @@ class InequalityPredicate(FilterHolder):
         if self.__ineaoa_enabled:
             self.extract_aoa_core(query)
             # self.cleanup_predicates()
+        self.__cast_for_floats()
         self.fill_in_internal_predicates()
         return True
 
