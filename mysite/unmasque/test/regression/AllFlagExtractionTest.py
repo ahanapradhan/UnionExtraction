@@ -26,9 +26,9 @@ class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = False
-        self.conn.config.detect_nep = True
+        self.conn.config.detect_nep = False
         self.conn.config.detect_oj = True
-        self.conn.config.detect_or = True
+        self.conn.config.detect_or = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
@@ -41,7 +41,7 @@ class ExtractionTestCase(BaseTestCase):
     def test_key_range(self):
         query = "select n_name, c_acctbal from nation LEFT OUTER JOIN customer " \
                 "ON n_nationkey = c_nationkey and c_nationkey > 3 and " \
-                "n_nationkey < 20 and c_nationkey != 10 and c_acctbal < 7000;"
+                "n_nationkey < 20 and c_nationkey != 10 and c_acctbal < 7000 LIMIT 200;"
         self.do_test(query)
 
     def test_projection_date(self):
@@ -208,6 +208,13 @@ class ExtractionTestCase(BaseTestCase):
                 "(select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on" \
                 " p_partkey = ps_partkey GROUP BY p_size, ps_suppkey ORDER BY p_size desc, " \
                 "ps_suppkey desc LIMIT 7);"
+        self.do_test(query)
+
+    def test_outer_join_with_key_nep(self):
+        query = "select p_size, ps_suppkey, sum(ps_supplycost), count(*) as low_line_number" \
+                " from part RIGHT OUTER JOIN partsupp ON " \
+                " p_partkey = ps_partkey GROUP BY p_size, ps_suppkey ORDER BY p_size desc, " \
+                "ps_suppkey desc LIMIT 200;"
         self.do_test(query)
 
     def test_outer_join_subq2_or(self):

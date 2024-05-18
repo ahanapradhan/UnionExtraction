@@ -19,13 +19,6 @@ class Limit(GenerationPipeLineBase):
         self.joined_attrib_valDict = {}
         self.no_rows = self.connectionHelper.config.limit_limit
 
-    def construct_filter_dict(self):
-        # get filter values and their allowed minimum and maximum value
-        _dict = {}
-        for entry_key in self.filter_attrib_dict.keys():
-            _dict[entry_key[1]] = self.filter_attrib_dict[entry_key]
-        return _dict
-
     def doExtractJob(self, query):
         result = self.doLimitExtractJob(query)
         self.do_init()
@@ -53,14 +46,16 @@ class Limit(GenerationPipeLineBase):
             self.insert_attrib_vals_into_table(att_order, attrib_list, insert_rows, table, insert_logger=False)
             gen_dict[table] = insert_rows
 
-        new_result = self.app.doJob(query)
-        if self.app.isQ_result_empty(new_result):
-            self.logger.error('some error in generating new database. Result is empty. Can not identify Limit.')
-            return False
-        else:
-            if 4 <= len(new_result) <= self.no_rows:
-                self.limit = len(new_result) - 1  # excluding the header column
-                self.logger.debug(f"Limit {self.limit}")
+            new_result = self.app.doJob(query)
+            if not self.app.isQ_result_empty(new_result):
+                if 4 <= len(new_result) <= self.no_rows:
+                    self.limit = len(new_result) - 1  # excluding the header column
+                    self.logger.debug(f"Limit {self.limit}")
+                else:
+                    if self.limit is not None:
+                        self.limit = None
+                        self.logger.debug(f"Result is growing. Limit may be larger than {self.no_rows}")
+                        break
         return True
 
     def determine_k_insert_rows(self, attrib_list_inner, gb_tab_attribs, grouping_attribute_values, insert_rows, k,
@@ -186,9 +181,3 @@ class Limit(GenerationPipeLineBase):
         if not self.global_groupby_attributes:
             pre_assignment = False
         return pre_assignment
-
-    def construct_types_dict(self):
-        _dict = {}
-        for entry_key in self.attrib_types_dict:
-            _dict[entry_key[1]] = self.attrib_types_dict[entry_key]
-        return _dict
