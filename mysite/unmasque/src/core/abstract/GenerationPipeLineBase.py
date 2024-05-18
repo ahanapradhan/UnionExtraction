@@ -152,22 +152,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             return prev
 
         lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
-        self.logger.debug(f"lb {lb}, ub {ub}")
-        if lb == ub:
-            self.logger.info("Cannot generate a new s-val. Giving the old one!")
-            return lb
-
-        if datatype in NUMBER_TYPES:
-            num = get_random_number(datatype, lb, ub)
-            while num == prev:
-                num = get_random_number(datatype, lb, ub)
-            return num
-        elif datatype == 'date':
-            d_date = generate_random_date(lb, ub)
-            while d_date == prev:
-                d_date = generate_random_date(lb, ub)
-            return d_date
-
         if prev == lb:
             val = ub
         elif prev == ub:
