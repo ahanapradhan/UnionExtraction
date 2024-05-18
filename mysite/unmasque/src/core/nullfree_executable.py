@@ -102,6 +102,12 @@ class NullFreeExecutable(Executable):
                 return yes
         return yes
 
+    def get_attrib_val(self, Res, attrib_idx):
+        for row in Res[1:]:
+            if row[attrib_idx] not in [None, 'None']:
+                return row[attrib_idx]
+        return None
+
     def is_attrib_equal_val(self, Res, attrib, val):
         idx = Res[0].index(attrib)
         for row in Res[1:]:
