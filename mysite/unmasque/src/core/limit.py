@@ -40,6 +40,8 @@ class Limit(GenerationPipeLineBase):
         total_combinations = 1
         self.decide_number_of_rows(gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations)
 
+        gen_dict = {}
+
         for table in self.core_relations:
             attrib_list = self.global_all_attribs[table]
             attrib_list_str = ",".join(attrib_list)
@@ -48,20 +50,17 @@ class Limit(GenerationPipeLineBase):
             for k in range(self.no_rows):
                 self.determine_k_insert_rows(attrib_list, gb_tab_attribs, grouping_attribute_values, insert_rows,
                                              k, table)
-            self.insert_attrib_vals_into_table(att_order, attrib_list,
-                                               insert_rows, table, insert_logger=False)
+            self.insert_attrib_vals_into_table(att_order, attrib_list, insert_rows, table, insert_logger=False)
+            gen_dict[table] = insert_rows
 
-            new_result = self.app.doJob(query)
-            if self.app.isQ_result_empty(new_result):
-                self.logger.error('some error in generating new database. Result is empty. Can not identify Limit.')
-                return False
-            else:
-                if 4 <= len(new_result) <= self.no_rows:
-                    self.limit = len(new_result) - 1  # excluding the header column
-                    self.logger.debug(f"Limit {self.limit}")
-                else:
-                    self.logger.info(f"Limit may be higher than {self.no_rows}. "
-                                     f"If extraction gets wrong, set config limit to higher number and try again!")
+        new_result = self.app.doJob(query)
+        if self.app.isQ_result_empty(new_result):
+            self.logger.error('some error in generating new database. Result is empty. Can not identify Limit.')
+            return False
+        else:
+            if 4 <= len(new_result) <= self.no_rows:
+                self.limit = len(new_result) - 1  # excluding the header column
+                self.logger.debug(f"Limit {self.limit}")
         return True
 
     def determine_k_insert_rows(self, attrib_list_inner, gb_tab_attribs, grouping_attribute_values, insert_rows, k,
