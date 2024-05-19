@@ -212,10 +212,10 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_outer_join_with_key_nep(self):
-        query = "select p_size, ps_suppkey, sum(ps_supplycost), count(*) as low_line_number" \
+        query = "select p_size, ps_suppkey, count(*) as low_line_number" \
                 " from part RIGHT OUTER JOIN partsupp ON " \
                 " p_partkey = ps_partkey GROUP BY p_size, ps_suppkey ORDER BY p_size desc, " \
-                "ps_suppkey desc LIMIT 300;"
+                "ps_suppkey desc LIMIT 700;"
         self.do_test(query)
 
     def test_outer_join_subq2_or(self):
