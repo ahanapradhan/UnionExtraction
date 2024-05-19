@@ -87,8 +87,6 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.time_profile.update(time_profile)
             return None
 
-        self.aoa.post_process_for_generation_pipeline(query)
-        self.genPipelineCtx = copy.copy(self.aoa.nextPipelineCtx)
         check, time_profile = self._extract_disjunction(self.aoa.filter_predicates,
                                                         core_relations, query, time_profile)
         if not check:
@@ -96,6 +94,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.time_profile.update(time_profile)
             return None
 
+        self.aoa.post_process_for_generation_pipeline(query, self.or_predicates)
+        self.genPipelineCtx = copy.copy(self.aoa.nextPipelineCtx)
         self.time_profile.update(time_profile)
 
         '''

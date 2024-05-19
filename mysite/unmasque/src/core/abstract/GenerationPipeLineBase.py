@@ -10,7 +10,7 @@ from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, g
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ....src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
-NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number']
+NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number', 'Decimal']
 NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
 
 
@@ -152,18 +152,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             return prev
 
         lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
-        self.logger.debug(f"lb {lb}, ub {ub}")
-        if datatype in NUMBER_TYPES:
-            num = get_random_number(datatype, lb, ub)
-            while num == prev:
-                num = get_random_number(datatype, lb, ub)
-            return num
-        elif datatype == 'date':
-            d_date = generate_random_date(lb, ub)
-            while d_date == prev:
-                d_date = generate_random_date(lb, ub)
-            return d_date
-
         if prev == lb:
             val = ub
         elif prev == ub:
