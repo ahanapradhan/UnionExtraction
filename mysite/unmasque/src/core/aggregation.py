@@ -28,8 +28,8 @@ def get_k_value_for_number(a, b):
         while k_value in constraint_array:
             k_value = k_value + 1
         avg = round((k_value * a + b) / (k_value + 1), 2)
-        if avg / int(avg) == 1:
-            avg = int(avg)
+        # if avg / int(avg) == 1:
+        #    avg = int(avg)
         agg_array = [SUM, k_value * a + b, AVG, avg, MIN, min(a, b), MAX, max(a, b), COUNT, k_value + 1]
     return k_value, agg_array
 
@@ -305,13 +305,9 @@ class Aggregation(GenerationPipeLineBase):
         self.logger.debug("analyze")
         new_result = list(new_result[1])
         new_result = [x.strip() for x in new_result]
-
-        if is_number(new_result[result_index]):
-            check_value = round(float(new_result[result_index]), 2)
-            if check_value / int(check_value) == 1:
-                check_value = int(check_value)
-        else:
-            check_value = str(new_result[result_index])
+        check_value = round(float(new_result[result_index]), 2) if is_number(new_result[result_index]) \
+            else str(new_result[result_index])
+        agg_array = [round(x, 2) if isinstance(x, float) else x for x in agg_array]
         j = 0
         while j < len(agg_array) - 1:
             self.logger.debug(str(attrib), " ", agg_array[j])
