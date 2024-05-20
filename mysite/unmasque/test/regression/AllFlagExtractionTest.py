@@ -5,7 +5,6 @@ from datetime import date, timedelta
 import pytest
 
 from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
-from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
 from mysite.unmasque.test.util import queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -28,21 +27,26 @@ class ExtractionTestCase(BaseTestCase):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = True
         self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = False
+        self.conn.config.detect_oj = True
         self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
-    def test_divide_by_zero_bugfix(self):
-        query = "SELECT c_name, sum(c_acctbal) as max_balance, " \
-                "o_clerk FROM customer, orders where " \
-                "c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
-                "and o_orderdate <= DATE '1995-10-23' and c_acctbal > 0.1 and c_acctbal < 0.6 " \
-                "group by c_name, o_clerk order by c_name, o_clerk desc;"
+    def test_in(self):
+        query = "select n_name, c_acctbal from nation, customer " \
+                "WHERE n_nationkey = c_nationkey and " \
+                "n_nationkey IN (1, 5, 3, 10) and c_acctbal < 7000  ORDER BY c_acctbal LIMIT 30;"
         self.do_test(query)
 
-    def test_projection_date(self):
-        query = "select l_shipdate, l_receiptdate from lineitem;"
+    def test_key_range(self):
+        query = "select n_name, c_acctbal from nation LEFT OUTER JOIN customer " \
+                "ON n_nationkey = c_nationkey and c_nationkey > 3 and " \
+                "n_nationkey < 20 and c_nationkey != 10 and c_acctbal < 7000 LIMIT 200;"
+        self.do_test(query)
+
+    def test_no_filter_outer_join(self):
+        query = "select c_name, n_name, count(*) as total from nation RIGHT OUTER JOIN customer " \
+                "ON c_nationkey = n_nationkey GROUP BY c_name, n_name;"
         self.do_test(query)
 
     def test_main_cmd_query(self):
@@ -105,7 +109,7 @@ class ExtractionTestCase(BaseTestCase):
         query = f"SELECT c_name, max(c_acctbal) as max_balance,  " \
                 f"o_clerk FROM customer RIGHT OUTER JOIN orders ON " \
                 f"c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
-                f"and o_orderdate <= DATE '1995-10-23' and o_orderstatus NOT IN ('P', 'O') and c_acctbal > 20" \
+                f"and o_orderdate <= DATE '1995-10-23' and o_orderstatus NOT IN ('P', 'O') and c_acctbal > 0" \
                 f" group by c_name, o_clerk order by c_name, o_clerk desc LIMIT 42;"
         self.do_test(query)
 
@@ -205,6 +209,13 @@ class ExtractionTestCase(BaseTestCase):
                 "(select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on" \
                 " p_partkey = ps_partkey GROUP BY p_size, ps_suppkey ORDER BY p_size desc, " \
                 "ps_suppkey desc LIMIT 7);"
+        self.do_test(query)
+
+    def test_outer_join_with_key_nep(self):
+        query = "select p_size, ps_suppkey, count(*) as low_line_number" \
+                " from part RIGHT OUTER JOIN partsupp ON " \
+                " p_partkey = ps_partkey GROUP BY p_size, ps_suppkey ORDER BY p_size desc, " \
+                "ps_suppkey desc LIMIT 700;"
         self.do_test(query)
 
     def test_outer_join_subq2_or(self):

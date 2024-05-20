@@ -10,12 +10,26 @@ class MyTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = False
         self.conn.config.detect_or = False
-        self.conn.config.detect_aoa = True
         self.pipeline = ExtractionPipeLine(self.conn)
+
+    def test_basic(self):
+        query = "Select l_shipmode, count(*) as count From orders, lineitem " \
+                "Where " \
+                "o_orderkey = l_orderkey " \
+                "and l_receiptdate >= '1994-01-01' " \
+                "and l_receiptdate <= '1995-01-01' " \
+                "and l_extendedprice <= 70000 " \
+                "and o_totalprice >= 60000 " \
+                "Group By l_shipmode " \
+                "Order By l_shipmode;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
 
     @pytest.mark.skip
     def test_dormant_aoa(self):
-        self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count From orders, lineitem " \
                 "Where o_orderkey = l_orderkey and l_commitdate <= l_receiptdate and l_shipdate <= l_commitdate " \
                 "and l_receiptdate >= '1994-01-01' and l_receiptdate <= '1995-01-01' and l_extendedprice <= " \
@@ -23,7 +37,6 @@ class MyTestCase(BaseTestCase):
                 "Order By l_shipmode;"
         eq = self.pipeline.doJob(query)
         self.assertTrue(eq is not None)
-        self.conn.closeConnection()
 
     @pytest.mark.skip
     def test_paper_subquery1(self):

@@ -92,38 +92,31 @@ class Filter(UN2WhereClause):
         self.logger.debug(self.filter_predicates)
         return self.filter_predicates
 
-    def prepare_attrib_set_for_bulk_mutation(self, attrib_list):
-        d_plus_value = copy.deepcopy(self.global_d_plus_value)
-        attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
-        prepared_attrib_list = []
-        for tab_attrib in attrib_list:
-            tab, attrib = tab_attrib[0], tab_attrib[1]
-            one_attrib = (tab, attrib, attrib_max_length, d_plus_value)
-            prepared_attrib_list.append(one_attrib)
-        return prepared_attrib_list
-
     def get_filter_predicates(self, query: str) -> list:
         filter_attribs = []
-        total_attribs = 0
-        d_plus_value = copy.deepcopy(self.global_d_plus_value)
-        attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
+        # total_attribs = 0
+        # d_plus_value = copy.deepcopy(self.global_d_plus_value)
+        # attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
 
         for tabname in self.core_relations:
             attrib_list = self.global_all_attribs[tabname]
-            total_attribs = total_attribs + len(attrib_list)
+            # total_attribs += len(attrib_list)
             for attrib in attrib_list:
                 datatype = self.get_datatype((tabname, attrib))
-                one_attrib = (tabname, attrib, attrib_max_length, d_plus_value)
-                self.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
+                # one_attrib = (tabname, attrib, attrib_max_length, d_plus_value)
+                # one_attrib = (tabname, attrib)  # , self.global_attrib_max_length, self.global_d_plus_value)
+                # self.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
+                self.extract_filter_on_attrib_set(filter_attribs, query, [(tabname, attrib)], datatype)
         return filter_attribs
 
     def extract_filter_on_attrib_set(self, filter_attribs, query, attrib_list, datatype):
         if datatype == 'str':
             # Group mutation is not implemented for string/text/char/varchar data type
             one_attrib = attrib_list[0]
-            tabname, attrib, attrib_max_length, d_plus_value = one_attrib[0], \
-                one_attrib[1], one_attrib[2], one_attrib[3]
-            self.handle_string_filter(attrib, attrib_max_length, d_plus_value, filter_attribs, tabname, query)
+            # tabname, attrib, attrib_max_length, d_plus_value = one_attrib[0], \
+            #    one_attrib[1], one_attrib[2], one_attrib[3]
+            tabname, attrib = one_attrib[0], one_attrib[1]
+            self.handle_string_filter(attrib, filter_attribs, tabname, query)
         else:
             min_val_domain, max_val_domain = get_min_and_max_val(datatype)
             self.handle_filter_for_nonTextTypes(attrib_list, datatype, filter_attribs, max_val_domain, min_val_domain,
@@ -206,32 +199,31 @@ class Filter(UN2WhereClause):
                                                   attrib_list)  # True implies row was still present
         max_present = self.checkAttribValueEffect(query, max_val_domain,
                                                   attrib_list)  # True implies row was still present
-
         mandatory_attrib = attrib_list[0]
-        tabname, attrib, attrib_max_length, d_plus_value = mandatory_attrib[0], mandatory_attrib[1], mandatory_attrib[
-            2], mandatory_attrib[3]
+        tabname, attrib, = mandatory_attrib[0], mandatory_attrib[1]
+        dmin_val = self.global_d_plus_value[attrib]
+        float_dmin_val = get_cast_value('float', dmin_val)
+        # mandatory_attrib[2], mandatory_attrib[3]
         # inference based on flag_min and flag_max
         if not min_present and not max_present:
-            equalto_flag = self.get_filter_value(query, 'int', float(d_plus_value[attrib]) - .01,
-                                                 float(d_plus_value[attrib]) + .01, '=', attrib_list)
+            equalto_flag = self.get_filter_value(query, 'int', float_dmin_val - .01,
+                                                 float_dmin_val + .01, '=', attrib_list)
             if equalto_flag:
-                filterAttribs.append(
-                    (tabname, attrib, '=', float(d_plus_value[attrib]), float(d_plus_value[attrib])))
+                filterAttribs.append((tabname, attrib, '=', float_dmin_val, float_dmin_val))
             else:
-                val1 = self.get_filter_value(query, 'float', float(d_plus_value[attrib]), max_val_domain, '<=',
-                                             attrib_list)
-                val2 = self.get_filter_value(query, 'float', min_val_domain, math.floor(float(d_plus_value[attrib])),
+                val1 = self.get_filter_value(query, 'float', float_dmin_val, max_val_domain, '<=', attrib_list)
+                val2 = self.get_filter_value(query, 'float', min_val_domain, math.floor(float_dmin_val),
                                              '>=', attrib_list)
                 filterAttribs.append((tabname, attrib, 'range', float(val2), float(val1)))
         elif min_present and not max_present:
-            val = self.get_filter_value(query, 'float', math.ceil(float(d_plus_value[attrib])) - 5, max_val_domain,
+            val = self.get_filter_value(query, 'float', math.ceil(float_dmin_val) - 5, max_val_domain,
                                         '<=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val), float(val) + 0.99, '<=', attrib_list)
             val1 = truncate_value(val1, 2)
             filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, 2))))
 
         elif not min_present and max_present:
-            val = self.get_filter_value(query, 'float', min_val_domain, math.floor(float(d_plus_value[attrib]) + 5),
+            val = self.get_filter_value(query, 'float', min_val_domain, math.floor(float_dmin_val + 5),
                                         '>=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val) - 1, val, '>=', attrib_list)
             val1 = truncate_value(val1, 2)
@@ -300,40 +292,34 @@ class Filter(UN2WhereClause):
     def handle_point_filter(self, datatype, filterAttribs, query, attrib_list, min_val_domain, max_val_domain):
         # min and max domain values (initialize based on data type)
         # PLEASE CONFIRM THAT DATE FORMAT IN DATABASE IS YYYY-MM-DD
-        # min_val_domain, max_val_domain = get_min_and_max_val(datatype)
-        # self.see_d_min()
-        # self.logger.debug(min_val_domain, max_val_domain)
         min_present = self.checkAttribValueEffect(query, get_format(datatype, min_val_domain),
                                                   attrib_list)  # True implies row
         # was still present
         max_present = self.checkAttribValueEffect(query, get_format(datatype, max_val_domain),
                                                   attrib_list)  # True implies row
         mandatory_attrib = attrib_list[0]
-        tabname, attrib, attrib_max_length, d_plus_value = mandatory_attrib[0], mandatory_attrib[1], mandatory_attrib[
-            2], mandatory_attrib[3]
+        tabname, attrib, = mandatory_attrib[0], mandatory_attrib[1]
+        dmin_val = self.global_d_plus_value[attrib]
+        int_dmin_val = get_cast_value(datatype, dmin_val)
         # inference based on flag_min and flag_max
         # was still present
         if not min_present and not max_present:
-            equalto_flag = self.get_filter_value(query, datatype, get_val_plus_delta(datatype,
-                                                                                     get_cast_value(datatype,
-                                                                                                    d_plus_value[
-                                                                                                        attrib]), -1),
-                                                 get_val_plus_delta(datatype,
-                                                                    get_cast_value(datatype, d_plus_value[attrib]), 1),
+            equalto_flag = self.get_filter_value(query, datatype, get_val_plus_delta(datatype, int_dmin_val, -1),
+                                                 get_val_plus_delta(datatype, int_dmin_val, 1),
                                                  '=', attrib_list)
             if equalto_flag:
-                filterAttribs.append((tabname, attrib, '=', d_plus_value[attrib], d_plus_value[attrib]))
+                filterAttribs.append((tabname, attrib, '=', dmin_val, dmin_val))
             else:
-                val1 = self.get_filter_value(query, datatype, get_cast_value(datatype, d_plus_value[attrib]),
+                val1 = self.get_filter_value(query, datatype, int_dmin_val,
                                              get_val_plus_delta(datatype,
                                                                 get_cast_value(datatype, max_val_domain), 1), '<=',
                                              attrib_list)
                 val2 = self.get_filter_value(query, datatype,
                                              get_val_plus_delta(datatype, get_cast_value(datatype, min_val_domain), -1),
-                                             get_cast_value(datatype, d_plus_value[attrib]), '>=', attrib_list)
+                                             int_dmin_val, '>=', attrib_list)
                 filterAttribs.append((tabname, attrib, 'range', val2, val1))
         elif min_present and not max_present:
-            val = self.get_filter_value(query, datatype, get_cast_value(datatype, d_plus_value[attrib]),
+            val = self.get_filter_value(query, datatype, int_dmin_val,
                                         get_val_plus_delta(datatype,
                                                            get_cast_value(datatype, max_val_domain), 1), '<=',
                                         attrib_list)
@@ -341,19 +327,15 @@ class Filter(UN2WhereClause):
         elif not min_present and max_present:
             val = self.get_filter_value(query, datatype,
                                         get_val_plus_delta(datatype, get_cast_value(datatype, min_val_domain), -1),
-                                        get_cast_value(datatype, d_plus_value[attrib]), '>=', attrib_list)
+                                        int_dmin_val, '>=', attrib_list)
             filterAttribs.append((tabname, attrib, '>=', val, max_val_domain))
 
-    def handle_string_filter(self, attrib, attrib_max_length, d_plus_value, filterAttribs, tabname, query):
+    def handle_string_filter(self, attrib, filterAttribs, tabname, query):
         # STRING HANDLING
         # ESCAPE CHARACTERS IN STRING REMAINING
         if self.checkStringPredicate(query, tabname, attrib):
             # returns true if there is predicate on this string attribute
-            representative = str(d_plus_value[attrib])
-            max_length = 100000
-            if (tabname, attrib) in attrib_max_length.keys():
-                max_length = attrib_max_length[(tabname, attrib)]
-            val = self.getStrFilterValue(query, tabname, attrib, representative, max_length)
+            val = self.getStrFilterValue(query, tabname, attrib, str(self.global_d_plus_value[attrib]))
             val = val.strip()
             if '%' in val or '_' in val:
                 filterAttribs.append((tabname, attrib, 'LIKE', val, val))
@@ -373,7 +355,12 @@ class Filter(UN2WhereClause):
         self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)
         return effect
 
-    def getStrFilterValue(self, query, tabname, attrib, representative, max_length):
+    def getStrFilterValue(self, query, tabname, attrib, representative):
+        if (tabname, attrib) in self.global_attrib_max_length.keys():
+            max_length = self.global_attrib_max_length[(tabname, attrib)]
+        else:
+            max_length = 100000
+
         index = 0
         output = ""
         # currently inverted exclaimaination is being used assuming it will not be in the string

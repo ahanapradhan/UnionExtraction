@@ -256,7 +256,7 @@ class Projection(GenerationPipeLineBase):
             # print(self.app.doJob(query), b)
             exe_result = self.app.doJob(query)
             if not self.app.isQ_result_empty(exe_result):
-                b[i][0] = exe_result[1][idx]
+                b[i][0] = self.app.get_attrib_val(exe_result, idx)
 
         solution = np.linalg.solve(coeff, b)
         solution = np.around(solution, decimals=0)
