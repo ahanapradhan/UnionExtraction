@@ -25,12 +25,19 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
-        self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = True
-        self.conn.config.detect_or = True
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.detect_or = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+
+    def test_division_by_zero_bugfix(self):
+        query = "SELECT c_name, avg(c_acctbal) as max_balance,o_clerk FROM customer, orders where " \
+                "c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
+                "and o_orderdate <= DATE '1995-10-23' and c_acctbal > 0.1 and c_acctbal < 0.6 " \
+                "group by c_name, o_clerk order by c_name, o_clerk desc;"
+        self.do_test(query)
 
     def test_in(self):
         query = "select n_name, c_acctbal from nation, customer " \

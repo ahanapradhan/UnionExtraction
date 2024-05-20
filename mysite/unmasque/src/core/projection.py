@@ -284,7 +284,7 @@ class Projection(GenerationPipeLineBase):
                 if fil_check[j]:
                     mi = fil_check[j][3]
                     ma = fil_check[j][4]
-                coeff[outer_idx][j] = random.randrange(math.ceil(mi), math.floor(ma))
+                coeff[outer_idx][j] = random.randrange(math.floor(mi), math.ceil(ma))
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]

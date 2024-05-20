@@ -303,7 +303,7 @@ class Aggregation(GenerationPipeLineBase):
 
     def analyze(self, agg_array, attrib, new_result, result_index):
         self.logger.debug("analyze")
-        new_result = list(new_result[1])
+        new_result = list(self.app.get_attrib_val(new_result, 1))  # list(new_result[1])
         new_result = [x.strip() for x in new_result]
 
         if is_number(new_result[result_index]):
