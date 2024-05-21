@@ -25,10 +25,10 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = False
-        self.conn.config.detect_nep = False
-        self.conn.config.detect_oj = False
-        self.conn.config.detect_or = False
+        self.conn.config.detect_union = True
+        self.conn.config.detect_nep = True
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
@@ -42,7 +42,7 @@ class ExtractionTestCase(BaseTestCase):
     def test_in(self):
         query = "select n_name, c_acctbal from nation, customer " \
                 "WHERE n_nationkey = c_nationkey and " \
-                "n_nationkey IN (1, 5, 3, 10) and c_acctbal < 7000  ORDER BY c_acctbal LIMIT 30;"
+                "n_nationkey IN (1, 2, 5, 3, 4, 10) and c_acctbal < 7000  ORDER BY c_acctbal LIMIT 30;"
         self.do_test(query)
 
     def test_key_range(self):

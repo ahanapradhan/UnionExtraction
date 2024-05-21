@@ -14,7 +14,7 @@ class OuterJoinPipeLine(ExtractionPipeLine):
         if eq is None:
             return None
 
-        self.logger.debug(self.q_generator.filter_predicates)
+        self.logger.debug(self.q_generator.arithmetic_filters)
         self.update_state(OUTER_JOIN + START)
         oj = OuterJoin(self.connectionHelper, self.global_pk_dict, self.genPipelineCtx, self.q_generator,
                        self.pgao_ctx)

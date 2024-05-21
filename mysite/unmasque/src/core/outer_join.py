@@ -3,7 +3,7 @@ from datetime import date
 from typing import Tuple, Union
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.genPipeline_context import GenPipelineContext
 from .dataclass.pgao_context import PGAOcontext
 from ..util.QueryStringGenerator import QueryStringGenerator
 
@@ -11,7 +11,7 @@ from ..util.QueryStringGenerator import QueryStringGenerator
 class OuterJoin(GenerationPipeLineBase):
 
     def __init__(self, connectionHelper, global_pk_dict,
-                 genPipelineCtx: PackageForGenPipeline,
+                 genPipelineCtx: GenPipelineContext,
                  q_gen: QueryStringGenerator,
                  genCtx: PGAOcontext):
         super().__init__(connectionHelper, "Outer Join", genPipelineCtx)
