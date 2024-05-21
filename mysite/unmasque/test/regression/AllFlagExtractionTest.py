@@ -32,10 +32,18 @@ class ExtractionTestCase(BaseTestCase):
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
+    def test_division_by_zero_bugfix(self):
+        query = "SELECT c_name, avg(c_acctbal) as max_balance,o_clerk FROM customer, orders where " \
+                "c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
+                "and o_orderdate <= DATE '1995-10-23' and c_acctbal > 0.1 and c_acctbal < 0.6 " \
+                "group by c_name, o_clerk order by c_name, o_clerk desc;"
+        self.do_test(query)
+
     def test_in(self):
         query = "select n_name, c_acctbal from nation, customer " \
                 "WHERE n_nationkey = c_nationkey and " \
-                "n_nationkey IN (1, 5, 3, 10) and c_acctbal < 7000  ORDER BY c_acctbal LIMIT 30;"
+                "n_nationkey IN (1, 2, 5, 3, 4, 10) and c_acctbal < 7000 "\
+                 "and c_acctbal > 1000 ORDER BY c_acctbal LIMIT 30;"
         self.do_test(query)
 
     def test_key_range(self):

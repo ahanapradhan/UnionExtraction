@@ -5,14 +5,13 @@ from typing import Union, List, Tuple
 
 from .abstract.abstractConnection import AbstractConnectionHelper
 from .abstract.filter_holder import FilterHolder
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
 from ..util.aoa_utils import get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \
     get_delta, \
     get_all_two_combs, get_val_bound_for_chain, get_min_max_for_chain_bounds, \
     optimize_edge_set, create_adjacency_map_from_aoa_predicates, find_all_chains, \
     add_concrete_bounds_as_edge2, remove_item_from_list, \
     find_le_attribs_from_edge_set, find_ge_attribs_from_edge_set, add_item_to_list, remove_absorbed_Bs, \
-    find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, do_numeric_drama, need_permanent_mutation, \
+    find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, need_permanent_mutation, \
     find_concrete_bound_from_filter_bounds, is_equal, add_item_to_dict
 from ..util.utils import get_val_plus_delta, add_two, get_mid_val
 
@@ -40,10 +39,7 @@ class InequalityPredicate(FilterHolder):
         self.arithmetic_ineq_predicates = copy.deepcopy(pending_predicates)
         self.aoa_predicates = []
         self.aoa_less_thans = []
-        self.join_graph = []
-        self.filter_predicates = []
-        self.filter_in_predicates = []
-        self.nextPipelineCtx = None
+        self.arithmetic_filters = []
         self.__handle_filter_for_subrange = self.filter_extractor.handle_filter_for_subrange
 
     def __cast_for_decimals(self):
@@ -108,6 +104,7 @@ class InequalityPredicate(FilterHolder):
             # self.cleanup_predicates()
         self.__cast_for_floats()
         self.fill_in_internal_predicates()
+        self.restore_d_min_from_dict()
         return True
 
     def extract_aoa_core(self, query):
@@ -390,27 +387,7 @@ class InequalityPredicate(FilterHolder):
         return edge_set_dict
 
     def post_process_for_generation_pipeline(self, query, or_predicates) -> None:
-        self.logger.debug("aoa post-process.")
-        self.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict_bkp)
-        self.restore_d_min_from_dict()
-        self.do_permanent_mutation()
-        res = self.app.doJob(query)
-        if self.app.isQ_result_no_full_nullfree_row(res):
-            print("Mutation got wrong! %%%%%%")
-
-        for i, pred in enumerate(self.filter_predicates):
-            for in_pred in self.filter_in_predicates:
-                if pred[:2] == in_pred[:2]:
-                    self.filter_predicates[i] = in_pred
-
-        self.nextPipelineCtx = PackageForGenPipeline(self.core_relations, self.filter_extractor.global_all_attribs,
-                                                     self.filter_extractor.global_attrib_types,
-                                                     self.filter_predicates, self.aoa_predicates, self.join_graph,
-                                                     self.aoa_less_thans, self.global_min_instance_dict,
-                                                     self.get_dmin_val, self.get_datatype)
-        self.nextPipelineCtx.doJob()
-        self.logger.debug(self.nextPipelineCtx.global_filter_predicates)
-        self.logger.debug(self.nextPipelineCtx.global_join_graph)
+        pass
 
     def do_permanent_mutation(self):
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_less_thans))
@@ -450,25 +427,16 @@ class InequalityPredicate(FilterHolder):
 
     def fill_in_internal_predicates(self):
         for a_eq in self.arithmetic_eq_predicates:
-            self.filter_predicates.append(a_eq)
+            self.arithmetic_filters.append(a_eq)
         to_remove = []
         for a_ineq in self.arithmetic_ineq_predicates:
-            red = check_redundancy(self.filter_predicates, a_ineq)
+            red = check_redundancy(self.arithmetic_filters, a_ineq)
             if red:
                 to_remove.append(a_ineq)
             else:
-                self.filter_predicates.append(a_ineq)
+                self.arithmetic_filters.append(a_ineq)
         for t_r in to_remove:
             self.arithmetic_ineq_predicates.remove(t_r)
-        self.create_equi_join_graph()
-
-    def create_equi_join_graph(self):
-        for eq_join in self.algebraic_eq_predicates:
-            join_graph_edge = list(f"{item[1]}" for item in eq_join if len(item) == 2)
-            join_graph_edge.sort()
-            for i in range(0, len(join_graph_edge) - 1):
-                self.join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
-        self.logger.debug("create_equi_join_graph: ", self.join_graph)
 
     def get_equi_join_group(self, tab_attrib: Tuple[str, str]) -> List[Tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:

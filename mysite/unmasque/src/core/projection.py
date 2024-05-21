@@ -7,7 +7,7 @@ from sympy import symbols, expand, collect, nsimplify
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.util.utils import count_empty_lists_in, find_diff_idx
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from ...src.core.dataclass.genPipeline_context import GenPipelineContext
 from ...src.util import constants
 
 
@@ -30,7 +30,7 @@ def get_index_of_difference(attrib, new_result, new_result1, projection_dep, tab
 
 
 class Projection(GenerationPipeLineBase):
-    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: PackageForGenPipeline):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: GenPipelineContext):
         super().__init__(connectionHelper, "Projection", genPipelineCtx)
         self.projection_names = None
         self.projected_attribs = None

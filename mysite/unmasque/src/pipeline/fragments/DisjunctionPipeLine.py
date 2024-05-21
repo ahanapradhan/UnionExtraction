@@ -136,7 +136,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         return True, time_profile
 
     def __get_predicates_in_action(self):
-        return self.aoa.filter_predicates
+        return self.aoa.arithmetic_filters
 
     @abstractmethod
     def process(self, query: str):
