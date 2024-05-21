@@ -2,12 +2,12 @@ import ast
 import copy
 import math
 
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
-from .projection import get_param_values_external
-from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES
-from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
-from ...src.util.constants import min_int_val, max_int_val
+from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from mysite.unmasque.src.core.projection import get_param_values_external
+from mysite.unmasque.src.util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
+from mysite.unmasque.src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES
+from mysite.unmasque.src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
+from mysite.unmasque.src.util.constants import min_int_val, max_int_val
 
 
 def get_k_value_for_number(a, b):
@@ -28,8 +28,6 @@ def get_k_value_for_number(a, b):
         while k_value in constraint_array:
             k_value = k_value + 1
         avg = round((k_value * a + b) / (k_value + 1), 2)
-        # if avg / int(avg) == 1:
-        #    avg = int(avg)
         agg_array = [SUM, k_value * a + b, AVG, avg, MIN, min(a, b), MAX, max(a, b), COUNT, k_value + 1]
     return k_value, agg_array
 

@@ -3,10 +3,10 @@ import math
 import decimal
 from typing import List
 
-from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.abstract.un2_where_clause import UN2WhereClause
-from ...src.util.aoa_utils import get_constants_for
-from ...src.util.utils import is_int, get_val_plus_delta, get_min_and_max_val, \
+from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
+from mysite.unmasque.src.core.abstract.un2_where_clause import UN2WhereClause
+from mysite.unmasque.src.util.aoa_utils import get_constants_for
+from mysite.unmasque.src.util.utils import is_int, get_val_plus_delta, get_min_and_max_val, \
     is_left_less_than_right_by_cutoff, get_format, get_mid_val, get_cast_value
 
 
@@ -211,19 +211,19 @@ class Filter(UN2WhereClause):
             if equalto_flag:
                 filterAttribs.append((tabname, attrib, '=', float_dmin_val, float_dmin_val))
             else:
-                val1 = self.get_filter_value(query, 'float', float_dmin_val, max_val_domain, '<=', attrib_list)
-                val2 = self.get_filter_value(query, 'float', min_val_domain, math.floor(float_dmin_val),
+                val1 = self.get_filter_value(query, 'float', float_dmin_val - 5, max_val_domain, '<=', attrib_list)
+                val2 = self.get_filter_value(query, 'float', min_val_domain, float_dmin_val + 5,
                                              '>=', attrib_list)
                 filterAttribs.append((tabname, attrib, 'range', float(val2), float(val1)))
         elif min_present and not max_present:
-            val = self.get_filter_value(query, 'float', math.ceil(float_dmin_val) - 5, max_val_domain,
+            val = self.get_filter_value(query, 'float', float_dmin_val - 5, max_val_domain,
                                         '<=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val), float(val) + 0.99, '<=', attrib_list)
             val1 = truncate_value(val1, 2)
             filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, 2))))
 
         elif not min_present and max_present:
-            val = self.get_filter_value(query, 'float', min_val_domain, math.floor(float_dmin_val + 5),
+            val = self.get_filter_value(query, 'float', min_val_domain, float_dmin_val + 5,
                                         '>=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val) - 1, val, '>=', attrib_list)
             val1 = truncate_value(val1, 2)
