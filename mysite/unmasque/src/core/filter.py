@@ -211,8 +211,8 @@ class Filter(UN2WhereClause):
             if equalto_flag:
                 filterAttribs.append((tabname, attrib, '=', float_dmin_val, float_dmin_val))
             else:
-                val1 = self.get_filter_value(query, 'float', float_dmin_val - 5, max_val_domain, '<=', attrib_list)
-                val2 = self.get_filter_value(query, 'float', min_val_domain, float_dmin_val + 5,
+                val1 = self.get_filter_value(query, 'float', float_dmin_val, max_val_domain, '<=', attrib_list)
+                val2 = self.get_filter_value(query, 'float', min_val_domain, float_dmin_val,
                                              '>=', attrib_list)
                 filterAttribs.append((tabname, attrib, 'range', float(val2), float(val1)))
         elif min_present and not max_present:
