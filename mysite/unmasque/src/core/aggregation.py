@@ -10,6 +10,7 @@ from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ...src.util.constants import min_int_val, max_int_val
 
 
+
 def get_k_value_for_number(a, b):
     if a == b:
         k_value = 1
@@ -28,8 +29,6 @@ def get_k_value_for_number(a, b):
         while k_value in constraint_array:
             k_value = k_value + 1
         avg = round((k_value * a + b) / (k_value + 1), 2)
-        # if avg / int(avg) == 1:
-        #    avg = int(avg)
         agg_array = [SUM, k_value * a + b, AVG, avg, MIN, min(a, b), MAX, max(a, b), COUNT, k_value + 1]
     return k_value, agg_array
 

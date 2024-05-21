@@ -3,10 +3,10 @@ import math
 import decimal
 from typing import List
 
-from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.abstract.un2_where_clause import UN2WhereClause
-from ...src.util.aoa_utils import get_constants_for
-from ...src.util.utils import is_int, get_val_plus_delta, get_min_and_max_val, \
+from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
+from mysite.unmasque.src.core.abstract.un2_where_clause import UN2WhereClause
+from mysite.unmasque.src.util.aoa_utils import get_constants_for
+from mysite.unmasque.src.util.utils import is_int, get_val_plus_delta, get_min_and_max_val, \
     is_left_less_than_right_by_cutoff, get_format, get_mid_val, get_cast_value
 
 
@@ -211,19 +211,19 @@ class Filter(UN2WhereClause):
             if equalto_flag:
                 filterAttribs.append((tabname, attrib, '=', float_dmin_val, float_dmin_val))
             else:
-                val1 = self.get_filter_value(query, 'float', float_dmin_val, max_val_domain, '<=', attrib_list)
-                val2 = self.get_filter_value(query, 'float', min_val_domain, math.floor(float_dmin_val),
+                val1 = self.get_filter_value(query, 'float', float_dmin_val - 5, max_val_domain, '<=', attrib_list)
+                val2 = self.get_filter_value(query, 'float', min_val_domain, float_dmin_val + 5,
                                              '>=', attrib_list)
                 filterAttribs.append((tabname, attrib, 'range', float(val2), float(val1)))
         elif min_present and not max_present:
-            val = self.get_filter_value(query, 'float', math.ceil(float_dmin_val) - 5, max_val_domain,
+            val = self.get_filter_value(query, 'float', float_dmin_val - 5, max_val_domain,
                                         '<=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val), float(val) + 0.99, '<=', attrib_list)
             val1 = truncate_value(val1, 2)
             filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, 2))))
 
         elif not min_present and max_present:
-            val = self.get_filter_value(query, 'float', min_val_domain, math.floor(float_dmin_val + 5),
+            val = self.get_filter_value(query, 'float', min_val_domain, float_dmin_val + 5,
                                         '>=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val) - 1, val, '>=', attrib_list)
             val1 = truncate_value(val1, 2)
@@ -246,7 +246,7 @@ class Filter(UN2WhereClause):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front_set)
                 if mid_val == low or high == mid_val:
                     break
-                if self.app.isQ_result_no_full_nullfree_row(new_result):
+                if self.app.isQ_result_empty(new_result):
                     high = mid_val
                 else:
                     low = mid_val
@@ -258,7 +258,7 @@ class Filter(UN2WhereClause):
                 mid_val, new_result = self.run_app_with_mid_val(datatype, high, low, query, query_front_set)
                 if mid_val == high or low == mid_val:
                     break
-                if self.app.isQ_result_no_full_nullfree_row(new_result):
+                if self.app.isQ_result_empty(new_result):
                     low = mid_val
                 else:
                     high = mid_val
@@ -277,7 +277,7 @@ class Filter(UN2WhereClause):
             low_query = self.connectionHelper.queries.form_update_query_with_value(query_front, datatype, low)
             self.connectionHelper.execute_sql([low_query])
         new_result = self.app.doJob(query)
-        return not self.app.isQ_result_no_full_nullfree_row(new_result)
+        return not self.app.isQ_result_empty(new_result)
 
     def run_app_with_mid_val(self, datatype, high, low, query, query_front_set):
         mid_val = get_mid_val(datatype, high, low)
@@ -349,8 +349,8 @@ class Filter(UN2WhereClause):
             0] == 'a') else 'a'
         val_result = self.run_updateQ_with_temp_str(attrib, query, tabname, val)
         empty_result = self.run_updateQ_with_temp_str(attrib, query, tabname, "" "")
-        effect = self.app.isQ_result_no_full_nullfree_row(val_result) \
-                 or self.app.isQ_result_no_full_nullfree_row(empty_result)
+        effect = self.app.isQ_result_empty(val_result) \
+                 or self.app.isQ_result_empty(empty_result)
         # update table so that result is not empty
         self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)
         return effect
@@ -373,11 +373,11 @@ class Filter(UN2WhereClause):
                 temp[index] = 'a'
             temp = ''.join(temp)
             new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
-            if not self.app.isQ_result_no_full_nullfree_row(new_result):
+            if not self.app.isQ_result_empty(new_result):
                 temp = copy.deepcopy(representative)
                 temp = temp[:index] + temp[index + 1:]
                 new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
-                if not self.app.isQ_result_no_full_nullfree_row(new_result):
+                if not self.app.isQ_result_empty(new_result):
                     representative = representative[:index] + representative[index + 1:]
                 else:
                     output = output + "_"
@@ -403,7 +403,7 @@ class Filter(UN2WhereClause):
                     temp.insert(index, 'a')
                 temp = ''.join(temp)
                 new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
-                if not self.app.isQ_result_no_full_nullfree_row(new_result):
+                if not self.app.isQ_result_empty(new_result):
                     output = output + '%'
                 output = output + representative[index]
                 index = index + 1
@@ -414,7 +414,7 @@ class Filter(UN2WhereClause):
                 temp.append('a')
             temp = ''.join(temp)
             new_result = self.run_updateQ_with_temp_str(attrib, query, tabname, temp)
-            if not self.app.isQ_result_no_full_nullfree_row(new_result):
+            if not self.app.isQ_result_empty(new_result):
                 output = output + '%'
         return output
 
