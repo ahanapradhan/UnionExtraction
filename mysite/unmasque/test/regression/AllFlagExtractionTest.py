@@ -42,7 +42,8 @@ class ExtractionTestCase(BaseTestCase):
     def test_in(self):
         query = "select n_name, c_acctbal from nation, customer " \
                 "WHERE n_nationkey = c_nationkey and " \
-                "n_nationkey IN (1, 2, 5, 3, 4, 10) and c_acctbal < 7000  ORDER BY c_acctbal LIMIT 30;"
+                "n_nationkey IN (1, 2, 5, 3, 4, 10) and c_acctbal < 7000 "\
+                 "and c_acctbal > 1000 ORDER BY c_acctbal LIMIT 30;"
         self.do_test(query)
 
     def test_key_range(self):
