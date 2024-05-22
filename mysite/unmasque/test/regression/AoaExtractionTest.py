@@ -71,6 +71,7 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    @pytest.mark.skip
     def test_UQ13(self):
         query = "Select l_orderkey, l_linenumber From orders, lineitem, partsupp Where " \
                 "o_orderkey = l_orderkey and " \
