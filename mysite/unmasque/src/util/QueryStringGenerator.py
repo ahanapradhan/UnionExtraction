@@ -174,6 +174,9 @@ class QueryStringGenerator:
     @equi_join.setter
     def equi_join(self, aoa):
         self._workingCopy.eq_join_predicates = aoa.algebraic_eq_predicates
+        self._workingCopy.aoa_predicates = aoa.aoa_predicates
+        self._workingCopy.aoa_less_thans = aoa.aoa_less_thans
+        self._workingCopy.arithmetic_filters = aoa.arithmetic_ineq_predicates
 
     @property
     def limit(self):
@@ -202,9 +205,6 @@ class QueryStringGenerator:
 
     @where_clause_remnants.setter
     def where_clause_remnants(self, remnants):
-        self._workingCopy.aoa_predicates = remnants.global_aoa_le_predicates
-        self._workingCopy.aoa_less_thans = remnants.global_aoa_l_predicates
-        self._workingCopy.arithmetic_filters = remnants.arithmetic_filters
         self._workingCopy.filter_in_predicates = remnants.filter_in_predicates
 
     @property

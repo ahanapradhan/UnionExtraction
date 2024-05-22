@@ -5,7 +5,7 @@ from frozenlist._frozenlist import FrozenList
 
 from ..aoa import InequalityPredicate
 from ..filter import Filter
-from ...util.aoa_utils import get_constants_for
+from ...util.aoa_utils import get_constants_for, get_tab, get_attrib
 from ...util.utils import get_val_plus_delta, get_min_and_max_val, get_format
 
 
@@ -207,7 +207,7 @@ class GenPipelineContext:
 
     def __make_dmin_dict_from_aoa_l(self, LB_dict: dict, UB_dict: dict) -> Tuple[dict, dict]:
         for entry in self.global_aoa_l_predicates:
-            datatype = self.get_datatype((entry[0], entry[1]))
+            datatype = self.get_datatype((get_tab(entry[0]), get_attrib(entry[0])))
             delta, _ = get_constants_for(datatype)
 
             l_attrib, r_attrib = entry[0], entry[1]

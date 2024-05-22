@@ -12,6 +12,20 @@ class MyTestCase(BaseTestCase):
         self.conn.config.detect_or = False
         self.pipeline = ExtractionPipeLine(self.conn)
 
+    def test_basic_simple(self):
+        query = "Select l_shipmode, count(*) as count From orders, lineitem " \
+                "Where " \
+                "o_orderkey = l_orderkey " \
+                "and l_extendedprice <= 70000 " \
+                "and o_totalprice >= 60000 " \
+                "and l_extendedprice <= o_totalprice " \
+                "Group By l_shipmode " \
+                "Order By l_shipmode;"
+        eq = self.pipeline.doJob(query)
+        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
     def test_basic(self):
         query = "Select l_shipmode, count(*) as count From orders, lineitem " \
                 "Where " \
@@ -27,20 +41,76 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
-
-    @pytest.mark.skip
     def test_dormant_aoa(self):
         query = "Select l_shipmode, count(*) as count From orders, lineitem " \
                 "Where o_orderkey = l_orderkey and l_commitdate <= l_receiptdate and l_shipdate <= l_commitdate " \
-                "and l_receiptdate >= '1994-01-01' and l_receiptdate <= '1995-01-01' and l_extendedprice <= " \
+                "and l_receiptdate >= '1994-01-01' and l_receiptdate <= '1995-01-01' and l_extendedprice < " \
                 "o_totalprice and l_extendedprice <= 70000 and o_totalprice >= 60000 Group By l_shipmode " \
                 "Order By l_shipmode;"
         eq = self.pipeline.doJob(query)
-        self.assertTrue(eq is not None)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
+    def test_UQ10(self):
+        query = "Select l_shipmode " \
+                "From orders, lineitem " \
+                "Where o_orderkey = l_orderkey " \
+                "and l_shipdate < l_commitdate ;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_UQ10_2(self):
+        query = "Select l_shipmode " \
+                "From orders, lineitem " \
+                "Where o_orderkey = l_orderkey " \
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate " \
+                "and l_receiptdate >= '1993-01-01' and " \
+                "l_receiptdate < '1995-01-01';"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_UQ13(self):
+        query = "Select l_orderkey, l_linenumber From orders, lineitem, partsupp Where " \
+                "o_orderkey = l_orderkey and " \
+                "ps_partkey = l_partkey and " \
+                "ps_suppkey = l_suppkey and " \
+                "ps_availqty = l_linenumber and " \
+                "l_shipdate >= o_orderdate and " \
+                "o_orderdate >= '1990-01-01' and " \
+                "l_commitdate <= l_receiptdate and " \
+                "l_shipdate <= l_commitdate and " \
+                "l_receiptdate > '1994-01-01' " \
+                "Order By l_orderkey Limit 7;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_UQ10_1(self):
+        query = "Select l_shipmode " \
+                "From orders, lineitem " \
+                "Where o_orderkey = l_orderkey " \
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_aoa_dev_2(self):
+        low_val = 1000
+        high_val = 5527
+        query = f"SELECT c_name as name, " \
+                f"c_acctbal as account_balance " \
+                f"FROM orders, customer, nation " \
+                f"WHERE o_custkey > {low_val} and c_custkey = o_custkey and c_custkey <= {high_val}" \
+                f"and c_nationkey = n_nationkey " \
+                f"and o_orderdate between '1998-01-01' and '1998-01-15' " \
+                f"and o_totalprice <= c_acctbal;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
     def test_paper_subquery1(self):
-        self.conn.connectUsingParams()
         query = "SELECT c_name as name, (c_acctbal - o_totalprice) as account_balance " \
                 "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
                 "and c_nationkey = n_nationkey " \
@@ -51,11 +121,8 @@ class MyTestCase(BaseTestCase):
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
-        self.conn.closeConnection()
 
-    @pytest.mark.skip
     def test_paper_subquery2(self):
-        self.conn.connectUsingParams()
         query = "SELECT s_name as name, " \
                 "(s_acctbal + o_totalprice) as account_balance " \
                 "FROM supplier, lineitem, orders, nation " \
@@ -67,11 +134,9 @@ class MyTestCase(BaseTestCase):
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
-        self.conn.closeConnection()
 
     @pytest.mark.skip
     def test_UQ12_subq1(self):
-        self.conn.connectUsingParams()
         query = "Select p_brand, o_clerk, l_shipmode " \
                 "From orders, lineitem, part " \
                 "Where l_partkey = p_partkey " \
@@ -89,11 +154,8 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
 
-    @pytest.mark.skip
     def test_UQ12_subq2(self):
-        self.conn.connectUsingParams()
         query = "(Select p_brand, s_name, l_shipmode From lineitem, part, supplier  Where l_partkey = " \
                 "p_partkey " \
                 "and p_container = 'LG CAN' and l_shipdate  >= '1995-01-02' and l_suppkey <= 13999 and l_partkey <= " \
@@ -103,7 +165,6 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
 
     def test_UQ10_subq2(self):
         query = "SELECT l_orderkey, l_shipdate FROM lineitem, " \
@@ -114,11 +175,8 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
-        self.assertEqual(3, eq.count("and"))
 
-    @pytest.mark.skip
     def test_UQ11(self):
-        self.conn.connectUsingParams()
         query = "Select o_orderpriority, " \
                 "count(*) as order_count " \
                 "From orders, lineitem " \
@@ -130,7 +188,6 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
-        self.conn.closeConnection()
 
 
 if __name__ == '__main__':

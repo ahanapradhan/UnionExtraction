@@ -203,7 +203,12 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.genPipelineCtx = GenPipelineContext(self.core_relations, self.aoa,
                                                  self.filter_extractor, self.global_min_instance_dict,
                                                  self.or_predicates)
+        self.logger.debug(self.genPipelineCtx.arithmetic_filters)
+        self.logger.debug(self.genPipelineCtx.global_join_graph)
+        self.logger.debug(self.genPipelineCtx.filter_in_predicates)
+        self.logger.debug(self.genPipelineCtx.filter_attrib_dict)
         self.genPipelineCtx.doJob()
+        self.logger.debug("after doJob...")
         self.logger.debug(self.genPipelineCtx.arithmetic_filters)
         self.logger.debug(self.genPipelineCtx.global_join_graph)
         self.logger.debug(self.genPipelineCtx.filter_in_predicates)
