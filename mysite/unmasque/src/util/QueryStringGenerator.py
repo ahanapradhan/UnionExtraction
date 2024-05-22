@@ -3,6 +3,7 @@ from _decimal import Decimal
 
 from frozenlist._frozenlist import FrozenList
 
+from .aoa_utils import remove_item_from_list
 from ..core.abstract.GenerationPipeLineBase import NUMBER_TYPES
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
@@ -452,10 +453,7 @@ class QueryStringGenerator:
         temp_list = copy.deepcopy(self._workingCopy.global_groupby_attributes)
         for attrib in temp_list:
             if attrib not in self._workingCopy.global_projected_attributes:
-                try:
-                    self._workingCopy.global_groupby_attributes.remove(attrib)
-                except:
-                    pass
+                remove_item_from_list(attrib, self._workingCopy.global_groupby_attributes)
                 continue
             remove_flag = True
             for elt in self._workingCopy.global_aggregated_attributes:
@@ -463,10 +461,7 @@ class QueryStringGenerator:
                     remove_flag = False
                     break
             if remove_flag:
-                try:
-                    self._workingCopy.global_groupby_attributes.remove(attrib)
-                except:
-                    pass
+                remove_item_from_list(attrib, self._workingCopy.global_groupby_attributes)
 
     def __generate_select_clause(self):
         for i in range(len(self._workingCopy.global_projected_attributes)):
