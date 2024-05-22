@@ -10,7 +10,6 @@ from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ...src.util import constants
 
-
 def if_dependencies_found_incomplete(projection_names, projection_dep):
     if len(projection_names) > 2:
         empty_deps = count_empty_lists_in(projection_dep)
@@ -221,6 +220,7 @@ class Projection(GenerationPipeLineBase):
         self.logger.debug("Line 221 : Param List", local_param_list)
         self.param_list.append(local_param_list)
         self.infinite_loop(coeff, fil_check, n)
+        self.logger.debug("Line 224 : Coeff", coeff)
         # print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
@@ -257,16 +257,16 @@ class Projection(GenerationPipeLineBase):
             exe_result = self.app.doJob(query)
             if not self.app.isQ_result_empty(exe_result):
                 b[i][0] = self.app.get_attrib_val(exe_result, idx)
-
+        self.logger.debug("Line 261 : Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
         solution = np.around(solution, decimals=0)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
-        self.logger.debug("Line 266 : Coeff of 1", solution[len(self.syms[idx]) - 1])
+        self.logger.debug("Line 267 : Coeff of 1", solution[len(self.syms[idx]) - 1])
         final_res += 1 * solution[-1]
-        self.logger.debug("Line 268 : Equation", coeff, b)
-        self.logger.debug("Line 269 : Solution", solution)
+        self.logger.debug("Line 269 : Equation", coeff, b)
+        self.logger.debug("Line 270 : Solution", solution)
         # self.logger.debug("Final", final_res, nsimplify(collect(final_res, local_symbol_list)))
         projected_attrib[idx] = str(nsimplify(collect(final_res, local_symbol_list)))
         return solution
@@ -282,9 +282,13 @@ class Projection(GenerationPipeLineBase):
                 mi = constants.pr_min
                 ma = constants.pr_max
                 if fil_check[j]:
+                    datatype = self.get_datatype((fil_check[j][0], fil_check[j][1]))
                     mi = fil_check[j][3]
                     ma = fil_check[j][4]
-                coeff[outer_idx][j] = random.randrange(math.floor(mi), math.ceil(ma))
+                    if datatype == 'int':
+                        coeff[outer_idx][j] = random.randrange(mi, ma)
+                    elif (datatype == 'numeric'):
+                        coeff[outer_idx][j] = random.uniform(mi, ma)
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]
