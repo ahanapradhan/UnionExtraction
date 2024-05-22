@@ -157,11 +157,9 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
 
     def test_UQ12_subq2(self):
-        query = "(Select p_brand, s_name, l_shipmode From lineitem, part, supplier  Where l_partkey = " \
-                "p_partkey " \
+        query = "(Select p_brand, s_name, l_shipmode From lineitem, part, supplier  Where l_partkey = p_partkey " \
                 "and p_container = 'LG CAN' and l_shipdate  >= '1995-01-02' and l_suppkey <= 13999 and l_partkey <= " \
-                "14999 " \
-                "and l_extendedprice <= s_acctbal order by s_name Limit 10); "
+                "14999 and l_extendedprice <= s_acctbal order by s_name Limit 10); "
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)

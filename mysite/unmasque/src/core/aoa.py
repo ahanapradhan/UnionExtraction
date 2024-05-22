@@ -427,8 +427,8 @@ class InequalityPredicate(FilterHolder):
         self.filter_extractor.global_min_instance_dict = copy.deepcopy(self.global_min_instance_dict)
 
     def __do_bound_check_again(self, tab_attrib: Tuple[str, str], datatype: str, query: str) -> list:
-        filter_attribs = []
         joined_attribs = self.__get_equi_join_group(tab_attrib)
+        filter_attribs = []
         filter_attribs = self.__extract_filter_on_attrib_set(filter_attribs, query, joined_attribs, datatype)
         return filter_attribs
 
