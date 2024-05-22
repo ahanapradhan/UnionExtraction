@@ -7,9 +7,8 @@ from sympy import symbols, expand, collect, nsimplify
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.util.utils import count_empty_lists_in, find_diff_idx
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.dataclass.genPipeline_context import GenPipelineContext
+from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ...src.util import constants
-
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
     if len(projection_names) > 2:
@@ -30,7 +29,7 @@ def get_index_of_difference(attrib, new_result, new_result1, projection_dep, tab
 
 
 class Projection(GenerationPipeLineBase):
-    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: GenPipelineContext):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: PackageForGenPipeline):
         super().__init__(connectionHelper, "Projection", genPipelineCtx)
         self.projection_names = None
         self.projected_attribs = None
@@ -221,6 +220,7 @@ class Projection(GenerationPipeLineBase):
         self.logger.debug("Param List", local_param_list)
         self.param_list.append(local_param_list)
         self.infinite_loop(coeff, fil_check, n)
+        self.logger.debug("Coeff", coeff)
         # print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
@@ -257,7 +257,7 @@ class Projection(GenerationPipeLineBase):
             exe_result = self.app.doJob(query)
             if not self.app.isQ_result_empty(exe_result):
                 b[i][0] = self.app.get_attrib_val(exe_result, idx)
-
+        self.logger.debug("Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
         solution = np.around(solution, decimals=0)
         final_res = 0
@@ -282,9 +282,13 @@ class Projection(GenerationPipeLineBase):
                 mi = constants.pr_min
                 ma = constants.pr_max
                 if fil_check[j]:
+                    datatype = self.get_datatype((fil_check[j][0], fil_check[j][1]))
                     mi = fil_check[j][3]
                     ma = fil_check[j][4]
-                coeff[outer_idx][j] = random.randrange(math.floor(mi), math.ceil(ma))
+                    if datatype == 'int':
+                        coeff[outer_idx][j] = random.randrange(mi, ma)
+                    elif (datatype == 'numeric'):
+                        coeff[outer_idx][j] = random.uniform(mi, ma)
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]
