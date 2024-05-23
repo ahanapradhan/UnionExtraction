@@ -98,6 +98,42 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_UQ13_2(self):
+        query = "Select l_orderkey, l_linenumber From orders, lineitem Where " \
+                "o_orderkey = l_orderkey and " \
+                "l_shipdate > o_orderdate and " \
+                "o_orderdate >= '1990-01-01' and " \
+                "l_commitdate < l_receiptdate and " \
+                "l_shipdate <= l_commitdate and " \
+                "l_receiptdate > '1994-01-01';"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_UQ13_3(self):
+        query = "Select l_orderkey, l_linenumber From orders, lineitem Where " \
+                "o_orderkey = l_orderkey and " \
+                "l_shipdate > o_orderdate and " \
+                "l_shipdate >= '1991-01-01' and " \
+                "l_commitdate < l_receiptdate and " \
+                "l_shipdate < l_commitdate and " \
+                "l_receiptdate > '1994-01-01';"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_UQ13_4(self):
+        query = "Select l_orderkey, l_linenumber From orders, lineitem Where " \
+                "o_orderkey = l_orderkey and " \
+                "l_shipdate >= o_orderdate and " \
+                "l_commitdate > '1992-03-03' and " \
+                "l_commitdate < l_receiptdate and " \
+                "l_shipdate <= l_commitdate and " \
+                "l_receiptdate > '1994-01-01';"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
     def test_UQ10_1(self):
         query = "Select l_shipmode " \
                 "From orders, lineitem " \

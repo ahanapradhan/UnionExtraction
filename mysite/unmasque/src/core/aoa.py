@@ -12,7 +12,7 @@ from ..util.aoa_utils import get_min, get_max, get_attrib, get_tab, get_UB, get_
     add_concrete_bounds_as_edge2, remove_item_from_list, \
     find_le_attribs_from_edge_set, find_ge_attribs_from_edge_set, add_item_to_list, remove_absorbed_Bs, \
     find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, need_permanent_mutation, \
-    find_concrete_bound_from_filter_bounds, add_item_to_dict, get_op
+    find_concrete_bound_from_filter_bounds, add_item_to_dict, get_op, remove_item_from_dict
 from ..util.utils import get_val_plus_delta, add_two, get_mid_val
 
 
@@ -106,14 +106,14 @@ class InequalityPredicate(FilterHolder):
                     aoa = self.absorb_variable_LBs(E, L, datatype, col_src, col_sink, query)
                     self.absorb_variable_UBs(E, L, datatype, col_src, col_sink, query, aoa)
                     remove_absorbed_Bs(E, self.__absorbed_LBs, self.__absorbed_UBs, col_sink, col_src)
-                    self.logger.debug("E: ", E)
+                    self.logger.debug("within chain E: ", E)
 
                 self.__extract_dormant_LBs(E, col_src, datatype, query, L)
-                self.logger.debug("E: ", E)
+                self.logger.debug("after absorbing all bounds E: ", E)
 
         self.__revert_mutation_on_filter_global_min_instance_dict()
         self.__extract_dormant_UBs(E, datatype, directed_paths, query, L)
-        self.logger.debug("E: ", E)
+        self.logger.debug("after full round E: ", E)
 
         self.absorb_arithmetic_filters()  # mandatory cleanup
         self.__revert_mutation_on_filter_global_min_instance_dict()
@@ -199,21 +199,18 @@ class InequalityPredicate(FilterHolder):
 
         col_sink_lb = self.find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
         val, dmin_val = self.__mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, False, query)
-        self.logger.debug(f"dmin.{col_sink}: {dmin_val}, mutated with {val}")
 
         if val != dmin_val:
             new_ub_fe = self.__do_bound_check_again(col_src, datatype, query)
-            new_ub = get_UB(new_ub_fe[0]) if len(new_ub_fe) else get_max(self.constants_dict[datatype])
-            self.logger.debug(f"new UB of {col_src}: {new_ub}")
+            new_ub = get_UB(new_ub_fe[0]) if new_ub_fe is not None and len(new_ub_fe) \
+                else get_max(self.constants_dict[datatype])
 
             if prev_ub != new_ub:
                 add_item_to_list((col_src, col_sink), E)
                 for _src in joined_src:
                     add_item_to_dict(self.__absorbed_UBs, _src, prev_ub)
 
-                self.logger.debug(f" new ub {new_ub}, val {val}")
                 if new_ub < val:
-                    self.logger.debug(f"{col_src} < {col_sink}")
                     remove_item_from_list((col_src, col_sink), E)
                     add_item_to_list((col_src, col_sink), L)
             else:
@@ -236,21 +233,21 @@ class InequalityPredicate(FilterHolder):
         if any mutation happens in d_min, make sure the lb is updated accordingly
         """
         prev_lb = self.find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
+
+        if (col_src, col_sink) in E or (col_src, col_sink) in L:
+            for _sink in joined_sink:
+                add_item_to_dict(self.__absorbed_LBs, _sink, prev_lb)
+
         col_src_ub = self.find_concrete_bound_from_edge_set(col_src, E, datatype, True)
         val, dmin_val = self.__mutate_attrib_with_Bound_val(col_src, datatype, col_src_ub, True, query)
-        self.logger.debug(f"dmin.{col_src}: {dmin_val}, mutated with {val}")
 
         if val != dmin_val:
             new_lb_fe = self.__do_bound_check_again(col_sink, datatype, query)
-            new_lb = get_LB(new_lb_fe[0]) if len(new_lb_fe) else get_min(self.constants_dict[datatype])
-            self.logger.debug(f"new LB of {col_sink}: {new_lb}")
+            new_lb = get_LB(new_lb_fe[0]) if new_lb_fe is not None and len(new_lb_fe) \
+                else get_min(self.constants_dict[datatype])
 
             if prev_lb != new_lb:
                 aoa_confirm = True
-                for _sink in joined_sink:
-                    add_item_to_dict(self.__absorbed_LBs, _sink, prev_lb)
-                self.logger.debug(f" new lb {new_lb}, val {val}")
-
                 if new_lb > val:
                     self.logger.debug(f"{col_src} < {col_sink}")
                     remove_item_from_list((col_src, col_sink), E)
@@ -267,6 +264,11 @@ class InequalityPredicate(FilterHolder):
         else:
             self.logger.debug(f"no aoa due to immutability of dmin val")
             remove_item_from_list((col_src, col_sink), E)
+
+        if not aoa_confirm:
+            for _sink in joined_sink:
+                remove_item_from_dict(self.__absorbed_LBs, _sink, prev_lb)
+
         return aoa_confirm
 
     def __mutate_col_to_lb_and_update_setE(self, col_src, datatype, query):

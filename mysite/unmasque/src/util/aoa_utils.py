@@ -127,7 +127,8 @@ def get_max(pred: Tuple[Union[int, Decimal, date], Union[int, Decimal, date, flo
     return pred[1]
 
 
-def get_min(pred: Tuple[Union[int, Decimal, date, float], Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
+def get_min(pred: Tuple[
+    Union[int, Decimal, date, float], Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
     return pred[0]
 
 
@@ -322,6 +323,12 @@ def add_item_to_dict(_dict: dict, key, item):
     else:
         if item not in _dict[key]:
             _dict[key].append(item)
+
+
+def remove_item_from_dict(_dict: dict, key, item):
+    if key in _dict.keys():
+        if item in _dict[key]:
+            _dict[key].remove(item)
 
 
 def remove_absorbed_Bs(E, absorbed_LBs, absorbed_UBs, col_sink, col_src):
