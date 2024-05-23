@@ -22,7 +22,6 @@ class MyTestCase(BaseTestCase):
                 "Group By l_shipmode " \
                 "Order By l_shipmode;"
         eq = self.pipeline.doJob(query)
-        self.assertTrue(eq is not None)
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
@@ -37,7 +36,6 @@ class MyTestCase(BaseTestCase):
                 "Group By l_shipmode " \
                 "Order By l_shipmode;"
         eq = self.pipeline.doJob(query)
-        self.assertTrue(eq is not None)
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
@@ -71,7 +69,7 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_UQ13(self):
         query = "Select l_orderkey, l_linenumber From orders, lineitem, partsupp Where " \
                 "o_orderkey = l_orderkey and " \
@@ -121,7 +119,7 @@ class MyTestCase(BaseTestCase):
                 "and o_totalprice <= c_acctbal;"
         eq = self.pipeline.doJob(query)
         print(eq)
-        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
 
     def test_paper_subquery2(self):
         query = "SELECT s_name as name, " \
@@ -134,9 +132,9 @@ class MyTestCase(BaseTestCase):
                 "and o_totalprice >= s_acctbal and o_totalprice >= 30000 and 50000 >= s_acctbal;"
         eq = self.pipeline.doJob(query)
         print(eq)
-        self.assertTrue(eq is not None)
+        self.assertTrue(self.pipeline.correct)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_UQ12_subq1(self):
         query = "Select p_brand, o_clerk, l_shipmode " \
                 "From orders, lineitem, part " \
@@ -153,7 +151,6 @@ class MyTestCase(BaseTestCase):
 
         eq = self.pipeline.doJob(query)
         print(eq)
-        self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
     def test_UQ12_subq2(self):
@@ -162,7 +159,6 @@ class MyTestCase(BaseTestCase):
                 "14999 and l_extendedprice <= s_acctbal order by s_name Limit 10); "
         eq = self.pipeline.doJob(query)
         print(eq)
-        self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
     def test_UQ10_subq2(self):
@@ -172,7 +168,6 @@ class MyTestCase(BaseTestCase):
                 "l_extendedprice > 1000;"
         eq = self.pipeline.doJob(query)
         print(eq)
-        self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
     def test_UQ11(self):
@@ -185,7 +180,6 @@ class MyTestCase(BaseTestCase):
                 "Order By o_orderpriority;"
         eq = self.pipeline.doJob(query)
         print(eq)
-        self.assertTrue(eq is not None)
         self.assertTrue(self.pipeline.correct)
 
 

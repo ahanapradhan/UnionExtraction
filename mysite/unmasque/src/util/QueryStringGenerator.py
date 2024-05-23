@@ -177,7 +177,7 @@ class QueryStringGenerator:
         self._workingCopy.eq_join_predicates = aoa.algebraic_eq_predicates
         self._workingCopy.aoa_predicates = aoa.aoa_predicates
         self._workingCopy.aoa_less_thans = aoa.aoa_less_thans
-        self._workingCopy.arithmetic_filters = aoa.arithmetic_ineq_predicates
+        self._workingCopy.arithmetic_filters = aoa.arithmetic_ineq_predicates + aoa.arithmetic_eq_predicates
 
     @property
     def limit(self):
@@ -397,6 +397,8 @@ class QueryStringGenerator:
             if datatype == 'numeric':
                 f_lb, f_ub = round(Decimal(lb), 2), round(Decimal(ub), 2)
                 i_min, i_max = round(Decimal(i_min), 2), round(Decimal(i_max), 2)
+            if lb == ub:
+                predicate = f"{tab}.{attrib} = {f_lb}"
             if lb <= i_min:
                 predicate = f"{tab}.{attrib} <= {f_ub}"
             if ub >= i_max:

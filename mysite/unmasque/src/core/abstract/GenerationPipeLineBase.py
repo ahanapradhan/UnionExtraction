@@ -5,8 +5,7 @@ from datetime import date, timedelta
 from typing import Union, Tuple
 
 from .MutationPipeLineBase import MutationPipeLineBase
-from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string, \
-    get_random_number
+from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ....src.core.dataclass.genPipeline_context import GenPipelineContext
 
