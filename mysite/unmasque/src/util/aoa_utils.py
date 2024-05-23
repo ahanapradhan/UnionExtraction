@@ -95,37 +95,37 @@ def get_all_two_combs2(items):
     return seq
 
 
-def get_LB(pred: Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]]):
+def get_LB(pred: Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
     return pred[3]
 
 
-def get_UB(pred: Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]]):
+def get_UB(pred: Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
     return pred[4]
 
 
 def get_attrib(pred: Union[
-    Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]],
+    Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]],
     Tuple[str, str]
 ]):
     return pred[1]
 
 
 def get_tab(pred: Union[
-    Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]],
+    Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date, float]],
     Tuple[str, str]
 ]):
     return pred[0]
 
 
-def get_op(pred: Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date]]):
+def get_op(pred: Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
     return pred[2]
 
 
-def get_max(pred: Tuple[Union[int, Decimal, date], Union[int, Decimal, date], Union[int, Decimal, date]]):
+def get_max(pred: Tuple[Union[int, Decimal, date, float], Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
     return pred[1]
 
 
-def get_min(pred: Tuple[Union[int, Decimal, date], Union[int, Decimal, date], Union[int, Decimal, date]]):
+def get_min(pred: Tuple[Union[int, Decimal, date, float], Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
     return pred[0]
 
 
