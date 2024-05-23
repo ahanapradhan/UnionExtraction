@@ -207,7 +207,7 @@ class InequalityPredicate(FilterHolder):
             self.logger.debug(f"new UB of {col_src}: {new_ub}")
 
             if prev_ub != new_ub:
-
+                add_item_to_list((col_src, col_sink), E)
                 for _src in joined_src:
                     add_item_to_dict(self.__absorbed_UBs, _src, prev_ub)
 
@@ -236,10 +236,6 @@ class InequalityPredicate(FilterHolder):
         if any mutation happens in d_min, make sure the lb is updated accordingly
         """
         prev_lb = self.find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
-        if (col_src, col_sink) in E or (col_src, col_sink) in L:
-            for _sink in joined_sink:
-                add_item_to_dict(self.__absorbed_LBs, _sink, prev_lb)
-
         col_src_ub = self.find_concrete_bound_from_edge_set(col_src, E, datatype, True)
         val, dmin_val = self.__mutate_attrib_with_Bound_val(col_src, datatype, col_src_ub, True, query)
         self.logger.debug(f"dmin.{col_src}: {dmin_val}, mutated with {val}")

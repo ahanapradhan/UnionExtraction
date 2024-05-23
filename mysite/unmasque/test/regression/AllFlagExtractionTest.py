@@ -629,12 +629,13 @@ class ExtractionTestCase(BaseTestCase):
                 "limit 100;"
         self.do_test(query)
 
-    @pytest.mark.skip
+    #@pytest.mark.skip
     def test_sumang_thesis_Q3_nep(self):
         query = "select l_shipmode,sum(l_extendedprice) as revenue " \
                 "from lineitem " \
                 "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and ((l_orderkey > 124 and l_orderkey < 135) or (l_orderkey > 235 and l_orderkey < 370)) group by l_shipmode order by l_shipmode " \
+                "and ((l_orderkey > 124 and l_orderkey < 135) or " \
+                "(l_orderkey > 235 and l_orderkey < 370)) group by l_shipmode order by l_shipmode " \
                 "limit 100;"
         self.do_test(query)
 

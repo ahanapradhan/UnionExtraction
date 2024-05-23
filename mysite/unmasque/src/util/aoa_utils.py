@@ -43,13 +43,11 @@ def remove_subchians(chains):
     to_remove = []
     seq = get_all_two_combs(chains)
     for s in seq:
-        if is_sublist(s[0], s[1]):
-            to_remove.append(s[1])
+        sorted_s = sorted(s, key=lambda x: len(x))
+        if is_sublist(sorted_s[1], sorted_s[0]):
+            to_remove.append(sorted_s[0])
     for r in to_remove:
-        try:
-            chains.remove(r)
-        except ValueError:
-            pass
+        remove_item_from_list(r, chains)
     return chains
 
 
