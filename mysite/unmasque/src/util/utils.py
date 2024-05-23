@@ -281,7 +281,8 @@ def get_mid_val(datatype, high, low, div=2):
     elif datatype == 'int':
         mid_val = low + int((high - low) / div)
     else:  # numeric
-        mid_val = (high + low) / div
+        result = Decimal(str(high)) + Decimal(str(low))
+        mid_val = result / div
         mid_val = float(truncate(mid_val, 2))
     return mid_val
 
