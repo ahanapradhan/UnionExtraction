@@ -167,11 +167,11 @@ class QueryStringGenerator:
         self._workingCopy.core_relations.sort()
 
     @property
-    def equi_join(self):
+    def algebraic_predicates(self):
         return NotImplementedError
 
-    @equi_join.setter
-    def equi_join(self, aoa):
+    @algebraic_predicates.setter
+    def algebraic_predicates(self, aoa):
         self._workingCopy.eq_join_predicates = aoa.algebraic_eq_predicates
         for pred in aoa.aoa_less_thans:
             self._workingCopy.all_aoa.append(
@@ -203,11 +203,11 @@ class QueryStringGenerator:
         self._workingCopy.order_by_op = value.orderby_string
 
     @property
-    def where_clause_remnants(self):
+    def arithmetic_in_predicates(self):
         return NotImplementedError
 
-    @where_clause_remnants.setter
-    def where_clause_remnants(self, remnants):
+    @arithmetic_in_predicates.setter
+    def arithmetic_in_predicates(self, remnants):
         self._workingCopy.filter_in_predicates = remnants.filter_in_predicates
 
     @property
@@ -222,19 +222,11 @@ class QueryStringGenerator:
         raise NotImplementedError
 
     @property
-    def algebraic_inequalities_aoa(self):
+    def algebraic_inequalities(self):
         return self._workingCopy.all_aoa
 
-    @algebraic_inequalities_aoa.setter
+    @algebraic_inequalities.setter
     def algebraic_inequalities_aoa(self, value):
-        raise NotImplementedError
-
-    @property
-    def algebraic_inequalities_aoa_lt(self):
-        return self._workingCopy.aoa_less_thans
-
-    @algebraic_inequalities_aoa_lt.setter
-    def algebraic_inequalities_aoa_lt(self, value):
         raise NotImplementedError
 
     @property
