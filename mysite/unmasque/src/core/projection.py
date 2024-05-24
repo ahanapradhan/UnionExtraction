@@ -7,7 +7,9 @@ from .dataclass.genPipeline_context import GenPipelineContext
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
+from ...src.util.utils import count_empty_lists_in, find_diff_idx
 from ...src.util.aoa_utils import get_LB, get_UB
+
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
     if len(projection_names) > 2:
@@ -281,14 +283,14 @@ class Projection(GenerationPipeLineBase):
                 pred = fil_check[j]
                 min = constants.pr_min
                 max = constants.pr_max
-                if pred:
+                if fil_check[j]:
                     datatype = self.get_datatype((fil_check[j][0], fil_check[j][1]))
                     min = get_LB(pred)
                     max = get_UB(pred)
-                if datatype == 'int':
-                    coeff[outer_idx][j] = random.randrange(min, max)
-                elif (datatype == 'numeric'):
-                    coeff[outer_idx][j] = random.uniform(min, max)
+                    if datatype == 'int':
+                        coeff[outer_idx][j] = random.randrange(min, max)
+                    elif (datatype == 'numeric'):
+                        coeff[outer_idx][j] = random.uniform(min, max)
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]
