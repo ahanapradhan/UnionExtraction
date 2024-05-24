@@ -281,16 +281,16 @@ class Projection(GenerationPipeLineBase):
             # Additionally checking if rank of the matrix has become 2^n
             for j in range(n):
                 pred = fil_check[j]
-                min = constants.pr_min
-                max = constants.pr_max
+                mini = constants.pr_min
+                maxi = constants.pr_max
                 if fil_check[j]:
                     datatype = self.get_datatype((fil_check[j][0], fil_check[j][1]))
-                    min = get_LB(pred)
-                    max = get_UB(pred)
+                    mini = get_LB(pred)
+                    maxi = get_UB(pred)
                     if datatype == 'int':
-                        coeff[outer_idx][j] = random.randrange(min, max)
+                        coeff[outer_idx][j] = random.randrange(mini, maxi)
                     elif (datatype == 'numeric'):
-                        coeff[outer_idx][j] = random.uniform(min, max)
+                        coeff[outer_idx][j] = random.uniform(mini, maxi)
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]
