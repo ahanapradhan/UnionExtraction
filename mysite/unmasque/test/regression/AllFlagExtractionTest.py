@@ -638,6 +638,13 @@ class ExtractionTestCase(BaseTestCase):
                 "limit 100;"
         self.do_test(query)
 
+    def test_test(self):
+        query = "SELECT c_name, avg(c_acctbal+o_totalprice + 3.02) as rolex,o_clerk FROM customer, orders WHERE " \
+                "c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
+                "and o_orderdate <= DATE '1995-10-23' and c_acctbal > 30.04 " \
+                "group by c_name, o_clerk order by c_name, o_clerk desc;"
+        self.do_test(query)
+
     @pytest.mark.skip
     def test_sumang_thesis_Q3_nep1(self):
         query = "select l_shipmode,sum(l_extendedprice) as revenue " \
