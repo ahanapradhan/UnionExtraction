@@ -665,7 +665,7 @@ class QueryStringGenerator:
         predicate = ''
         if len(fp) == 3:
             predicate = get_aoa_string(fp)
-        elif len(fp) > 4:
+        elif len(fp) >= 4:
             predicate = self.formulate_predicate_from_filter(fp)
         return predicate
 
