@@ -8,7 +8,7 @@ import pytest
 class MyTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
-        self.conn.config.detect_nep = False
+        self.conn.config.detect_nep = True
         self.conn.config.detect_or = False
         self.pipeline = ExtractionPipeLine(self.conn)
 
@@ -125,11 +125,14 @@ class MyTestCase(BaseTestCase):
     def test_UQ13_4(self):
         query = "Select l_orderkey, l_linenumber From orders, lineitem Where " \
                 "o_orderkey = l_orderkey and " \
-                "l_shipdate >= o_orderdate and " \
-                "l_commitdate > '1992-03-03' and " \
+                "l_shipdate > o_orderdate and " \
+                "o_orderdate > '1992-03-03' and " \
                 "l_commitdate < l_receiptdate and " \
                 "l_shipdate <= l_commitdate and " \
-                "l_receiptdate > '1994-01-01';"
+                "l_receiptdate > '1994-01-01' and " \
+                "o_orderdate <> '1996-01-10' " \
+                "and l_shipdate <> '1994-02-21'" \
+                " and l_commitdate <> '1998-06-25';"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(self.pipeline.correct)

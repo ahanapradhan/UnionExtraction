@@ -99,8 +99,7 @@ class InequalityPredicate(FilterHolder):
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(E))
         self.logger.debug("E: ", E)
         for path in directed_paths:
-            for i in range(len(path)):
-                col_src = path[i]
+            for i, col_src in enumerate(path):
                 col_sink = path[i + 1] if i + 1 < len(path) else None
                 if col_sink is not None:
                     aoa = self.absorb_variable_LBs(E, L, datatype, col_src, col_sink, query)
@@ -249,7 +248,6 @@ class InequalityPredicate(FilterHolder):
             if prev_lb != new_lb:
                 aoa_confirm = True
                 if new_lb > val:
-                    self.logger.debug(f"{col_src} < {col_sink}")
                     remove_item_from_list((col_src, col_sink), E)
                     add_item_to_list((col_src, col_sink), L)
                 """
@@ -273,7 +271,7 @@ class InequalityPredicate(FilterHolder):
 
     def __mutate_col_to_lb_and_update_setE(self, col_src, datatype, query):
         mutation_lb_fe = self.__do_bound_check_again(col_src, datatype, query)
-        mutation_lb = get_LB(mutation_lb_fe[0]) if len(mutation_lb_fe) \
+        mutation_lb = get_LB(mutation_lb_fe[0]) if mutation_lb_fe is not None and len(mutation_lb_fe) \
             else get_min(self.constants_dict[datatype])
         joined_src = self.__get_equi_join_group(col_src)
         for col in joined_src:
