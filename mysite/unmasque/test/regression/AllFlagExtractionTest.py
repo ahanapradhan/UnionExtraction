@@ -732,6 +732,13 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
 
+    def test_UQ10_1_1(self):
+        query = "Select l_shipmode, o_clerk " \
+                "From orders RIGHT OUTER JOIN lineitem " \
+                "ON o_orderkey = l_orderkey " \
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate;"
+        self.do_test(query)
+
 
 if __name__ == '__main__':
     unittest.main()

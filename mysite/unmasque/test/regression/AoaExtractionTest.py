@@ -147,15 +147,6 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
-    def test_UQ10_1_1(self):
-        query = "Select l_shipmode, o_clerk " \
-                "From orders RIGHT OUTER JOIN lineitem " \
-                "ON o_orderkey = l_orderkey " \
-                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate;"
-        eq = self.pipeline.doJob(query)
-        print(eq)
-        self.assertTrue(self.pipeline.correct)
-
     def test_aoa_dev_2(self):
         low_val = 1000
         high_val = 5527
