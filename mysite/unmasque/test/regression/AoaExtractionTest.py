@@ -10,7 +10,6 @@ class MyTestCase(BaseTestCase):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = True
         self.conn.config.detect_or = True
-        self.conn.config.detect_oj = True
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_basic_simple(self):
