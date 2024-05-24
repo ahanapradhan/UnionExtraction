@@ -3,6 +3,8 @@ from _decimal import Decimal
 from datetime import date
 from typing import Union, List, Tuple
 
+from mysite.unmasque.src.util.utils import get_datatype_of_val, get_format
+
 
 def optimize_edge_set(edge_set: List[Tuple[Tuple[str, str], Tuple[str, str]]]):
     nodes = set()
@@ -183,6 +185,19 @@ def left_over_aoa_CBs(absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, edge_s
         if not isinstance(edge[1], tuple):
             if edge[0] not in aoa_CB_UBs or edge[0] not in absorbed_UBs:
                 aoa_CB_UBs[edge[0]] = edge[1]
+
+
+def get_aoa_string(aoa):
+    lesser, op, greater = aoa[0], aoa[1], aoa[2]
+    return f"{lesser[0]}.{lesser[1]} {op} {greater[0]}.{greater[1]}"
+
+
+def add_pred_for(aoa_l, pred):
+    if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
+        pred.append(f"{aoa_l[0]}.{aoa_l[1]}")
+    else:
+        pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
+    return aoa_l
 
 
 def partitions_with_min_elements(arr, min_elements=2):
