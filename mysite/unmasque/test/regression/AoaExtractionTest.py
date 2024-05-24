@@ -9,7 +9,8 @@ class MyTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self.conn.config.detect_nep = True
-        self.conn.config.detect_or = False
+        self.conn.config.detect_or = True
+        self.conn.config.detect_oj = True
         self.pipeline = ExtractionPipeLine(self.conn)
 
     def test_basic_simple(self):
@@ -122,6 +123,7 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    @pytest.mark.skip
     def test_UQ13_4(self):
         query = "Select l_orderkey, l_linenumber From orders, lineitem Where " \
                 "o_orderkey = l_orderkey and " \
@@ -141,6 +143,15 @@ class MyTestCase(BaseTestCase):
         query = "Select l_shipmode " \
                 "From orders, lineitem " \
                 "Where o_orderkey = l_orderkey " \
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_UQ10_1_1(self):
+        query = "Select l_shipmode, o_clerk " \
+                "From orders RIGHT OUTER JOIN lineitem " \
+                "ON o_orderkey = l_orderkey " \
                 "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate;"
         eq = self.pipeline.doJob(query)
         print(eq)

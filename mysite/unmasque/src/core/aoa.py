@@ -102,8 +102,8 @@ class InequalityPredicate(FilterHolder):
             for i, col_src in enumerate(path):
                 col_sink = path[i + 1] if i + 1 < len(path) else None
                 if col_sink is not None:
-                    aoa = self.absorb_variable_LBs(E, L, datatype, col_src, col_sink, query)
-                    self.absorb_variable_UBs(E, L, datatype, col_src, col_sink, query, aoa)
+                    aoa = self.__absorb_variable_LBs(E, L, datatype, col_src, col_sink, query)
+                    self.__absorb_variable_UBs(E, L, datatype, col_src, col_sink, query, aoa)
                     remove_absorbed_Bs(E, self.__absorbed_LBs, self.__absorbed_UBs, col_sink, col_src)
                     self.logger.debug("within chain E: ", E)
 
@@ -114,11 +114,11 @@ class InequalityPredicate(FilterHolder):
         self.__extract_dormant_UBs(E, datatype, directed_paths, query, L)
         self.logger.debug("after full round E: ", E)
 
-        self.absorb_arithmetic_filters()  # mandatory cleanup
+        self.__absorb_arithmetic_filters()  # mandatory cleanup
         self.__revert_mutation_on_filter_global_min_instance_dict()
         return E, L
 
-    def absorb_arithmetic_filters(self):
+    def __absorb_arithmetic_filters(self):
         to_remove = []
         for eq in self.arithmetic_eq_predicates:
             tab, attrib, val = get_tab(eq), get_attrib(eq), eq[-1]
@@ -148,13 +148,13 @@ class InequalityPredicate(FilterHolder):
         else None, E)
         cb_list = list(filter(lambda ub: ub is not None, cb_list_with_nones))
 
-        self.find_transitive_concrete_L_Bounds(L, cb_list, to_remove, is_UB=True)
-        self.find_transitive_concrete_L_Bounds(L, cb_list, to_remove, is_UB=False)
+        self.__find_transitive_concrete_L_Bounds(L, cb_list, to_remove, is_UB=True)
+        self.__find_transitive_concrete_L_Bounds(L, cb_list, to_remove, is_UB=False)
 
         for t_r in to_remove:
             remove_item_from_list(t_r, E)
 
-    def find_transitive_concrete_L_Bounds(self, L: List[Tuple], cb_list: list, to_remove: list, is_UB: bool) -> None:
+    def __find_transitive_concrete_L_Bounds(self, L: List[Tuple], cb_list: list, to_remove: list, is_UB: bool) -> None:
         if not len(L) or not len(cb_list):
             return
         for edge in L:
@@ -171,7 +171,7 @@ class InequalityPredicate(FilterHolder):
                     redundant_pred = (edge[0], lup) if is_UB else (gup, edge[1])
                     to_remove.append(redundant_pred)
 
-    def find_concrete_bound_from_edge_set(self, attrib, edge_set, datatype, is_UB):
+    def __find_concrete_bound_from_edge_set(self, attrib, edge_set, datatype, is_UB):
         col_ps_getter = find_ge_attribs_from_edge_set if is_UB else find_le_attribs_from_edge_set
         prev_b_none_getter = get_max if is_UB else get_min
         prev_b = None
@@ -188,15 +188,15 @@ class InequalityPredicate(FilterHolder):
             self.logger.debug(f"LB of {attrib}: {prev_b}")
         return prev_b
 
-    def absorb_variable_UBs(self, E, L, datatype, col_src, col_sink, query,
-                            aoa_confirm):
+    def __absorb_variable_UBs(self, E, L, datatype, col_src, col_sink, query,
+                              aoa_confirm):
         joined_src = self.__get_equi_join_group(col_src)
-        prev_ub = self.find_concrete_bound_from_edge_set(col_src, E, datatype, True)
+        prev_ub = self.__find_concrete_bound_from_edge_set(col_src, E, datatype, True)
         if (col_src, col_sink) in E or (col_src, col_sink) in L:
             for _src in joined_src:
                 add_item_to_dict(self.__absorbed_UBs, _src, prev_ub)
 
-        col_sink_lb = self.find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
+        col_sink_lb = self.__find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
         val, dmin_val = self.__mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, False, query)
 
         if val != dmin_val:
@@ -224,20 +224,20 @@ class InequalityPredicate(FilterHolder):
                 self.logger.debug(f"no aoa due to immutability of dmin val")
                 remove_item_from_list((col_src, col_sink), E)
 
-    def absorb_variable_LBs(self, E, L, datatype, col_src, col_sink, query) -> bool:
+    def __absorb_variable_LBs(self, E, L, datatype, col_src, col_sink, query) -> bool:
         aoa_confirm = False
         joined_sink = self.__get_equi_join_group(col_sink)
         """
         lb is lesser than current d_min value
         if any mutation happens in d_min, make sure the lb is updated accordingly
         """
-        prev_lb = self.find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
+        prev_lb = self.__find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
 
         if (col_src, col_sink) in E or (col_src, col_sink) in L:
             for _sink in joined_sink:
                 add_item_to_dict(self.__absorbed_LBs, _sink, prev_lb)
 
-        col_src_ub = self.find_concrete_bound_from_edge_set(col_src, E, datatype, True)
+        col_src_ub = self.__find_concrete_bound_from_edge_set(col_src, E, datatype, True)
         val, dmin_val = self.__mutate_attrib_with_Bound_val(col_src, datatype, col_src_ub, True, query)
 
         if val != dmin_val:
@@ -277,54 +277,44 @@ class InequalityPredicate(FilterHolder):
         for col in joined_src:
             self.mutate_dmin_with_val(datatype, col, mutation_lb)
 
+    def __extract_dormant_concrete_bound(self, E, L, col_i, datatype, query, is_UB):
+        ub_dot = self.__mutate_with_boundary_value(E, datatype, query, col_i, is_UB)
+        max_val = self.__what_is_possible_bound_val(E, L, col_i, datatype, is_UB)
+        i_bound = get_max(self.constants_dict[datatype]) if is_UB else get_min(self.constants_dict[datatype])
+        if ub_dot not in [max_val, i_bound]:
+            if is_UB:
+                add_item_to_list((col_i, ub_dot), E)
+            else:
+                add_item_to_list((ub_dot, col_i), E)
+
     def __extract_dormant_LBs(self, E, col_src, datatype, query, L):
-        lb_dot = self.__mutate_with_boundary_value(E, datatype, query, col_src, False)
-        min_val = self.__what_is_possible_min_val(E, L, col_src, datatype)
-        check = lb_dot not in [min_val, get_min(self.constants_dict[datatype])]
-        if check:
-            add_item_to_list((lb_dot, col_src), E)
-
-    def __what_is_possible_min_val(self, E, L, col_src, datatype):
-        min_val = None
-        col_prev_list = find_le_attribs_from_edge_set(col_src, E)
-        if len(col_prev_list):
-            col_prev = col_prev_list[0]
-            min_val = self.__what_is_possible_min_val(E, L, col_prev, datatype)
-        else:
-            col_prev_list = find_le_attribs_from_edge_set(col_src, L)
-            if len(col_prev_list):
-                col_prev = col_prev_list[0]
-                dmin_col_prev = self.__what_is_possible_min_val(E, L, col_prev, datatype)
-                min_val = get_val_plus_delta(datatype, dmin_col_prev, 1 * get_delta(self.constants_dict[datatype]))
-        if min_val is None:
-            min_val = get_min(self.constants_dict[datatype])
-        return min_val
-
-    def __what_is_possible_max_val(self, E, L, col_src, datatype):
-        max_val = None
-        col_next_list = find_ge_attribs_from_edge_set(col_src, E)
-        if len(col_next_list):
-            col_next = col_next_list[0]
-            max_val = self.__what_is_possible_max_val(E, L, col_next, datatype)
-        else:
-            col_next_list = find_ge_attribs_from_edge_set(col_src, L)
-            if len(col_next_list):
-                col_next = col_next_list[0]
-                dmin_col_next = self.__what_is_possible_max_val(E, L, col_next, datatype)  # self.get_dmin_val(
-                max_val = get_val_plus_delta(datatype, dmin_col_next, -1 * get_delta(self.constants_dict[datatype]))
-        if max_val is None:
-            max_val = get_max(self.constants_dict[datatype])
-        return max_val
+        self.__extract_dormant_concrete_bound(E, L, col_src, datatype, query, False)
 
     def __extract_dormant_UBs(self, E, datatype, directed_paths, query, L):
         for path in directed_paths:
             for i in reversed(range(len(path))):
                 col_i = path[i]
-                ub_dot = self.__mutate_with_boundary_value(E, datatype, query, col_i, True)
-                max_val = self.__what_is_possible_max_val(E, L, col_i, datatype)
-                check = ub_dot not in [max_val, get_max(self.constants_dict[datatype])]
-                if check:
-                    add_item_to_list((col_i, ub_dot), E)
+                self.__extract_dormant_concrete_bound(E, L, col_i, datatype, query, True)
+
+    def __what_is_possible_bound_val(self, E, L, col_src, datatype, is_UB):
+        get_extreme = get_max if is_UB else get_min
+        find_e_attribs_from_edge_set = find_ge_attribs_from_edge_set if is_UB else find_le_attribs_from_edge_set
+        factor = -1 if is_UB else 1
+        bound_val = None
+        col_list = find_e_attribs_from_edge_set(col_src, E)
+        if len(col_list):
+            col_next = col_list[0]
+            bound_val = self.__what_is_possible_bound_val(E, L, col_next, datatype, is_UB)
+        else:
+            col_list = find_e_attribs_from_edge_set(col_src, L)
+            if len(col_list):
+                col_next = col_list[0]
+                dmin_col_next = self.__what_is_possible_bound_val(E, L, col_next, datatype, is_UB)
+                bound_val = get_val_plus_delta(datatype, dmin_col_next,
+                                               factor * get_delta(self.constants_dict[datatype]))
+        if bound_val is None:
+            bound_val = get_extreme(self.constants_dict[datatype])
+        return bound_val
 
     def __algo4_create_edgeSet_E(self) -> dict:
         filtered_dict = self.__isolate_ineq_aoa_preds_per_datatype()
@@ -350,12 +340,12 @@ class InequalityPredicate(FilterHolder):
                 self.logger.debug("Need to mutate d_min permanently!")
                 lb = find_concrete_bound_from_filter_bounds(path[0], self.aoa_predicates, None, False)
                 if lb is None:
-                    lb = self.__what_is_possible_min_val(self.aoa_predicates,
-                                                         self.aoa_less_thans, path[0], datatype)
+                    lb = self.__what_is_possible_bound_val(self.aoa_predicates,
+                                                           self.aoa_less_thans, path[0], datatype, False)
                 ub = find_concrete_bound_from_filter_bounds(path[-1], self.aoa_predicates, None, True)
                 if ub is None:
-                    ub = self.__what_is_possible_max_val(self.aoa_predicates,
-                                                         self.aoa_less_thans, path[-1], datatype)
+                    ub = self.__what_is_possible_bound_val(self.aoa_predicates,
+                                                           self.aoa_less_thans, path[-1], datatype, True)
                 self.logger.debug(f"min: {path[0]} {lb}, max: {path[-1]} {ub}")
                 chunk_size = get_mid_val(datatype, ub, lb, num)
                 new_vals = [lb]
@@ -365,8 +355,8 @@ class InequalityPredicate(FilterHolder):
                 for i in range(num):
                     min_val = find_concrete_bound_from_filter_bounds(path[i], self.aoa_predicates, None, False)
                     if min_val is None:
-                        min_val = self.__what_is_possible_min_val(self.aoa_predicates,
-                                                                  self.aoa_less_thans, path[i], datatype)
+                        min_val = self.__what_is_possible_bound_val(self.aoa_predicates,
+                                                                    self.aoa_less_thans, path[i], datatype, False)
                     if min_val > new_vals[i]:
                         new_vals[i] = min_val
                 self.logger.debug(new_vals)
@@ -406,13 +396,13 @@ class InequalityPredicate(FilterHolder):
     def __mutate_with_boundary_value(self, edge_set, datatype, query, tab_attrib, is_UB):
         filter_attribs = []
         joined_tab_attrib = self.__get_equi_join_group(tab_attrib)
-        min_val, max_val = self.__get_min_max_for_chain_bounds(datatype, tab_attrib, is_UB)
+        min_val, max_val = self.__get_min_max_for_aoa_chain(datatype, tab_attrib, is_UB)
         self.__handle_filter_for_subrange(joined_tab_attrib, datatype, filter_attribs, max_val, min_val, query)
         val = self.__get_bound_when_tab_attrib_is_in_aoaChain(datatype, filter_attribs, is_UB)
 
         if val is None:
             for key in joined_tab_attrib:
-                val = self.find_concrete_bound_from_edge_set(key, edge_set, datatype, is_UB)
+                val = self.__find_concrete_bound_from_edge_set(key, edge_set, datatype, is_UB)
 
         for key in joined_tab_attrib:
             tab, attrib = get_tab(key), get_attrib(key)
@@ -498,7 +488,7 @@ class InequalityPredicate(FilterHolder):
                 val = dmin_val
         return val, dmin_val
 
-    def __get_min_max_for_chain_bounds(self, datatype, tab_attrib, is_UB):
+    def __get_min_max_for_aoa_chain(self, datatype, tab_attrib, is_UB):
         i_min, i_max = get_min(self.constants_dict[datatype]), get_max(self.constants_dict[datatype])
         if is_UB:
             min_val = self.__absorbed_UBs[tab_attrib][0] if tab_attrib in self.__absorbed_UBs.keys() else i_min
