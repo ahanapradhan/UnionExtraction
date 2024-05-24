@@ -4,6 +4,35 @@ from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
 
 
+def make_filter_attrib_dict(entry, filter_attrib_dict):
+    values = []
+    single_values = []
+    range_values = []
+    for val in entry[3]:
+        if not isinstance(val, tuple):
+            single_values.append(val)
+        else:
+            range_values.append(val)
+    single_values.sort()
+    range_values.sort(key=lambda tup: tup[0])  # sorts in place
+    print(single_values, range_values)
+    s_counter, r_counter = 0, 0
+    while s_counter < len(single_values) and r_counter < len(range_values):
+        if single_values[s_counter] <= range_values[r_counter][0]:
+            values.append(single_values[s_counter])
+            s_counter += 1
+        else:
+            values.append(range_values[r_counter])
+            r_counter += 1
+    while s_counter < len(single_values):
+        values.append(single_values[s_counter])
+        s_counter += 1
+    while r_counter < len(range_values):
+        values.append(range_values[r_counter])
+        r_counter += 1
+    filter_attrib_dict[(entry[0], entry[1])] = tuple(values)
+
+
 class MyTestCase(unittest.TestCase):
 
     def create_pipeline(self):
@@ -14,6 +43,12 @@ class MyTestCase(unittest.TestCase):
         self.conn.config.detect_union = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+
+    def test_in_filter_attrib_dict(self):
+        _dict = {}
+        test_entry = ('tab', 'attrib', 'IN', [10, (2, 3), 5], [10, (2, 3), 5])
+        make_filter_attrib_dict(test_entry, _dict)
+        self.assertEqual(len(_dict.keys()), 1)
 
     def test_stg2(self):
         self.create_pipeline()

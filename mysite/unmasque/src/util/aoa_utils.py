@@ -111,7 +111,7 @@ def get_attrib(pred: Union[
 
 
 def get_tab(pred: Union[
-    Tuple[str, str, str, Union[int, Decimal, date], Union[int, Decimal, date, float]],
+    Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]],
     Tuple[str, str]
 ]):
     return pred[0]

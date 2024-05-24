@@ -9,7 +9,7 @@ from ...src.util.utils import count_empty_lists_in, find_diff_idx
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ...src.util import constants
-from ...src.util.aoa_utils import get_LB, get_UB
+
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
     if len(projection_names) > 2:
@@ -48,7 +48,7 @@ class Projection(GenerationPipeLineBase):
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
 
         if not check:
-            self.logger.error("Line 51 : Some problem while identifying the dependency list!")
+            self.logger.error("Some problem while identifying the dependency list!")
             return False
         if if_dependencies_found_incomplete(projection_names, projection_dep):
             for s_v in s_values:
@@ -56,22 +56,22 @@ class Projection(GenerationPipeLineBase):
                     self.update_with_val(s_v[1], s_v[0], s_v[2])
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)
         if not check:
-            self.logger.error("Line 59 : Some problem while identifying the dependency list!")
+            self.logger.error("Some problem while identifying the dependency list!")
             return False
 
-        self.logger.debug("Line 62 : Projection Deps: ", projection_dep)
+        self.logger.debug("Projection Deps: ", projection_dep)
         projection_sol = self.find_solution_on_multi(projected_attrib, projection_dep, query)
         self.projected_attribs = projected_attrib
         self.projection_names = projection_names
         self.dependencies = projection_dep
         self.solution = projection_sol
-        self.logger.debug("Line 68 : Result ", projection_names, projected_attrib, projection_sol, self.param_list)
+        self.logger.debug("Result ", projection_names, projected_attrib, projection_sol, self.param_list)
         return True
 
     def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)
         if self.app.isQ_result_empty(new_result):
-            self.logger.error("Line 74 : Unmasque: \n some error in generating new database. "
+            self.logger.error("Unmasque: \n some error in generating new database. "
                               "Result is empty. Can not identify "
                               "projections completely.")
             return [], [], [], False
@@ -89,8 +89,8 @@ class Projection(GenerationPipeLineBase):
         for entry in self.global_attrib_types:
             tabname = entry[0]
             attrib = entry[1]
-            self.logger.debug("Line 92 : Joined attribs: ", self.joined_attribs)
-            self.logger.debug("Line 93 : checking for ", tabname, attrib)
+            self.logger.debug("Joined attribs: ", self.joined_attribs)
+            self.logger.debug("checking for ", tabname, attrib)
             if attrib in self.joined_attribs:
                 val, keys_to_skip = self.check_impact_of_bulk_attribs(attrib, new_result, projection_dep, query,
                                                                       tabname, keys_to_skip, s_value_dict)
@@ -134,30 +134,30 @@ class Projection(GenerationPipeLineBase):
                 return
         val, prev = self.update_attrib_to_see_impact(attrib, tabname)
         if val == prev:
-            self.logger.debug("Line 137 : Could not find other s-value! Cannot verify impact!")
+            self.logger.debug("Could not find other s-value! Cannot verify impact!")
             return
         new_result1 = self.app.doJob(query)
         self.update_with_val(attrib, tabname, prev)
         if not self.app.isQ_result_empty(new_result1):
             projection_dep = get_index_of_difference(attrib, new_result, new_result1, projection_dep, tabname)
         else:
-            self.logger.debug("Line 144 : Got empty result!!!!")
+            self.logger.debug("Got empty result!!!!")
         return val
 
     def find_solution_on_multi(self, projected_attrib, projection_dep, query):
         solution = []
         for idx_pro, ele in enumerate(projected_attrib):
-            self.logger.debug("Line 150 : ele being checked", ele, idx_pro)
+            self.logger.debug("ele being checked", ele, idx_pro)
             if projection_dep[idx_pro] == [] or (
                     len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == constants.IDENTICAL_EXPR):
-                self.logger.debug("Line 153 : Simple Projection, Continue")
+                self.logger.debug("Simple Projection, Continue")
                 # Identical output column, so append empty list and continue
                 solution.append([])
                 self.param_list.append([])
                 self.syms.append([])
             else:
                 value_used = self.construct_value_used_with_dmin()
-                self.logger.debug("Line 160 : Inside else", value_used)
+                self.logger.debug("Inside else", value_used)
                 solution.append(
                     self.get_solution(projected_attrib, projection_dep, idx_pro, value_used, query))
         return solution
@@ -167,7 +167,7 @@ class Projection(GenerationPipeLineBase):
     """
 
     def get_solution(self, projected_attrib, projection_dep, idx, value_used, query):
-        self.logger.debug("Line 170 : filters: ", self.global_filter_predicates)
+        self.logger.debug("filters: ", self.global_filter_predicates)
         dep = projection_dep[idx]
         n = len(dep)
         fil_check = []
@@ -179,16 +179,16 @@ class Projection(GenerationPipeLineBase):
             syms = symbols(sym_string)
             local_symbol_list = syms
             syms = sorted(syms, key=lambda x: str(x))
-            self.logger.debug("Line 182 : symbols", syms)
+            self.logger.debug("symbols", syms)
             for i in syms:
                 res *= (1 + i)
-            self.logger.debug("Line 185 : Sym List", expand(res).args)
+            self.logger.debug("Sym List", expand(res).args)
             self.syms.append(get_param_values_external(syms))
-            self.logger.debug("Line 187 : Another List", self.syms)
+            self.logger.debug("Another List", self.syms)
         else:
             self.syms.append([symbols(sym_string)])
             local_symbol_list = self.syms[-1]
-            self.logger.debug("Line 191 : Another List", self.syms, idx)
+            self.logger.debug("Another List", self.syms, idx)
         if n == 1 and ('int' not in self.attrib_types_dict[(dep[0][0], dep[0][1])]) and (
                 'numeric' not in self.attrib_types_dict[(dep[0][0], dep[0][1])]):
             self.param_list.append([dep[0][1]])
@@ -218,10 +218,9 @@ class Projection(GenerationPipeLineBase):
         coeff[0][2 ** n - 1] = 1
 
         local_param_list = self.get_param_list(sorted([i[1] for i in dep]))
-        self.logger.debug("Line 221 : Param List", local_param_list)
+        self.logger.debug("Param List", local_param_list)
         self.param_list.append(local_param_list)
         self.infinite_loop(coeff, fil_check, n)
-        self.logger.debug("Line 224 : Coeff", coeff)
         # print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
@@ -259,15 +258,16 @@ class Projection(GenerationPipeLineBase):
             if not self.app.isQ_result_empty(exe_result):
                 b[i][0] = self.app.get_attrib_val(exe_result, idx)
         self.logger.debug("Line 261 : Coeff", coeff)
+        self.logger.debug("Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
         solution = np.around(solution, decimals = 0)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
-        self.logger.debug("Line 267 : Coeff of 1", solution[len(self.syms[idx]) - 1])
+        self.logger.debug("Coeff of 1", solution[len(self.syms[idx]) - 1])
         final_res += 1 * solution[-1]
-        self.logger.debug("Line 269 : Equation", coeff, b)
-        self.logger.debug("Line 270 : Solution", solution)
+        self.logger.debug("Equation", coeff, b)
+        self.logger.debug("Solution", solution)
         # self.logger.debug("Final", final_res, nsimplify(collect(final_res, local_symbol_list)))
         projected_attrib[idx] = str(nsimplify(collect(final_res, local_symbol_list)))
         return solution
@@ -299,9 +299,9 @@ class Projection(GenerationPipeLineBase):
             if m_rank > curr_rank:
                 curr_rank += 1
                 outer_idx += 1
-            self.logger.debug("Line 296 : outer_idx: ", outer_idx, "curr_rank: ", curr_rank)
+            self.logger.debug("outer_idx: ", outer_idx, "curr_rank: ", curr_rank)
             if prev_idx == outer_idx and curr_rank == prev_rank:
-                self.logger.debug("Line 298 : It will go to infinite loop!! so breaking...")
+                self.logger.debug("It will go to infinite loop!! so breaking...")
                 break
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
@@ -329,14 +329,14 @@ class Projection(GenerationPipeLineBase):
                     res_str += "+"
                 res_str += (str(solution[i][0]) + "*" + param_l[i]) if solution[i][0] != 1 else param_l[i]
 
-        self.logger.debug("Line 326 : Result String", res_str)
+        self.logger.debug("Result String", res_str)
         return res_str
 
     def get_param_list(self, deps):
-        self.logger.debug("Line 330 : ",deps)
+        self.logger.debug(deps)
         subsets = get_subsets(deps)
         subsets = sorted(subsets, key=len)
-        self.logger.debug("Line 333 : ",subsets)
+        self.logger.debug(subsets)
         final_lis = []
         for i in subsets:
             if len(i) < 2 and i == []:

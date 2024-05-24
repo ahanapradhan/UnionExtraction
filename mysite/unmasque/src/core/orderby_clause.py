@@ -2,8 +2,8 @@ import copy
 
 import frozenlist
 
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES
+from .dataclass.genPipeline_context import GenPipelineContext
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES, get_lb_ub
 from ...src.util.constants import COUNT, NO_ORDER, SUM
 from ...src.util.utils import get_unused_dummy_val, get_dummy_val_for, \
     get_val_plus_delta, get_format, get_char
@@ -62,7 +62,7 @@ def check_sort_order(logger, lst):
 class OrderBy(GenerationPipeLineBase):
 
     def __init__(self, connectionHelper,
-                 genPipelineCtx: PackageForGenPipeline,
+                 genPipelineCtx: GenPipelineContext,
                  pgao_Ctx):
         super().__init__(connectionHelper, "Order By", genPipelineCtx)
         self.values_used = []
@@ -298,9 +298,8 @@ class OrderBy(GenerationPipeLineBase):
         if datatype != 'date':
             datatype = 'int'
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-            first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-            second = min(get_val_plus_delta(datatype, first, 1),
-                         self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
+            first, ub = get_lb_ub((tabname_inner, attrib_inner), self.filter_attrib_dict)
+            second = min(get_val_plus_delta(datatype, first, 1), ub)
         else:
             first = get_unused_dummy_val(datatype, self.values_used)
             second = get_val_plus_delta(datatype, first, 1)
@@ -318,9 +317,8 @@ class OrderBy(GenerationPipeLineBase):
 
     def get_date_values(self, attrib_inner, tabname_inner):
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-            first = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-            second = min(get_val_plus_delta('date', first, 1),
-                         self.filter_attrib_dict[(tabname_inner, attrib_inner)][1])
+            first, ub = get_lb_ub((tabname_inner, attrib_inner), self.filter_attrib_dict)
+            second = min(get_val_plus_delta('date', first, 1), ub)
         else:
             first = get_dummy_val_for('date')
             second = get_val_plus_delta('date', first, 1)
