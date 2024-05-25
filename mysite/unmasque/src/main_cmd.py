@@ -54,9 +54,13 @@ if __name__ == '__main__':
     result = factory.result
 
     if result is not None:
+        print("Union P = " + str(conn.config.detect_union) + "   " + "Outer Join P = " + str(conn.config.detect_oj))
+        print("NEP P = " + str(conn.config.detect_nep) + "   " + "Or P = " + str(conn.config.detect_or))
+        print("============= Given Query ===============")
+        print(hq)
         print("=========== Extracted Query =============")
         print(result)
-        print("============= Profile ===================")
+        print("================ Profile ================")
         pipe = factory.get_pipeline_obj(token)
         pipe.time_profile.print()
 

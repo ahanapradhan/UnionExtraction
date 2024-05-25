@@ -271,7 +271,8 @@ def truncate(num, places):
     with localcontext() as context:
         context.rounding = ROUND_DOWN
         exponent = Decimal(str(10 ** - places))
-        return Decimal(str(num)).quantize(exponent).to_eng_string()
+        value = float(Decimal(str(num)).quantize(exponent).to_eng_string())
+        return value
 
 
 def get_mid_val(datatype, high, low, div=2):
@@ -280,7 +281,8 @@ def get_mid_val(datatype, high, low, div=2):
     elif datatype == 'int':
         mid_val = low + int((high - low) / div)
     else:  # numeric
-        mid_val = (high + low) / div
+        result = Decimal(str(high)) + Decimal(str(low))
+        mid_val = result / div
         mid_val = float(truncate(mid_val, 2))
     return mid_val
 
