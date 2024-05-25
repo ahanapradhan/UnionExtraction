@@ -187,11 +187,6 @@ def left_over_aoa_CBs(absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, edge_s
                 aoa_CB_UBs[edge[0]] = edge[1]
 
 
-def get_aoa_string(aoa):
-    lesser, op, greater = aoa[0], aoa[1], aoa[2]
-    return f"{lesser[0]}.{lesser[1]} {op} {greater[0]}.{greater[1]}"
-
-
 def add_pred_for(aoa_l, pred):
     if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
         pred.append(f"{aoa_l[0]}.{aoa_l[1]}")
@@ -501,3 +496,19 @@ def get_constants_for(datatype):
     else:
         raise ValueError(f"Unsupported datatype: {datatype}")
     return delta, while_cut_off
+
+
+def find_tables_from_predicate(fp):
+    if len(fp) >= 4:
+        return [fp[0]]
+    tables = []
+    for tup in fp:
+        if isinstance(tup, tuple):
+            tables.append(tup[0])
+    return tables
+
+
+def get_one_tab_attrib_from_aoa_pred(pred):
+    for tup in pred:
+        if isinstance(tup, tuple):
+            return tup

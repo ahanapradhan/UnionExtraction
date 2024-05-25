@@ -1,9 +1,11 @@
+import ast
 import copy
 from _decimal import Decimal
 
 from frozenlist._frozenlist import FrozenList
 
-from .aoa_utils import remove_item_from_list, get_attrib, get_tab, get_aoa_string
+from .aoa_utils import remove_item_from_list, find_tables_from_predicate
+from ..core.abstract.GenerationPipeLineBase import NUMBER_TYPES
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
 from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX
@@ -174,11 +176,9 @@ class QueryStringGenerator:
     def algebraic_predicates(self, aoa):
         self._workingCopy.eq_join_predicates = aoa.algebraic_eq_predicates
         for pred in aoa.aoa_less_thans:
-            self._workingCopy.all_aoa.append(
-                ((get_tab(pred[0]), get_attrib(pred[0])), '<', (get_tab(pred[1]), get_attrib(pred[1]))))
+            self._workingCopy.all_aoa.append((pred[0], '<', pred[1]))
         for pred in aoa.aoa_predicates:
-            self._workingCopy.all_aoa.append(
-                ((get_tab(pred[0]), get_attrib(pred[0])), '<=', (get_tab(pred[1]), get_attrib(pred[1]))))
+            self._workingCopy.all_aoa.append((pred[0], '<=', pred[1]))
         self._workingCopy.arithmetic_filters = aoa.arithmetic_ineq_predicates + aoa.arithmetic_eq_predicates
 
     @property
@@ -226,7 +226,7 @@ class QueryStringGenerator:
         return self._workingCopy.all_aoa
 
     @algebraic_inequalities.setter
-    def algebraic_inequalities_aoa(self, value):
+    def algebraic_inequalities(self, value):
         raise NotImplementedError
 
     @property
@@ -436,7 +436,7 @@ class QueryStringGenerator:
 
     def __generate_algebraic_inequalities(self, predicates):
         for aoa in self._workingCopy.all_aoa:
-            predicates.append(get_aoa_string(aoa))
+            predicates.append(self.get_aoa_string(aoa))
 
     def __generate_arithmetic_pure_conjunctions(self, predicates):
         apc_predicates = self.all_arithmetic_filters
@@ -647,7 +647,8 @@ class QueryStringGenerator:
         self.from_op += f" {table1} {join_part}" if flag_first else "" + join_part
         flag_first = False
         for fp in fp_on:
-            if fp[0] in relevant_tables:
+            tables = find_tables_from_predicate(fp)
+            if all(tab in relevant_tables for tab in tables):
                 predicate = self.__generate_where_clause_predicate_str(fp)
                 if len(predicate):
                     self.from_op += "\n\t and " + predicate
@@ -656,7 +657,7 @@ class QueryStringGenerator:
     def __generate_where_clause_predicate_str(self, fp):
         predicate = ''
         if len(fp) == 3:
-            predicate = get_aoa_string(fp)
+            predicate = self.get_aoa_string(fp)
         elif len(fp) >= 4:
             predicate = self.formulate_predicate_from_filter(fp)
         return predicate
@@ -664,3 +665,21 @@ class QueryStringGenerator:
     def clear_from_where_ops(self):
         self._workingCopy.from_op = ''
         self._workingCopy.where_op = ''
+
+    def get_aoa_string(self, aoa):
+        lesser, op, greater = aoa[0], aoa[1], aoa[2]
+        tab_attrib = lesser if isinstance(lesser, tuple) else greater
+        datatype = self.get_datatype(tab_attrib)
+        f_str = ""
+        for tup in aoa:
+            if isinstance(tup, tuple):
+                f_str += f"{tup[0]}.{tup[1]}"
+            elif tup in ['<', '<=']:
+                f_str += f" {tup} "
+            else:
+                self.logger.debug(tup)
+                f_val = get_format(datatype, tup)
+                self.logger.debug(f_val)
+                f_str += f_val
+        self.logger.debug(f_str)
+        return f_str

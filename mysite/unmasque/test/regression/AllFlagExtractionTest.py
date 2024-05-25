@@ -25,10 +25,10 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
-        self.conn.config.detect_nep = True
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
         self.conn.config.detect_oj = True
-        self.conn.config.detect_or = True
+        self.conn.config.detect_or = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
@@ -737,6 +737,14 @@ class ExtractionTestCase(BaseTestCase):
                 "From orders RIGHT OUTER JOIN lineitem " \
                 "ON o_orderkey = l_orderkey " \
                 "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate;"
+        self.do_test(query)
+
+    def test_UQ10_1_2(self):
+        query = "Select l_shipmode, o_clerk " \
+                "From orders RIGHT OUTER JOIN lineitem " \
+                "ON o_orderkey = l_orderkey and o_orderdate <= l_shipdate and o_orderdate >= '1991-01-01'" \
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate " \
+                "and l_receiptdate <= '1996-03-03' and l_extendedprice < 70000 and o_totalprice >= 60055;"
         self.do_test(query)
 
 

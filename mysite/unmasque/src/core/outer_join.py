@@ -6,7 +6,7 @@ from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .dataclass.genPipeline_context import GenPipelineContext
 from .dataclass.pgao_context import PGAOcontext
 from ..util.QueryStringGenerator import QueryStringGenerator
-from ..util.aoa_utils import get_tab, get_attrib
+from ..util.aoa_utils import get_tab, get_attrib, get_one_tab_attrib_from_aoa_pred
 
 
 class OuterJoin(GenerationPipeLineBase):
@@ -309,8 +309,10 @@ class OuterJoin(GenerationPipeLineBase):
         all_aoa = self.q_gen.algebraic_inequalities
         self.logger.debug("all_aoa predicates: ", all_aoa)
         for aoa in all_aoa:
-            tab, attrib = get_tab(aoa[0]), get_attrib(aoa[0])
-            self.__check_on_or_where(tab, attrib, aoa_pred_on, aoa_pred_where, aoa, query)
+            tab_attrib = get_one_tab_attrib_from_aoa_pred(aoa)
+            self.__check_on_or_where(get_tab(tab_attrib), get_attrib(tab_attrib),
+                                     aoa_pred_on, aoa_pred_where, aoa, query)
+        self.logger.debug(aoa_pred_on, aoa_pred_where)
         return aoa_pred_on, aoa_pred_where
 
     def __determine_on_and_where_filters(self, query):

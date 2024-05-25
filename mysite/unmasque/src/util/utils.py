@@ -244,10 +244,10 @@ def get_format(datatype, val):
     if datatype == 'date' or datatype == 'char' \
             or datatype == 'character' \
             or datatype == 'character varying' or datatype == 'str':
-        return f"\'{str(val)}\'"
+        return f'\'{str(val)}\''
     elif datatype == 'float' or datatype == 'numeric':
         val = float(val)
-        return str(round(val, 12))
+        return str(round(val, 3))
     return str(val)
 
 
