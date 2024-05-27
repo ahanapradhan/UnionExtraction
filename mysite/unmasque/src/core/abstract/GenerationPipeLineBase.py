@@ -5,9 +5,9 @@ from datetime import date, timedelta
 from typing import Union, Tuple
 
 from .MutationPipeLineBase import MutationPipeLineBase
+from ..dataclass.genPipeline_context import GenPipelineContext
 from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ....src.core.dataclass.generation_pipeline_package import GenPipeLineContext
 
 NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number', 'Decimal']
 NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
@@ -23,7 +23,7 @@ def generate_random_date(lb, ub):
 
 class GenerationPipeLineBase(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: GenPipeLineContext):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: GenPipelineContext):
         super().__init__(connectionHelper, genCtx.core_relations, genCtx.global_min_instance_dict, name)
         self.global_all_attribs = genCtx.global_all_attribs
         self.global_attrib_types = genCtx.global_attrib_types

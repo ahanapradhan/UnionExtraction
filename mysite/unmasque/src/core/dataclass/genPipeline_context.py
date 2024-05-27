@@ -1,12 +1,12 @@
 import copy
-from typing import Callable, List, Tuple
+from typing import List, Tuple
 
 from frozenlist._frozenlist import FrozenList
 
 from ..aoa import InequalityPredicate
 from ..filter import Filter
 from ...util.aoa_utils import get_constants_for
-from ...util.utils import get_val_plus_delta, get_min_and_max_val, get_format
+from ...util.utils import get_val_plus_delta, get_min_and_max_val
 
 
 def collect_attribs_from(_input):
