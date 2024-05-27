@@ -4,12 +4,11 @@ import random
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify
 
-from .dataclass.genPipeline_context import GenPipelineContext
+from .dataclass.generation_pipeline_package import PackageForGenPipeline
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
 from ...src.util.utils import count_empty_lists_in, find_diff_idx
-from ...src.util.aoa_utils import get_LB, get_UB
 
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
