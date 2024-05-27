@@ -339,6 +339,8 @@ def remove_item_from_dict(_dict: dict, key, item):
     if key in _dict.keys():
         if item in _dict[key]:
             _dict[key].remove(item)
+        if not len(_dict[key]):
+            del _dict[key]
 
 
 def remove_absorbed_Bs(E, absorbed_LBs, absorbed_UBs, col_sink, col_src):

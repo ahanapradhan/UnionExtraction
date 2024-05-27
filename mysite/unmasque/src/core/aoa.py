@@ -36,7 +36,7 @@ class InequalityPredicate(FilterHolder):
                          "InequalityPredicate")
         self.__absorbed_LBs = {}
         self.__absorbed_UBs = {}
-        self.__ineaoa_enabled = True
+        self.__ineaoa_enabled = False
         self.arithmetic_eq_predicates = arithmetic_eq_predicates
         self.algebraic_eq_predicates = algebraic_eq_predicates
         self.arithmetic_ineq_predicates = copy.deepcopy(pending_predicates)

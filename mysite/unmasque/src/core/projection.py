@@ -289,7 +289,7 @@ class Projection(GenerationPipeLineBase):
                     maxi = get_UB(pred)
                     if datatype == 'int':
                         coeff[outer_idx][j] = random.randrange(mini, maxi)
-                    elif (datatype == 'numeric'):
+                    elif datatype == 'numeric':
                         coeff[outer_idx][j] = random.uniform(mini, maxi)
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
