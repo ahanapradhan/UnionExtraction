@@ -49,6 +49,7 @@ class GenPipeLineContext:
                  global_aoa_l_predicates: List[Tuple[str, str]], global_min_instance_dict: dict,
                  get_dmin_val: Callable[[str, str], any], get_datatype: Callable[[Tuple[str, str]], str]):
 
+        self.filter_in_predicates = []
         self.core_relations = core_relations
         self.global_all_attribs = global_all_attribs
         self.attrib_types_dict = None

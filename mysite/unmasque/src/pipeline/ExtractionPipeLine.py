@@ -95,8 +95,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.time_profile.update(time_profile)
             return None
 
-        self.aoa.post_process_for_generation_pipeline(query, self.or_predicates)
-        self.genPipelineCtx = copy.copy(self.aoa.nextPipelineCtx)
+        self.__gen_pipeline_preprocess()
         self.time_profile.update(time_profile)
 
         '''
