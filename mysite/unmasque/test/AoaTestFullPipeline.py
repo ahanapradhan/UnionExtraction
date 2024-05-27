@@ -159,7 +159,7 @@ class MyTestCase(BaseTestCase):
         aoa, check = self.run_pipeline(from_rels, query)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.filter_extractor.arithmetic_filters)
+        print(aoa.filter_extractor.filter_predicates)
         print(aoa.aoa_predicates)
         
         self.conn.closeConnection()
@@ -171,7 +171,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.conn.conn is not None)
         aoa, check = self.run_pipeline(from_rels, query)
         self.assertTrue(check)
-        print(aoa.filter_extractor.arithmetic_filters)
+        print(aoa.filter_extractor.filter_predicates)
         print(aoa.aoa_predicates)
         print(aoa.filter_extractor.global_min_instance_dict)
         
@@ -191,7 +191,7 @@ class MyTestCase(BaseTestCase):
         aoa, check = self.run_pipeline(from_rels, query)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.arithmetic_filters)
+        print(aoa.filter_predicates)
         print(aoa.aoa_predicates)
         
         self.conn.closeConnection()

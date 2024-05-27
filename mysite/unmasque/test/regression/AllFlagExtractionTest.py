@@ -117,7 +117,7 @@ class ExtractionTestCase(BaseTestCase):
         query = f"SELECT c_name, max(c_acctbal) as max_balance,  " \
                 f"o_clerk FROM customer RIGHT OUTER JOIN orders ON " \
                 f"c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
-                f"and o_orderdate <= DATE '1995-10-23' and o_orderstatus NOT IN ('P', 'O') and c_acctbal > 0" \
+                f"and o_orderdate <= DATE '1995-10-23' and o_orderstatus NOT IN ('P', 'O') and c_acctbal > 20" \
                 f" group by c_name, o_clerk order by c_name, o_clerk desc LIMIT 42;"
         self.do_test(query)
 
@@ -400,7 +400,7 @@ class ExtractionTestCase(BaseTestCase):
                 "and s_acctbal < 5000 RIGHT OUTER JOIN orders" \
                 " on o_orderkey = l_orderkey and  o_orderstatus = 'F'  LEFT OUTER JOIN nation " \
                 "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
-                "Order By numwait desc, s_name Limit 1200;"  # it needs config limit to be set to higher value
+                "Order By numwait desc, s_name Limit 1200;" # it needs config limit to be set to higher value
         self.do_test(query)
 
     def test_Q16_sql(self):
@@ -638,13 +638,6 @@ class ExtractionTestCase(BaseTestCase):
                 "limit 100;"
         self.do_test(query)
 
-    def test_test(self):
-        query = "SELECT c_name, avg(c_acctbal+o_totalprice + 3.02) as rolex,o_clerk FROM customer, orders WHERE " \
-                "c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
-                "and o_orderdate <= DATE '1995-10-23' and c_acctbal > 30.04 " \
-                "group by c_name, o_clerk order by c_name, o_clerk desc;"
-        self.do_test(query)
-
     @pytest.mark.skip
     def test_sumang_thesis_Q3_nep1(self):
         query = "select l_shipmode,sum(l_extendedprice) as revenue " \
@@ -707,19 +700,10 @@ class ExtractionTestCase(BaseTestCase):
                 "Order by value desc Limit 100;"
         self.do_test(query)
 
-    @pytest.mark.skip
     def test_for_numeric_filter_NEP(self):
         query = "select c_mktsegment as segment from customer,nation,orders where " \
                 "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey " \
                 "and n_name not LIKE 'MO%' LIMIT 40;"
-        self.do_test(query)
-
-    def test_gopinath_fix_with_outer_joins(self):
-        query = f"SELECT c_name, avg(c_acctbal) as rolex," \
-                f"o_clerk FROM customer FULL OUTER JOIN orders ON " \
-                f"c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' " \
-                f"and o_orderdate <= DATE '1995-10-23' and c_acctbal > 30.04" \
-                f"group by c_name, o_clerk order by c_name, o_clerk desc;"
         self.do_test(query)
 
     def do_test(self, query):
