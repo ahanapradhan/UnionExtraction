@@ -1,14 +1,14 @@
-import math
 import random
 
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify
 
+from .dataclass.genPipeline_context import GenPipelineContext
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ...src.util.utils import count_empty_lists_in, find_diff_idx
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.dataclass.genPipeline_context import GenPipelineContext
 from ...src.util import constants
+from ...src.util.utils import count_empty_lists_in, find_diff_idx
+from ...src.util.aoa_utils import get_LB, get_UB
 
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
@@ -221,6 +221,7 @@ class Projection(GenerationPipeLineBase):
         self.logger.debug("Param List", local_param_list)
         self.param_list.append(local_param_list)
         self.infinite_loop(coeff, fil_check, n)
+        self.logger.debug("Coeff", coeff)
         # print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
@@ -257,9 +258,9 @@ class Projection(GenerationPipeLineBase):
             exe_result = self.app.doJob(query)
             if not self.app.isQ_result_empty(exe_result):
                 b[i][0] = self.app.get_attrib_val(exe_result, idx)
-
+        self.logger.debug("Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
-        solution = np.around(solution, decimals=0)
+        solution = np.around(solution, decimals = 0)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
@@ -279,12 +280,17 @@ class Projection(GenerationPipeLineBase):
             # Same algorithm as above with insertion of random values
             # Additionally checking if rank of the matrix has become 2^n
             for j in range(n):
-                mi = constants.pr_min
-                ma = constants.pr_max
+                pred = fil_check[j]
+                mini = constants.pr_min
+                maxi = constants.pr_max
                 if fil_check[j]:
-                    mi = fil_check[j][3]
-                    ma = fil_check[j][4]
-                coeff[outer_idx][j] = random.randrange(math.floor(mi), math.ceil(ma))
+                    datatype = self.get_datatype((fil_check[j][0], fil_check[j][1]))
+                    mini = get_LB(pred)
+                    maxi = get_UB(pred)
+                    if datatype == 'int':
+                        coeff[outer_idx][j] = random.randrange(mini, maxi)
+                    elif (datatype == 'numeric'):
+                        coeff[outer_idx][j] = random.uniform(mini, maxi)
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]
