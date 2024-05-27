@@ -34,9 +34,9 @@ class ExtractionPipeLine(DisjunctionPipeLine,
     def __init__(self, connectionHelper, name="Extraction PipeLine"):
         DisjunctionPipeLine.__init__(self, connectionHelper, name)
         NepPipeLine.__init__(self, connectionHelper)
+        self.genPipelineCtx = None
         self.pj = None
         self.global_pk_dict = None
-        self.genPipelineCtx = None
         self.pgao_ctx = PGAOcontext()
 
     def process(self, query: str):
@@ -88,7 +88,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.time_profile.update(time_profile)
             return None
 
-        check, time_profile = self._extract_disjunction(self.aoa.filter_predicates,
+        check, time_profile = self._extract_disjunction(self.aoa.arithmetic_filters,
                                                         core_relations, query, time_profile)
         if not check:
             self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
@@ -97,6 +97,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         self.__gen_pipeline_preprocess()
         self.time_profile.update(time_profile)
+        self.__gen_pipeline_preprocess()
 
         '''
         Projection Extraction

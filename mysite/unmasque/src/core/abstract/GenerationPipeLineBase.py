@@ -126,8 +126,10 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         datatype = self.get_datatype((tabname, attrib))
         if datatype in NON_TEXT_TYPES:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
+                lb = self.filter_attrib_dict[(tabname, attrib)][0]
+                if not isinstance(lb, tuple):
+                    return lb
+                return lb[0]
             else:
                 val = get_dummy_val_for(datatype)
             # val = ast.literal_eval(get_format(datatype, val))
@@ -143,6 +145,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def get_other_than_dmin_val_nonText(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
         datatype = self.get_datatype((tabname, attrib))
         key = (tabname, attrib)
+        datatype = self.get_datatype(key)
         if key not in self.filter_attrib_dict:
             return get_dummy_val_for(datatype)
 
@@ -150,13 +153,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             self.logger.info("Cannot generate a new s-val. Giving the old one!")
             return prev
 
-        lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
-        if prev == lb:
-            val = ub
-        elif prev == ub:
-            val = lb
-        else:
-            val = min(lb, ub)
+        lb, ub = get_lb_ub(key, self.filter_attrib_dict, self.logger)
+        val = ub if prev == lb else lb
         return val
 
     def get_different_s_val(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:

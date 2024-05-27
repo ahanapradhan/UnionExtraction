@@ -2,7 +2,6 @@ import ast
 
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.dataclass.generation_pipeline_package import GenPipeLineContext
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 NON_TEXT_TYPES = ['date', 'int', 'integer', 'numeric', 'float']
