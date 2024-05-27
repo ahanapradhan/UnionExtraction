@@ -261,7 +261,7 @@ class Projection(GenerationPipeLineBase):
                 b[i][0] = self.app.get_attrib_val(exe_result, idx)
         self.logger.debug("Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
-        solution = np.around(solution, decimals = 0)
+        solution = np.around(solution, decimals = 2)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
