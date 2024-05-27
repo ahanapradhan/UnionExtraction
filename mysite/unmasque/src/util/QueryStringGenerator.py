@@ -23,7 +23,6 @@ class QueryDetails:
         self.core_relations = []
 
         self.eq_join_predicates = []
-        self.join_graph = []
         self.filter_in_predicates = []
         self.arithmetic_filters = []
         self.filter_not_in_predicates = []
@@ -48,7 +47,6 @@ class QueryDetails:
     def makeCopy(self, other):
         self.core_relations = other.core_relations
         self.eq_join_predicates = other.eq_join_predicates
-        self.join_graph = other.join_graph
         self.filter_in_predicates = other.filter_in_predicates
         self.arithmetic_filters = other.arithmetic_filters
         self.all_aoa = other.all_aoa
@@ -57,7 +55,6 @@ class QueryDetails:
         self.global_projected_attributes = other.global_projected_attributes
         self.global_groupby_attributes = other.global_groupby_attributes
         self.global_aggregated_attributes = other.global_aggregated_attributes
-        self.or_predicates = other.or_predicates
 
     def add_to_where_op(self, predicate):
         if self.where_op and predicate not in self.where_op:
@@ -123,12 +120,12 @@ class QueryStringGenerator:
 
     @property
     def filter_predicates(self):
-        return self._workingCopy.filter_predicates
+        return self._workingCopy.arithmetic_filters
 
     @filter_predicates.setter
     def filter_predicates(self, value):
-        if value not in self._workingCopy.filter_predicates:
-            self._workingCopy.filter_predicates.append(value)
+        if value not in self._workingCopy.arithmetic_filters:
+            self._workingCopy.arithmetic_filters.append(value)
 
     @property
     def select_op(self):
@@ -242,14 +239,6 @@ class QueryStringGenerator:
         self._workingCopy.eq_join_predicates.clear()  # when join edges are assigned directly, old equi join
         # predicates are obsolete
 
-    @property
-    def or_predicates(self):
-        raise NotImplementedError
-
-    @or_predicates.setter
-    def or_predicates(self, value):
-        self._workingCopy.or_predicates = value
-
     def rectify_projection(self, replace_dict):
         for key in replace_dict.keys():
             self._workingCopy.global_groupby_attributes[self._workingCopy.global_groupby_attributes.index(key)] \
@@ -345,7 +334,6 @@ class QueryStringGenerator:
             predicates.extend(self._workingCopy.join_edges)
         self.__generate_algebraic_inequalities(predicates)
 
-        self.__generate_arithmetic_conjunctive_disjunctions(predicates)
         self.__generate_arithmetic_pure_conjunctions(predicates)
 
         where_clause = "\n and ".join(predicates)
@@ -388,11 +376,31 @@ class QueryStringGenerator:
         self.logger.debug("query_dict: ", self._queries)
         return query_string
 
+    def __generate_predicate_string_for_in_operator(self, tab, attrib, values):
+        datatype = self.get_datatype((tab, attrib))
+        predicates = []
+        single_value_set = []
+        for v in values:
+            if isinstance(v, tuple):
+                elt = [tab, attrib, 'range', v[0], v[1]]
+                predicates.append(self.formulate_predicate_from_filter(elt))
+            else:
+                single_value_set.append(get_format(datatype, v))
+        f_values = get_formatted_value(datatype, single_value_set)
+        op = 'IN' if len(single_value_set) > 1 else '='
+        if len(single_value_set):
+            predicates.append(f"{tab}.{attrib} {op} {f_values}")
+        return " OR ".join(predicates)
+
     def formulate_predicate_from_filter(self, elt):
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[-1]
+        if op == 'in':
+            predicate = self.__generate_predicate_string_for_in_operator(tab, attrib, lb)
+            return f"({predicate})"
         datatype = self.get_datatype((tab, attrib))
         f_lb = get_formatted_value(datatype, lb)
         f_ub = get_formatted_value(datatype, ub)
+
         if op == 'range':
             predicate = ''
             i_min, i_max = get_min_and_max_val(datatype)
@@ -411,7 +419,7 @@ class QueryStringGenerator:
                 predicate = ''
         elif op == '>=':
             predicate = f"{tab}.{attrib} {op} {f_lb}"
-        elif op in ['<=', '=', 'equal', 'like', 'not like', '<>', '!=', 'in', 'not in']:
+        elif op in ['<=', '=', 'equal', 'like', 'not like', '<>', '!=', 'not in']:
             predicate = f"{tab}.{attrib} {str(op.replace('equal', '=')).upper()} {f_ub}"
         else:
             predicate = ''

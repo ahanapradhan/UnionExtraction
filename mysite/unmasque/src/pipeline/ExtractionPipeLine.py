@@ -1,6 +1,6 @@
 import copy
 
-from ..core.dataclass.generation_pipeline_package import GenPipeLineContext
+from ..core.dataclass.genPipeline_context import GenPipelineContext
 from ..core.dataclass.pgao_context import PGAOcontext
 from ...src.pipeline.fragments.DisjunctionPipeLine import DisjunctionPipeLine
 from ...src.pipeline.fragments.NepPipeLine import NepPipeLine
@@ -15,6 +15,7 @@ from ...src.core.limit import Limit
 from ...src.core.orderby_clause import OrderBy
 from ...src.core.projection import Projection
 
+
 class IOState:
     def __init__(self, inp, output):
         self.input = inp
@@ -23,7 +24,7 @@ class IOState:
             "input": self.input,
             "output": self.output
         }
-    
+
     def get_dic(self):
         return self.dic
 
@@ -34,9 +35,9 @@ class ExtractionPipeLine(DisjunctionPipeLine,
     def __init__(self, connectionHelper, name="Extraction PipeLine"):
         DisjunctionPipeLine.__init__(self, connectionHelper, name)
         NepPipeLine.__init__(self, connectionHelper)
+        self.genPipelineCtx = None
         self.pj = None
         self.global_pk_dict = None
-        self.genPipelineCtx = None
         self.pgao_ctx = PGAOcontext()
 
     def process(self, query: str):
@@ -88,7 +89,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.time_profile.update(time_profile)
             return None
 
-        check, time_profile = self._extract_disjunction(self.aoa.filter_predicates,
+        check, time_profile = self._extract_disjunction(self.aoa.arithmetic_filters,
                                                         core_relations, query, time_profile)
         if not check:
             self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
@@ -97,6 +98,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         self.__gen_pipeline_preprocess()
         self.time_profile.update(time_profile)
+        self.__gen_pipeline_preprocess()
 
         '''
         Projection Extraction
@@ -201,7 +203,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
     def __gen_pipeline_preprocess(self):
         self.logger.debug("aoa post-process.")
-        self.genPipelineCtx = GenPipeLineContext(self.core_relations, self.aoa,
+        self.genPipelineCtx = GenPipelineContext(self.core_relations, self.aoa,
                                                  self.filter_extractor, self.global_min_instance_dict,
                                                  self.or_predicates)
         self.logger.debug(self.genPipelineCtx.arithmetic_filters)
@@ -214,4 +216,3 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.logger.debug(self.genPipelineCtx.global_join_graph)
         self.logger.debug(self.genPipelineCtx.filter_in_predicates)
         self.logger.debug(self.genPipelineCtx.filter_attrib_dict)
-

@@ -1,8 +1,8 @@
 import ast
 
+from .dataclass.genPipeline_context import GenPipelineContext
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.dataclass.generation_pipeline_package import GenPipeLineContext
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 NON_TEXT_TYPES = ['date', 'int', 'integer', 'numeric', 'float']
@@ -14,7 +14,7 @@ def has_attrib_key_condition(attrib, attrib_inner, key_list):
 
 class GroupBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 genPipelineCtx: GenPipeLineContext,
+                 genPipelineCtx: GenPipelineContext,
                  pgao_ctx):
         super().__init__(connectionHelper, "Group By", genPipelineCtx)
         self.projected_attribs = pgao_ctx.projected_attribs
