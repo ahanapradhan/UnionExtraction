@@ -7,7 +7,7 @@ from typing import Union, Tuple
 from .MutationPipeLineBase import MutationPipeLineBase
 from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ....src.core.dataclass.genPipeline_context import GenPipelineContext
+from ....src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
 NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number', 'Decimal']
 NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
@@ -21,29 +21,14 @@ def generate_random_date(lb, ub):
     return random_date1
 
 
-def get_lb_ub(key, filter_attrib_dict, logger=None):
-    if logger is not None:
-        logger.debug(filter_attrib_dict[key])
-    lb, ub = filter_attrib_dict[key][0], filter_attrib_dict[key][-1]
-    if logger is not None:
-        logger.debug(f"lb: {lb}, ub: {ub}")
-    if isinstance(lb, tuple):
-        lb = lb[0]
-    if isinstance(ub, tuple):
-        ub = ub[1]
-    if logger is not None:
-        logger.debug(f"lb: {lb}, ub: {ub}")
-    return lb, ub
-
-
 class GenerationPipeLineBase(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: GenPipelineContext):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: PackageForGenPipeline):
         super().__init__(connectionHelper, genCtx.core_relations, genCtx.global_min_instance_dict, name)
         self.global_all_attribs = genCtx.global_all_attribs
         self.global_attrib_types = genCtx.global_attrib_types
         self.global_join_graph = genCtx.global_join_graph
-        self.global_filter_predicates = genCtx.arithmetic_filters
+        self.global_filter_predicates = genCtx.global_filter_predicates
         self.filter_attrib_dict = genCtx.filter_attrib_dict
         self.attrib_types_dict = genCtx.attrib_types_dict
         self.joined_attribs = genCtx.joined_attribs
@@ -141,10 +126,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         datatype = self.get_datatype((tabname, attrib))
         if datatype in NON_TEXT_TYPES:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                lb = self.filter_attrib_dict[(tabname, attrib)][0]
-                if not isinstance(lb, tuple):
-                    return lb
-                return lb[0]
+                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
+                          self.filter_attrib_dict[(tabname, attrib)][1])
             else:
                 val = get_dummy_val_for(datatype)
             # val = ast.literal_eval(get_format(datatype, val))
@@ -158,8 +141,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return val
 
     def get_other_than_dmin_val_nonText(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
+        datatype = self.get_datatype((tabname, attrib))
         key = (tabname, attrib)
-        datatype = self.get_datatype(key)
         if key not in self.filter_attrib_dict:
             return get_dummy_val_for(datatype)
 
@@ -167,8 +150,13 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             self.logger.info("Cannot generate a new s-val. Giving the old one!")
             return prev
 
-        lb, ub = get_lb_ub(key, self.filter_attrib_dict, self.logger)
-        val = ub if prev == lb else lb
+        lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
+        if prev == lb:
+            val = ub
+        elif prev == ub:
+            val = lb
+        else:
+            val = min(lb, ub)
         return val
 
     def get_different_s_val(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:

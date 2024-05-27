@@ -5,6 +5,7 @@ from typing import Union, List, Tuple
 
 from .abstract.abstractConnection import AbstractConnectionHelper
 from .abstract.filter_holder import FilterHolder
+from .dataclass.generation_pipeline_package import GenPipeLineContext
 from ..util.aoa_utils import get_min, get_max, get_attrib, get_tab, get_UB, get_LB, \
     get_delta, \
     get_all_two_combs, \
@@ -13,6 +14,7 @@ from ..util.aoa_utils import get_min, get_max, get_attrib, get_tab, get_UB, get_
     find_le_attribs_from_edge_set, find_ge_attribs_from_edge_set, add_item_to_list, remove_absorbed_Bs, \
     find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, need_permanent_mutation, \
     find_concrete_bound_from_filter_bounds, add_item_to_dict, get_op, remove_item_from_dict
+
 from ..util.utils import get_val_plus_delta, add_two, get_mid_val
 
 
@@ -42,7 +44,10 @@ class InequalityPredicate(FilterHolder):
         self.arithmetic_ineq_predicates = copy.deepcopy(pending_predicates)
         self.aoa_predicates = []
         self.aoa_less_thans = []
-        self.arithmetic_filters = []
+        self.join_graph = []
+        self.filter_predicates = []
+        self.filter_in_predicates = []
+        self.nextPipelineCtx = None
         self.__handle_filter_for_subrange = self.filter_extractor.handle_filter_for_subrange
 
     def doActualJob(self, args=None):
@@ -366,16 +371,25 @@ class InequalityPredicate(FilterHolder):
 
     def __fill_in_internal_predicates(self):
         for a_eq in self.arithmetic_eq_predicates:
-            self.arithmetic_filters.append(a_eq)
+            self.filter_predicates.append(a_eq)
         to_remove = []
         for a_ineq in self.arithmetic_ineq_predicates:
-            red = check_redundancy(self.arithmetic_filters, a_ineq)
+            red = check_redundancy(self.filter_predicates, a_ineq)
             if red:
                 to_remove.append(a_ineq)
             else:
-                self.arithmetic_filters.append(a_ineq)
+                self.filter_predicates.append(a_ineq)
         for t_r in to_remove:
             self.arithmetic_ineq_predicates.remove(t_r)
+        self.create_equi_join_graph()
+
+    def create_equi_join_graph(self):
+        for eq_join in self.algebraic_eq_predicates:
+            join_graph_edge = list(f"{item[1]}" for item in eq_join if len(item) == 2)
+            join_graph_edge.sort()
+            for i in range(0, len(join_graph_edge) - 1):
+                self.join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
+        self.logger.debug("create_equi_join_graph: ", self.join_graph)
 
     def __get_equi_join_group(self, tab_attrib: Tuple[str, str]) -> List[Tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:

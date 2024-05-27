@@ -1,15 +1,15 @@
-import random
 import math
+import random
 
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify
 
-from .dataclass.genPipeline_context import GenPipelineContext
+from .dataclass.generation_pipeline_package import GenPipeLineContext
+from ..util.aoa_utils import get_LB, get_UB
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
 from ...src.util.utils import count_empty_lists_in, find_diff_idx
-from ...src.util.aoa_utils import get_LB, get_UB
 
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
@@ -31,7 +31,7 @@ def get_index_of_difference(attrib, new_result, new_result1, projection_dep, tab
 
 
 class Projection(GenerationPipeLineBase):
-    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: GenPipelineContext):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: GenPipeLineContext):
         super().__init__(connectionHelper, "Projection", genPipelineCtx)
         self.projection_names = None
         self.projected_attribs = None
@@ -222,7 +222,6 @@ class Projection(GenerationPipeLineBase):
         self.logger.debug("Param List", local_param_list)
         self.param_list.append(local_param_list)
         self.infinite_loop(coeff, fil_check, n)
-        self.logger.debug("Coeff", coeff)
         # print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
@@ -261,7 +260,7 @@ class Projection(GenerationPipeLineBase):
                 b[i][0] = self.app.get_attrib_val(exe_result, idx)
         self.logger.debug("Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
-        solution = np.around(solution, decimals = 0)
+        solution = np.around(solution, decimals=2)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
@@ -281,11 +280,11 @@ class Projection(GenerationPipeLineBase):
             # Same algorithm as above with insertion of random values
             # Additionally checking if rank of the matrix has become 2^n
             for j in range(n):
-                pred = fil_check[j]
                 mini = constants.pr_min
                 maxi = constants.pr_max
                 if fil_check[j]:
-                    datatype = self.get_datatype((fil_check[j][0], fil_check[j][1]))
+                    pred = fil_check[j]
+                    datatype = self.get_datatype((pred[0], pred[1]))
                     mini = get_LB(pred)
                     maxi = get_UB(pred)
                     if datatype == 'int':
