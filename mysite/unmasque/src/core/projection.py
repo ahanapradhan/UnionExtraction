@@ -1,4 +1,5 @@
 import random
+import math
 
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify
@@ -291,6 +292,8 @@ class Projection(GenerationPipeLineBase):
                         coeff[outer_idx][j] = random.randrange(mini, maxi)
                     elif (datatype == 'numeric'):
                         coeff[outer_idx][j] = random.uniform(mini, maxi)
+                else :
+                    coeff[outer_idx][j] = random.randrange(math.ceil(mini), math.floor(maxi))
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]
