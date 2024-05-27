@@ -1,5 +1,6 @@
 import unittest
 
+from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from ...test.util.BaseTestCase import BaseTestCase
 import pytest
@@ -7,10 +8,13 @@ import pytest
 
 class MyTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
-        super(BaseTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
+        self.conn.config.detect_union = True
         self.conn.config.detect_nep = True
+        self.conn.config.detect_oj = True
         self.conn.config.detect_or = True
-        self.pipeline = ExtractionPipeLine(self.conn)
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
 
     def test_basic_simple(self):
         query = "Select l_shipmode, count(*) as count From orders, lineitem " \
