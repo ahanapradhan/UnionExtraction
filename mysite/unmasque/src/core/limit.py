@@ -4,14 +4,14 @@ import itertools
 
 import frozenlist as frozenlist
 
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.generation_pipeline_package import GenPipeLineContext
 from .dataclass.pgao_context import PGAOcontext
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 
 class Limit(GenerationPipeLineBase):
-    def __init__(self, connectionHelper, genPipelineCtx: PackageForGenPipeline,
+    def __init__(self, connectionHelper, genPipelineCtx: GenPipeLineContext,
                  genCtx: PGAOcontext):
         super().__init__(connectionHelper, "Limit", genPipelineCtx)
         self.limit = None

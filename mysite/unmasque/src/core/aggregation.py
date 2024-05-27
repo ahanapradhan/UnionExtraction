@@ -2,7 +2,7 @@ import ast
 import copy
 import math
 
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.generation_pipeline_package import GenPipeLineContext
 from .projection import get_param_values_external
 from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES
@@ -114,7 +114,7 @@ def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner,
 
 class Aggregation(GenerationPipeLineBase):
     def __init__(self, connectionHelper,
-                 genPipelineCtx: PackageForGenPipeline,
+                 genPipelineCtx: GenPipeLineContext,
                  pgao_Ctx):
         super().__init__(connectionHelper, "Aggregation", genPipelineCtx)
         self.global_aggregated_attributes = None

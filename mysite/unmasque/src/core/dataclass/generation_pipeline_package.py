@@ -43,7 +43,7 @@ def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):
             del UB_dict[attrib]
 
 
-class PackageForGenPipeline:
+class GenPipeLineContext:
     def __init__(self, core_relations: List[str], global_all_attribs, global_attrib_types,
                  global_filter_predicates: list, global_aoa_le_predicates: List[Tuple[str, str]], global_join_graph,
                  global_aoa_l_predicates: List[Tuple[str, str]], global_min_instance_dict: dict,
@@ -55,7 +55,7 @@ class PackageForGenPipeline:
         self.filter_attrib_dict = None
         self.joined_attribs = None
         self.aoa_attribs = None
-        self.global_filter_predicates = global_filter_predicates
+        self.arithmetic_filters = global_filter_predicates
         self.global_min_instance_dict = copy.deepcopy(global_min_instance_dict)
 
         self.global_join_graph = global_join_graph
@@ -105,7 +105,7 @@ class PackageForGenPipeline:
             del UB_dict[attrib]
 
     def add_arithmetic_filters(self, filter_attrib_dict: dict):
-        for entry in self.global_filter_predicates:
+        for entry in self.arithmetic_filters:
             if len(entry) > 4:
                 if entry[2].lower() not in ['like', 'equal', 'in']:  # <=, >=, =
                     filter_attrib_dict[(entry[0], entry[1])] = (entry[3], entry[4])
@@ -143,7 +143,7 @@ class PackageForGenPipeline:
 
     def update_filter_predicates(self):
         filter_dict = []
-        for pred in self.global_filter_predicates:
+        for pred in self.arithmetic_filters:
             key = (pred[0], pred[1])
             filter_dict.append(key)
 
@@ -163,7 +163,7 @@ class PackageForGenPipeline:
                     to_add.add((key[0], key[1], 'equal', bounds, bounds))
                 else:
                     to_add.add((key[0], key[1], 'range', bounds[0], bounds[1]))
-        self.global_filter_predicates.extend(list(to_add))
+        self.arithmetic_filters.extend(list(to_add))
 
     def make_dmin_dict_from_aoa_l(self, LB_dict: dict, UB_dict: dict) -> Tuple[dict, dict]:
         for entry in self.global_aoa_l_predicates:

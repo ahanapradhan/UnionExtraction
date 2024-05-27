@@ -6,7 +6,7 @@ import unittest
 import pytest
 
 from mysite.unmasque.src.util.utils import get_unused_dummy_val, get_format, get_char
-from mysite.unmasque.src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from mysite.unmasque.src.core.dataclass.generation_pipeline_package import GenPipeLineContext
 from mysite.unmasque.src.util import constants
 
 sys.path.append("../../../")
@@ -30,7 +30,7 @@ def construct_values_used(global_filter_predicates, attrib_types_dict):
 
 def create_dmin_for_test(from_rels, pj):
     pj.truncate_core_relations()
-    val_used = construct_values_used(pj.global_filter_predicates, pj.attrib_types_dict)
+    val_used = construct_values_used(pj.arithmetic_filters, pj.attrib_types_dict)
     val_used = construct_values_for_attribs(val_used, pj)
     for tab_name in from_rels:
         al = pj.app.doJob("select * from " + tab_name)
@@ -109,10 +109,10 @@ class MyTestCase(BaseTestCase):
         self.global_attrib_types_dict = {}
 
     def post_process_for_generation_pipeline(self):
-        self.pipeline_delivery = PackageForGenPipeline(self.core_relations, self.global_all_attribs,
-                                                       self.global_attrib_types, self.filter_predicates, [],
-                                                       self.join_graph, [], self.global_min_instance_dict,
-                                                       self.get_dmin_val, self.get_datatype)
+        self.pipeline_delivery = GenPipeLineContext(self.core_relations, self.global_all_attribs,
+                                                    self.global_attrib_types, self.filter_predicates, [],
+                                                    self.join_graph, [], self.global_min_instance_dict,
+                                                    self.get_dmin_val, self.get_datatype)
         self.pipeline_delivery.doJob()
 
     def test_projection_Q1(self):
