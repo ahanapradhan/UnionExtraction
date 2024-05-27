@@ -143,7 +143,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return val
 
     def get_other_than_dmin_val_nonText(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
-        datatype = self.get_datatype((tabname, attrib))
         key = (tabname, attrib)
         datatype = self.get_datatype(key)
         if key not in self.filter_attrib_dict:
@@ -153,7 +152,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             self.logger.info("Cannot generate a new s-val. Giving the old one!")
             return prev
 
-        lb, ub = get_lb_ub(key, self.filter_attrib_dict, self.logger)
+        lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
         val = ub if prev == lb else lb
         return val
 
