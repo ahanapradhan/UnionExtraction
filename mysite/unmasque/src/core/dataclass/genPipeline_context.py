@@ -207,7 +207,7 @@ class GenPipelineContext:
 
     def __make_dmin_dict_from_aoa_l(self, LB_dict: dict, UB_dict: dict) -> Tuple[dict, dict]:
         for entry in self.global_aoa_l_predicates:
-            datatype = self.get_datatype((entry[0], entry[1]))
+            datatype = self.get_datatype((entry[0]))
             delta, _ = get_constants_for(datatype)
 
             l_attrib, r_attrib = entry[0], entry[1]
