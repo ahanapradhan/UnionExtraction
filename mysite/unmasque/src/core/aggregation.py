@@ -10,7 +10,6 @@ from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ...src.util.constants import min_int_val, max_int_val
 
 
-
 def get_k_value_for_number(a, b):
     if a == b:
         k_value = 1

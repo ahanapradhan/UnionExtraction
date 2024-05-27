@@ -261,7 +261,7 @@ class Projection(GenerationPipeLineBase):
                 b[i][0] = self.app.get_attrib_val(exe_result, idx)
         self.logger.debug("Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
-        solution = np.around(solution, decimals = 2)
+        solution = np.around(solution, decimals=2)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
@@ -290,9 +290,9 @@ class Projection(GenerationPipeLineBase):
                     maxi = get_UB(pred)
                     if datatype == 'int':
                         coeff[outer_idx][j] = random.randrange(mini, maxi)
-                    elif (datatype == 'numeric'):
+                    elif datatype == 'numeric':
                         coeff[outer_idx][j] = random.uniform(mini, maxi)
-                else :
+                else:
                     coeff[outer_idx][j] = random.randrange(math.ceil(mini), math.floor(maxi))
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
