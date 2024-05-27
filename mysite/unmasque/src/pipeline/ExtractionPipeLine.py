@@ -1,6 +1,6 @@
 import copy
 
-from ..core.dataclass.generation_pipeline_package import GenPipeLineContext
+from ..core.dataclass.genPipeline_context import GenPipelineContext
 from ..core.dataclass.pgao_context import PGAOcontext
 from ...src.pipeline.fragments.DisjunctionPipeLine import DisjunctionPipeLine
 from ...src.pipeline.fragments.NepPipeLine import NepPipeLine
@@ -15,6 +15,7 @@ from ...src.core.limit import Limit
 from ...src.core.orderby_clause import OrderBy
 from ...src.core.projection import Projection
 
+
 class IOState:
     def __init__(self, inp, output):
         self.input = inp
@@ -23,7 +24,7 @@ class IOState:
             "input": self.input,
             "output": self.output
         }
-    
+
     def get_dic(self):
         return self.dic
 
@@ -202,7 +203,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
     def __gen_pipeline_preprocess(self):
         self.logger.debug("aoa post-process.")
-        self.genPipelineCtx = GenPipeLineContext(self.core_relations, self.aoa,
+        self.genPipelineCtx = GenPipelineContext(self.core_relations, self.aoa,
                                                  self.filter_extractor, self.global_min_instance_dict,
                                                  self.or_predicates)
         self.logger.debug(self.genPipelineCtx.arithmetic_filters)
@@ -215,4 +216,3 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.logger.debug(self.genPipelineCtx.global_join_graph)
         self.logger.debug(self.genPipelineCtx.filter_in_predicates)
         self.logger.debug(self.genPipelineCtx.filter_attrib_dict)
-
