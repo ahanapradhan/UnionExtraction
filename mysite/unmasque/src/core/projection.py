@@ -4,7 +4,6 @@ import random
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify
 
-from .dataclass.generation_pipeline_package import GenPipeLineContext
 from ..util.aoa_utils import get_LB, get_UB
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper

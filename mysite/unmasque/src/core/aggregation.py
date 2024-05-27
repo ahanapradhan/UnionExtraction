@@ -2,10 +2,10 @@ import ast
 import copy
 import math
 
-from .dataclass.generation_pipeline_package import GenPipeLineContext
+from .dataclass.genPipeline_context import GenPipelineContext
 from .projection import get_param_values_external
 from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_lb_ub
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES
 from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ...src.util.constants import min_int_val, max_int_val
 
@@ -40,14 +40,14 @@ def get_k_value(attrib, filter_attrib_dict, groupby_key_flag, tabname, datatype)
     elif (tabname, attrib) in filter_attrib_dict.keys():
         if datatype in NUMBER_TYPES:
             # PRECISION TO BE TAKEN CARE FOR NUMERIC
-            a, b = get_lb_ub((tabname, attrib), filter_attrib_dict)
+            a, b = filter_attrib_dict[(tabname, attrib)][0], filter_attrib_dict[(tabname, attrib)][1]
             b = min(a + 1, b)
             if a == 0:  # swap a and b
                 a = b
                 b = 0
             k_value, agg_array = get_k_value_for_number(a, b)
         elif datatype == 'date':
-            date_lb, date_ub = get_lb_ub((tabname, attrib), filter_attrib_dict)
+            date_lb, date_ub = filter_attrib_dict[(tabname, attrib)][0], filter_attrib_dict[(tabname, attrib)][1]
             a = get_format('date', date_lb)
             date_val_plus_1 = get_val_plus_delta('date', date_lb, 1)
             b = get_format('date', min(date_val_plus_1, date_ub))
@@ -109,7 +109,7 @@ def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner,
 
 class Aggregation(GenerationPipeLineBase):
     def __init__(self, connectionHelper,
-                 genPipelineCtx: GenPipeLineContext,
+                 genPipelineCtx: GenPipelineContext,
                  pgao_Ctx):
         super().__init__(connectionHelper, "Aggregation", genPipelineCtx)
         self.global_aggregated_attributes = None
