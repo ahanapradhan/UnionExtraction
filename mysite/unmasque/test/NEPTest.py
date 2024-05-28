@@ -5,7 +5,7 @@ import pytest as pytest
 
 from mysite.unmasque.src.core.nep import NEP
 from mysite.unmasque.src.util.QueryStringGenerator import QueryStringGenerator
-from ..src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from ..src.core.dataclass.generation_pipeline_package import GenPipeLineContext
 from ..src.util.constants import max_numeric_val
 from ..test.util import tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase
@@ -57,8 +57,8 @@ class MyTestCase(BaseTestCase):
              'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
              'l_shipmode', 'l_comment']]
         self.backup_tables()
-        delivery = PackageForGenPipeline(['lineitem'], self.global_all_attribs, self.global_attrib_types, filters, [],
-                                         [], [], {}, self.get_dmin_val, self.get_datatype)
+        delivery = GenPipeLineContext(['lineitem'], self.global_all_attribs, self.global_attrib_types, filters, [],
+                                      [], [], {}, self.get_dmin_val, self.get_datatype)
         self.do_init()
         delivery.doJob()
 
@@ -151,8 +151,8 @@ class MyTestCase(BaseTestCase):
         q_gen.select_op = 'c_mktsegment as segment'
         q_gen.where_op = "c_acctbal between 1000 and 5000 and c_nationkey = n_nationkey and c_custkey = o_custkey"
 
-        delivery = PackageForGenPipeline(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
-                                         self.join_graph, [], {}, self.get_dmin_val, self.get_datatype)
+        delivery = GenPipeLineContext(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
+                                      self.join_graph, [], {}, self.get_dmin_val, self.get_datatype)
         self.do_init()
         delivery.doJob()
         self.backup_tables()
@@ -215,9 +215,9 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         join_graph = []
 
-        delivery = PackageForGenPipeline(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
-                                         join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = GenPipeLineContext(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
+                                      join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
+                                      self.get_datatype)
         self.do_init()
         delivery.doJob()
         self.backup_tables()
@@ -288,9 +288,9 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         self.join_graph = []
 
-        delivery = PackageForGenPipeline(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
-                                         self.join_graph, [], global_min_instance_dict, self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = GenPipeLineContext(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
+                                      self.join_graph, [], global_min_instance_dict, self.get_dmin_val,
+                                      self.get_datatype)
         self.do_init()
         delivery.doJob()
         self.backup_tables()
@@ -364,8 +364,8 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         self.join_graph = []
 
-        delivery = PackageForGenPipeline(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
-                                         self.join_graph, [], {}, self.get_dmin_val, self.get_datatype)
+        delivery = GenPipeLineContext(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
+                                      self.join_graph, [], {}, self.get_dmin_val, self.get_datatype)
         self.do_init()
 
         delivery.doJob()
@@ -475,9 +475,9 @@ class MyTestCase(BaseTestCase):
 
         self.global_min_instance_dict = {}
 
-        delivery = PackageForGenPipeline(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
-                                         self.join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = GenPipeLineContext(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
+                                      self.join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
+                                      self.get_datatype)
         self.do_init()
         self.backup_tables()
 
@@ -580,9 +580,9 @@ class MyTestCase(BaseTestCase):
         self.join_graph = [['c_custkey', 'o_custkey'],
                            ['o_orderkey', 'l_orderkey']]
 
-        delivery = PackageForGenPipeline(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
-                                         self.join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = GenPipeLineContext(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
+                                      self.join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
+                                      self.get_datatype)
         self.do_init()
 
         delivery.doJob()
@@ -685,9 +685,9 @@ class MyTestCase(BaseTestCase):
         aoa_predicates = []
         self.join_graph = [['c_custkey', 'o_custkey'],
                            ['o_orderkey', 'l_orderkey']]
-        delivery = PackageForGenPipeline(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
-                                         self.join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = GenPipeLineContext(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
+                                      self.join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
+                                      self.get_datatype)
         self.do_init()
 
         delivery.doJob()
@@ -798,9 +798,9 @@ class MyTestCase(BaseTestCase):
         self.join_graph = [['ps_suppkey', 's_suppkey'],
                            ['s_nationkey', 'n_nationkey']]
 
-        delivery = PackageForGenPipeline(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
-                                         self.join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
-                                         self.get_datatype)
+        delivery = GenPipeLineContext(core_rels, self.global_all_attribs, self.global_attrib_types, filters, [],
+                                      self.join_graph, [], self.global_min_instance_dict, self.get_dmin_val,
+                                      self.get_datatype)
         self.do_init()
         delivery.doJob()
         o = NEP(self.conn, core_rels, q_gen, delivery, tpchSettings.all_size)

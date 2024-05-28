@@ -136,7 +136,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         return True, time_profile
 
     def __get_predicates_in_action(self):
-        return self.aoa.filter_predicates
+        return self.aoa.arithmetic_filters
 
     @abstractmethod
     def process(self, query: str):
@@ -161,13 +161,6 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             except Exception as e:
                 self.logger.error("Error in disjunction loop. ", str(e))
                 return False, time_profile
-            '''
-            gaining sanity back from nullified attributes
-            check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
-            if not check:
-                self.logger.error("Error while sanitizing after disjunction. Aborting!")
-                return False, time_profile
-            '''
         self.or_predicates = list(zip(*all_eq_predicates))
         return True, time_profile
 

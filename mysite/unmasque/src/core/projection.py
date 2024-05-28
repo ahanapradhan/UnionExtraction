@@ -4,7 +4,8 @@ import random
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify
 
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.genPipeline_context import GenPipelineContext
+from ..util.aoa_utils import get_LB, get_UB
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
@@ -30,7 +31,7 @@ def get_index_of_difference(attrib, new_result, new_result1, projection_dep, tab
 
 
 class Projection(GenerationPipeLineBase):
-    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: PackageForGenPipeline):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: GenPipelineContext):
         super().__init__(connectionHelper, "Projection", genPipelineCtx)
         self.projection_names = None
         self.projected_attribs = None
@@ -279,12 +280,19 @@ class Projection(GenerationPipeLineBase):
             # Same algorithm as above with insertion of random values
             # Additionally checking if rank of the matrix has become 2^n
             for j in range(n):
-                mi = constants.pr_min
-                ma = constants.pr_max
+                mini = constants.pr_min
+                maxi = constants.pr_max
                 if fil_check[j]:
-                    mi = fil_check[j][3]
-                    ma = fil_check[j][4]
-                coeff[outer_idx][j] = random.randrange(math.floor(mi), math.ceil(ma))
+                    pred = fil_check[j]
+                    datatype = self.get_datatype((pred[0], pred[1]))
+                    mini = get_LB(pred)
+                    maxi = get_UB(pred)
+                    if datatype == 'int':
+                        coeff[outer_idx][j] = random.randrange(mini, maxi)
+                    elif datatype == 'numeric':
+                        coeff[outer_idx][j] = random.uniform(mini, maxi)
+                else :
+                    coeff[outer_idx][j] = random.randrange(math.ceil(mini), math.floor(maxi))
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]

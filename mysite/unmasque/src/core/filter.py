@@ -113,8 +113,6 @@ class Filter(UN2WhereClause):
         if datatype == 'str':
             # Group mutation is not implemented for string/text/char/varchar data type
             one_attrib = attrib_list[0]
-            # tabname, attrib, attrib_max_length, d_plus_value = one_attrib[0], \
-            #    one_attrib[1], one_attrib[2], one_attrib[3]
             tabname, attrib = one_attrib[0], one_attrib[1]
             self.handle_string_filter(attrib, filter_attribs, tabname, query)
         else:

@@ -2,7 +2,7 @@ import copy
 
 import frozenlist
 
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.genPipeline_context import GenPipelineContext
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES
 from ...src.util.constants import COUNT, NO_ORDER, SUM
 from ...src.util.utils import get_unused_dummy_val, get_dummy_val_for, \
@@ -62,7 +62,7 @@ def check_sort_order(logger, lst):
 class OrderBy(GenerationPipeLineBase):
 
     def __init__(self, connectionHelper,
-                 genPipelineCtx: PackageForGenPipeline,
+                 genPipelineCtx: GenPipelineContext,
                  pgao_Ctx):
         super().__init__(connectionHelper, "Order By", genPipelineCtx)
         self.values_used = []
