@@ -28,7 +28,7 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_union = False
         self.conn.config.detect_nep = True
         self.conn.config.detect_oj = False
-        self.conn.config.detect_or = False
+        self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
@@ -54,7 +54,14 @@ class ExtractionTestCase(BaseTestCase):
     def test_in(self):
         query = "select n_name, c_acctbal from nation, customer " \
                 "WHERE n_nationkey = c_nationkey and " \
-                "n_nationkey IN (1, 2, 5, 3, 4, 10) and c_acctbal < 7000 " \
+                "n_nationkey IN (1, 3, 4, 10) and c_acctbal < 7000 " \
+                "and c_acctbal > 1000 ORDER BY c_acctbal;"
+        self.do_test(query)
+
+    def test_in_agg_aoa(self):
+        query = "select o_clerk, sum(c_acctbal + 2*o_totalprice) as total_price, n_name from orders, customer, nation " \
+                "WHERE c_custkey = o_custkey and c_nationkey = n_nationkey and " \
+                "n_nationkey IN (1, 5, 3, 10) and c_acctbal < 7000 " \
                 "and c_acctbal > 1000 ORDER BY c_acctbal LIMIT 30;"
         self.do_test(query)
 

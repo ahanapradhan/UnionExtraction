@@ -21,6 +21,16 @@ def generate_random_date(lb, ub):
     return random_date1
 
 
+def _get_boundary_value(v_cand, is_ub):
+    if isinstance(v_cand, list) or isinstance(v_cand, tuple):
+        v_val = v_cand[-1] if is_ub else v_cand[0]
+        if isinstance(v_val, tuple):
+            v_val = v_val[-1] if is_ub else v_val[0]
+    else:
+        v_val = v_cand
+    return v_val
+
+
 class GenerationPipeLineBase(MutationPipeLineBase):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: GenPipelineContext):
@@ -127,9 +137,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         if datatype in NON_TEXT_TYPES:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 lb = self.filter_attrib_dict[(tabname, attrib)][0]
-                if not isinstance(lb, tuple):
-                    return lb
-                return lb[0]
+                val = _get_boundary_value(lb, is_ub=False)
             else:
                 val = get_dummy_val_for(datatype)
             # val = ast.literal_eval(get_format(datatype, val))
@@ -153,6 +161,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             return prev
 
         lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
+        lb = _get_boundary_value(lb, is_ub=False)
+        ub = _get_boundary_value(ub, is_ub=True)
         val = ub if prev == lb else lb
         return val
 

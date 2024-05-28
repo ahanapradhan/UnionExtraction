@@ -43,11 +43,11 @@ class NepPipeLine(GenericPipeLine, ABC):
             matched = nep_minimizer.match(query, eq)
             self.update_state(NEP_ + RESULT_COMPARE + DONE)
             if matched is None:
-                eq = self.q_generator.rewrite_for_not_in()
+                eq = self.q_generator.rewrite_for_NEP()
                 self.logger.error("Extracted Query is not semantically correct!..not going to try to extract NEP!")
                 return eq
             if matched:
-                eq = self.q_generator.rewrite_for_not_in()
+                eq = self.q_generator.rewrite_for_NEP()
                 self.logger.info("No NEP!")
                 return eq
 
@@ -71,6 +71,6 @@ class NepPipeLine(GenericPipeLine, ABC):
                 self.update_state(NEP_ + FILTER + DONE)
                 self.time_profile.update_for_nep(nep_extractor.local_elapsed_time, nep_extractor.app_calls)
 
-        eq = self.q_generator.rewrite_for_not_in()
+        eq = self.q_generator.rewrite_for_NEP()
         self.logger.debug("returning..", eq)
         return eq
