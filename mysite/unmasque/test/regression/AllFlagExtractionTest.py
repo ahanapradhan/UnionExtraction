@@ -26,7 +26,7 @@ class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = False
-        self.conn.config.detect_nep = False
+        self.conn.config.detect_nep = True
         self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
         factory = PipeLineFactory()
