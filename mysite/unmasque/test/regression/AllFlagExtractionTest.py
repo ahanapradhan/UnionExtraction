@@ -27,7 +27,7 @@ class ExtractionTestCase(BaseTestCase):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = False
         self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = False
+        self.conn.config.detect_oj = True
         self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
@@ -54,7 +54,7 @@ class ExtractionTestCase(BaseTestCase):
     def test_in(self):
         query = "select n_name, c_acctbal from nation, customer " \
                 "WHERE n_nationkey = c_nationkey and " \
-                "n_nationkey IN (1, 3, 4, 10) and c_acctbal < 7000 " \
+                "n_nationkey IN (1, 2, 3, 5, 4, 10) and c_acctbal < 7000 " \
                 "and c_acctbal > 1000 ORDER BY c_acctbal;"
         self.do_test(query)
 
@@ -73,6 +73,11 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_no_filter_outer_join(self):
         query = "select c_name, n_name, count(*) as total from nation RIGHT OUTER JOIN customer " \
+                "ON c_nationkey = n_nationkey GROUP BY c_name, n_name;"
+        self.do_test(query)
+
+    def test_no_filter_outer_join1(self):
+        query = "select c_name, n_name from nation RIGHT OUTER JOIN customer " \
                 "ON c_nationkey = n_nationkey GROUP BY c_name, n_name;"
         self.do_test(query)
 
