@@ -2,14 +2,15 @@ import ast
 import copy
 from _decimal import Decimal
 
+import frozenlist
 from frozenlist._frozenlist import FrozenList
 
-from .aoa_utils import remove_item_from_list, find_tables_from_predicate
+from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_constants_for
 from ..core.abstract.GenerationPipeLineBase import NUMBER_TYPES
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
 from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX
-from ..util.utils import get_format, get_min_and_max_val
+from ..util.utils import get_format, get_min_and_max_val, get_val_plus_delta
 
 
 def append_clause(output, clause, param):
@@ -179,7 +180,6 @@ class QueryStringGenerator:
             self._workingCopy.all_aoa.append((pred[0], '<', pred[1]))
         for pred in aoa.aoa_predicates:
             self._workingCopy.all_aoa.append((pred[0], '<=', pred[1]))
-        self._workingCopy.arithmetic_filters = aoa.arithmetic_ineq_predicates + aoa.arithmetic_eq_predicates
 
     @property
     def limit(self):
@@ -203,12 +203,13 @@ class QueryStringGenerator:
         self._workingCopy.order_by_op = value.orderby_string
 
     @property
-    def arithmetic_in_predicates(self):
+    def arithmetic_predicates(self):
         return NotImplementedError
 
-    @arithmetic_in_predicates.setter
-    def arithmetic_in_predicates(self, remnants):
+    @arithmetic_predicates.setter
+    def arithmetic_predicates(self, remnants):
         self._workingCopy.filter_in_predicates = remnants.filter_in_predicates
+        self._workingCopy.arithmetic_filters = remnants.arithmetic_filters
 
     @property
     def all_arithmetic_filters(self):
@@ -284,7 +285,75 @@ class QueryStringGenerator:
         Q_E = self.write_query()
         return Q_E
 
-    def consolidate_nep_filters_for_not_in(self):
+    def __absorb_nep_filters(self):
+        _range_dict, _in_dict, _nep_dict = {}, {}, {}
+        for elt in self._workingCopy.arithmetic_filters:
+            if elt[2] == 'range':
+                _range_dict[(elt[0], elt[1])] = (elt[3], elt[4])
+            elif elt[2] in ['!=', '<>']:
+                datatype = self.get_datatype((elt[0], elt[1]))
+                _nep_dict[(elt[0], elt[1])] = int(elt[3]) if datatype in NUMBER_TYPES else elt[3]
+        for elt in self._workingCopy.filter_in_predicates:
+            if elt[2] == 'IN':
+                _in_dict[(elt[0], elt[1])] = list(elt[3])
+
+        for key in _nep_dict.keys():
+            datatype = self.get_datatype(key)
+            delta, _ = get_constants_for(datatype)
+            if key in _range_dict \
+                    and _range_dict[key][0] <= _nep_dict[key] <= _range_dict[key][1]:
+                range1 = (_range_dict[key][0], get_val_plus_delta(datatype, _nep_dict[key], -1 * delta))
+                range2 = (get_val_plus_delta(datatype, _nep_dict[key], 1 * delta), _range_dict[key][1])
+                remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])), self._workingCopy.arithmetic_filters)
+                remove_item_from_list((key[0], key[1], 'range', _range_dict[key][0], _range_dict[key][1]),
+                                      self._workingCopy.arithmetic_filters)
+                if key in _in_dict:
+                    _in_dict[key].extend([range1, range2])
+                else:
+                    _in_dict[key] = [range1, range2]
+            if key in _in_dict:
+                if _nep_dict[key] in _in_dict[key]:
+                    _in_dict[key].remove(_nep_dict[key])
+                remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])), self._workingCopy.arithmetic_filters)
+                to_remove, to_add = [], []
+                for v_tup in _in_dict[key]:
+                    if isinstance(v_tup, tuple) and v_tup[0] <= _nep_dict[key] <= v_tup[1]:
+                        range1 = (v_tup[0], get_val_plus_delta(datatype, _nep_dict[key], -1 * delta))
+                        range2 = (get_val_plus_delta(datatype, _nep_dict[key], 1 * delta), v_tup[1])
+                        remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])),
+                                              self._workingCopy.arithmetic_filters)
+                        to_add.extend([range1, range2])
+                        to_remove.append(v_tup)
+                for t_r in to_remove:
+                    _in_dict[key].remove(t_r)
+                for t_a in to_add:
+                    _in_dict[key].append(t_a)
+
+        for key in _in_dict.keys():
+            t_remove = []
+            in_vals = _in_dict[key]
+            for vi in in_vals:
+                for vj in in_vals:
+                    if not isinstance(vi, tuple) and isinstance(vj, tuple):
+                        if vj[0] <= vi <= vj[1]:
+                            t_remove.append(vi)
+            for t_r in t_remove:
+                _in_dict[key].remove(t_r)
+            l_val = FrozenList(_in_dict[key])
+            l_val.freeze()
+            _in_dict[key] = l_val
+
+        t_remove = []
+        for elt in self._workingCopy.filter_in_predicates:
+            if (elt[0], elt[1]) in _in_dict.keys():
+                t_remove.append(elt)
+        for t_r in t_remove:
+            self._workingCopy.filter_in_predicates.remove(t_r)
+        for key in _in_dict.keys():
+            self._workingCopy.filter_in_predicates.append((key[0], key[1], 'IN', _in_dict[key], _in_dict[key]))
+
+    def __consolidate_nep_filters_for_not_in(self):
+        self.__absorb_nep_filters()
         t_remove = []
         nep_dict = {}
         for elt in self._workingCopy.arithmetic_filters:
@@ -312,13 +381,14 @@ class QueryStringGenerator:
             self._workingCopy.arithmetic_filters.remove(pred)
         return t_remove
 
-    def rewrite_for_not_in(self):
-        t_remove = self.consolidate_nep_filters_for_not_in()
+    def rewrite_for_NEP(self):
+        t_remove = self.__consolidate_nep_filters_for_not_in()
         for pred in t_remove:
             self._remove_exact_NE_string_predicate(pred)
         for notInPred in self._workingCopy.filter_not_in_predicates:
             pred = self.formulate_predicate_from_filter(notInPred)
             self._workingCopy.add_to_where_op(pred)
+        self._workingCopy.where_op = self.__generate_where_clause()
         Q_E = self.write_query()
         return Q_E
 
@@ -439,46 +509,13 @@ class QueryStringGenerator:
             predicates.append(self.get_aoa_string(aoa))
 
     def __generate_arithmetic_pure_conjunctions(self, predicates):
-        apc_predicates = self._workingCopy.arithmetic_filters + self._workingCopy.filter_not_in_predicates
+        apc_predicates = self._workingCopy.arithmetic_filters \
+                         + self._workingCopy.filter_in_predicates \
+                         + self._workingCopy.filter_not_in_predicates
         for a_eq in apc_predicates:
             pred = self.formulate_predicate_from_filter(a_eq)
             if pred not in predicates:
                 predicates.append(pred)
-
-    def __generate_arithmetic_conjunctive_disjunctions(self, predicates):
-        for p in self._workingCopy.or_predicates:
-            non_empty_indices = [i for i, t_a in enumerate(p) if t_a]
-            tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
-            ops = [p[i][2] for i in non_empty_indices]
-            datatypes = [self.get_datatype(tab_attribs[i]) for i in non_empty_indices]
-            values = [get_format(datatypes[i], p[i][3]) for i in non_empty_indices]
-            values.sort()
-            uniq_tab_attribs = set(tab_attribs)
-            if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
-                tab, attrib = next(iter(uniq_tab_attribs))
-                in_pred = self.__adjust_for_in_predicates(attrib, tab, values)
-                one_pred = self.formulate_predicate_from_filter(in_pred)
-            else:
-                pred_str, preds = "", []
-                for i in non_empty_indices:
-                    pred_str = self.formulate_predicate_from_filter(p[i])
-                    preds.append(pred_str)
-                one_pred = " OR ".join(preds)
-            predicates.append(one_pred)
-
-    def __adjust_for_in_predicates(self, attrib, tab, values):
-        in_pred = [tab, attrib, 'IN', values, values] if len(values) > 1 else [tab, attrib, '=', values, values]
-        frozen_values = FrozenList(values)
-        frozen_values.freeze()
-        frozen_in_pred = (in_pred[0], in_pred[1], in_pred[2], frozen_values, frozen_values)
-        self._workingCopy.filter_in_predicates.append(frozen_in_pred)
-        remove_eq_filter_predicate = []
-        for eq_pred in self._workingCopy.arithmetic_filters:
-            if eq_pred[0] == tab and eq_pred[1] == attrib and eq_pred[2] in ['equal', '=']:
-                remove_eq_filter_predicate.append(eq_pred)
-        for t_r in remove_eq_filter_predicate:
-            self._workingCopy.arithmetic_filters.remove(t_r)
-        return tuple(in_pred)
 
     def __optimize_group_by_attributes(self):
         for i in range(len(self._workingCopy.global_projected_attributes)):

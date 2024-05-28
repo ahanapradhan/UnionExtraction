@@ -6,7 +6,7 @@ import frozenlist as frozenlist
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from .dataclass.pgao_context import PGAOcontext
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES, _get_boundary_value
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 
@@ -73,7 +73,6 @@ class Limit(GenerationPipeLineBase):
             else:
                 self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
         insert_rows.append(tuple(insert_values))
-        # self.logger.debug("Inserted values of ", len(insert_rows), f"rows in table {tabname_inner}")
 
     def decide_number_of_rows(self, gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations):
         if pre_assignment:
@@ -119,10 +118,19 @@ class Limit(GenerationPipeLineBase):
                 temp.append(self.filter_attrib_dict[elt][0] + k)
 
     def compute_total_values(self, datatype, elt, total_combinations):
-        if datatype == 'date':
-            tot_values = (self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0]).days + 1
+        if elt[2] == 'IN':
+            tot_values = 0
+            value_range = elt[3]
+            for v in value_range:
+                if not isinstance(v, tuple):
+                    tot_values += 1
+                else:
+                    tot_values += v[-1] - v[0]
         else:
-            tot_values = self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0] + 1
+            if datatype == 'date':
+                tot_values = (self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0]).days + 1
+            else:
+                tot_values = self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0] + 1
         if (total_combinations * tot_values) > self.no_rows:
             i = 1
             while (total_combinations * i) < self.no_rows + 1 and i < tot_values:
@@ -161,6 +169,7 @@ class Limit(GenerationPipeLineBase):
         s_val_plus_k = get_val_plus_delta(datatype, s_val, k)
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             one = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+            one = _get_boundary_value(one, is_ub=True)
             s_val_plus_k = min(s_val_plus_k, one)
         insert_values.append(ast.literal_eval(get_format(datatype, s_val_plus_k)))
         for edge in self.global_join_graph:

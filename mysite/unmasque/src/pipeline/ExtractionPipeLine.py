@@ -187,7 +187,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.q_generator.get_datatype = self.filter_extractor.get_datatype  # method
         self.q_generator.from_clause = core_relations
         self.q_generator.algebraic_predicates = self.aoa
-        self.q_generator.arithmetic_in_predicates = self.genPipelineCtx
+        self.q_generator.arithmetic_predicates = self.genPipelineCtx
 
         self.q_generator.pgaoCtx = self.pgao_ctx
         self.q_generator.limit = lm
