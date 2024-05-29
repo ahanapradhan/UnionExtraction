@@ -90,6 +90,12 @@ class PipeLineFactory:
             return pipe.get_state()
 
         return WAITING
+    
+    def get_pipeline_all_states(self, token):
+        pipe = self.get_pipeline_obj(token)
+        if pipe:
+            return pipe.get_list()
+        return [WAITING]
 
     def get_pipeline_obj(self, token):
         for i in self.pipelines:
@@ -115,6 +121,13 @@ class PipeLineFactory:
             if i[0] == token:
                 return i[1]
         return None
+
+    def get_pipeline_done_states(self, token):
+        pipe = self.get_pipeline_obj(token)
+        if pipe:
+            return pipe.get_done_list()
+        return [WAITING]    
+
 
     def cancel_pipeline_exec(self, token):
         p = self.get_pipeline_obj(token)

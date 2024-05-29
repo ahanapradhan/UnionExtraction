@@ -75,7 +75,6 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.global_pk_dict = fc.init.global_pk_dict
 
         eq = self._after_from_clause_extract(query, self.core_relations)
-        self.update_state(DONE)
         self.connectionHelper.closeConnection()
         return eq
 

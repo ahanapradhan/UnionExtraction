@@ -3,10 +3,10 @@ import math
 import decimal
 from typing import List
 
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
-from mysite.unmasque.src.core.abstract.un2_where_clause import UN2WhereClause
-from mysite.unmasque.src.util.aoa_utils import get_constants_for
-from mysite.unmasque.src.util.utils import is_int, get_val_plus_delta, get_min_and_max_val, \
+from ..core.abstract.abstractConnection import AbstractConnectionHelper
+from ..core.abstract.un2_where_clause import UN2WhereClause
+from ..util.aoa_utils import get_constants_for
+from ..util.utils import is_int, get_val_plus_delta, get_min_and_max_val, \
     is_left_less_than_right_by_cutoff, get_format, get_mid_val, get_cast_value
 
 

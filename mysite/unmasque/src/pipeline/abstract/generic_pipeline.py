@@ -35,9 +35,11 @@ class PipeLineState(object):
 
 class GenericPipeLine(ABC):
     _instance = None
-    state = WAITING
+    
 
     def __init__(self, connectionHelper, name):
+        self.state = [WAITING]
+        self.done_states = []
         self.update_state(WAITING)
         self.info = {}
         self.IO = {}
@@ -68,6 +70,7 @@ class GenericPipeLine(ABC):
             self.logger.info("Valid Execution")
             return result
         finally:
+            self.update_state(DONE)
             self.logger.info("Ended Execution")
 
     def doJob(self, query, qe=None):
@@ -94,18 +97,26 @@ class GenericPipeLine(ABC):
         if matched:
             self.logger.info("Extracted Query is Correct.")
             self.correct = True
-            self.update_state(DONE)
         else:
             self.logger.info("Extracted Query seems different!.")
             self.correct = False
             self.update_state(WRONG)
+        self.update_state(RESULT_COMPARE + DONE)
 
     @abstractmethod
     def extract(self, query):
         pass
 
     def update_state(self, state):
-        self.state = state
+        self.state.append(state)
+        if DONE in state:
+            self.done_states.append(state)
 
     def get_state(self):
+        return self.state[-1]
+
+    def get_list(self):
         return self.state
+
+    def get_done_list(self):
+        return self.done_states

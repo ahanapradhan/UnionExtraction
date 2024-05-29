@@ -53,7 +53,6 @@ class UnionPipeLine(OuterJoinPipeLine):
                 break
 
         result = self.__post_process(pstr, u_eq)
-        self.update_state(DONE)
         return result
 
     def __post_process(self, pstr, u_eq):
@@ -66,7 +65,6 @@ class UnionPipeLine(OuterJoinPipeLine):
                      f"\nHere's what I have as a half-baked answer:\n{pstr}\n"
             self.update_state(WRONG)
         result += u_Q
-        self.update_state(DONE)
         return result
 
     def __update_time_profile(self, union, union_time):
