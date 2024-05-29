@@ -199,72 +199,6 @@ table{
 
 
 
-.label{
-    text-align: center;
-}
-
-  .stage {
-    position: relative;
-    text-align: center;
-    flex: 0 0 auto; /* Ensure stages do not grow or shrink */
-    width: 15%;
-  }
-  
-  .circle {
-    height: 100px;
-    background-color: gray;
-    margin: 10px auto;
-    cursor:grab;
-    transition: background-color 0.3s ease;
-    border: 2px solid #000;
-    position: relative;
-    z-index: 1;
-    transform: scale(1.1);
-  }
-  
-  .label {
-    font-size: 24px;
-  }
-  
-  .arrow {
-    font-size: 83px;
-    transform: scaleX(1.5);
-    margin-top: 5px;
-  }
-  
-  .inactive {
-    background-color: #f0f0f0;
-    border-color: #000;
-    border-width: 1px;
-
-  }
-  
-  .running {
-    background-color: #ffcc00;
-    animation: pulse 1s infinite alternate;
-  }
-  
-  .done {
-    background-color: #339933;
-  }
-
-  .row{
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    width: 100%;
-    gap: 20px;
-    padding: 0px 90px;
-  }
-  
-
-  @keyframes pulse {
-    from {
-      transform: scale(1);
-    }
-    to {
-      transform: scale(1.2);
-    }
   
 .bi{
     font-weight: 700;
@@ -314,7 +248,6 @@ table{
 
 .subsubcontent{
     font-weight: 400;
-
 }
 
 .down{
@@ -679,6 +612,3 @@ svg:has(>.path.done) + div{
     fill: #c1e5f5;
     stroke: #46b1e1;
 }
-
-}
-
