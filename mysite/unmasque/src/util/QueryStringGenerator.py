@@ -180,6 +180,7 @@ class QueryStringGenerator:
             self._workingCopy.all_aoa.append((pred[0], '<', pred[1]))
         for pred in aoa.aoa_predicates:
             self._workingCopy.all_aoa.append((pred[0], '<=', pred[1]))
+        self._workingCopy.arithmetic_filters = aoa.arithmetic_eq_predicates + aoa.arithmetic_ineq_predicates
 
     @property
     def limit(self):
@@ -209,7 +210,7 @@ class QueryStringGenerator:
     @arithmetic_predicates.setter
     def arithmetic_predicates(self, remnants):
         self._workingCopy.filter_in_predicates = remnants.filter_in_predicates
-        self._workingCopy.arithmetic_filters = remnants.arithmetic_filters
+        # self._workingCopy.arithmetic_filters = remnants.arithmetic_filters
 
     @property
     def all_arithmetic_filters(self):

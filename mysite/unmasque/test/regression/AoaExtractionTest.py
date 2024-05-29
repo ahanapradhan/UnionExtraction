@@ -9,10 +9,10 @@ from ...test.util.BaseTestCase import BaseTestCase
 class MyTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
-        self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = True
-        self.conn.config.detect_or = True
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.detect_or = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
