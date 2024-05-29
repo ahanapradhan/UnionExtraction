@@ -510,12 +510,12 @@ class QueryStringGenerator:
             predicates.append(self.get_aoa_string(aoa))
 
     def __generate_arithmetic_pure_conjunctions(self, predicates):
-        apc_predicates = self._workingCopy.arithmetic_filters \
-                         + self._workingCopy.filter_in_predicates \
+        apc_predicates = self._workingCopy.filter_in_predicates \
+                         + self._workingCopy.arithmetic_filters \
                          + self._workingCopy.filter_not_in_predicates
         for a_eq in apc_predicates:
             pred = self.formulate_predicate_from_filter(a_eq)
-            if pred not in predicates:
+            if all(pred not in pred_str for pred_str in predicates):
                 predicates.append(pred)
 
     def __optimize_group_by_attributes(self):
