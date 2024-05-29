@@ -62,7 +62,7 @@ class ExtractionTestCase(BaseTestCase):
         query = "select o_clerk, sum(c_acctbal + 2*o_totalprice) as total_price, n_name from orders, customer, nation " \
                 "WHERE c_custkey = o_custkey and c_nationkey = n_nationkey and " \
                 "n_nationkey IN (1, 5, 3, 10) and c_acctbal < 7000 " \
-                "and c_acctbal > 1000 ORDER BY c_acctbal LIMIT 30;"
+                "and c_acctbal > 1000 and c_acctbal <= o_totalprice group by o_clerk, n_name ORDER BY o_clerk LIMIT 30;"
         self.do_test(query)
 
     def test_key_range(self):
