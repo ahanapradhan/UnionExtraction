@@ -48,6 +48,12 @@ class Executable(Base):
             raise error
         return result
 
+    def is_attrib_all_null(self, Res, attrib):
+        return self.isQ_result_empty(Res)
+
+    def get_attrib_val(self, Res, attrib_idx):
+        return Res[1][attrib_idx]
+
     def isQ_result_no_full_nullfree_row(self, Res):
         return self.isQ_result_empty(Res)
 
@@ -55,7 +61,7 @@ class Executable(Base):
         return not self.isQ_result_empty(Res)
 
     def isQ_result_empty(self, Res):
-        self.logger.debug("exe: isQ_result_empty")
+        # self.logger.debug("exe: isQ_result_empty")
         if len(Res) <= 1:
             return True
         return False

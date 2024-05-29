@@ -50,17 +50,9 @@ class NepComparator(ResultComparator):
         res_Qh_ = res_Qh[1:]
         if res_Qh_ not in [None, 'None']:
             for row in res_Qh_:
-                hasNullVal = False
-                for val in row:
-                    if val in [None, 'None']:
-                        hasNullVal = True
-                        break
-                if hasNullVal:
+                if any(val in [None, 'None'] for val in row):
                     continue
-                temp = []
-                for val in row:
-                    temp.append(str(val))
-                ins = (tuple(temp))
+                ins = (tuple(row))
                 if len(res_Qh_) == 1 and len(res_Qh_[0]) == 1:
                     self.insert_into_result_table_values(header, ins[0], table)
                 else:
@@ -180,54 +172,57 @@ class NepMinimizer(Minimizer):
 
 class NEP(GenerationPipeLineBase):
 
-    def __init__(self, connectionHelper, delivery):
-        super().__init__(connectionHelper, "NEP Extractor", delivery)
+    def __init__(self, connectionHelper, genCtx):
+        super().__init__(connectionHelper, "NEP Extractor", genCtx)
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
 
     def extract_NEP_for_table(self, tabname, query, is_for_joined):
-        i = self.core_relations.index(tabname)
         self.logger.debug("Inside get nep")
         res = self.app.doJob(query)
         filterAttribs = []
         if self.app.isQ_result_empty(res):
-            attrib_list = self.global_all_attribs[i]
+            attrib_list = self.global_all_attribs[tabname]
             self.logger.debug("attrib list: ", attrib_list)
-            filterAttribs = self.check_per_attrib(attrib_list,
-                                                  tabname,
-                                                  query,
-                                                  filterAttribs, is_for_joined)
+            filterAttribs = self.__check_per_attrib(attrib_list,
+                                                    tabname,
+                                                    query,
+                                                    filterAttribs, is_for_joined)
         return filterAttribs
 
     def doActualJob(self, args=None):
         query, table = self.extract_params_from_args(args)
         nonKey_filter = self.extract_NEP_for_table(table, query, False)
-        key_filter = []  # self.extract_NEP_for_table(table, query, True)
+        key_filter = self.extract_NEP_for_table(table, query, True)
         return nonKey_filter + key_filter
 
-    def check_per_attrib(self, attrib_list, tabname, query, filterAttribs, is_for_joined):
+    def __check_per_attrib(self, attrib_list, tabname, query, filterAttribs, is_for_joined):
         if is_for_joined:
-            self.check_per_joined_attrib(attrib_list, filterAttribs, query, tabname)
+            self.__check_per_joined_attrib(attrib_list, filterAttribs, query, tabname)
         else:
-            self.check_per_single_attrib(attrib_list, filterAttribs, query, tabname)
+            self.__check_per_single_attrib(attrib_list, filterAttribs, query, tabname)
         return filterAttribs
 
-    def check_per_joined_attrib(self, attrib_list, filterAttribs, query, tabname):
+    def __check_per_joined_attrib(self, attrib_list, filterAttribs, query, tabname):
         if self.joined_attribs is None:
             return
         joined_attribs = [attrib for attrib in attrib_list if attrib in self.joined_attribs]
+        skip_attribs = []
         for attrib in joined_attribs:
+            if attrib in skip_attribs:
+                continue
             join_tabnames = []
             other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
+            skip_attribs.extend(other_attribs)
             val, prev = self.update_attrib_to_see_impact(attrib, tabname)
             self.update_attribs_bulk(join_tabnames, other_attribs, val)
             new_result = self.app.doJob(query)
             self.update_with_val(attrib, tabname, prev)
             self.update_attribs_bulk(join_tabnames, other_attribs, prev)
-            self.update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
+            self.__update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
 
-    def check_per_single_attrib(self, attrib_list, filterAttribs, query, tabname):
+    def __check_per_single_attrib(self, attrib_list, filterAttribs, query, tabname):
         if self.joined_attribs is not None:
             single_attribs = [attrib for attrib in attrib_list if attrib not in self.joined_attribs]
         else:
@@ -241,9 +236,9 @@ class NEP(GenerationPipeLineBase):
             self.update_with_val(attrib, tabname, val)
             new_result = self.app.doJob(query)
             self.update_with_val(attrib, tabname, prev)
-            self.update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
+            self.__update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
 
-    def update_filter_attribs_from_res(self, new_result, filterAttribs, tabname, attrib, prev):
+    def __update_filter_attribs_from_res(self, new_result, filterAttribs, tabname, attrib, prev):
         if not self.app.isQ_result_empty(new_result):
             filterAttribs.append((tabname, attrib, '<>', prev))
             self.logger.debug(filterAttribs, '++++++_______++++++')

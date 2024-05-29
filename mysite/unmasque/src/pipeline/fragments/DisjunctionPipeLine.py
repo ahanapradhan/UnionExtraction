@@ -1,7 +1,7 @@
 import copy
 from abc import abstractmethod, ABC
 
-from ....src.core.aoa import AlgebraicPredicate
+from ....src.core.aoa import InequalityPredicate
 from ....src.core.cs2 import Cs2
 from ....src.core.db_restorer import DbRestorer
 from ....src.core.equi_join import U2EquiJoin
@@ -56,7 +56,6 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             self.logger.info("Sampling is disabled!")
         else:
             self.info[SAMPLING] = {'sample': cs2.sample, 'size': cs2.sizes}
-            # self.db_restorer.update_last_restored_size(cs2.sizes)
 
         """
             View based Database Minimization
@@ -118,15 +117,15 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         AOA Extraction
         '''
         self.update_state(INEQUALITY + START)
-        self.aoa = AlgebraicPredicate(self.connectionHelper, core_relations, self.equi_join.pending_predicates,
-                                      self.equi_join.arithmetic_eq_predicates,
-                                      self.equi_join.algebraic_eq_predicates, self.filter_extractor,
-                                      self.global_min_instance_dict)
+        self.aoa = InequalityPredicate(self.connectionHelper, core_relations, self.equi_join.pending_predicates,
+                                       self.equi_join.arithmetic_eq_predicates,
+                                       self.equi_join.algebraic_eq_predicates, self.filter_extractor,
+                                       self.global_min_instance_dict)
         self.update_state(INEQUALITY + RUNNING)
         check = self.aoa.doJob(query)
         self.update_state(INEQUALITY + DONE)
         time_profile.update_for_where_clause(self.aoa.local_elapsed_time, self.aoa.app_calls)
-        self.info[INEQUALITY] = self.aoa.where_clause
+        self.info[INEQUALITY] = self.aoa.aoa_predicates + self.aoa.aoa_less_thans + self.aoa.arithmetic_ineq_predicates
         if not check:
             self.info[INEQUALITY] = None
             self.logger.info("Cannot find inequality Predicates.")
@@ -137,7 +136,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         return True, time_profile
 
     def __get_predicates_in_action(self):
-        return self.aoa.filter_predicates
+        return self.aoa.arithmetic_filters
 
     @abstractmethod
     def process(self, query: str):
@@ -153,7 +152,6 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
 
     def _extract_disjunction(self, init_predicates, core_relations, query, time_profile):  # for once
         self.or_predicates = []
-        # self.original_size = self.all_sizes
         curr_eq_predicates = copy.deepcopy(init_predicates)
         all_eq_predicates = [curr_eq_predicates]
         ids = list(range(len(curr_eq_predicates)))
@@ -163,15 +161,6 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             except Exception as e:
                 self.logger.error("Error in disjunction loop. ", str(e))
                 return False, time_profile
-            '''
-            gaining sanity back from nullified attributes
-            '''
-            # self.all_sizes = self.original_size
-            check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
-            if not check:
-                self.logger.error("Error while sanitizing after disjunction. Aborting!")
-                return False, time_profile
-
         self.or_predicates = list(zip(*all_eq_predicates))
         return True, time_profile
 

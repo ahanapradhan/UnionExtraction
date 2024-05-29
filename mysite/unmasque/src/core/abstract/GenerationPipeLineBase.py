@@ -1,29 +1,49 @@
 import ast
 import copy
-from datetime import date
+import random
+from datetime import date, timedelta
 from typing import Union, Tuple
 
 from .MutationPipeLineBase import MutationPipeLineBase
+from ..dataclass.genPipeline_context import GenPipelineContext
 from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ....src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
-NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number']
+NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number', 'Decimal']
+NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
+
+
+def generate_random_date(lb, ub):
+    start_date = lb
+    end_date = ub
+    # Generate two random dates
+    random_date1 = start_date + timedelta(days=random.randint(0, (end_date - start_date).days))
+    return random_date1
+
+
+def _get_boundary_value(v_cand, is_ub):
+    if isinstance(v_cand, list) or isinstance(v_cand, tuple):
+        v_val = v_cand[-1] if is_ub else v_cand[0]
+        if isinstance(v_val, tuple):
+            v_val = v_val[-1] if is_ub else v_val[0]
+    else:
+        v_val = v_cand
+    return v_val
 
 
 class GenerationPipeLineBase(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, delivery: PackageForGenPipeline):
-        super().__init__(connectionHelper, delivery.core_relations, delivery.global_min_instance_dict, name)
-        self.global_all_attribs = delivery.global_all_attribs
-        self.global_attrib_types = delivery.global_attrib_types
-        self.global_join_graph = delivery.global_join_graph
-        self.global_filter_predicates = delivery.global_filter_predicates
-        self.filter_attrib_dict = delivery.filter_attrib_dict
-        self.attrib_types_dict = delivery.attrib_types_dict
-        self.joined_attribs = delivery.joined_attribs
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: GenPipelineContext):
+        super().__init__(connectionHelper, genCtx.core_relations, genCtx.global_min_instance_dict, name)
+        self.global_all_attribs = genCtx.global_all_attribs
+        self.global_attrib_types = genCtx.global_attrib_types
+        self.global_join_graph = genCtx.global_join_graph
+        self.global_filter_predicates = genCtx.arithmetic_filters
+        self.filter_attrib_dict = genCtx.filter_attrib_dict
+        self.attrib_types_dict = genCtx.attrib_types_dict
+        self.joined_attribs = genCtx.joined_attribs
 
-        self.get_datatype = delivery.get_datatype  # method
+        self.get_datatype = genCtx.get_datatype  # method
 
     def extract_params_from_args(self, args):
         return args[0]
@@ -32,7 +52,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         query = self.extract_params_from_args(args)
         self.do_init()
         check = self.doExtractJob(query)
-        self.do_init()
         return check
 
     def restore_d_min_from_dict(self) -> None:
@@ -46,7 +65,9 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def do_init(self) -> None:
         for tab in self.core_relations:
             self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.create_table_as_select_star_from_limit_1(f"{tab}__temp", tab),
+                [self.connectionHelper.queries.create_table_as_select_star_from_limit_1(f"{tab}__temp",
+                                                                                        self.connectionHelper.queries.get_backup(
+                                                                                            tab)),
                  self.connectionHelper.queries.drop_table(tab),
                  self.connectionHelper.queries.alter_table_rename_to(f"{tab}__temp", tab)])
         self.restore_d_min_from_dict()
@@ -104,7 +125,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)
         else:
             datatype = self.get_datatype((tabname, attrib))
-            if datatype == 'date' or datatype in NUMBER_TYPES:
+            if datatype in NON_TEXT_TYPES:
                 update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib,
                                                                                       get_format(datatype, val))
             else:
@@ -113,21 +134,13 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def get_s_val(self, attrib: str, tabname: str) -> Union[int, float, date, str]:
         datatype = self.get_datatype((tabname, attrib))
-        if datatype == 'date':
+        if datatype in NON_TEXT_TYPES:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
+                lb = self.filter_attrib_dict[(tabname, attrib)][0]
+                val = _get_boundary_value(lb, is_ub=False)
             else:
                 val = get_dummy_val_for(datatype)
             # val = ast.literal_eval(get_format(datatype, val))
-
-        elif datatype in NUMBER_TYPES:
-            # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
-            else:
-                val = get_dummy_val_for(datatype)
         else:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = self.get_s_val_for_textType(attrib, tabname)
@@ -137,31 +150,32 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                 val = get_char(get_dummy_val_for('char'))
         return val
 
-    def get_different_val_for_dmin(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
-        if prev == self.filter_attrib_dict[(tabname, attrib)][0]:
-            val = self.filter_attrib_dict[(tabname, attrib)][1]
-        elif prev == self.filter_attrib_dict[(tabname, attrib)][1]:
-            val = self.filter_attrib_dict[(tabname, attrib)][0]
-        else:
-            val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                      self.filter_attrib_dict[(tabname, attrib)][1])
+    def get_other_than_dmin_val_nonText(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
+        key = (tabname, attrib)
+        datatype = self.get_datatype(key)
+        if key not in self.filter_attrib_dict:
+            return get_dummy_val_for(datatype)
+
+        if len(self.filter_attrib_dict[key]) == 1:
+            self.logger.info("Cannot generate a new s-val. Giving the old one!")
+            return prev
+
+        lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
+        lb = _get_boundary_value(lb, is_ub=False)
+        ub = _get_boundary_value(ub, is_ub=True)
+        val = ub if prev == lb else lb
         return val
 
     def get_different_s_val(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
         datatype = self.get_datatype((tabname, attrib))
-        if datatype == 'date':
+        self.logger.debug(f"datatype of {attrib} is {datatype}")
+        if datatype in NON_TEXT_TYPES:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = self.get_different_val_for_dmin(attrib, tabname, prev)
+                val = self.get_other_than_dmin_val_nonText(attrib, tabname, prev)
             else:
                 val = get_unused_dummy_val(datatype, [prev])
-            val = ast.literal_eval(get_format(datatype, val))
-
-        elif datatype in NUMBER_TYPES:
-            # check for filter (#MORE PRECISION CAN BE ADDED FOR NUMERIC#)
-            if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = self.get_different_val_for_dmin(attrib, tabname, prev)
-            else:
-                val = get_unused_dummy_val(datatype, [prev])
+            if datatype == 'date':
+                val = ast.literal_eval(get_format(datatype, val))
         else:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
                 val = self.get_s_val_for_textType(attrib, tabname)

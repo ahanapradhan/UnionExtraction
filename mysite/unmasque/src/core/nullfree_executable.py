@@ -10,7 +10,7 @@ def log_result(Res, logger):
 
 def is_result_nonempty_nullfree(res, logger=None):
     if logger is not None:
-        logger.debug("is_result_nonempty_nullfree")
+        # logger.debug("is_result_nonempty_nullfree")
         log_result(res, logger)
         # logger.debug(res[1:])
     if res[1:] is None:
@@ -27,7 +27,7 @@ def is_result_nonempty_nullfree(res, logger=None):
 
 def is_result_all_null(res, logger=None):
     if logger is not None:
-        logger.debug("is_result_all_null")
+        # logger.debug("is_result_all_null")
         log_result(res, logger)
 
     if res[1:] is None:
@@ -44,7 +44,7 @@ def is_result_all_null(res, logger=None):
 
 def is_result_has_no_data(res, logger=None):
     if logger is not None:
-        logger.debug("is_result_has_no_data")
+        # logger.debug("is_result_has_no_data")
         log_result(res, logger)
 
     if len(res) <= 1:
@@ -54,7 +54,7 @@ def is_result_has_no_data(res, logger=None):
 
 def is_result_has_some_data(res, logger=None):
     if logger is not None:
-        logger.debug("is_result_has_some_data")
+        # logger.debug("is_result_has_some_data")
         log_result(res, logger)
 
     if res[1:] is None:
@@ -71,7 +71,7 @@ def is_result_has_some_data(res, logger=None):
 
 def is_result_no_full_nullfree_row(res, logger):
     if logger is not None:
-        logger.debug("is_result_no_full_nullfree_row")
+        # logger.debug("is_result_no_full_nullfree_row")
         log_result(res, logger)
 
     if res[1:] is None:
@@ -90,6 +90,33 @@ class NullFreeExecutable(Executable):
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Null Free Executable")
 
+    def is_attrib_all_null(self, Res, attrib):
+        idx = Res[0].index(attrib)
+        yes = True
+        for row in Res[1:]:
+            self.logger.debug(f"{attrib} value: ", row[idx])
+            if row[idx] in [None, 'None']:
+                yes = yes and True
+            else:
+                yes = False
+                return yes
+        return yes
+
+    def get_attrib_val(self, Res, attrib_idx):
+        for row in Res[1:]:
+            if row[attrib_idx] not in [None, 'None']:
+                return row[attrib_idx]
+        return None
+
+    def is_attrib_equal_val(self, Res, attrib, val):
+        idx = Res[0].index(attrib)
+        for row in Res[1:]:
+            self.logger.debug(f"{attrib} value: ", row[idx])
+            if row[idx] not in [None, 'None'] and row[idx] != val:
+                return False
+        yes = not self.is_attrib_all_null(Res, attrib)
+        return yes
+
     def isQ_result_no_full_nullfree_row(self, Res):
         return is_result_no_full_nullfree_row(Res, self.logger)
 
@@ -97,7 +124,7 @@ class NullFreeExecutable(Executable):
         return is_result_nonempty_nullfree(Res, self.logger)
 
     def isQ_result_empty(self, Res):
-        return not is_result_nonempty_nullfree(Res, self.logger)
+        return is_result_no_full_nullfree_row(Res, self.logger)
 
     def isQ_result_has_no_data(self, Res):
         return is_result_has_no_data(Res, self.logger)

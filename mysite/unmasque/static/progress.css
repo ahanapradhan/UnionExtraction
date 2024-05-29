@@ -70,9 +70,6 @@ body{
     padding: 0px 50px;
 }
 
-.pipeline{
-    padding: 0px 50px;
-}
 
 .state_label{
     font-size: 18px;
@@ -201,13 +198,6 @@ table{
 }
 
 
-.pipeline {
-    display: flex;
-    flex-wrap: wrap; /* Allow flex items to wrap to the next row */
-    align-items: center;
-    gap: 75px;
-    text-align: center;
-  }
 
 .label{
     text-align: center;
@@ -275,7 +265,6 @@ table{
     to {
       transform: scale(1.2);
     }
-  }
   
 .bi{
     font-weight: 700;
@@ -325,4 +314,371 @@ table{
 
 .subsubcontent{
     font-weight: 400;
+
 }
+
+.down{
+    position: relative;
+    
+}
+
+.right{
+    left: 1500px;
+}
+
+.left{
+    left: 200px;
+}
+
+
+.stage{
+    position: relative;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.path.inactive{
+    fill: #dedede;
+}
+
+.path.running{
+    fill: #ffcc00;
+}
+
+.path.done{
+    fill: #339933;
+    
+}
+
+svg:has(>.path.done) + div{
+    color: #fff;
+}
+
+#from{
+    width: 150px;
+}
+#from > div{
+    position: absolute;
+    top:30px;
+    left: 20px;
+}
+
+#union_from{
+    width: 150px;
+}
+#union_from > div{
+    position: absolute;
+    top:12px;
+    left: 20px;
+}
+
+
+.in_out{
+    margin-bottom: 50px;
+    width: 200px;
+    height: 120px;
+}
+
+#restore_db > div{
+    position: absolute;
+    top:25px;
+    left: 95px;
+}
+
+.stage_and_transitions{
+    display: flex;
+}
+
+.stage_and_transitions.down{
+    flex-direction: column;
+    position: relative;
+}
+
+#min_db_t{
+    position: absolute;
+    top: 70px;
+    left: -70px;
+}
+
+#nep_t{
+    position:absolute;
+    top: -225px;
+    left:-1321px;
+}
+
+#nep_t2{
+    position:absolute;
+    top: -92px;
+    left: -1141px;
+}
+
+#filter_t{
+    position:absolute;
+    top: 120px;
+    left: 30px;
+}
+
+#limit_t{
+    position:absolute;
+    top: 33px;
+    left: -157px;
+}
+
+#oj_t{
+    position:absolute;
+    top: 215px;
+    left: -1142px;
+}
+
+#limit_nep{
+    position:absolute;
+    top: -87px;
+    left: -91px;
+}
+
+#res_finish{
+    position:absolute;
+    top: 182px;
+    left: -484px;
+    transform: rotate(180deg) scaleX(1.2);;
+}
+
+#limit_oj{
+    position:absolute;
+    top: -34px;
+    left: -108px;
+}
+
+#rdb_t{
+    position:absolute;
+    top: -134px;
+    left: 152px;
+}
+
+#start_from{
+    position:absolute;
+    top: -340px;
+    left: 50px;
+}
+
+#start_union{
+    position:absolute;
+    top: -215px;
+    left: 52px;
+}
+
+#projection_t{
+    position:absolute;
+    top: -124px;
+    left: 26px;
+    transform: rotate(180deg);
+}
+
+.row{
+    display: flex;
+    align-items: center;
+    margin-top: 27px;
+}
+
+.second{
+    gap:30px;
+}
+
+.first{
+    margin-left: 180px;
+}
+
+.third{
+    margin-left: 150px;
+}
+
+#sampling > div{
+    position: absolute;
+    top:40px;
+    left: 100px;
+}
+
+#min_db > div{
+    position: absolute;
+    top:25px;
+    left: 120px;
+}
+
+#projection > div{
+    position: absolute;
+    top:40px;
+    left: 50px;
+}
+
+#inequality > div{
+    position: absolute;
+    top:40px;
+    left: 60px;
+}
+
+#start > div{
+    position: absolute;
+    top:6px;
+    left: 16px;
+}
+
+
+#equality > div{
+    position: absolute;
+    top:40px;
+    left: 80px;
+}
+
+#filter > div{
+    position: absolute;
+    top:40px;
+    left: 95px;
+}
+
+
+#nep > div{
+    position: absolute;
+    top:51px;
+    left: -63px;
+    transform: rotate(-90deg);
+}
+
+#group_by > div{
+    position: absolute;
+    top:27px;
+    left: 98px;
+}
+
+#finished > div{
+    position: absolute;
+    top:27px;
+    left: 98px;
+}
+
+#agg > div{
+    position: absolute;
+    top:41px;
+    left: 76px;
+}
+
+#ob > div{
+    position: absolute;
+    top:31px;
+    left: 105px;
+}
+
+#limit > div{
+    position: absolute;
+    top:40px;
+    left: 105px;
+}
+
+
+.substages{
+    display: flex;
+    gap: 60px;
+}
+
+#start_txt{
+    font-size: 50px;
+    color: #f00
+}
+
+.container{
+    display: block;
+    position: relative;
+}
+
+.right.stages{
+    position: relative;
+
+}
+
+.stages > .stage{
+    position: absolute;
+}
+
+#nep{
+    top: -90px;
+    left: -1263px;
+}
+
+#oj > div{
+    position: absolute;
+    top:110px;
+    left: -20px;
+    transform: rotate(-90deg);
+}
+
+#oj{
+    left: -1141px;
+    top: -40px;
+}
+
+#finished{
+    top: 210px;
+    left: -531px;
+}
+
+#finished > div{
+    position: absolute;
+    top: 39px;
+    left: 39px;
+}
+
+#res_comp{
+    top: 194px;
+    left: 190px;
+}
+
+#res_comp > div{
+    position: absolute;
+    top:28px;
+    left: 50px;
+}
+
+#nep_res{
+    position:absolute;
+    top: 176px;
+    left: -1217px;
+    transform: rotate(180deg) scaleY(1.5);
+    z-index: -1;
+}
+
+
+@keyframes pulse {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.1);
+    }
+}
+
+.main_p{
+    fill:#d9f2d0;
+    stroke: #3b7d23;
+}
+
+.union_p{
+    fill: #c3bae0;
+    stroke: #7030a0;
+}
+
+.nep_p{
+    fill: #156082;
+    stroke: #062635;
+}
+
+.dis_p{
+    fill: #f2aa84;
+    stroke: #e97537;
+}
+
+.oj_p{
+    fill: #c1e5f5;
+    stroke: #46b1e1;
+}
+
+}
+

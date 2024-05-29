@@ -2,9 +2,13 @@ import copy
 import datetime
 import itertools
 import math
+import random
 from itertools import combinations
+from random import randint
 
 from dateutil.relativedelta import relativedelta
+
+from decimal import Decimal, localcontext, ROUND_DOWN
 
 from ...src.util import constants
 from ...src.util.constants import dummy_int, dummy_date, dummy_char
@@ -182,7 +186,7 @@ def get_datatype_from_typesList(list_type):
 
 
 def get_dummy_val_for(datatype):
-    if datatype == 'int' or datatype == 'numeric':
+    if datatype in ['int', 'numeric', 'float', 'Decimal']:
         return dummy_int
     elif datatype == 'date':
         return dummy_date
@@ -190,17 +194,28 @@ def get_dummy_val_for(datatype):
         return dummy_char
 
 
+def get_random_number(datatype, lb, ub):
+    if datatype == 'int':
+        return randint(lb, ub)
+    elif datatype == 'numeric':
+        lb, ub = round(Decimal(lb), 2) * 100, round(Decimal(ub), 2) * 100
+        num = round(Decimal(random.randrange(lb, ub) / 100), 2)
+        return num
+    else:
+        raise ValueError
+
+
 def get_val_plus_delta(datatype, min_val, delta):
     plus_delta = min_val
     try:
         if datatype == 'date':
             plus_delta = min_val + datetime.timedelta(days=delta)
-        elif datatype == 'int' or datatype == 'numeric':  # INT, NUMERIC
+        elif datatype == 'int':
             plus_delta = min_val + delta
+        elif datatype == 'numeric':
+            plus_delta = float(Decimal(min_val) + Decimal(delta))
         elif datatype == 'char':
             plus_delta = get_int(min_val) + delta
-            # if get_char(plus_delta) >= '\\':
-            #    plus_delta = get_dummy_val_for(datatype)
         return plus_delta
     except OverflowError:
         return min_val
@@ -211,7 +226,7 @@ def get_min_and_max_val(datatype):
         return constants.min_date_val, constants.max_date_val
     elif datatype == 'int':
         return constants.min_int_val, constants.max_int_val
-    elif datatype == 'numeric':
+    elif datatype in ['numeric', 'float', 'Decimal']:
         return constants.min_numeric_val, constants.max_numeric_val
     else:
         return constants.min_int_val, constants.max_int_val
@@ -229,10 +244,10 @@ def get_format(datatype, val):
     if datatype == 'date' or datatype == 'char' \
             or datatype == 'character' \
             or datatype == 'character varying' or datatype == 'str':
-        return f"\'{str(val)}\'"
+        return f'\'{str(val)}\''
     elif datatype == 'float' or datatype == 'numeric':
         val = float(val)
-        return str(round(val, 12))
+        return str(round(val, 3))
     return str(val)
 
 
@@ -249,14 +264,26 @@ def add_two(one, two, datatype):
         return one + two
 
 
+def truncate(num, places):
+    if not isinstance(places, int):
+        return num
+
+    with localcontext() as context:
+        context.rounding = ROUND_DOWN
+        exponent = Decimal(str(10 ** - places))
+        value = float(Decimal(str(num)).quantize(exponent).to_eng_string())
+        return value
+
+
 def get_mid_val(datatype, high, low, div=2):
     if datatype == 'date':
         mid_val = low + datetime.timedelta(days=int(math.floor((high - low).days / div)))
     elif datatype == 'int':
         mid_val = low + int((high - low) / div)
     else:  # numeric
-        mid_val = (high + low) / div
-        mid_val = round(mid_val, 3)
+        result = Decimal(str(high)) + Decimal(str(low))
+        mid_val = result / div
+        mid_val = float(truncate(mid_val, 2))
     return mid_val
 
 
@@ -294,12 +321,6 @@ def get_int(dchar):
 
 def find_indices(list_to_check, item_to_find):
     return [idx for idx, value in enumerate(list_to_check) if value == item_to_find]
-
-
-def get_2_elems_sublists(l):
-    comb = list(itertools.combinations(l, 2))
-    comb1 = list(set(tup) for tup in comb)
-    return comb1
 
 
 def get_escape_string(attrib_list_inner):

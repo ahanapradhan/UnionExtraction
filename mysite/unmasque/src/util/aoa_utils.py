@@ -1,8 +1,9 @@
 import datetime
+from _decimal import Decimal
 from datetime import date
 from typing import Union, List, Tuple
 
-from .utils import get_datatype_of_val, get_format
+from ..util.utils import get_datatype_of_val, get_format
 
 
 def optimize_edge_set(edge_set: List[Tuple[Tuple[str, str], Tuple[str, str]]]):
@@ -44,13 +45,11 @@ def remove_subchians(chains):
     to_remove = []
     seq = get_all_two_combs(chains)
     for s in seq:
-        if is_sublist(s[0], s[1]):
-            to_remove.append(s[1])
+        sorted_s = sorted(s, key=lambda x: len(x))
+        if is_sublist(sorted_s[1], sorted_s[0]):
+            to_remove.append(sorted_s[0])
     for r in to_remove:
-        try:
-            chains.remove(r)
-        except ValueError:
-            pass
+        remove_item_from_list(r, chains)
     return chains
 
 
@@ -94,37 +93,44 @@ def get_all_two_combs2(items):
     return seq
 
 
-def get_LB(pred: Tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
-    return pred[3]
+def get_LB(pred: Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
+    val = pred[3]
+    if isinstance(val, Decimal):
+        val = float(val)
+    return val
 
 
-def get_UB(pred: Tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
-    return pred[4]
+def get_UB(pred: Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
+    val = pred[4]
+    if isinstance(val, Decimal):
+        val = float(val)
+    return val
 
 
 def get_attrib(pred: Union[
-    Tuple[str, str, str, Union[int, float, date], Union[int, float, date]],
+    Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]],
     Tuple[str, str]
 ]):
     return pred[1]
 
 
 def get_tab(pred: Union[
-    Tuple[str, str, str, Union[int, float, date], Union[int, float, date]],
+    Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]],
     Tuple[str, str]
 ]):
     return pred[0]
 
 
-def get_op(pred: Tuple[str, str, str, Union[int, float, date], Union[int, float, date]]):
+def get_op(pred: Tuple[str, str, str, Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
     return pred[2]
 
 
-def get_max(pred: Tuple[Union[int, float, date], Union[int, float, date], Union[int, float, date]]):
+def get_max(pred: Tuple[Union[int, Decimal, date], Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
     return pred[1]
 
 
-def get_min(pred: Tuple[Union[int, float, date], Union[int, float, date], Union[int, float, date]]):
+def get_min(pred: Tuple[
+    Union[int, Decimal, date, float], Union[int, Decimal, date, float], Union[int, Decimal, date, float]]):
     return pred[0]
 
 
@@ -181,6 +187,14 @@ def left_over_aoa_CBs(absorbed_LBs, absorbed_UBs, aoa_CB_LBs, aoa_CB_UBs, edge_s
                 aoa_CB_UBs[edge[0]] = edge[1]
 
 
+def add_pred_for(aoa_l, pred):
+    if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
+        pred.append(f"{aoa_l[0]}.{aoa_l[1]}")
+    else:
+        pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
+    return aoa_l
+
+
 def partitions_with_min_elements(arr, min_elements=2):
     n = len(arr)
 
@@ -235,25 +249,14 @@ def merge_equivalent_paritions(arr):
     return my_list
 
 
-def is_same_tab_attrib(one: Union[Tuple[str, str], Union[int, float, date]],
-                       two: Union[Tuple[str, str], Union[int, float, date]]) -> bool:
+def is_same_tab_attrib(one: Union[Tuple[str, str], Union[int, Decimal, date]],
+                       two: Union[Tuple[str, str], Union[int, Decimal, date]]) -> bool:
     check = False
     try:
         check = get_tab(one) == get_tab(two) and get_attrib(one) == get_attrib(two)
     except TypeError:
         pass
     return check
-
-
-def add_concrete_bounds_as_edge(pred_list, edge_set):
-    for pred in pred_list:
-        if pred[2] == '<=':
-            edge_set.append([(get_tab(pred), get_attrib(pred)), get_UB(pred)])
-        elif pred[2] == '>=':
-            edge_set.append([get_LB(pred), (get_tab(pred), get_attrib(pred))])
-        elif pred[2] == 'range':
-            edge_set.append([get_LB(pred), (get_tab(pred), get_attrib(pred))])
-            edge_set.append([(get_tab(pred), get_attrib(pred)), get_UB(pred)])
 
 
 def add_concrete_bounds_as_edge2(pred_list, edge_set, datatype):
@@ -268,76 +271,6 @@ def add_concrete_bounds_as_edge2(pred_list, edge_set, datatype):
         elif pred[2] == 'range':
             edge_set.append((lb, (get_tab(pred), get_attrib(pred))))
             edge_set.append(((get_tab(pred), get_attrib(pred)), ub))
-
-
-def get_LB_of_next_attrib(ineq_group: List[Tuple], c: Tuple[str, str]):
-    for pred in ineq_group:
-        if get_tab(pred) == get_tab(c) and get_attrib(pred) == get_attrib(c) and (get_op(pred) in ['>=', 'range']):
-            return get_LB(pred)
-
-
-def add_pred_for(aoa_l, pred):
-    if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
-        pred.append(f"{aoa_l[0]}.{aoa_l[1]}")
-    else:
-        pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
-    return aoa_l
-
-
-def adjust_Bounds2(LB_impact: bool, UB_impact: bool,
-                   absorbed_LBs, absorbed_UBs,
-                   aoa_CB_LBs, aoa_CB_UBs,
-                   attrib: Tuple[str, str], next_attrib: Tuple[str, str],
-                   edge_set: List[Tuple[Tuple[str, str], Tuple[str, str]]]) -> bool:
-    _LB = get_concrete_LB_in_edge(edge_set, next_attrib)
-    _UB = get_concrete_UB_out_edge(edge_set, attrib)
-    if _UB:
-        if UB_impact:
-            absorbed_UBs[_UB[0]] = _UB[1]
-            edge_set.remove(_UB)
-        else:
-            aoa_CB_UBs[_UB[0]] = _UB[1]
-    if _LB:
-        if LB_impact:
-            absorbed_LBs[_LB[1]] = _LB[0]
-            edge_set.remove(_LB)
-        else:
-            aoa_CB_LBs[_LB[1]] = _LB[0]
-
-    if not UB_impact and not LB_impact:
-        edge_set.remove((attrib, next_attrib))
-        return False
-    return True
-
-
-def get_val_bound_for_chain(i_min, i_max, filter_attrib, is_UB):
-    if not len(filter_attrib):
-        if is_UB:
-            val = i_max
-        else:
-            val = i_min
-    else:
-        if is_UB:
-            val = get_UB(filter_attrib[0])
-        else:
-            val = get_LB(filter_attrib[0])
-    return val
-
-
-def get_min_max_for_chain_bounds(i_min, i_max, tab_attrib, a_b, is_UB):
-    if is_UB:
-        if tab_attrib in a_b.keys():
-            min_val = a_b[tab_attrib][0]
-        else:
-            min_val = i_min
-        max_val = i_max
-    else:
-        if tab_attrib in a_b.keys():
-            max_val = a_b[tab_attrib][0]
-        else:
-            max_val = i_max
-        min_val = i_min
-    return min_val, max_val
 
 
 def split_directed_path(directed_path, is_UB):
@@ -398,7 +331,16 @@ def add_item_to_dict(_dict: dict, key, item):
     if key not in _dict.keys():
         _dict[key] = [item]
     else:
-        _dict[key].append(item)
+        if item not in _dict[key]:
+            _dict[key].append(item)
+
+
+def remove_item_from_dict(_dict: dict, key, item):
+    if key in _dict.keys():
+        if item in _dict[key]:
+            _dict[key].remove(item)
+        if not len(_dict[key]):
+            del _dict[key]
 
 
 def remove_absorbed_Bs(E, absorbed_LBs, absorbed_UBs, col_sink, col_src):
@@ -503,7 +445,7 @@ def find_concrete_bound_from_filter_bounds(attrib, edge_set, prev_bound, is_uppe
 def do_numeric_drama(other_LB, datatype, my_val, delta, satisfied) -> bool:
     # all the following DRAMA is to handle "numeric" datatype
     if datatype == 'numeric':
-        bck_diff_1 = float(my_val) - other_LB
+        bck_diff_1 = Decimal(my_val) - other_LB
         alt_sat = True
         if not satisfied:
             if bck_diff_1 > 0:
@@ -513,12 +455,14 @@ def do_numeric_drama(other_LB, datatype, my_val, delta, satisfied) -> bool:
 
 
 def is_equal(one, other, datatype):
+    '''
     if datatype == 'numeric':
         diff = abs(one - other)
         delta, _ = get_constants_for(datatype)
         return diff <= delta
     else:
-        return one == other
+    '''
+    return one == other
 
 
 def conseq(nums):
@@ -545,12 +489,28 @@ def need_permanent_mutation(datatype, diffs: list) -> bool:
 
 
 def get_constants_for(datatype):
-    if datatype in ('int', 'date', 'number'):
+    if datatype in ['int', 'date', 'number']:
         while_cut_off = 0
         delta = 1
-    elif datatype in ('float', 'numeric'):
+    elif datatype in ['numeric', 'float']:
         while_cut_off = 0.00
         delta = 0.01
     else:
         raise ValueError(f"Unsupported datatype: {datatype}")
     return delta, while_cut_off
+
+
+def find_tables_from_predicate(fp):
+    if len(fp) >= 4:
+        return [fp[0]]
+    tables = []
+    for tup in fp:
+        if isinstance(tup, tuple):
+            tables.append(tup[0])
+    return tables
+
+
+def get_one_tab_attrib_from_aoa_pred(pred):
+    for tup in pred:
+        if isinstance(tup, tuple):
+            return tup

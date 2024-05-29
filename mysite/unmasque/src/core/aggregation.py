@@ -2,11 +2,12 @@ import ast
 import copy
 import math
 
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from .dataclass.genPipeline_context import GenPipelineContext
+from .projection import get_param_values_external
 from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, _get_boundary_value
 from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ...src.util.constants import min_int_val, max_int_val
-from .projection import get_param_values_external
 
 
 def get_k_value_for_number(a, b):
@@ -27,34 +28,33 @@ def get_k_value_for_number(a, b):
         while k_value in constraint_array:
             k_value = k_value + 1
         avg = round((k_value * a + b) / (k_value + 1), 2)
-        if avg / int(avg) == 1:
-            avg = int(avg)
         agg_array = [SUM, k_value * a + b, AVG, avg, MIN, min(a, b), MAX, max(a, b), COUNT, k_value + 1]
     return k_value, agg_array
 
 
-def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag, tabname):
-    if groupby_key_flag and ('int' in attrib_types_dict[(tabname, attrib)] or 'number' in attrib_types_dict[(tabname, attrib)]
-                             or 'numeric' in attrib_types_dict[(tabname, attrib)]):
+def get_k_value(attrib, filter_attrib_dict, groupby_key_flag, tabname, datatype):
+    if groupby_key_flag and datatype in NUMBER_TYPES:
         a = b = 3
         k_value = 1
         agg_array = [SUM, k_value * a + b, AVG, a, MIN, a, MAX, a, COUNT, k_value + 1]
     elif (tabname, attrib) in filter_attrib_dict.keys():
-        if ('int' in attrib_types_dict[(tabname, attrib)]
-                or 'numeric' in attrib_types_dict[(tabname, attrib)]
-        or 'number' in attrib_types_dict[(tabname, attrib)]):
+        if datatype in NUMBER_TYPES:
             # PRECISION TO BE TAKEN CARE FOR NUMERIC
-            a = filter_attrib_dict[(tabname, attrib)][0]
-            b = min(filter_attrib_dict[(tabname, attrib)][0] + 1, filter_attrib_dict[(tabname, attrib)][1])
+            a, b = filter_attrib_dict[(tabname, attrib)][0], filter_attrib_dict[(tabname, attrib)][1]
+            a = _get_boundary_value(a, is_ub=False)
+            b = _get_boundary_value(b, is_ub=True)
+            b = min(a + 1, b)
             if a == 0:  # swap a and b
                 a = b
                 b = 0
             k_value, agg_array = get_k_value_for_number(a, b)
-        elif 'date' in attrib_types_dict[(tabname, attrib)]:
-            date_val = filter_attrib_dict[(tabname, attrib)][0]
-            a = get_format('date', date_val)
-            date_val_plus_1 = get_val_plus_delta('date', date_val, 1)
-            b = get_format('date', min(date_val_plus_1, filter_attrib_dict[(tabname, attrib)][1]))
+        elif datatype == 'date':
+            date_lb, date_ub = filter_attrib_dict[(tabname, attrib)][0], filter_attrib_dict[(tabname, attrib)][1]
+            date_lb = _get_boundary_value(date_lb, is_ub=False)
+            date_ub = _get_boundary_value(date_ub, is_ub=True)
+            a = get_format('date', date_lb)
+            date_val_plus_1 = get_val_plus_delta('date', date_lb, 1)
+            b = get_format('date', min(date_val_plus_1, date_ub))
             k_value = 1
             agg_array = [MIN, min(a, b), MAX, max(a, b)]
             a = ast.literal_eval(a)
@@ -72,13 +72,12 @@ def get_k_value(attrib, attrib_types_dict, filter_attrib_dict, groupby_key_flag,
             k_value = 1
             agg_array = [MIN, min(a, b), MAX, max(a, b)]
     else:
-        if 'date' in attrib_types_dict[(tabname, attrib)]:
+        if datatype == 'date':
             a = get_format('date', get_dummy_val_for('date'))
             b = get_format('date', get_val_plus_delta('date', get_dummy_val_for('date'), 1))
             k_value = 1
             agg_array = [MIN, min(a, b), MAX, max(a, b)]
-        elif ('int' in attrib_types_dict[(tabname, attrib)]
-              or 'numeric' in attrib_types_dict[(tabname, attrib)] or 'number' in attrib_types_dict[(tabname, attrib)]):
+        elif datatype in NUMBER_TYPES:
             # Combination which gives all different results for aggregation
             a = 5
             b = 8
@@ -113,16 +112,17 @@ def get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner,
 
 
 class Aggregation(GenerationPipeLineBase):
-    def __init__(self, connectionHelper, projected_attribs, has_groupby, groupby_attribs, dependencies, solution,
-                 param_list, delivery):
-        super().__init__(connectionHelper, "Aggregation", delivery)
+    def __init__(self, connectionHelper,
+                 genPipelineCtx: GenPipelineContext,
+                 pgao_Ctx):
+        super().__init__(connectionHelper, "Aggregation", genPipelineCtx)
         self.global_aggregated_attributes = None
-        self.global_projected_attributes = projected_attribs
-        self.has_groupby = has_groupby
-        self.global_groupby_attributes = groupby_attribs
-        self.dependencies = dependencies
-        self.solution = solution
-        self.param_list = param_list
+        self.global_projected_attributes = pgao_Ctx.projected_attribs
+        self.has_groupby = pgao_Ctx.has_groupby
+        self.global_groupby_attributes = pgao_Ctx.group_by_attrib
+        self.dependencies = pgao_Ctx.projection_dependencies
+        self.solution = pgao_Ctx.projection_solution
+        self.param_list = pgao_Ctx.projection_param_list
 
     def doExtractJob(self, query):
         # AsSUMing NO DISTINCT IN AGGREGATION
@@ -130,10 +130,8 @@ class Aggregation(GenerationPipeLineBase):
         self.global_aggregated_attributes = [(element, '') for element in self.global_projected_attributes]
         if not self.has_groupby:
             return False
-        break_cond = False
-        for i in range(len(self.core_relations)):
-            tabname = self.core_relations[i]
-            attrib_list = copy.deepcopy(self.global_all_attribs[i])
+        for tabname in self.core_relations:
+            attrib_list = copy.deepcopy(self.global_all_attribs[tabname])
             for attrib in attrib_list:
                 # check if it is a key attribute
                 key_list = next((elt for elt in self.global_join_graph if attrib in elt), [])
@@ -164,8 +162,9 @@ class Aggregation(GenerationPipeLineBase):
                 if attrib in self.joined_attribs and attrib in self.global_groupby_attributes:
                     groupby_key_flag = True
                 for result_index in result_index_list:
-                    a, agg_array, b, k_value = get_k_value(attrib, self.attrib_types_dict, self.filter_attrib_dict,
-                                                           groupby_key_flag, tabname)
+                    datatype = self.get_datatype((tabname, attrib))
+                    a, agg_array, b, k_value = get_k_value(attrib, self.filter_attrib_dict,
+                                                           groupby_key_flag, tabname, datatype)
 
                     self.truncate_core_relations()
                     temp_vals = []
@@ -185,8 +184,7 @@ class Aggregation(GenerationPipeLineBase):
                         for ele in self.dependencies[result_index]:
                             local_tabname = ele[0]
                             local_attrib = ele[1]
-                            local_attrib_index = self.global_all_attribs[
-                                self.core_relations.index(local_tabname)].index(local_attrib)
+                            local_attrib_index = self.global_all_attribs[local_tabname].index(local_attrib)
                             vals_sp = temp_vals[self.core_relations.index(local_tabname)]
                             l = []
                             for row in vals_sp:
@@ -244,12 +242,9 @@ class Aggregation(GenerationPipeLineBase):
     def insert_for_inner(self, a, attrib, b, k_value, key_list, tabname, temp_vals, result_index):
         max_no_of_rows = 0
         # For this table (tabname) and this attribute (attrib), fill all tables now
-        for j in range(len(self.core_relations)):
-            tabname_inner = self.core_relations[j]
-            attrib_list_inner = self.global_all_attribs[j]
-
+        for tabname_inner in self.core_relations:
+            attrib_list_inner = self.global_all_attribs[tabname_inner]
             insert_rows = []
-
             no_of_rows = get_no_of_rows(attrib_list_inner, k_value, key_list, tabname, tabname_inner, result_index,
                                         self.dependencies)
 
@@ -257,7 +252,6 @@ class Aggregation(GenerationPipeLineBase):
                 max_no_of_rows = no_of_rows
 
             self.logger.debug("tabname ", tabname, " tabname_inner ", tabname_inner, " no_of_rows ", no_of_rows)
-
             attrib_list_str = ",".join(attrib_list_inner)
             att_order = f"({attrib_list_str})"
 
@@ -277,13 +271,15 @@ class Aggregation(GenerationPipeLineBase):
                         # check for filter
                         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                             date_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                            date_val = _get_boundary_value(date_val, is_ub=False)
                         else:
                             date_val = get_val_plus_delta('date', get_dummy_val_for('date'), 2)
                         insert_values.append(ast.literal_eval(get_format('date', date_val)))
-                    elif datatype in ['int', 'numeric', 'number']:
+                    elif datatype in NUMBER_TYPES:
                         # check for filter
                         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                             number_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+                            number_val = _get_boundary_value(number_val, is_ub=False)
                         else:
                             number_val = get_dummy_val_for('int')
                         insert_values.append(number_val)
@@ -309,13 +305,9 @@ class Aggregation(GenerationPipeLineBase):
         self.logger.debug("analyze")
         new_result = list(new_result[1])
         new_result = [x.strip() for x in new_result]
-
-        if is_number(new_result[result_index]):
-            check_value = round(float(new_result[result_index]), 2)
-            if check_value / int(check_value) == 1:
-                check_value = int(check_value)
-        else:
-            check_value = str(new_result[result_index])
+        check_value = round(float(new_result[result_index]), 2) if is_number(new_result[result_index]) \
+            else str(new_result[result_index])
+        agg_array = [round(x, 2) if isinstance(x, float) else x for x in agg_array]
         j = 0
         while j < len(agg_array) - 1:
             self.logger.debug(str(attrib), " ", agg_array[j])

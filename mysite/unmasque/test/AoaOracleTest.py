@@ -6,7 +6,7 @@ from mysite.unmasque.src.util.QueryStringGenerator import QueryStringGenerator
 from mysite.unmasque.src.core.aggregation import Aggregation
 from mysite.unmasque.src.core.groupby_clause import GroupBy
 from mysite.unmasque.src.core.projection import Projection
-from ..src.core.aoa import AlgebraicPredicate
+from ..src.core.aoa import InequalityPredicate
 from ..src.util.Oracle_connectionHelper import OracleConnectionHelper
 from ..src.util.configParser import Config
 
@@ -213,7 +213,7 @@ class MyTestCase(unittest.TestCase):
 
     def run_pipeline(self, global_min_instance_dict, query, relations):
         print(global_min_instance_dict)
-        aoa = AlgebraicPredicate(self.conn, relations, pending_predicates, filter_extractor, global_min_instance_dict)
+        aoa = InequalityPredicate(self.conn, relations, pending_predicates, filter_extractor, global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.assertTrue(check)
@@ -223,11 +223,10 @@ class MyTestCase(unittest.TestCase):
         check = pj.doJob(query)
         self.assertTrue(check)
         print(pj.projected_attribs)
-        gb = GroupBy(self.conn, aoa.nextPipelineCtx, pj.projected_attribs)
+        gb = GroupBy(self.conn, aoa.nextPipelineCtx, pgao_ctx)
         check = gb.doJob(query)
         self.assertTrue(check)
-        agg = Aggregation(self.conn, pj.projected_attribs, gb.has_groupby, gb.group_by_attrib,
-                          pj.dependencies, pj.solution, pj.param_list, aoa.nextPipelineCtx)
+        agg = Aggregation(self.conn, aoa.nextPipelineCtx)
         agg.doJob(query)
         self.assertTrue(agg.done)
         ob = OrderBy(self.conn, pj.projected_attribs, pj.projection_names, pj.dependencies,
@@ -237,7 +236,7 @@ class MyTestCase(unittest.TestCase):
         lm = Limit(self.conn, gb.group_by_attrib, aoa.nextPipelineCtx)
         lm.doJob(query)
         self.assertTrue(lm.done)
-        eq = QueryStringGenerator(self.conn).generate_query_string(relations, pj, agg, ob, lm, aoa)
+        eq = QueryStringGenerator(self.conn).formulate_query_string()
         return eq
 
     def test_orders_lineitem_aoa(self):

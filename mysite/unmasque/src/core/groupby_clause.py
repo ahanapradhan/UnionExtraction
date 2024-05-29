@@ -1,9 +1,10 @@
 import ast
 
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
+from .dataclass.genPipeline_context import GenPipelineContext
+
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, _get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
+from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 NON_TEXT_TYPES = ['date', 'int', 'integer', 'numeric', 'float']
 
@@ -14,16 +15,16 @@ def has_attrib_key_condition(attrib, attrib_inner, key_list):
 
 class GroupBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 delivery: PackageForGenPipeline, projected_attribs: list):
-        super().__init__(connectionHelper, "Group By", delivery)
-        self.projected_attribs = projected_attribs
+                 genPipelineCtx: GenPipelineContext,
+                 pgao_ctx):
+        super().__init__(connectionHelper, "Group By", genPipelineCtx)
+        self.projected_attribs = pgao_ctx.projected_attribs
         self.has_groupby = False
         self.group_by_attrib = []
 
     def doExtractJob(self, query):
-        for i in range(len(self.core_relations)):
-            tabname = self.core_relations[i]
-            attrib_list = self.global_all_attribs[i]
+        for tabname in self.core_relations:
+            attrib_list = self.global_all_attribs[tabname]
 
             for attrib in attrib_list:
                 self.truncate_core_relations()
@@ -34,9 +35,8 @@ class GroupBy(GenerationPipeLineBase):
                 key_list = next((elt for elt in self.global_join_graph if attrib in elt), [])
 
                 # For this table (tabname) and this attribute (attrib), fill all tables now
-                for j in range(len(self.core_relations)):
-                    tabname_inner = self.core_relations[j]
-                    attrib_list_inner = self.global_all_attribs[j]
+                for tabname_inner in self.core_relations:
+                    attrib_list_inner = self.global_all_attribs[tabname_inner]
 
                     insert_rows = []
 
@@ -79,6 +79,11 @@ class GroupBy(GenerationPipeLineBase):
                     self.has_groupby = True
 
         self.remove_duplicates()
+
+        for elt in self.global_filter_predicates:
+            if elt[1] not in self.group_by_attrib and elt[1] in self.projected_attribs and (
+                    elt[2] == '=' or elt[2] == 'equal'):
+                self.group_by_attrib.append(elt[1])
         self.logger.debug(self.group_by_attrib)
         return True
 
@@ -122,16 +127,19 @@ class GroupBy(GenerationPipeLineBase):
     def get_insert_value_for_single_attrib(self, datatype, attrib_inner, tabname_inner):
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+            val = _get_boundary_value(val, is_ub=False)
         else:
             val = get_dummy_val_for(datatype)
         return val
 
     def get_insert_value_for_joined_attribs(self, datatype, attrib_inner, delta, tabname_inner):
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-            zero_val = get_val_plus_delta(datatype,
-                                          self.filter_attrib_dict[
-                                              (tabname_inner, attrib_inner)][0], delta)
+            zero_val = self.filter_attrib_dict[
+                (tabname_inner, attrib_inner)][0]
+            zero_val = _get_boundary_value(zero_val, is_ub=False)
+            zero_val = get_val_plus_delta(datatype, zero_val, delta)
             one_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+            one_val = _get_boundary_value(one_val, is_ub=False)
             val = min(zero_val, one_val)
         else:
             val = get_val_plus_delta(datatype, get_dummy_val_for(datatype), delta)

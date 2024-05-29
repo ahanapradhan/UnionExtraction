@@ -9,7 +9,7 @@ from mysite.unmasque.src.core.elapsed_time import create_zero_time_profile
 from mysite.unmasque.src.core.projection import Projection
 from mysite.unmasque.src.core.view_minimizer import ViewMinimizer
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
-from ..src.core.aoa import AlgebraicPredicate
+from ..src.core.aoa import InequalityPredicate
 from ..test.util import tpchSettings
 from ..test.util.BaseTestCase import BaseTestCase
 
@@ -67,7 +67,7 @@ class MyTestCase(BaseTestCase):
         core_rels = ['orders', 'lineitem']
         aoa, check = self.run_pipeline(core_rels, query)
         self.assertTrue(check)
-        print(aoa.where_clause)
+        
         self.assertEqual(aoa.where_clause.count("and"), 7)
         self.conn.closeConnection()
 
@@ -87,7 +87,7 @@ class MyTestCase(BaseTestCase):
                 "Order By l_orderkey Limit 10;"
         aoa, check = self.run_pipeline(core_rels, query)
         self.assertTrue(check)
-        print(aoa.where_clause)
+        
         self.assertEqual(aoa.where_clause.count("and"), 8)
         self.assertEqual(aoa.where_clause.count("<="), 6)
         self.assertEqual(aoa.where_clause.count(" ="), 3)
@@ -103,7 +103,7 @@ class MyTestCase(BaseTestCase):
         aoa, check = self.run_pipeline(core_rels, query)
         self.assertTrue(check)
         self.assertEqual(len(aoa.algebraic_eq_predicates), 3)
-        print(aoa.where_clause)
+        
 
     def test_date_predicate_aoa(self):
         self.conn.connectUsingParams()
@@ -134,8 +134,8 @@ class MyTestCase(BaseTestCase):
         check = vm.doJob(query)
         self.assertTrue(vm.done and check)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
-        aoa = AlgebraicPredicate(self.conn, core_rels, pending_predicates, filter_extractor,
-                                 self.global_min_instance_dict)
+        aoa = InequalityPredicate(self.conn, core_rels, pending_predicates, filter_extractor,
+                                  self.global_min_instance_dict)
         aoa.mock = True
         check = aoa.doJob(query)
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)
@@ -159,9 +159,9 @@ class MyTestCase(BaseTestCase):
         aoa, check = self.run_pipeline(from_rels, query)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.filter_extractor.filter_predicates)
+        print(aoa.filter_extractor.arithmetic_filters)
         print(aoa.aoa_predicates)
-        print(aoa.where_clause)
+        
         self.conn.closeConnection()
 
     @pytest.mark.skip
@@ -171,10 +171,10 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.conn.conn is not None)
         aoa, check = self.run_pipeline(from_rels, query)
         self.assertTrue(check)
-        print(aoa.filter_extractor.filter_predicates)
+        print(aoa.filter_extractor.arithmetic_filters)
         print(aoa.aoa_predicates)
         print(aoa.filter_extractor.global_min_instance_dict)
-        print(aoa.where_clause)
+        
         self.conn.closeConnection()
 
     def test_UQ11(self):
@@ -191,9 +191,9 @@ class MyTestCase(BaseTestCase):
         aoa, check = self.run_pipeline(from_rels, query)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.filter_predicates)
+        print(aoa.arithmetic_filters)
         print(aoa.aoa_predicates)
-        print(aoa.where_clause)
+        
         self.conn.closeConnection()
 
     def test_UQ10(self):
@@ -208,7 +208,7 @@ class MyTestCase(BaseTestCase):
         aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.where_clause)
+        
         self.assertTrue("lineitem.l_shipdate < lineitem.l_commitdate" in aoa.where_clause)
         self.assertTrue("lineitem.l_commitdate < lineitem.l_receiptdate" in aoa.where_clause)
         self.conn.closeConnection()
@@ -235,7 +235,7 @@ class MyTestCase(BaseTestCase):
         aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.where_clause)
+        
         print(pj.projected_attribs)
         print(pj.projection_names)
         self.assertTrue("orders.o_orderdate <= lineitem.l_shipdate" in aoa.where_clause)
@@ -265,7 +265,7 @@ class MyTestCase(BaseTestCase):
         aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
         print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.where_clause)
+        
         self.assertTrue("lineitem.l_extendedprice <= part.p_retailprice" in aoa.where_clause)
         self.assertTrue("orders.o_orderdate <= lineitem.l_shipdate" in aoa.where_clause)
         self.conn.closeConnection()
@@ -279,7 +279,7 @@ class MyTestCase(BaseTestCase):
         aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
         # print(self.global_min_instance_dict)
         self.assertTrue(check)
-        print(aoa.where_clause)
+        
         self.assertEqual(aoa.where_clause.count("and"), 6)
         self.assertTrue("customer.c_custkey = orders.o_custkey" in aoa.where_clause)
         self.assertTrue("customer.c_nationkey = nation.n_nationkey" in aoa.where_clause)
@@ -300,7 +300,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.conn.conn is not None)
         aoa, check, pj = self.run_pipeline_till_projection(from_rels, query)
         self.assertTrue(check)
-        print(aoa.where_clause)
+        
         self.assertEqual(aoa.where_clause.count("and"), 8)
         self.assertTrue("lineitem.l_suppkey = supplier.s_suppkey" in aoa.where_clause)
         self.assertTrue("lineitem.l_orderkey = orders.o_orderkey" in aoa.where_clause)
@@ -325,7 +325,7 @@ class MyTestCase(BaseTestCase):
                 f"and c_acctbal < l_extendedprice and l_extendedprice < o_totalprice;"
         aoa, check, pj = self.run_pipeline_till_projection(['orders', 'lineitem', 'customer', 'nation'], query)
         self.assertTrue(check)
-        print(aoa.where_clause)
+        
         self.assertEqual(aoa.where_clause.count("and"), 6)
         self.conn.closeConnection()
 

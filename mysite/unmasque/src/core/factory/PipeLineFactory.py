@@ -71,15 +71,16 @@ class PipeLineFactory:
     def create_pipeline(self, connectionHelper):
         detect_union = connectionHelper.config.detect_union
         detect_oj = connectionHelper.config.detect_oj
-        if detect_union:
+        if not detect_union:
+            if detect_oj:
+                pipe = OuterJoinPipeLine(connectionHelper)
+                print("Outer Join Pipeline")
+            else:
+                pipe = ExtractionPipeLine(connectionHelper)
+                print("Extraction Pipeline")
+        else:  # detect_union:
             pipe = UnionPipeLine(connectionHelper)
             print("Union Pipeline")
-        elif detect_oj:
-            pipe = OuterJoinPipeLine(connectionHelper)
-            print("Outer Join Pipeline")
-        else:
-            pipe = ExtractionPipeLine(connectionHelper)
-            print("Extraction Pipeline")
         self.pipeline = pipe
         return pipe
 
@@ -89,6 +90,12 @@ class PipeLineFactory:
             return pipe.get_state()
 
         return WAITING
+    
+    def get_pipeline_all_states(self, token):
+        pipe = self.get_pipeline_obj(token)
+        if pipe:
+            return pipe.get_list()
+        return [WAITING]
 
     def get_pipeline_obj(self, token):
         for i in self.pipelines:
@@ -114,6 +121,13 @@ class PipeLineFactory:
             if i[0] == token:
                 return i[1]
         return None
+
+    def get_pipeline_done_states(self, token):
+        pipe = self.get_pipeline_obj(token)
+        if pipe:
+            return pipe.get_done_list()
+        return [WAITING]    
+
 
     def cancel_pipeline_exec(self, token):
         p = self.get_pipeline_obj(token)

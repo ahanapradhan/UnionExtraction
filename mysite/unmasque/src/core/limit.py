@@ -4,37 +4,77 @@ import itertools
 
 import frozenlist as frozenlist
 
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from .dataclass.genPipeline_context import GenPipelineContext
+from .dataclass.pgao_context import PGAOcontext
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES, _get_boundary_value
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 
 class Limit(GenerationPipeLineBase):
-
-    def __init__(self, connectionHelper, global_groupby_attributes, delivery):
-        super().__init__(connectionHelper, "Limit", delivery)
+    def __init__(self, connectionHelper, genPipelineCtx: GenPipelineContext,
+                 genCtx: PGAOcontext):
+        super().__init__(connectionHelper, "Limit", genPipelineCtx)
         self.limit = None
-        self.global_groupby_attributes = global_groupby_attributes
+        self.global_groupby_attributes = genCtx.group_by_attrib
         self.joined_attrib_valDict = {}
-        self.no_rows = 1000
-
-    def construct_filter_dict(self):
-        # get filter values and their allowed minimum and maximum value
-        _dict = {}
-        for entry_key in self.filter_attrib_dict.keys():
-            _dict[entry_key[1]] = self.filter_attrib_dict[entry_key]
-        return _dict
+        self.no_rows = self.connectionHelper.config.limit_limit
 
     def doExtractJob(self, query):
+        result = self.doLimitExtractJob(query)
+        self.do_init()
+        return result
+
+    def doLimitExtractJob(self, query):
         grouping_attribute_values = {}
-
-        # notable_filter_attrib_dict = self.construct_filter_dict()
-        # notable_attrib_type_dict = self.construct_types_dict()
         pre_assignment = self.get_pre_assignment()
-
         gb_tab_attribs = [(self.find_tabname_for_given_attrib(attrib), attrib)
                           for attrib in self.global_groupby_attributes]
 
         total_combinations = 1
+        self.decide_number_of_rows(gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations)
+
+        gen_dict = {}
+
+        for table in self.core_relations:
+            attrib_list = self.global_all_attribs[table]
+            attrib_list_str = ",".join(attrib_list)
+            att_order = f"({attrib_list_str})"
+            insert_rows = []
+            for k in range(self.no_rows):
+                self.determine_k_insert_rows(attrib_list, gb_tab_attribs, grouping_attribute_values, insert_rows,
+                                             k, table)
+            self.insert_attrib_vals_into_table(att_order, attrib_list, insert_rows, table, insert_logger=False)
+            gen_dict[table] = insert_rows
+
+            new_result = self.app.doJob(query)
+            if not self.app.isQ_result_empty(new_result):
+                if 4 <= len(new_result) <= self.no_rows:
+                    self.limit = len(new_result) - 1  # excluding the header column
+                    self.logger.debug(f"Limit {self.limit}")
+                else:
+                    if self.limit is not None:
+                        self.limit = None
+                        self.logger.debug(f"Result is growing. Limit may be larger than {self.no_rows}")
+                        break
+        return True
+
+    def determine_k_insert_rows(self, attrib_list_inner, gb_tab_attribs, grouping_attribute_values, insert_rows, k,
+                                tabname_inner):
+        insert_values = []
+        for attrib_inner in attrib_list_inner:
+            datatype = self.get_datatype((tabname_inner, attrib_inner))
+            if attrib_inner in grouping_attribute_values.keys():
+                insert_values.append(grouping_attribute_values[attrib_inner][k])
+            elif attrib_inner not in self.joined_attribs \
+                    and (tabname_inner, attrib_inner) not in gb_tab_attribs:
+                insert_values.append(self.get_dmin_val(attrib_inner, tabname_inner))
+            elif datatype in NON_TEXT_TYPES:
+                self.insert_non_text_attrib(datatype, attrib_inner, insert_values, k, tabname_inner)
+            else:
+                self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
+        insert_rows.append(tuple(insert_values))
+
+    def decide_number_of_rows(self, gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations):
         if pre_assignment:
             # GET LIMITS FOR ALL GROUPBY ATTRIBUTES
             group_lists = []
@@ -44,7 +84,7 @@ class Limit(GenerationPipeLineBase):
                     pre_assignment = False
                     break
                 datatype = self.get_datatype(elt)
-                if datatype in ['date', 'int', 'numeric']:
+                if datatype in NON_TEXT_TYPES:
                     tot_values = self.compute_total_values(datatype, elt, total_combinations)
                     self.get_temp_total_values(datatype, elt, temp, tot_values)
                 else:
@@ -65,43 +105,8 @@ class Limit(GenerationPipeLineBase):
                     temp = list(elt)
                     for (val1, val2) in zip(self.global_groupby_attributes, temp):
                         grouping_attribute_values[val1].append(val2)
-
         if pre_assignment:
             self.no_rows = min(self.no_rows, total_combinations)
-
-        for j in range(len(self.core_relations)):
-            tabname_inner = self.core_relations[j]
-            attrib_list_inner = self.global_all_attribs[j]
-            attrib_list_str = ",".join(attrib_list_inner)
-            att_order = f"({attrib_list_str})"
-            insert_rows = []
-            for k in range(self.no_rows):
-                insert_values = []
-                for attrib_inner in attrib_list_inner:
-                    datatype = self.get_datatype((tabname_inner, attrib_inner))
-                    if attrib_inner in grouping_attribute_values.keys():
-                        insert_values.append(grouping_attribute_values[attrib_inner][k])
-                    elif attrib_inner not in self.joined_attribs \
-                            and (tabname_inner, attrib_inner) not in gb_tab_attribs:
-                        insert_values.append(self.get_dmin_val(attrib_inner, tabname_inner))
-                    elif datatype in ['date', 'int', 'numeric', 'number']:
-                        self.insert_non_text_attrib(datatype, attrib_inner, insert_values, k, tabname_inner)
-                    else:
-                        self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
-                insert_rows.append(tuple(insert_values))
-
-            self.insert_attrib_vals_into_table(att_order, attrib_list_inner,
-                                               insert_rows, tabname_inner, insert_logger=False)
-            self.logger.debug("Inserted values of ", len(insert_rows), "rows")
-
-        new_result = self.app.doJob(query)
-        if self.app.isQ_result_empty(new_result):
-            self.logger.error('some error in generating new database. Result is empty. Can not identify Limit.')
-            return False
-        else:
-            if 4 <= len(new_result) <= 1000:
-                self.limit = len(new_result) - 1
-            return True
 
     def get_temp_total_values(self, datatype, elt, temp, tot_values):
         if datatype == 'date':
@@ -113,13 +118,22 @@ class Limit(GenerationPipeLineBase):
                 temp.append(self.filter_attrib_dict[elt][0] + k)
 
     def compute_total_values(self, datatype, elt, total_combinations):
-        if datatype == 'date':
-            tot_values = (self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0]).days + 1
+        if elt[2] == 'IN':
+            tot_values = 0
+            value_range = elt[3]
+            for v in value_range:
+                if not isinstance(v, tuple):
+                    tot_values += 1
+                else:
+                    tot_values += v[-1] - v[0]
         else:
-            tot_values = self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0] + 1
-        if (total_combinations * tot_values) > 1000:
+            if datatype == 'date':
+                tot_values = (self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0]).days + 1
+            else:
+                tot_values = self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0] + 1
+        if (total_combinations * tot_values) > self.no_rows:
             i = 1
-            while (total_combinations * i) < 1001 and i < tot_values:
+            while (total_combinations * i) < self.no_rows + 1 and i < tot_values:
                 i = i + 1
             tot_values = i
         return tot_values
@@ -155,6 +169,7 @@ class Limit(GenerationPipeLineBase):
         s_val_plus_k = get_val_plus_delta(datatype, s_val, k)
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             one = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+            one = _get_boundary_value(one, is_ub=True)
             s_val_plus_k = min(s_val_plus_k, one)
         insert_values.append(ast.literal_eval(get_format(datatype, s_val_plus_k)))
         for edge in self.global_join_graph:
@@ -175,9 +190,3 @@ class Limit(GenerationPipeLineBase):
         if not self.global_groupby_attributes:
             pre_assignment = False
         return pre_assignment
-
-    def construct_types_dict(self):
-        _dict = {}
-        for entry_key in self.attrib_types_dict:
-            _dict[entry_key[1]] = self.attrib_types_dict[entry_key]
-        return _dict

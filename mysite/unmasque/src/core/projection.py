@@ -4,11 +4,12 @@ import random
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify
 
+from .dataclass.genPipeline_context import GenPipelineContext
+from ..util.aoa_utils import get_LB, get_UB
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from ...src.util.utils import count_empty_lists_in, find_diff_idx
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ...src.util import constants
+from ...src.util.utils import count_empty_lists_in, find_diff_idx
 
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
@@ -30,8 +31,8 @@ def get_index_of_difference(attrib, new_result, new_result1, projection_dep, tab
 
 
 class Projection(GenerationPipeLineBase):
-    def __init__(self, connectionHelper: AbstractConnectionHelper, delivery: PackageForGenPipeline):
-        super().__init__(connectionHelper, "Projection", delivery)
+    def __init__(self, connectionHelper: AbstractConnectionHelper, genPipelineCtx: GenPipelineContext):
+        super().__init__(connectionHelper, "Projection", genPipelineCtx)
         self.projection_names = None
         self.projected_attribs = None
         self.dependencies = None
@@ -244,9 +245,9 @@ class Projection(GenerationPipeLineBase):
                     update_multi = []
                     for val in join:
                         update_multi.append(val)
-                        for l, ele in enumerate(self.global_all_attribs):
-                            if val in ele:
-                                update_multi.append(self.core_relations[l])
+                        for tab_key in self.global_all_attribs.keys():
+                            if val in self.global_all_attribs[tab_key]:
+                                update_multi.append(tab_key)
                                 break
                         update_multi.append(value)
                     for inner_i in range(0, len(update_multi), 3):
@@ -256,10 +257,10 @@ class Projection(GenerationPipeLineBase):
             # print(self.app.doJob(query), b)
             exe_result = self.app.doJob(query)
             if not self.app.isQ_result_empty(exe_result):
-                b[i][0] = exe_result[1][idx]
-
+                b[i][0] = self.app.get_attrib_val(exe_result, idx)
+        self.logger.debug("Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
-        solution = np.around(solution, decimals=0)
+        solution = np.around(solution, decimals=2)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
@@ -279,12 +280,19 @@ class Projection(GenerationPipeLineBase):
             # Same algorithm as above with insertion of random values
             # Additionally checking if rank of the matrix has become 2^n
             for j in range(n):
-                mi = constants.pr_min
-                ma = constants.pr_max
+                mini = constants.pr_min
+                maxi = constants.pr_max
                 if fil_check[j]:
-                    mi = fil_check[j][3]
-                    ma = fil_check[j][4]
-                coeff[outer_idx][j] = random.randrange(math.ceil(mi), math.floor(ma))
+                    pred = fil_check[j]
+                    datatype = self.get_datatype((pred[0], pred[1]))
+                    mini = get_LB(pred)
+                    maxi = get_UB(pred)
+                    if datatype == 'int':
+                        coeff[outer_idx][j] = random.randrange(mini, maxi)
+                    elif datatype == 'numeric':
+                        coeff[outer_idx][j] = random.uniform(mini, maxi)
+                else :
+                    coeff[outer_idx][j] = random.randrange(math.ceil(mini), math.floor(maxi))
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]

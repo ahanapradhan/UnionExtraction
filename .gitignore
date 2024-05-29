@@ -20,3 +20,4 @@ mysite/unmasque/src/pipeline/abstract/__init__.py
 *.log
 *.patch
 *.ini
+mysite/unmasque/test/regression/extraction_result.sql

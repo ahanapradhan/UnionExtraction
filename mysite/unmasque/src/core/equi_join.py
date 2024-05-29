@@ -1,9 +1,12 @@
+import copy
+
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.core.abstract.filter_holder import FilterHolder
 from ...src.core.filter import Filter
 from ...src.util.aoa_utils import get_op, get_tab, get_attrib, merge_equivalent_paritions
 
 from typing import List, Tuple
+
 
 class U2EquiJoin(FilterHolder):
 
@@ -13,14 +16,8 @@ class U2EquiJoin(FilterHolder):
                  filter_extractor: Filter,
                  global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor, "Equi Join")
-
-        # method from filter object
-        self.prepare_attrib_list = self.filter_extractor.prepare_attrib_set_for_bulk_mutation
-        self.extract_filter_on_attrib_set = self.filter_extractor.extract_filter_on_attrib_set
-
         self.algebraic_eq_predicates = []
         self.arithmetic_eq_predicates = []
-        # self.join_graph = []
         self.filter_predicates = filter_predicates
         self.pending_predicates = None
 
@@ -59,14 +56,13 @@ class U2EquiJoin(FilterHolder):
     def handle_unit_eq_group(self, equi_join_group, query) -> bool:
         filter_attribs = []
         datatype = self.get_datatype(equi_join_group[0])
-        prepared_attrib_list = self.prepare_attrib_list(equi_join_group)
+        # prepared_attrib_list = self._prepare_attrib_list(equi_join_group)
 
-        self.extract_filter_on_attrib_set(filter_attribs, query, prepared_attrib_list,
-                                                           datatype)
+        self._extract_filter_on_attrib_set(filter_attribs, query, equi_join_group, datatype)
         self.logger.debug("join group check", equi_join_group, filter_attribs)
         if len(filter_attribs) > 0:
-            if self.is_it_equality_op(get_op(filter_attribs[0])):
-                return False
+            # if self.is_it_equality_op(get_op(filter_attribs[0])):
+            #    return False
             equi_join_group.extend(filter_attribs)
         self.algebraic_eq_predicates.append(equi_join_group)
         return True
