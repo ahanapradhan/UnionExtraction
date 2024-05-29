@@ -200,7 +200,7 @@ class Aggregation(GenerationPipeLineBase):
                             inter_val = []
                             eqn = 0
                             for j in range(len(self.dependencies[result_index])):
-                                inter_val.append(int(temp_ar[j][1][_row]))
+                                inter_val.append(float(temp_ar[j][1][_row]))
                             n = len(self.dependencies[result_index])
 
                             temp_arr = get_param_values_external(inter_val)
