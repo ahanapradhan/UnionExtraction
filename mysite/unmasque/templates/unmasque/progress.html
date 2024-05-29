@@ -370,6 +370,7 @@
         let RESTORE_DB = "RESTORE DATABASE"
         let OUTER_JOIN = "OUTER JOIN"
         let NEP_COMPARATOR = "NEP_COMPARATOR"
+
         let handle_circle_click = (ev) => {
             const clicked = ev.target;
             console.log(clicked)
@@ -601,7 +602,7 @@
                     data = dat
                     console.log(data.progress_message, curr_state)
                     console.log(data.curr_states)
-                    console.log(data.done_states)
+                    console.log(data.done_states
                     $("#progress-updates").html(data.progress_message);
                     if(data.progress_message == "_WRONG"){
                         console.log("WRONG")
