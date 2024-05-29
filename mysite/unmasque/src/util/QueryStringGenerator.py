@@ -292,7 +292,7 @@ class QueryStringGenerator:
                 _range_dict[(elt[0], elt[1])] = (elt[3], elt[4])
             elif elt[2] in ['!=', '<>']:
                 datatype = self.get_datatype((elt[0], elt[1]))
-                _nep_dict[(elt[0], elt[1])] = int(elt[3]) if datatype in NUMBER_TYPES else elt[3]
+                _nep_dict[(elt[0], elt[1])] = float(elt[3]) if datatype in NUMBER_TYPES else elt[3]
         for elt in self._workingCopy.filter_in_predicates:
             if elt[2] == 'IN':
                 _in_dict[(elt[0], elt[1])] = list(elt[3])
