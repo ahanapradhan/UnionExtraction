@@ -34,7 +34,7 @@ class MyTestCase(BaseTestCase):
         time_profile = create_zero_time_profile()
         self.pipeline.all_sizes = tpchSettings.all_size
         aoa, time_profile = self.pipeline._mutation_pipeline(core_rels, query, time_profile)
-        print(aoa.aoa_predicates)
+        print(aoa.all_aoa)
         # self.assertEqual(len(aoa.aoa_predicates), 2)
         # self.assertTrue((('orders', 'o_orderdate'), ('lineitem', 'l_shipdate')) in aoa.aoa_predicates)
         # self.assertTrue((('partsupp', 'ps_availqty'), ('lineitem', 'l_orderkey')) in aoa.aoa_predicates)
@@ -66,9 +66,9 @@ class MyTestCase(BaseTestCase):
         self.pipeline.all_sizes = tpchSettings.all_size
         aoa, time_profile = self.pipeline._mutation_pipeline(core_rels, query, time_profile)
 
-        print(aoa.aoa_predicates)
-        self.assertEqual(len(aoa.aoa_predicates), 1)
-        self.assertTrue((('orders', 'o_totalprice'), ('customer', 'c_acctbal')) in aoa.aoa_predicates)
+        print(aoa.all_aoa)
+        self.assertEqual(len(aoa.all_aoa), 1)
+        self.assertTrue((('orders', 'o_totalprice'), ('customer', 'c_acctbal')) in aoa.all_aoa)
         print(aoa.aoa_less_thans)
         self.assertFalse(len(aoa.aoa_less_thans))
 
@@ -89,9 +89,9 @@ class MyTestCase(BaseTestCase):
         self.pipeline.all_sizes = tpchSettings.all_size
         aoa, time_profile = self.pipeline._mutation_pipeline(from_rels, query, time_profile)
 
-        print(aoa.aoa_predicates)
-        self.assertEqual(len(aoa.aoa_predicates), 1)
-        self.assertTrue((('orders', 'o_totalprice'), ('customer', 'c_acctbal')) in aoa.aoa_predicates)
+        print(aoa.all_aoa)
+        self.assertEqual(len(aoa.all_aoa), 1)
+        self.assertTrue((('orders', 'o_totalprice'), ('customer', 'c_acctbal')) in aoa.all_aoa)
         print(aoa.aoa_less_thans)
         self.assertFalse(len(aoa.aoa_less_thans))
 

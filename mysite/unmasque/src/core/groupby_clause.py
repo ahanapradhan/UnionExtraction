@@ -1,8 +1,9 @@
 import ast
 
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from .dataclass.genPipeline_context import GenPipelineContext
+
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, _get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ...src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 NON_TEXT_TYPES = ['date', 'int', 'integer', 'numeric', 'float']
@@ -14,7 +15,7 @@ def has_attrib_key_condition(attrib, attrib_inner, key_list):
 
 class GroupBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper: AbstractConnectionHelper,
-                 genPipelineCtx: PackageForGenPipeline,
+                 genPipelineCtx: GenPipelineContext,
                  pgao_ctx):
         super().__init__(connectionHelper, "Group By", genPipelineCtx)
         self.projected_attribs = pgao_ctx.projected_attribs
@@ -126,16 +127,19 @@ class GroupBy(GenerationPipeLineBase):
     def get_insert_value_for_single_attrib(self, datatype, attrib_inner, tabname_inner):
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+            val = _get_boundary_value(val, is_ub=False)
         else:
             val = get_dummy_val_for(datatype)
         return val
 
     def get_insert_value_for_joined_attribs(self, datatype, attrib_inner, delta, tabname_inner):
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-            zero_val = get_val_plus_delta(datatype,
-                                          self.filter_attrib_dict[
-                                              (tabname_inner, attrib_inner)][0], delta)
+            zero_val = self.filter_attrib_dict[
+                (tabname_inner, attrib_inner)][0]
+            zero_val = _get_boundary_value(zero_val, is_ub=False)
+            zero_val = get_val_plus_delta(datatype, zero_val, delta)
             one_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+            one_val = _get_boundary_value(one_val, is_ub=False)
             val = min(zero_val, one_val)
         else:
             val = get_val_plus_delta(datatype, get_dummy_val_for(datatype), delta)

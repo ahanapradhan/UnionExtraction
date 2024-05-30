@@ -1,13 +1,17 @@
+import ast
 import copy
 from _decimal import Decimal
 
+import frozenlist
 from frozenlist._frozenlist import FrozenList
 
+from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_constants_for, get_tab, get_attrib, \
+    get_LB, get_op, get_UB, add_item_to_list
 from ..core.abstract.GenerationPipeLineBase import NUMBER_TYPES
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
 from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX
-from ..util.utils import get_format, get_datatype_of_val, get_min_and_max_val
+from ..util.utils import get_format, get_min_and_max_val, get_val_plus_delta
 
 
 def append_clause(output, clause, param):
@@ -21,12 +25,11 @@ class QueryDetails:
         self.core_relations = []
 
         self.eq_join_predicates = []
-        self.join_graph = []
         self.filter_in_predicates = []
-        self.filter_predicates = []
+        self.arithmetic_filters = []
         self.filter_not_in_predicates = []
         self.aoa_less_thans = []
-        self.aoa_predicates = []
+        self.all_aoa = []
         self.join_edges = []
         self.or_predicates = []
 
@@ -46,17 +49,14 @@ class QueryDetails:
     def makeCopy(self, other):
         self.core_relations = other.core_relations
         self.eq_join_predicates = other.eq_join_predicates
-        self.join_graph = other.join_graph
         self.filter_in_predicates = other.filter_in_predicates
-        self.filter_predicates = other.filter_predicates
-        self.aoa_less_thans = other.aoa_less_thans
-        self.aoa_predicates = other.aoa_predicates
+        self.arithmetic_filters = other.arithmetic_filters
+        self.all_aoa = other.all_aoa
         self.join_edges = other.join_edges
         self.projection_names = other.projection_names
         self.global_projected_attributes = other.global_projected_attributes
         self.global_groupby_attributes = other.global_groupby_attributes
         self.global_aggregated_attributes = other.global_aggregated_attributes
-        self.or_predicates = other.or_predicates
 
     def add_to_where_op(self, predicate):
         if self.where_op and predicate not in self.where_op:
@@ -74,6 +74,20 @@ class QueryDetails:
         output = append_clause(output, "Limit", self.limit_op)
         output = f"{output};"
         return output
+
+    def optimize_arithmetic_filters(self):
+        to_remove = []
+        for ar_fil in self.arithmetic_filters:
+            for fl_in in self.filter_in_predicates:
+                if get_tab(ar_fil) == get_tab(fl_in) and get_attrib(ar_fil) == get_attrib(fl_in):
+                    op = get_op(ar_fil)
+                    if op in ['=', 'equal'] and get_LB(ar_fil) in get_LB(fl_in):
+                        to_remove.append(ar_fil)
+                    elif op == 'range' and (get_LB(ar_fil), get_UB(ar_fil)) in get_LB(fl_in):
+                        to_remove.append(ar_fil)
+        for t_r in to_remove:
+            self.arithmetic_filters.remove(t_r)
+
 
 
 def get_formatted_value(datatype, value):
@@ -122,12 +136,12 @@ class QueryStringGenerator:
 
     @property
     def filter_predicates(self):
-        return self._workingCopy.filter_predicates
+        return self._workingCopy.arithmetic_filters
 
     @filter_predicates.setter
     def filter_predicates(self, value):
-        if value not in self._workingCopy.filter_predicates:
-            self._workingCopy.filter_predicates.append(value)
+        if value not in self._workingCopy.arithmetic_filters:
+            self._workingCopy.arithmetic_filters.append(value)
 
     @property
     def select_op(self):
@@ -171,12 +185,17 @@ class QueryStringGenerator:
         self._workingCopy.core_relations.sort()
 
     @property
-    def equi_join(self):
+    def algebraic_predicates(self):
         return NotImplementedError
 
-    @equi_join.setter
-    def equi_join(self, aoa):
+    @algebraic_predicates.setter
+    def algebraic_predicates(self, aoa):
         self._workingCopy.eq_join_predicates = aoa.algebraic_eq_predicates
+        for pred in aoa.aoa_less_thans:
+            self._workingCopy.all_aoa.append((pred[0], '<', pred[1]))
+        for pred in aoa.aoa_predicates:
+            self._workingCopy.all_aoa.append((pred[0], '<=', pred[1]))
+        self._workingCopy.arithmetic_filters = aoa.arithmetic_eq_predicates + aoa.arithmetic_ineq_predicates
 
     @property
     def limit(self):
@@ -200,24 +219,31 @@ class QueryStringGenerator:
         self._workingCopy.order_by_op = value.orderby_string
 
     @property
-    def where_clause_remnants(self):
+    def arithmetic_predicates(self):
         return NotImplementedError
 
-    @where_clause_remnants.setter
-    def where_clause_remnants(self, remnants):
-        self._workingCopy.aoa_predicates = remnants.global_aoa_le_predicates
-        self._workingCopy.aoa_less_thans = remnants.global_aoa_l_predicates
-        self._workingCopy.filter_predicates = remnants.global_filter_predicates
+    @arithmetic_predicates.setter
+    def arithmetic_predicates(self, remnants):
+        self._workingCopy.filter_in_predicates = remnants.filter_in_predicates
+        self._workingCopy.optimize_arithmetic_filters()
 
     @property
     def all_arithmetic_filters(self):
-        uniq_preds = list(set(self._workingCopy.filter_predicates
+        uniq_preds = list(set(self._workingCopy.arithmetic_filters
                               + self._workingCopy.filter_in_predicates
                               + self._workingCopy.filter_not_in_predicates))
         return uniq_preds
 
     @all_arithmetic_filters.setter
     def all_arithmetic_filters(self, value):
+        raise NotImplementedError
+
+    @property
+    def algebraic_inequalities(self):
+        return self._workingCopy.all_aoa
+
+    @algebraic_inequalities.setter
+    def algebraic_inequalities(self, value):
         raise NotImplementedError
 
     @property
@@ -229,14 +255,6 @@ class QueryStringGenerator:
         self._workingCopy.join_edges = value
         self._workingCopy.eq_join_predicates.clear()  # when join edges are assigned directly, old equi join
         # predicates are obsolete
-
-    @property
-    def or_predicates(self):
-        raise NotImplementedError
-
-    @or_predicates.setter
-    def or_predicates(self, value):
-        self._workingCopy.or_predicates = value
 
     def rectify_projection(self, replace_dict):
         for key in replace_dict.keys():
@@ -283,10 +301,78 @@ class QueryStringGenerator:
         Q_E = self.write_query()
         return Q_E
 
-    def consolidate_nep_filters_for_not_in(self):
+    def __absorb_nep_filters(self):
+        _range_dict, _in_dict, _nep_dict = {}, {}, {}
+        for elt in self._workingCopy.arithmetic_filters:
+            if elt[2] == 'range':
+                _range_dict[(elt[0], elt[1])] = (elt[3], elt[4])
+            elif elt[2] in ['!=', '<>']:
+                datatype = self.get_datatype((elt[0], elt[1]))
+                _nep_dict[(elt[0], elt[1])] = float(elt[3]) if datatype in NUMBER_TYPES else elt[3]
+        for elt in self._workingCopy.filter_in_predicates:
+            if elt[2] == 'IN':
+                _in_dict[(elt[0], elt[1])] = list(elt[3])
+
+        for key in _nep_dict.keys():
+            datatype = self.get_datatype(key)
+            delta, _ = get_constants_for(datatype)
+            if key in _range_dict \
+                    and _range_dict[key][0] <= _nep_dict[key] <= _range_dict[key][1]:
+                range1 = (_range_dict[key][0], get_val_plus_delta(datatype, _nep_dict[key], -1 * delta))
+                range2 = (get_val_plus_delta(datatype, _nep_dict[key], 1 * delta), _range_dict[key][1])
+                remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])), self._workingCopy.arithmetic_filters)
+                remove_item_from_list((key[0], key[1], 'range', _range_dict[key][0], _range_dict[key][1]),
+                                      self._workingCopy.arithmetic_filters)
+                if key in _in_dict:
+                    _in_dict[key].extend([range1, range2])
+                else:
+                    _in_dict[key] = [range1, range2]
+            if key in _in_dict:
+                if _nep_dict[key] in _in_dict[key]:
+                    _in_dict[key].remove(_nep_dict[key])
+                remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])), self._workingCopy.arithmetic_filters)
+                to_remove, to_add = [], []
+                for v_tup in _in_dict[key]:
+                    if isinstance(v_tup, tuple) and v_tup[0] <= _nep_dict[key] <= v_tup[1]:
+                        range1 = (v_tup[0], get_val_plus_delta(datatype, _nep_dict[key], -1 * delta))
+                        range2 = (get_val_plus_delta(datatype, _nep_dict[key], 1 * delta), v_tup[1])
+                        remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])),
+                                              self._workingCopy.arithmetic_filters)
+                        to_add.extend([range1, range2])
+                        to_remove.append(v_tup)
+                for t_r in to_remove:
+                    _in_dict[key].remove(t_r)
+                for t_a in to_add:
+                    _in_dict[key].append(t_a)
+
+        for key in _in_dict.keys():
+            t_remove = []
+            in_vals = _in_dict[key]
+            for vi in in_vals:
+                for vj in in_vals:
+                    if not isinstance(vi, tuple) and isinstance(vj, tuple):
+                        if vj[0] <= vi <= vj[1]:
+                            t_remove.append(vi)
+            for t_r in t_remove:
+                _in_dict[key].remove(t_r)
+            l_val = FrozenList(_in_dict[key])
+            l_val.freeze()
+            _in_dict[key] = l_val
+
+        t_remove = []
+        for elt in self._workingCopy.filter_in_predicates:
+            if (elt[0], elt[1]) in _in_dict.keys():
+                t_remove.append(elt)
+        for t_r in t_remove:
+            self._workingCopy.filter_in_predicates.remove(t_r)
+        for key in _in_dict.keys():
+            self._workingCopy.filter_in_predicates.append((key[0], key[1], 'IN', _in_dict[key], _in_dict[key]))
+
+    def __consolidate_nep_filters_for_not_in(self):
+        self.__absorb_nep_filters()
         t_remove = []
         nep_dict = {}
-        for elt in self._workingCopy.filter_predicates:
+        for elt in self._workingCopy.arithmetic_filters:
             if elt[2] not in ['!=', '<>']:
                 continue
             key = (elt[0], elt[1], elt[2])
@@ -308,16 +394,17 @@ class QueryStringGenerator:
                 self.logger.debug(self._workingCopy.filter_not_in_predicates)
 
         for pred in t_remove:
-            self._workingCopy.filter_predicates.remove(pred)
+            self._workingCopy.arithmetic_filters.remove(pred)
         return t_remove
 
-    def rewrite_for_not_in(self):
-        t_remove = self.consolidate_nep_filters_for_not_in()
+    def rewrite_for_NEP(self):
+        t_remove = self.__consolidate_nep_filters_for_not_in()
         for pred in t_remove:
             self._remove_exact_NE_string_predicate(pred)
         for notInPred in self._workingCopy.filter_not_in_predicates:
             pred = self.formulate_predicate_from_filter(notInPred)
             self._workingCopy.add_to_where_op(pred)
+        self._workingCopy.where_op = self.__generate_where_clause()
         Q_E = self.write_query()
         return Q_E
 
@@ -333,7 +420,6 @@ class QueryStringGenerator:
             predicates.extend(self._workingCopy.join_edges)
         self.__generate_algebraic_inequalities(predicates)
 
-        self.__generate_arithmetic_conjunctive_disjunctions(predicates)
         self.__generate_arithmetic_pure_conjunctions(predicates)
 
         where_clause = "\n and ".join(predicates)
@@ -376,17 +462,40 @@ class QueryStringGenerator:
         self.logger.debug("query_dict: ", self._queries)
         return query_string
 
+    def __generate_predicate_string_for_in_operator(self, tab, attrib, values):
+        datatype = self.get_datatype((tab, attrib))
+        predicates = []
+        single_value_set = []
+        for v in values:
+            if isinstance(v, tuple):
+                elt = [tab, attrib, 'range', v[0], v[1]]
+                predicates.append(self.formulate_predicate_from_filter(elt))
+            else:
+                single_value_set.append(get_format(datatype, v))
+        f_values = get_formatted_value(datatype, single_value_set)
+        op = 'IN' if len(single_value_set) > 1 else '='
+        if len(single_value_set):
+            predicates.append(f"{tab}.{attrib} {op} {f_values}")
+        return " OR ".join(predicates)
+
     def formulate_predicate_from_filter(self, elt):
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[-1]
+        if op == 'in':
+            predicate = self.__generate_predicate_string_for_in_operator(tab, attrib, lb)
+            predicate = f"({predicate})" if "OR" in predicate else predicate
+            return predicate
         datatype = self.get_datatype((tab, attrib))
         f_lb = get_formatted_value(datatype, lb)
         f_ub = get_formatted_value(datatype, ub)
+
         if op == 'range':
             predicate = ''
             i_min, i_max = get_min_and_max_val(datatype)
             if datatype == 'numeric':
                 f_lb, f_ub = round(Decimal(lb), 2), round(Decimal(ub), 2)
                 i_min, i_max = round(Decimal(i_min), 2), round(Decimal(i_max), 2)
+            if lb == ub:
+                predicate = f"{tab}.{attrib} = {f_lb}"
             if lb <= i_min:
                 predicate = f"{tab}.{attrib} <= {f_ub}"
             if ub >= i_max:
@@ -397,7 +506,7 @@ class QueryStringGenerator:
                 predicate = ''
         elif op == '>=':
             predicate = f"{tab}.{attrib} {op} {f_lb}"
-        elif op in ['<=', '=', 'equal', 'like', 'not like', '<>', '!=', 'in', 'not in']:
+        elif op in ['<=', '=', 'equal', 'like', 'not like', '<>', '!=', 'not in']:
             predicate = f"{tab}.{attrib} {str(op.replace('equal', '=')).upper()} {f_ub}"
         else:
             predicate = ''
@@ -413,58 +522,18 @@ class QueryStringGenerator:
         self._workingCopy.join_edges = copy.deepcopy(predicates)
 
     def __generate_algebraic_inequalities(self, predicates):
-        for aoa in self._workingCopy.aoa_predicates:
-            pred = []
-            add_pred_for(aoa[0], pred)
-            add_pred_for(aoa[1], pred)
-            predicates.append(" <= ".join(pred))
-        for aoa in self._workingCopy.aoa_less_thans:
-            pred = []
-            add_pred_for(aoa[0], pred)
-            add_pred_for(aoa[1], pred)
-            predicates.append(" < ".join(pred))
+        for aoa in self._workingCopy.all_aoa:
+            predicates.append(self.get_aoa_string(aoa))
 
     def __generate_arithmetic_pure_conjunctions(self, predicates):
-        apc_predicates = self._workingCopy.filter_predicates + self._workingCopy.filter_not_in_predicates
+        # self._workingCopy.optimize_arithmetic_filters()
+
+        apc_predicates = self._workingCopy.filter_in_predicates \
+                         + self._workingCopy.arithmetic_filters \
+                         + self._workingCopy.filter_not_in_predicates
         for a_eq in apc_predicates:
             pred = self.formulate_predicate_from_filter(a_eq)
-            if pred not in predicates:
-                predicates.append(pred)
-
-    def __generate_arithmetic_conjunctive_disjunctions(self, predicates):
-        for p in self._workingCopy.or_predicates:
-            non_empty_indices = [i for i, t_a in enumerate(p) if t_a]
-            tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
-            ops = [p[i][2] for i in non_empty_indices]
-            datatypes = [self.get_datatype(tab_attribs[i]) for i in non_empty_indices]
-            values = [get_format(datatypes[i], p[i][3]) for i in non_empty_indices]
-            values.sort()
-            uniq_tab_attribs = set(tab_attribs)
-            if len(uniq_tab_attribs) == 1 and all(op in ['equal', '='] for op in ops):
-                tab, attrib = next(iter(uniq_tab_attribs))
-                in_pred = self.__adjust_for_in_predicates(attrib, tab, values)
-                one_pred = self.formulate_predicate_from_filter(in_pred)
-            else:
-                pred_str, preds = "", []
-                for i in non_empty_indices:
-                    pred_str = self.formulate_predicate_from_filter(p[i])
-                    preds.append(pred_str)
-                one_pred = " OR ".join(preds)
-            predicates.append(one_pred)
-
-    def __adjust_for_in_predicates(self, attrib, tab, values):
-        in_pred = [tab, attrib, 'IN', values, values] if len(values) > 1 else [tab, attrib, '=', values, values]
-        frozen_values = FrozenList(values)
-        frozen_values.freeze()
-        frozen_in_pred = (in_pred[0], in_pred[1], in_pred[2], frozen_values, frozen_values)
-        self._workingCopy.filter_in_predicates.append(frozen_in_pred)
-        remove_eq_filter_predicate = []
-        for eq_pred in self._workingCopy.filter_predicates:
-            if eq_pred[0] == tab and eq_pred[1] == attrib and eq_pred[2] in ['equal', '=']:
-                remove_eq_filter_predicate.append(eq_pred)
-        for t_r in remove_eq_filter_predicate:
-            self._workingCopy.filter_predicates.remove(t_r)
-        return tuple(in_pred)
+            add_item_to_list(pred, predicates)
 
     def __optimize_group_by_attributes(self):
         for i in range(len(self._workingCopy.global_projected_attributes)):
@@ -478,10 +547,7 @@ class QueryStringGenerator:
         temp_list = copy.deepcopy(self._workingCopy.global_groupby_attributes)
         for attrib in temp_list:
             if attrib not in self._workingCopy.global_projected_attributes:
-                try:
-                    self._workingCopy.global_groupby_attributes.remove(attrib)
-                except:
-                    pass
+                remove_item_from_list(attrib, self._workingCopy.global_groupby_attributes)
                 continue
             remove_flag = True
             for elt in self._workingCopy.global_aggregated_attributes:
@@ -489,10 +555,7 @@ class QueryStringGenerator:
                     remove_flag = False
                     break
             if remove_flag:
-                try:
-                    self._workingCopy.global_groupby_attributes.remove(attrib)
-                except:
-                    pass
+                remove_item_from_list(attrib, self._workingCopy.global_groupby_attributes)
 
     def __generate_select_clause(self):
         for i in range(len(self._workingCopy.global_projected_attributes)):
@@ -563,7 +626,7 @@ class QueryStringGenerator:
                 else:
                     temp.insert(index, 'a')
                 temp = ''.join(temp)
-                output = self.try_with_temp(attrib, output, query, tabname, temp)
+                output = self.__try_with_temp(attrib, output, query, tabname, temp)
                 output = output + representative[index]
                 index = index + 1
 
@@ -573,10 +636,10 @@ class QueryStringGenerator:
             else:
                 temp.append('a')
             temp = ''.join(temp)
-            output = self.try_with_temp(attrib, output, query, tabname, temp)
+            output = self.__try_with_temp(attrib, output, query, tabname, temp)
         return output
 
-    def try_with_temp(self, attrib, output, query, tabname, temp):
+    def __try_with_temp(self, attrib, output, query, tabname, temp):
         u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
         try:
             self.connectionHelper.execute_sql([u_query], self.logger)
@@ -661,9 +724,9 @@ class QueryStringGenerator:
 
     def generate_where_clause(self, fp_where):
         for elt in fp_where:
-            predicate = self.formulate_predicate_from_filter(elt)
-            self.where_op = predicate if self.where_op == '' else self.where_op + " and " + predicate
-        self.logger.debug(f"Locally generated Where_op: {self.where_op}")
+            predicate = self.__generate_where_clause_predicate_str(elt)
+            if len(predicate):
+                self.where_op = predicate if self.where_op == '' else self.where_op + " and " + predicate
 
     def generate_from_on_clause(self, edge, fp_on, imp_t1, imp_t2, table1, table2):
         flag_first = True if self._workingCopy.from_op == '' else False
@@ -674,19 +737,39 @@ class QueryStringGenerator:
         self.from_op += f" {table1} {join_part}" if flag_first else "" + join_part
         flag_first = False
         for fp in fp_on:
-            if fp[0] in relevant_tables:
-                predicate = self.formulate_predicate_from_filter(fp)
-                self.from_op += "\n\t and " + predicate
+            tables = find_tables_from_predicate(fp)
+            if all(tab in relevant_tables for tab in tables):
+                predicate = self.__generate_where_clause_predicate_str(fp)
+                if len(predicate):
+                    self.from_op += "\n\t and " + predicate
         return flag_first
+
+    def __generate_where_clause_predicate_str(self, fp):
+        predicate = ''
+        if len(fp) == 3:
+            predicate = self.get_aoa_string(fp)
+        elif len(fp) >= 4:
+            predicate = self.formulate_predicate_from_filter(fp)
+        return predicate
 
     def clear_from_where_ops(self):
         self._workingCopy.from_op = ''
         self._workingCopy.where_op = ''
 
-
-def add_pred_for(aoa_l, pred):
-    if isinstance(aoa_l, list) or isinstance(aoa_l, tuple):
-        pred.append(f"{aoa_l[0]}.{aoa_l[1]}")
-    else:
-        pred.append(get_format(get_datatype_of_val(aoa_l), aoa_l))
-    return aoa_l
+    def get_aoa_string(self, aoa):
+        lesser, op, greater = aoa[0], aoa[1], aoa[2]
+        tab_attrib = lesser if isinstance(lesser, tuple) else greater
+        datatype = self.get_datatype(tab_attrib)
+        f_str = ""
+        for tup in aoa:
+            if isinstance(tup, tuple):
+                f_str += f"{tup[0]}.{tup[1]}"
+            elif tup in ['<', '<=']:
+                f_str += f" {tup} "
+            else:
+                self.logger.debug(tup)
+                f_val = get_format(datatype, tup)
+                self.logger.debug(f_val)
+                f_str += f_val
+        self.logger.debug(f_str)
+        return f_str

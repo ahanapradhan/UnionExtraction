@@ -50,17 +50,9 @@ class NepComparator(ResultComparator):
         res_Qh_ = res_Qh[1:]
         if res_Qh_ not in [None, 'None']:
             for row in res_Qh_:
-                hasNullVal = False
-                for val in row:
-                    if val in [None, 'None']:
-                        hasNullVal = True
-                        break
-                if hasNullVal:
+                if any(val in [None, 'None'] for val in row):
                     continue
-                temp = []
-                for val in row:
-                    temp.append(str(val))
-                ins = (tuple(temp))
+                ins = (tuple(row))
                 if len(res_Qh_) == 1 and len(res_Qh_[0]) == 1:
                     self.insert_into_result_table_values(header, ins[0], table)
                 else:

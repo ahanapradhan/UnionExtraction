@@ -25,12 +25,24 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = False
-        self.conn.config.detect_nep = False
-        self.conn.config.detect_oj = False
-        self.conn.config.detect_or = False
+        self.conn.config.detect_union = True
+        self.conn.config.detect_nep = True
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+
+    def test_aoa_dev_2(self):
+        low_val = 1000
+        high_val = 5527
+        query = f"SELECT c_name as name, " \
+                f"c_acctbal as account_balance " \
+                f"FROM orders, customer, nation " \
+                f"WHERE o_custkey > {low_val} and c_custkey = o_custkey and c_custkey <= {high_val}" \
+                f"and c_nationkey = n_nationkey " \
+                f"and o_orderdate between '1998-01-01' and '1998-01-15' " \
+                f"and o_totalprice <= c_acctbal;"
+        self.do_test(query)
 
     def test_division_by_zero_bugfix(self):
         query = "SELECT c_name, avg(c_acctbal) as max_balance,o_clerk FROM customer, orders where " \
@@ -42,8 +54,15 @@ class ExtractionTestCase(BaseTestCase):
     def test_in(self):
         query = "select n_name, c_acctbal from nation, customer " \
                 "WHERE n_nationkey = c_nationkey and " \
-                "n_nationkey IN (1, 2, 5, 3, 4, 10) and c_acctbal < 7000 "\
-                 "and c_acctbal > 1000 ORDER BY c_acctbal LIMIT 30;"
+                "n_nationkey IN (1, 2, 3, 5, 4, 10) and c_acctbal < 7000 " \
+                "and c_acctbal > 1000 ORDER BY c_acctbal;"
+        self.do_test(query)
+
+    def test_in_agg_aoa(self):
+        query = "select o_clerk, sum(c_acctbal + 2*o_totalprice) as total_price, n_name from orders, customer, nation " \
+                "WHERE c_custkey = o_custkey and c_nationkey = n_nationkey and " \
+                "n_nationkey IN (1, 5, 3, 10) and c_acctbal < 7000 " \
+                "and c_acctbal > 1000 and c_acctbal <= o_totalprice group by o_clerk, n_name ORDER BY o_clerk LIMIT 30;"
         self.do_test(query)
 
     def test_key_range(self):
@@ -54,6 +73,11 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_no_filter_outer_join(self):
         query = "select c_name, n_name, count(*) as total from nation RIGHT OUTER JOIN customer " \
+                "ON c_nationkey = n_nationkey GROUP BY c_name, n_name;"
+        self.do_test(query)
+
+    def test_no_filter_outer_join1(self):
+        query = "select c_name, n_name from nation RIGHT OUTER JOIN customer " \
                 "ON c_nationkey = n_nationkey GROUP BY c_name, n_name;"
         self.do_test(query)
 
@@ -629,12 +653,13 @@ class ExtractionTestCase(BaseTestCase):
                 "limit 100;"
         self.do_test(query)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_sumang_thesis_Q3_nep(self):
         query = "select l_shipmode,sum(l_extendedprice) as revenue " \
                 "from lineitem " \
                 "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and ((l_orderkey > 124 and l_orderkey < 135) or (l_orderkey > 235 and l_orderkey < 370)) group by l_shipmode order by l_shipmode " \
+                "and ((l_orderkey > 124 and l_orderkey < 135) or " \
+                "(l_orderkey > 235 and l_orderkey < 370)) group by l_shipmode order by l_shipmode " \
                 "limit 100;"
         self.do_test(query)
 
@@ -721,6 +746,31 @@ class ExtractionTestCase(BaseTestCase):
         record_file.write("\n --- END OF ONE EXTRACTION EXPERIMENT\n")
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
+
+    def test_UQ10_1_1(self):
+        query = "Select l_shipmode, o_clerk " \
+                "From orders RIGHT OUTER JOIN lineitem " \
+                "ON o_orderkey = l_orderkey " \
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate;"
+        self.do_test(query)
+
+    def test_UQ10_1_2(self):
+        query = "Select l_shipmode, o_clerk " \
+                "From orders RIGHT OUTER JOIN lineitem " \
+                "ON o_orderkey = l_orderkey and o_orderdate <= l_shipdate and o_orderdate >= '1991-01-01'" \
+                "and l_shipdate < l_commitdate and l_commitdate < l_receiptdate " \
+                "and l_receiptdate <= '1996-03-03' and l_extendedprice < 70000 and o_totalprice >= 60055;"
+        self.do_test(query)
+
+    def test_paper_subquery1(self):
+        query = "SELECT c_name as name, (c_acctbal - o_totalprice) as account_balance " \
+                "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
+                "and c_nationkey = n_nationkey " \
+                "and c_mktsegment = 'FURNITURE' " \
+                "and n_name = 'INDIA' " \
+                "and o_orderdate between '1998-01-01' and '1998-01-05' " \
+                "and o_totalprice <= c_acctbal;"
+        self.do_test(query)
 
 
 if __name__ == '__main__':

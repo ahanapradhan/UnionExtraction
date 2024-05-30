@@ -7,8 +7,22 @@ from .src.util.constants import WAITING, FROM_CLAUSE, START, DONE, RUNNING, SAMP
     FILTER, \
     LIMIT, ORDER_BY, AGGREGATE, GROUP_BY, PROJECTION, RESULT_COMPARE, OK, UNION, WRONG, RESTORE_DB, INEQUALITY
 
-ALL_STATES = [WAITING, UNION, FROM_CLAUSE, SAMPLING, DB_MINIMIZATION, FILTER, EQUALITY, INEQUALITY,
-              PROJECTION, GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, RESULT_COMPARE, DONE]
+ALL_STATES = [WAITING, 
+UNION, 
+FROM_CLAUSE, 
+RESTORE_DB, 
+SAMPLING, 
+DB_MINIMIZATION, 
+FILTER, 
+EQUALITY, 
+INEQUALITY,  
+PROJECTION, 
+GROUP_BY, 
+AGGREGATE, 
+ORDER_BY, 
+LIMIT, 
+RESULT_COMPARE, 
+DONE]
 
 
 # Create your views here.
@@ -37,7 +51,7 @@ def login_view(request):
         connHelper.config.detect_union = (request.POST.get("union") == "Union")
         connHelper.config.use_cs2 = (request.POST.get("sampling") == "Sampling")
         connHelper.config.detect_or = (request.POST.get("Disjunction") == "Disjunction")
-        connHelper.config.detect_oj = (request.POST.get("OuterJoin") == "OuterJoin")
+        connHelper.config.detect_oj = (request.POST.get("outer_join") == "OuterJoin")
         #print("Checkbox", connHelper.config.detect_nep, connHelper.config.detect_union, connHelper.config.use_cs2)
 
         token = start_extraction_pipeline_async(connHelper, query, request)
@@ -70,8 +84,8 @@ def func_start(connHelper, query, request):
 
 def check_progress(request, token):
     print("...Checking Progress...")
-    state_changed, state_msg, info, io = func_check_progress(request, token)
-    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg, 'state_info': info, 'io': io}, safe=False)
+    state_changed, state_msg, info, io, exec_states, curr_states = func_check_progress(request, token)
+    return JsonResponse({'state_changed': state_changed, 'progress_message': state_msg, 'state_info': info, 'io': io, 'done_states': exec_states, "curr_states": curr_states}, safe=False)
 
 
 def func_check_progress(request, token):
@@ -80,6 +94,8 @@ def func_check_progress(request, token):
     p = factory.get_pipeline_obj(token)
     print("TOKEN: ", token)
     state_msg = factory.get_pipeline_state(token)
+    exec_states  = factory.get_pipeline_done_states(token)
+    curr_states = factory.get_pipeline_all_states(token)
     print("Current state: ", state_msg, factory.get_pipeline_query(token))
     if state_msg in [DONE, WRONG]:
         print("...done!")
@@ -89,7 +105,7 @@ def func_check_progress(request, token):
         print("... still doing...", state_msg)
         to_pass = [factory.get_pipeline_query(token), state_msg, 'NA']
     request.session[str(token) + 'partials'] = to_pass
-    return state_changed, state_msg, p.info, p.IO if p else None
+    return state_changed, state_msg, p.info, p.IO, exec_states, curr_states if p else None
 
 
 def prepare_result(query):

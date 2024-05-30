@@ -5,10 +5,9 @@ from datetime import date, timedelta
 from typing import Union, Tuple
 
 from .MutationPipeLineBase import MutationPipeLineBase
-from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string, \
-    get_random_number
+from ..dataclass.genPipeline_context import GenPipelineContext
+from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
-from ....src.core.dataclass.generation_pipeline_package import PackageForGenPipeline
 
 NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number', 'Decimal']
 NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
@@ -22,17 +21,28 @@ def generate_random_date(lb, ub):
     return random_date1
 
 
+def _get_boundary_value(v_cand, is_ub):
+    if isinstance(v_cand, list) or isinstance(v_cand, tuple):
+        v_val = v_cand[-1] if is_ub else v_cand[0]
+        if isinstance(v_val, tuple):
+            v_val = v_val[-1] if is_ub else v_val[0]
+    else:
+        v_val = v_cand
+    return v_val
+
+
 class GenerationPipeLineBase(MutationPipeLineBase):
 
-    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: PackageForGenPipeline):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, name: str, genCtx: GenPipelineContext):
         super().__init__(connectionHelper, genCtx.core_relations, genCtx.global_min_instance_dict, name)
         self.global_all_attribs = genCtx.global_all_attribs
         self.global_attrib_types = genCtx.global_attrib_types
         self.global_join_graph = genCtx.global_join_graph
-        self.global_filter_predicates = genCtx.global_filter_predicates
+        self.global_filter_predicates = genCtx.arithmetic_filters
         self.filter_attrib_dict = genCtx.filter_attrib_dict
         self.attrib_types_dict = genCtx.attrib_types_dict
         self.joined_attribs = genCtx.joined_attribs
+        self.filter_in_predicates = genCtx.filter_in_predicates
 
         self.get_datatype = genCtx.get_datatype  # method
 
@@ -127,8 +137,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         datatype = self.get_datatype((tabname, attrib))
         if datatype in NON_TEXT_TYPES:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
-                val = min(self.filter_attrib_dict[(tabname, attrib)][0],
-                          self.filter_attrib_dict[(tabname, attrib)][1])
+                lb = self.filter_attrib_dict[(tabname, attrib)][0]
+                val = _get_boundary_value(lb, is_ub=False)
             else:
                 val = get_dummy_val_for(datatype)
             # val = ast.literal_eval(get_format(datatype, val))
@@ -142,8 +152,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return val
 
     def get_other_than_dmin_val_nonText(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
-        datatype = self.get_datatype((tabname, attrib))
         key = (tabname, attrib)
+        datatype = self.get_datatype(key)
         if key not in self.filter_attrib_dict:
             return get_dummy_val_for(datatype)
 
@@ -152,12 +162,9 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             return prev
 
         lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
-        if prev == lb:
-            val = ub
-        elif prev == ub:
-            val = lb
-        else:
-            val = min(lb, ub)
+        lb = _get_boundary_value(lb, is_ub=False)
+        ub = _get_boundary_value(ub, is_ub=True)
+        val = ub if prev == lb else lb
         return val
 
     def get_different_s_val(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
@@ -180,8 +187,13 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return val
 
     def find_tabname_for_given_attrib(self, find_attrib) -> str:
+        for tab_key in self.global_all_attribs.keys():
+            if find_attrib in self.global_all_attribs[tab_key]:
+                return tab_key
+        '''
         for entry in self.global_attrib_types:
             tabname = entry[0]
             attrib = entry[1]
             if attrib == find_attrib:
                 return tabname
+        '''

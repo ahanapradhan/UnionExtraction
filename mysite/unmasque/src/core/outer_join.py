@@ -3,15 +3,16 @@ from datetime import date
 from typing import Tuple, Union
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.genPipeline_context import GenPipelineContext
 from .dataclass.pgao_context import PGAOcontext
 from ..util.QueryStringGenerator import QueryStringGenerator
+from ..util.aoa_utils import get_tab, get_attrib, get_one_tab_attrib_from_aoa_pred
 
 
 class OuterJoin(GenerationPipeLineBase):
 
     def __init__(self, connectionHelper, global_pk_dict,
-                 genPipelineCtx: PackageForGenPipeline,
+                 genPipelineCtx: GenPipelineContext,
                  q_gen: QueryStringGenerator,
                  genCtx: PGAOcontext):
         super().__init__(connectionHelper, "Outer Join", genPipelineCtx)
@@ -68,7 +69,8 @@ class OuterJoin(GenerationPipeLineBase):
 
                 if not self.app.is_attrib_equal_val(res, name, mut_val):
                     self.identify_projection_rectification(attrib, replace_dict)
-        self.projected_attributes, self.group_by_attrib, _, self.orderby_string = self.q_gen.rectify_projection(replace_dict)
+        self.projected_attributes, self.group_by_attrib, _, self.orderby_string = self.q_gen.rectify_projection(
+            replace_dict)
 
     def identify_projection_rectification(self, attrib, replace_dict):
         other = attrib
@@ -281,6 +283,7 @@ class OuterJoin(GenerationPipeLineBase):
 
     def __formulateQueries(self, final_edge_seq, query):
         fp_on, fp_where = self.__determine_on_and_where_filters(query)
+        aoa_on, aoa_where = self.__determine_on_and_where_aoa(query)
         set_possible_queries = []
         for seq in final_edge_seq:
             self.q_gen.backup_query_before_new_generation()
@@ -288,8 +291,8 @@ class OuterJoin(GenerationPipeLineBase):
             for edge in seq:
                 table1, table2 = edge[0][1], edge[1][1]
                 imp_t1, imp_t2 = self.__determine_join_edge_type(edge, table1, table2)
-                self.q_gen.generate_from_on_clause(edge, fp_on, imp_t1, imp_t2, table1, table2)
-            self.q_gen.generate_where_clause(fp_where)
+                self.q_gen.generate_from_on_clause(edge, fp_on + aoa_on, imp_t1, imp_t2, table1, table2)
+            self.q_gen.generate_where_clause(fp_where + aoa_where)
             self.q_gen.generate_groupby_select()
             q_candidate = self.q_gen.write_query()
             self.logger.debug("+++++++++++++++++++++")
@@ -301,6 +304,17 @@ class OuterJoin(GenerationPipeLineBase):
 
         return set_possible_queries, fp_on
 
+    def __determine_on_and_where_aoa(self, query):
+        aoa_pred_on, aoa_pred_where = [], []
+        all_aoa = self.q_gen.algebraic_inequalities
+        self.logger.debug("all_aoa predicates: ", all_aoa)
+        for aoa in all_aoa:
+            tab_attrib = get_one_tab_attrib_from_aoa_pred(aoa)
+            self.__check_on_or_where(get_tab(tab_attrib), get_attrib(tab_attrib),
+                                     aoa_pred_on, aoa_pred_where, aoa, query)
+        self.logger.debug(aoa_pred_on, aoa_pred_where)
+        return aoa_pred_on, aoa_pred_where
+
     def __determine_on_and_where_filters(self, query):
         filter_pred_on, filter_pred_where = [], []
         all_arithmetic_filters = self.q_gen.all_arithmetic_filters
@@ -308,16 +322,19 @@ class OuterJoin(GenerationPipeLineBase):
         for fp in all_arithmetic_filters:
             self.logger.debug(f"fp from global filter predicates: {fp}")
             tab, attrib = fp[0], fp[1]
-            _, prev = self.update_attrib_to_see_impact(attrib, tab)
-            res_hq = self.app.doJob(query)
-            self.logger.debug(f"res_hq: {res_hq}")
-            if len(res_hq) == 1:
-                filter_pred_where.append(fp)
-            else:
-                filter_pred_on.append(fp)
-            self.update_with_val(attrib, tab, prev)
+            self.__check_on_or_where(tab, attrib, filter_pred_on, filter_pred_where, fp, query)
         self.logger.debug(filter_pred_on, filter_pred_where)
         return filter_pred_on, filter_pred_where
+
+    def __check_on_or_where(self, tab, attrib, filter_pred_on, filter_pred_where, fp, query):
+        _, prev = self.update_attrib_to_see_impact(attrib, tab)
+        res_hq = self.app.doJob(query)
+        self.logger.debug(f"res_hq: {res_hq}")
+        if len(res_hq) == 1:
+            filter_pred_where.append(fp)
+        else:
+            filter_pred_on.append(fp)
+        self.update_with_val(attrib, tab, prev)
 
     def __determine_join_edge_type(self, edge, table1, table2):
         # steps to determine type of join for edge

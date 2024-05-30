@@ -4,14 +4,14 @@ import itertools
 
 import frozenlist as frozenlist
 
-from .dataclass.generation_pipeline_package import PackageForGenPipeline
+from .dataclass.genPipeline_context import GenPipelineContext
 from .dataclass.pgao_context import PGAOcontext
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES, _get_boundary_value
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 
 class Limit(GenerationPipeLineBase):
-    def __init__(self, connectionHelper, genPipelineCtx: PackageForGenPipeline,
+    def __init__(self, connectionHelper, genPipelineCtx: GenPipelineContext,
                  genCtx: PGAOcontext):
         super().__init__(connectionHelper, "Limit", genPipelineCtx)
         self.limit = None
@@ -73,7 +73,6 @@ class Limit(GenerationPipeLineBase):
             else:
                 self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
         insert_rows.append(tuple(insert_values))
-        # self.logger.debug("Inserted values of ", len(insert_rows), f"rows in table {tabname_inner}")
 
     def decide_number_of_rows(self, gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations):
         if pre_assignment:
@@ -115,14 +114,25 @@ class Limit(GenerationPipeLineBase):
                 date_val = get_val_plus_delta('date', self.filter_attrib_dict[elt][0], k)
                 temp.append(ast.literal_eval(get_format('date', date_val)))
         else:
+            lb = _get_boundary_value(self.filter_attrib_dict[elt][0], is_ub=False)
             for k in range(tot_values):
-                temp.append(self.filter_attrib_dict[elt][0] + k)
+                temp.append(lb + k)
 
     def compute_total_values(self, datatype, elt, total_combinations):
-        if datatype == 'date':
-            tot_values = (self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0]).days + 1
-        else:
-            tot_values = self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0] + 1
+        tot_values = 0
+        for in_pred in self.filter_in_predicates:
+            if (in_pred[0], in_pred[1]) == elt:
+                value_range = in_pred[3]
+                for v in value_range:
+                    if not isinstance(v, tuple):
+                        tot_values += 1
+                    else:
+                        tot_values += v[-1] - v[0]
+        if not tot_values:
+            if datatype == 'date':
+                tot_values = (self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0]).days + 1
+            else:
+                tot_values = self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0] + 1
         if (total_combinations * tot_values) > self.no_rows:
             i = 1
             while (total_combinations * i) < self.no_rows + 1 and i < tot_values:
@@ -161,6 +171,7 @@ class Limit(GenerationPipeLineBase):
         s_val_plus_k = get_val_plus_delta(datatype, s_val, k)
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             one = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+            one = _get_boundary_value(one, is_ub=True)
             s_val_plus_k = min(s_val_plus_k, one)
         insert_values.append(ast.literal_eval(get_format(datatype, s_val_plus_k)))
         for edge in self.global_join_graph:
