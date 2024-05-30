@@ -2,7 +2,7 @@ import ast
 
 from .dataclass.genPipeline_context import GenPipelineContext
 
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, _get_boundary_value
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
@@ -127,7 +127,7 @@ class GroupBy(GenerationPipeLineBase):
     def get_insert_value_for_single_attrib(self, datatype, attrib_inner, tabname_inner):
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-            val = _get_boundary_value(val, is_ub=False)
+            val = get_boundary_value(val, is_ub=False)
         else:
             val = get_dummy_val_for(datatype)
         return val
@@ -136,10 +136,10 @@ class GroupBy(GenerationPipeLineBase):
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             zero_val = self.filter_attrib_dict[
                 (tabname_inner, attrib_inner)][0]
-            zero_val = _get_boundary_value(zero_val, is_ub=False)
+            zero_val = get_boundary_value(zero_val, is_ub=False)
             zero_val = get_val_plus_delta(datatype, zero_val, delta)
             one_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
-            one_val = _get_boundary_value(one_val, is_ub=False)
+            one_val = get_boundary_value(one_val, is_ub=False)
             val = min(zero_val, one_val)
         else:
             val = get_val_plus_delta(datatype, get_dummy_val_for(datatype), delta)

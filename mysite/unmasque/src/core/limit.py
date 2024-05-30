@@ -6,7 +6,7 @@ import frozenlist as frozenlist
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from .dataclass.pgao_context import PGAOcontext
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES, _get_boundary_value
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES, get_boundary_value
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 
@@ -114,7 +114,7 @@ class Limit(GenerationPipeLineBase):
                 date_val = get_val_plus_delta('date', self.filter_attrib_dict[elt][0], k)
                 temp.append(ast.literal_eval(get_format('date', date_val)))
         else:
-            lb = _get_boundary_value(self.filter_attrib_dict[elt][0], is_ub=False)
+            lb = get_boundary_value(self.filter_attrib_dict[elt][0], is_ub=False)
             for k in range(tot_values):
                 temp.append(lb + k)
 
@@ -171,7 +171,7 @@ class Limit(GenerationPipeLineBase):
         s_val_plus_k = get_val_plus_delta(datatype, s_val, k)
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
             one = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
-            one = _get_boundary_value(one, is_ub=True)
+            one = get_boundary_value(one, is_ub=True)
             s_val_plus_k = min(s_val_plus_k, one)
         insert_values.append(ast.literal_eval(get_format(datatype, s_val_plus_k)))
         for edge in self.global_join_graph:

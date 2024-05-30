@@ -5,7 +5,7 @@ import math
 from .dataclass.genPipeline_context import GenPipelineContext
 from .projection import get_param_values_external
 from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, _get_boundary_value
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
 from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ...src.util.constants import min_int_val, max_int_val
 
@@ -41,8 +41,8 @@ def get_k_value(attrib, filter_attrib_dict, groupby_key_flag, tabname, datatype)
         if datatype in NUMBER_TYPES:
             # PRECISION TO BE TAKEN CARE FOR NUMERIC
             a, b = filter_attrib_dict[(tabname, attrib)][0], filter_attrib_dict[(tabname, attrib)][1]
-            a = _get_boundary_value(a, is_ub=False)
-            b = _get_boundary_value(b, is_ub=True)
+            a = get_boundary_value(a, is_ub=False)
+            b = get_boundary_value(b, is_ub=True)
             b = min(a + 1, b)
             if a == 0:  # swap a and b
                 a = b
@@ -50,8 +50,8 @@ def get_k_value(attrib, filter_attrib_dict, groupby_key_flag, tabname, datatype)
             k_value, agg_array = get_k_value_for_number(a, b)
         elif datatype == 'date':
             date_lb, date_ub = filter_attrib_dict[(tabname, attrib)][0], filter_attrib_dict[(tabname, attrib)][1]
-            date_lb = _get_boundary_value(date_lb, is_ub=False)
-            date_ub = _get_boundary_value(date_ub, is_ub=True)
+            date_lb = get_boundary_value(date_lb, is_ub=False)
+            date_ub = get_boundary_value(date_ub, is_ub=True)
             a = get_format('date', date_lb)
             date_val_plus_1 = get_val_plus_delta('date', date_lb, 1)
             b = get_format('date', min(date_val_plus_1, date_ub))
@@ -270,7 +270,7 @@ class Aggregation(GenerationPipeLineBase):
                         # check for filter
                         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                             date_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-                            date_val = _get_boundary_value(date_val, is_ub=False)
+                            date_val = get_boundary_value(date_val, is_ub=False)
                         else:
                             date_val = get_val_plus_delta('date', get_dummy_val_for('date'), 2)
                         insert_values.append(ast.literal_eval(get_format('date', date_val)))
@@ -278,7 +278,7 @@ class Aggregation(GenerationPipeLineBase):
                         # check for filter
                         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                             number_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-                            number_val = _get_boundary_value(number_val, is_ub=False)
+                            number_val = get_boundary_value(number_val, is_ub=False)
                         else:
                             number_val = get_dummy_val_for('int')
                         insert_values.append(number_val)

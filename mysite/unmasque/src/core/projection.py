@@ -2,14 +2,17 @@ import math
 import random
 
 import numpy as np
-from sympy import symbols, expand, collect, nsimplify
+from sympy import symbols, expand, collect, nsimplify, Rational
 
 from .dataclass.genPipeline_context import GenPipelineContext
-from ..util.aoa_utils import get_LB, get_UB
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, _get_boundary_value
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
 from ...src.util.utils import count_empty_lists_in, find_diff_idx
+
+
+def round_expr(expr, num_digits):
+    return expr.xreplace({n: round(n, num_digits) for n in expr.atoms(Rational)})
 
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
@@ -232,7 +235,8 @@ class Projection(GenerationPipeLineBase):
         final_res += 1 * solution[-1]
         self.logger.debug("Equation", coeff, b)
         self.logger.debug("Solution", solution)
-        projected_attrib[idx] = str(nsimplify(collect(final_res, local_symbol_list)))
+        res_expr = nsimplify(collect(final_res, local_symbol_list))
+        projected_attrib[idx] = str(round_expr(res_expr, 2))
         return solution
 
     def __infinite_loop(self, coeff, dep):
@@ -249,14 +253,14 @@ class Projection(GenerationPipeLineBase):
                 maxi = constants.pr_max
                 if key in self.filter_attrib_dict.keys():
                     datatype = self.get_datatype(key)
-                    mini = _get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False)
-                    maxi = _get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True)
+                    mini = get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False)
+                    maxi = get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True)
                     if datatype == 'int':
                         coeff[outer_idx][j] = random.randrange(mini, maxi)
                     elif datatype == 'numeric':
-                        coeff[outer_idx][j] = random.uniform(mini, maxi)
+                        coeff[outer_idx][j] = round(random.uniform(mini, maxi), 2)
                 else:
-                    coeff[outer_idx][j] = random.randrange(math.ceil(mini), math.floor(maxi))
+                    coeff[outer_idx][j] = random.randrange(math.floor(mini), math.ceil(maxi))
 
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
