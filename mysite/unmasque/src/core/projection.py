@@ -6,7 +6,7 @@ from sympy import symbols, expand, collect, nsimplify
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from ..util.aoa_utils import get_LB, get_UB
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, _get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
 from ...src.util.utils import count_empty_lists_in, find_diff_idx
@@ -168,10 +168,9 @@ class Projection(GenerationPipeLineBase):
     """
 
     def get_solution(self, projected_attrib, projection_dep, idx, value_used, query):
-        self.logger.debug("filters: ", self.global_filter_predicates)
+        self.logger.debug("filters: ", self.filter_attrib_dict)
         dep = projection_dep[idx]
         n = len(dep)
-        fil_check = []
         sym_string = ''
         for i in dep:
             sym_string += (i[1] + " ")
@@ -190,71 +189,36 @@ class Projection(GenerationPipeLineBase):
             self.syms.append([symbols(sym_string)])
             local_symbol_list = self.syms[-1]
             self.logger.debug("Another List", self.syms, idx)
-        if n == 1 and ('int' not in self.attrib_types_dict[(dep[0][0], dep[0][1])]) and (
-                'numeric' not in self.attrib_types_dict[(dep[0][0], dep[0][1])]):
+        if n == 1 and self.attrib_types_dict[(dep[0][0], dep[0][1])] not in NUMBER_TYPES:
             self.param_list.append([dep[0][1]])
             projected_attrib[idx] = dep[0][1]
             return [[1]]
-        for ele in dep:
-            # Construct a list of list that will be used to check if the attrib belongs to filter predicate
-            fil = 0
-            for pred in self.global_filter_predicates:
-                if pred[0] == ele[0] and pred[1] == ele[1]:
-                    fil = pred
-                    break
-            if not fil:
-                fil_check.append(False)
-            else:
-                fil_check.append(fil)
 
         coeff = np.zeros((2 ** n, 2 ** n))
-
         for i in range(n):
             coeff[0][i] = value_used[value_used.index(dep[i][1]) + 1]
         temp_array = get_param_values_external(coeff[0][:n])
         for i in range(2 ** n - 1):
             # Given the values of the n dependencies, we form the rest 2^n - n combinations
             coeff[0][i] = temp_array[i]
-
         coeff[0][2 ** n - 1] = 1
 
         local_param_list = self.get_param_list(sorted([i[1] for i in dep]))
         self.logger.debug("Param List", local_param_list)
         self.param_list.append(local_param_list)
-        self.infinite_loop(coeff, fil_check, n)
+
+        self.__infinite_loop(coeff, dep)
         # print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
             for j in range(n):
                 col = self.param_list[idx][j]
-                tabname = None
-                for e_dep in dep:
-                    if col in e_dep:
-                        tabname = e_dep[0]
                 value = coeff[i][j]
-                join = []
-                for elt in self.global_join_graph:
-                    if dep[j][1] in elt:
-                        join = elt
-                        break
-                    if join:
-                        break
-                if not join:
-                    self.update_attrib_in_table(col, value, tabname)
-                else:
-                    update_multi = []
-                    for val in join:
-                        update_multi.append(val)
-                        for tab_key in self.global_all_attribs.keys():
-                            if val in self.global_all_attribs[tab_key]:
-                                update_multi.append(tab_key)
-                                break
-                        update_multi.append(value)
-                    for inner_i in range(0, len(update_multi), 3):
-                        self.update_attrib_in_table(update_multi[inner_i], update_multi[inner_i + 2],
-                                                    update_multi[inner_i + 1])
+                joined_cols = self.get_other_attribs_in_eqJoin_grp(col)
+                joined_cols.append(col)
+                for j_c in joined_cols:
+                    self.update_attrib_in_table(j_c, value, self.find_tabname_for_given_attrib(j_c))
 
-            # print(self.app.doJob(query), b)
             exe_result = self.app.doJob(query)
             if not self.app.isQ_result_empty(exe_result):
                 b[i][0] = self.app.get_attrib_val(exe_result, idx)
@@ -268,31 +232,32 @@ class Projection(GenerationPipeLineBase):
         final_res += 1 * solution[-1]
         self.logger.debug("Equation", coeff, b)
         self.logger.debug("Solution", solution)
-        # self.logger.debug("Final", final_res, nsimplify(collect(final_res, local_symbol_list)))
         projected_attrib[idx] = str(nsimplify(collect(final_res, local_symbol_list)))
         return solution
 
-    def infinite_loop(self, coeff, fil_check, n):
+    def __infinite_loop(self, coeff, dep):
+        n = len(dep)
         curr_rank = 1
         outer_idx = 1
         while outer_idx < 2 ** n and curr_rank < 2 ** n:
             prev_idx, prev_rank = outer_idx, curr_rank
             # Same algorithm as above with insertion of random values
             # Additionally checking if rank of the matrix has become 2^n
-            for j in range(n):
+            for j, ele in enumerate(dep):
+                key = (ele[0], ele[1])
                 mini = constants.pr_min
                 maxi = constants.pr_max
-                if fil_check[j]:
-                    pred = fil_check[j]
-                    datatype = self.get_datatype((pred[0], pred[1]))
-                    mini = get_LB(pred)
-                    maxi = get_UB(pred)
+                if key in self.filter_attrib_dict.keys():
+                    datatype = self.get_datatype(key)
+                    mini = _get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False)
+                    maxi = _get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True)
                     if datatype == 'int':
                         coeff[outer_idx][j] = random.randrange(mini, maxi)
                     elif datatype == 'numeric':
                         coeff[outer_idx][j] = random.uniform(mini, maxi)
-                else :
+                else:
                     coeff[outer_idx][j] = random.randrange(math.ceil(mini), math.floor(maxi))
+
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
                 coeff[outer_idx][j] = temp_array[j]
