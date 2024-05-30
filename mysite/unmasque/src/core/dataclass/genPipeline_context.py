@@ -148,7 +148,7 @@ class GenPipelineContext:
                 if entry[2].lower() not in ['like', 'equal', 'in']:  # <=, >=, =
                     filter_attrib_dict[(entry[0], entry[1])] = (entry[3], entry[4])
                 if entry[2].lower() in ['like', 'equal']:
-                    self.filter_attrib_dict[(entry[0], entry[1])] = entry[3]
+                    filter_attrib_dict[(entry[0], entry[1])] = entry[3]
         for entry in self.filter_in_predicates:
             filter_attrib_dict[(entry[0], entry[1])] = entry[3]
 
