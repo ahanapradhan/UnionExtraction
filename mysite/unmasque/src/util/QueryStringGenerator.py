@@ -5,7 +5,8 @@ from _decimal import Decimal
 import frozenlist
 from frozenlist._frozenlist import FrozenList
 
-from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_constants_for
+from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_constants_for, get_tab, get_attrib, \
+    get_LB, get_op, get_UB, add_item_to_list
 from ..core.abstract.GenerationPipeLineBase import NUMBER_TYPES
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
@@ -73,6 +74,20 @@ class QueryDetails:
         output = append_clause(output, "Limit", self.limit_op)
         output = f"{output};"
         return output
+
+    def optimize_arithmetic_filters(self):
+        to_remove = []
+        for ar_fil in self.arithmetic_filters:
+            for fl_in in self.filter_in_predicates:
+                if get_tab(ar_fil) == get_tab(fl_in) and get_attrib(ar_fil) == get_attrib(fl_in):
+                    op = get_op(ar_fil)
+                    if op in ['=', 'equal'] and get_LB(ar_fil) in get_LB(fl_in):
+                        to_remove.append(ar_fil)
+                    elif op == 'range' and (get_LB(ar_fil), get_UB(ar_fil)) in get_LB(fl_in):
+                        to_remove.append(ar_fil)
+        for t_r in to_remove:
+            self.arithmetic_filters.remove(t_r)
+
 
 
 def get_formatted_value(datatype, value):
@@ -210,7 +225,7 @@ class QueryStringGenerator:
     @arithmetic_predicates.setter
     def arithmetic_predicates(self, remnants):
         self._workingCopy.filter_in_predicates = remnants.filter_in_predicates
-        # self._workingCopy.arithmetic_filters = remnants.arithmetic_filters
+        self._workingCopy.optimize_arithmetic_filters()
 
     @property
     def all_arithmetic_filters(self):
@@ -467,7 +482,8 @@ class QueryStringGenerator:
         tab, attrib, op, lb, ub = elt[0], elt[1], str(elt[2]).strip().lower(), elt[3], elt[-1]
         if op == 'in':
             predicate = self.__generate_predicate_string_for_in_operator(tab, attrib, lb)
-            return f"({predicate})"
+            predicate = f"({predicate})" if "OR" in predicate else predicate
+            return predicate
         datatype = self.get_datatype((tab, attrib))
         f_lb = get_formatted_value(datatype, lb)
         f_ub = get_formatted_value(datatype, ub)
@@ -510,13 +526,14 @@ class QueryStringGenerator:
             predicates.append(self.get_aoa_string(aoa))
 
     def __generate_arithmetic_pure_conjunctions(self, predicates):
+        # self._workingCopy.optimize_arithmetic_filters()
+
         apc_predicates = self._workingCopy.filter_in_predicates \
                          + self._workingCopy.arithmetic_filters \
                          + self._workingCopy.filter_not_in_predicates
         for a_eq in apc_predicates:
             pred = self.formulate_predicate_from_filter(a_eq)
-            if all(pred not in pred_str for pred_str in predicates):
-                predicates.append(pred)
+            add_item_to_list(pred, predicates)
 
     def __optimize_group_by_attributes(self):
         for i in range(len(self._workingCopy.global_projected_attributes)):

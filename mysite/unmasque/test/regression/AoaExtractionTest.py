@@ -142,6 +142,15 @@ class MyTestCase(BaseTestCase):
         print(eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_in_agg_aoa(self):
+        query = "select o_clerk, sum(c_acctbal + 2*o_totalprice) as total_price, n_name from orders, customer, nation " \
+                "WHERE c_custkey = o_custkey and c_nationkey = n_nationkey and " \
+                " c_acctbal < 7000 and c_acctbal > 1000 and c_acctbal <= o_totalprice " \
+                "group by o_clerk, n_name ORDER BY o_clerk LIMIT 30;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
     def test_UQ10_1(self):
         query = "Select l_shipmode " \
                 "From orders, lineitem " \
