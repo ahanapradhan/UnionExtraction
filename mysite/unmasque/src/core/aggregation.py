@@ -148,7 +148,6 @@ class Aggregation(GenerationPipeLineBase):
                 # Attribute Filtering
                 if attrib in self.global_groupby_attributes:
                     continue
-                l = 0
 
                 result_index_list = []
 

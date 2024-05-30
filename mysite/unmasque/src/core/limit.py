@@ -114,19 +114,21 @@ class Limit(GenerationPipeLineBase):
                 date_val = get_val_plus_delta('date', self.filter_attrib_dict[elt][0], k)
                 temp.append(ast.literal_eval(get_format('date', date_val)))
         else:
+            lb = _get_boundary_value(self.filter_attrib_dict[elt][0], is_ub=False)
             for k in range(tot_values):
-                temp.append(self.filter_attrib_dict[elt][0] + k)
+                temp.append(lb + k)
 
     def compute_total_values(self, datatype, elt, total_combinations):
-        if elt[2] == 'IN':
-            tot_values = 0
-            value_range = elt[3]
-            for v in value_range:
-                if not isinstance(v, tuple):
-                    tot_values += 1
-                else:
-                    tot_values += v[-1] - v[0]
-        else:
+        tot_values = 0
+        for in_pred in self.filter_in_predicates:
+            if (in_pred[0], in_pred[1]) == elt:
+                value_range = in_pred[3]
+                for v in value_range:
+                    if not isinstance(v, tuple):
+                        tot_values += 1
+                    else:
+                        tot_values += v[-1] - v[0]
+        if not tot_values:
             if datatype == 'date':
                 tot_values = (self.filter_attrib_dict[elt][1] - self.filter_attrib_dict[elt][0]).days + 1
             else:

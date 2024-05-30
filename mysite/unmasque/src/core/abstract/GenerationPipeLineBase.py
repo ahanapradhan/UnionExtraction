@@ -42,6 +42,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.filter_attrib_dict = genCtx.filter_attrib_dict
         self.attrib_types_dict = genCtx.attrib_types_dict
         self.joined_attribs = genCtx.joined_attribs
+        self.filter_in_predicates = genCtx.filter_in_predicates
 
         self.get_datatype = genCtx.get_datatype  # method
 
@@ -186,8 +187,13 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return val
 
     def find_tabname_for_given_attrib(self, find_attrib) -> str:
+        for tab_key in self.global_all_attribs.keys():
+            if find_attrib in self.global_all_attribs[tab_key]:
+                return tab_key
+        '''
         for entry in self.global_attrib_types:
             tabname = entry[0]
             attrib = entry[1]
             if attrib == find_attrib:
                 return tabname
+        '''
