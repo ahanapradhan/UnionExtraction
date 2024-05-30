@@ -2,7 +2,7 @@ import math
 import random
 
 import numpy as np
-from sympy import symbols, expand, collect, nsimplify, Rational
+from sympy import symbols, expand, collect, nsimplify, Rational, Integer
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
@@ -12,7 +12,7 @@ from ...src.util.utils import count_empty_lists_in, find_diff_idx
 
 
 def round_expr(expr, num_digits):
-    return expr.xreplace({n: round(n, num_digits) for n in expr.atoms(Rational)})
+    return expr.xreplace({n: round(n, num_digits) for n in expr.atoms(Rational) if not isinstance(n, Integer)})
 
 
 def if_dependencies_found_incomplete(projection_names, projection_dep):
