@@ -258,6 +258,8 @@ class QueryStringGenerator:
 
     def rectify_projection(self, replace_dict):
         for key in replace_dict.keys():
+            if key not in self._workingCopy.global_groupby_attributes:
+                continue
             self._workingCopy.global_groupby_attributes[self._workingCopy.global_groupby_attributes.index(key)] \
                 = replace_dict[key]
             self._workingCopy.order_by_op.replace(key, replace_dict[key])

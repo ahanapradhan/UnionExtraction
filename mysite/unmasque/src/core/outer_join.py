@@ -59,6 +59,10 @@ class OuterJoin(GenerationPipeLineBase):
                 table = self.find_tabname_for_given_attrib(attrib)
                 prev = self.get_dmin_val(attrib, table)
                 mut_val = self.get_other_than_dmin_val_nonText(attrib, table, prev)
+                if prev == mut_val:
+                    self.logger.info(f"Cannot rectify projection for {attrib}...")
+                    continue
+
                 self.update_with_val(attrib, table, mut_val)
                 res = self.app.doJob(query)
                 self.logger.debug(res)
@@ -103,9 +107,9 @@ class OuterJoin(GenerationPipeLineBase):
                         queue.append(edge[0][1])
 
                 for i in remove_edge:
-                    try:
+                    if i in temp_njg:
                         temp_njg.remove(i)
-                    except:
+                    elif list(reversed(i)) in temp_njg:
                         temp_njg.remove(list(reversed(i)))
                 self.logger.debug(temp_njg)
             final_edge_seq.append(edge_seq)

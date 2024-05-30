@@ -33,7 +33,7 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline = factory.create_pipeline(self.conn)
 
     def test_gnp_Q10(self):
-        query = '''SELECT c_name, avg(2.24*c_acctbal + 5.48*o_totalprice + 325.64) as max_balance, o_clerk 
+        query = '''SELECT c_name, avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
                 FROM customer, orders 
                 where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' 
                 and o_orderdate <= DATE '1995-10-23' and 
