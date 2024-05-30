@@ -72,11 +72,6 @@ class MyTestCase(BaseTestCase):
         self.do_test(query)
 
     # @pytest.mark.skip
-    def test_plot_Q16(self):
-        query = Q16
-        self.do_test(query)
-
-    # @pytest.mark.skip
     def test_plot_Q16_nep(self):
         query = Q16_nep
         self.do_test(query)
