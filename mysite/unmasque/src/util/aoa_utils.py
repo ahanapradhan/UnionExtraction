@@ -3,7 +3,7 @@ from _decimal import Decimal
 from datetime import date
 from typing import Union, List, Tuple
 
-from mysite.unmasque.src.util.utils import get_datatype_of_val, get_format
+from ..util.utils import get_datatype_of_val, get_format
 
 
 def optimize_edge_set(edge_set: List[Tuple[Tuple[str, str], Tuple[str, str]]]):
