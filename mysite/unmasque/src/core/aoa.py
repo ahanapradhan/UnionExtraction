@@ -145,7 +145,8 @@ class InequalityPredicate(FilterHolder):
         find_transitive_concrete_upperBs(E, to_remove)
         find_transitive_concrete_lowerBs(E, to_remove)
 
-        cb_list_with_nones = map(lambda x: x if (not isinstance(x[0], tuple) or not isinstance(x[1], tuple)) else None, E)
+        cb_list_with_nones = map(lambda x: x if (not isinstance(x[0], tuple) or not isinstance(x[1], tuple)) else None,
+                                 E)
         cb_list = list(filter(lambda ub: ub is not None, cb_list_with_nones))
 
         self.__find_transitive_concrete_L_Bounds(L, cb_list, to_remove, is_UB=True)
@@ -190,11 +191,9 @@ class InequalityPredicate(FilterHolder):
 
     def __absorb_variable_UBs(self, E, L, datatype, col_src, col_sink, query,
                               aoa_confirm):
-        joined_src = self.__get_equi_join_group(col_src)
         prev_ub = self.__find_concrete_bound_from_edge_set(col_src, E, datatype, True)
         if (col_src, col_sink) in E or (col_src, col_sink) in L:
-            for _src in joined_src:
-                add_item_to_dict(self.__absorbed_UBs, _src, prev_ub)
+            self.__absorb_variable_inbetween_bounds(col_src, col_sink, prev_ub)
 
         col_sink_lb = self.__find_concrete_bound_from_edge_set(col_sink, E, datatype, is_UB=False)
         val, dmin_val = self.__mutate_attrib_with_Bound_val(col_sink, datatype, col_sink_lb, query, with_UB=False)
@@ -206,8 +205,7 @@ class InequalityPredicate(FilterHolder):
 
             if prev_ub != new_ub:
                 add_item_to_list((col_src, col_sink), E)
-                for _src in joined_src:
-                    add_item_to_dict(self.__absorbed_UBs, _src, prev_ub)
+                self.__absorb_variable_inbetween_bounds(col_src, col_sink, prev_ub)
 
                 if new_ub < val:
                     remove_item_from_list((col_src, col_sink), E)
@@ -216,8 +214,7 @@ class InequalityPredicate(FilterHolder):
                 if not aoa_confirm:
                     self.logger.debug(f"no aoa due to fixed UB")
                     remove_item_from_list((col_src, col_sink), E)
-                    joined_sink = self.__get_equi_join_group(col_sink)
-                    for col in joined_sink:
+                    for col in self.__get_equi_join_group(col_sink):
                         self.mutate_dmin_with_val(datatype, col, dmin_val)
         else:
             if not aoa_confirm:
@@ -226,7 +223,6 @@ class InequalityPredicate(FilterHolder):
 
     def __absorb_variable_LBs(self, E, L, datatype, col_src, col_sink, query) -> bool:
         aoa_confirm = False
-        joined_sink = self.__get_equi_join_group(col_sink)
         """
         lb is lesser than current d_min value
         if any mutation happens in d_min, make sure the lb is updated accordingly
@@ -234,8 +230,7 @@ class InequalityPredicate(FilterHolder):
         prev_lb = self.__find_concrete_bound_from_edge_set(col_sink, E, datatype, False)
 
         if (col_src, col_sink) in E or (col_src, col_sink) in L:
-            for _sink in joined_sink:
-                add_item_to_dict(self.__absorbed_LBs, _sink, prev_lb)
+            self.__absorb_variable_inbetween_bounds(col_src, col_sink, prev_lb)
 
         col_src_ub = self.__find_concrete_bound_from_edge_set(col_src, E, datatype, is_UB=True)
         val, dmin_val = self.__mutate_attrib_with_Bound_val(col_src, datatype, col_src_ub, query, with_UB=True)
@@ -264,10 +259,21 @@ class InequalityPredicate(FilterHolder):
             remove_item_from_list((col_src, col_sink), E)
 
         if not aoa_confirm:
-            for _sink in joined_sink:
-                remove_item_from_dict(self.__absorbed_LBs, _sink, prev_lb)
+            self.__undo_absorbtion(col_sink, col_src, prev_lb)
 
         return aoa_confirm
+
+    def __undo_absorbtion(self, col_sink, col_src, prev_lb):
+        for _src in self.__get_equi_join_group(col_src):
+            remove_item_from_dict(self.__absorbed_UBs, _src, prev_lb)
+        for _sink in self.__get_equi_join_group(col_sink):
+            remove_item_from_dict(self.__absorbed_LBs, _sink, prev_lb)
+
+    def __absorb_variable_inbetween_bounds(self, col_src, col_sink, prev_lb):
+        for _src in self.__get_equi_join_group(col_src):
+            add_item_to_dict(self.__absorbed_UBs, _src, prev_lb)
+        for _sink in self.__get_equi_join_group(col_sink):
+            add_item_to_dict(self.__absorbed_LBs, _sink, prev_lb)
 
     def __mutate_col_to_lb_and_update_setE(self, col_src, datatype, query):
         mutation_lb_fe = self.__do_bound_check_again(col_src, datatype, query)
@@ -278,14 +284,14 @@ class InequalityPredicate(FilterHolder):
             self.mutate_dmin_with_val(datatype, col, mutation_lb)
 
     def __extract_dormant_concrete_bound(self, E, L, col_i, datatype, query, is_UB):
-        ub_dot = self.__mutate_with_boundary_value(E, datatype, query, col_i, is_UB)
-        max_val = self.__what_is_possible_bound_val(E, L, col_i, datatype, is_UB)
+        b_dot = self.__mutate_with_boundary_value(E, datatype, query, col_i, is_UB)
+        boundary_val = self.__what_is_possible_bound_val(E, L, col_i, datatype, is_UB)
         i_bound = get_max(self.constants_dict[datatype]) if is_UB else get_min(self.constants_dict[datatype])
-        if ub_dot not in [max_val, i_bound]:
+        if b_dot not in [boundary_val, i_bound]:
             if is_UB:
-                add_item_to_list((col_i, ub_dot), E)
+                add_item_to_list((col_i, b_dot), E)
             else:
-                add_item_to_list((ub_dot, col_i), E)
+                add_item_to_list((b_dot, col_i), E)
 
     def __extract_dormant_LBs(self, E, col_src, datatype, query, L):
         self.__extract_dormant_concrete_bound(E, L, col_src, datatype, query, is_UB=False)

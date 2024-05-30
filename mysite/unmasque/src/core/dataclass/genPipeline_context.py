@@ -76,7 +76,7 @@ class GenPipelineContext:
         self.core_relations = core_relations
         self.global_all_attribs = filter_extractor.global_all_attribs
         self.attrib_types_dict = None
-        self.filter_attrib_dict = None
+        self.filter_attrib_dict = {}
         self.joined_attribs = None
         self.__aoa_attribs = None
         self.arithmetic_filters = aoa_extractor.arithmetic_filters
@@ -113,8 +113,8 @@ class GenPipelineContext:
                 self.global_join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
 
     def __construct_filter_attribs_dict(self) -> dict:
-        # get filter values and their allowed minimum and maximum value
         filter_attrib_dict = {}
+        # get filter values and their allowed minimum and maximum value
         self.__add_arithmetic_filters(filter_attrib_dict)
         LB_dict, UB_dict = self.__make_dmin_dict_from_aoa_le()
         LB_dict, UB_dict = self.__make_dmin_dict_from_aoa_l(LB_dict, UB_dict)
@@ -123,7 +123,7 @@ class GenPipelineContext:
         self.__update_aoa_single_bounds(LB_dict, UB_dict, filter_attrib_dict)
         return filter_attrib_dict
 
-    def __update_aoa_single_bounds(self, LB_dict: dict, UB_dict: dict, filter_attrib_dict: dict):
+    def __update_aoa_single_bounds(self, LB_dict: dict, UB_dict: dict, filter_attrib_dict):
         to_del_LB = []
         for attrib in LB_dict.keys():
             datatype = self.attrib_types_dict[attrib]
@@ -142,15 +142,15 @@ class GenPipelineContext:
         for attrib in to_del_UB:
             del UB_dict[attrib]
 
-    def __add_arithmetic_filters(self, filter_attrib_dict: dict):
+    def __add_arithmetic_filters(self, filter_attrib_dict):
         for entry in self.arithmetic_filters:
             if len(entry) > 4:
                 if entry[2].lower() not in ['like', 'equal', 'in']:  # <=, >=, =
                     filter_attrib_dict[(entry[0], entry[1])] = (entry[3], entry[4])
                 if entry[2].lower() in ['like', 'equal']:
-                    filter_attrib_dict[(entry[0], entry[1])] = entry[3]
+                    self.filter_attrib_dict[(entry[0], entry[1])] = entry[3]
         for entry in self.filter_in_predicates:
-            filter_attrib_dict[(entry[0], entry[1])] = tuple(entry[3])
+            filter_attrib_dict[(entry[0], entry[1])] = entry[3]
 
     def __make_dmin_dict_from_aoa_le(self) -> Tuple[dict, dict]:
         LB_dict, UB_dict = {}, {}
@@ -167,17 +167,29 @@ class GenPipelineContext:
 
             if isinstance(r_attrib, tuple):
                 if r_attrib not in LB_dict.keys():
-                    LB_dict[r_attrib] = l_dmin_val
+                    self.__update_transitive_bound(LB_dict, r_attrib, l_dmin_val, is_ub=False)
                 else:
                     if l_dmin_val > LB_dict[r_attrib]:
-                        LB_dict[r_attrib] = l_dmin_val
+                        self.__update_transitive_bound(LB_dict, r_attrib, l_dmin_val, is_ub=False)
             if isinstance(l_attrib, tuple):
                 if l_attrib not in UB_dict.keys():
-                    UB_dict[l_attrib] = r_dmin_val
+                    self.__update_transitive_bound(UB_dict, l_attrib, r_dmin_val, is_ub=True)
                 else:
                     if r_dmin_val < UB_dict[l_attrib]:
-                        UB_dict[l_attrib] = r_dmin_val
+                        self.__update_transitive_bound(UB_dict, l_attrib, r_dmin_val, is_ub=True)
         return LB_dict, UB_dict
+
+    def __update_transitive_bound(self, _dict, key, val, is_ub):
+        _dict[key] = val
+        for aoa in self.global_aoa_le_predicates:
+            if is_ub:
+                if aoa[1] == key:
+                    if aoa[0] in _dict.keys():
+                        _dict[aoa[0]] = val
+            else:
+                if aoa[0] == key:
+                    if aoa[1] in _dict.keys():
+                        _dict[aoa[1]] = val
 
     def __update_filter_predicates_from_filter_dict(self):
         filter_dict = []
