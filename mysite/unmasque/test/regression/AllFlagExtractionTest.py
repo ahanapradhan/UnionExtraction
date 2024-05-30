@@ -25,12 +25,22 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
-        self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = True
-        self.conn.config.detect_or = True
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.detect_or = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+
+    def test_gnp_Q10(self):
+        query = '''SELECT c_name, avg(2.24*c_acctbal + 5.48*o_totalprice + 325.64) as max_balance, o_clerk 
+                FROM customer, orders 
+                where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' 
+                and o_orderdate <= DATE '1995-10-23' and 
+                c_acctbal > 0 and c_acctbal < 30.04
+                group by c_name, o_clerk 
+                order by c_name, o_clerk desc;'''
+        self.do_test(query)
 
     def test_aoa_dev_2(self):
         low_val = 1000
@@ -424,7 +434,7 @@ class ExtractionTestCase(BaseTestCase):
                 "and s_acctbal < 5000 RIGHT OUTER JOIN orders" \
                 " on o_orderkey = l_orderkey and  o_orderstatus = 'F'  LEFT OUTER JOIN nation " \
                 "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
-                "Order By numwait desc, s_name Limit 1200;" # it needs config limit to be set to higher value
+                "Order By numwait desc, s_name Limit 1200;"  # it needs config limit to be set to higher value
         self.do_test(query)
 
     def test_Q16_sql(self):
