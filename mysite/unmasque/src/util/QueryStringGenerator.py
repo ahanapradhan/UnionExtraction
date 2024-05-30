@@ -315,9 +315,9 @@ class QueryStringGenerator:
 
         for key in _nep_dict.keys():
             datatype = self.get_datatype(key)
-            delta, _ = get_constants_for(datatype)
             if key in _range_dict \
                     and _range_dict[key][0] <= _nep_dict[key] <= _range_dict[key][1]:
+                delta, _ = get_constants_for(datatype)
                 range1 = (_range_dict[key][0], get_val_plus_delta(datatype, _nep_dict[key], -1 * delta))
                 range2 = (get_val_plus_delta(datatype, _nep_dict[key], 1 * delta), _range_dict[key][1])
                 remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])), self._workingCopy.arithmetic_filters)
