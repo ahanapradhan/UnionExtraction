@@ -21,8 +21,11 @@ body{
     padding: 0px 50px;
 }
 
+
+
 .content{
     padding: 50px 50px;
+    margin: 0 auto;
     width: 100%;
 }
 
