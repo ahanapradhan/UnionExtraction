@@ -67,7 +67,8 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
         if not check or not vm.done:
-            self.logger.error("Cannot do database minimization. ")
+            self.error = "Cannot do database minimization. "
+            self.logger.error(self.error)
             self.info[DB_MINIMIZATION] = None
             return False, time_profile
         self.db_restorer.update_last_restored_size(vm.all_sizes)
@@ -86,7 +87,8 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
                                              self.filter_extractor.app_calls)
         if not self.filter_extractor.done:
             self.info[FILTER] = None
-            self.logger.error("Some problem in filter extraction!")
+            self.error = "Some problem in filter extraction!"
+            self.logger.error(self.error)
             return False, time_profile
         if not check:
             self.info[FILTER] = None
@@ -105,7 +107,8 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         time_profile.update_for_where_clause(self.equi_join.local_elapsed_time, self.equi_join.app_calls)
         if not self.equi_join.done:
             self.info[EQUALITY] = None
-            self.logger.error("Some problem in Equality predicate extraction!")
+            self.error = "Some problem in Equality predicate extraction!"
+            self.logger.error(self.error)
             return False, time_profile
         if not check:
             self.info[EQUALITY] = None
@@ -131,7 +134,8 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             self.logger.info("Cannot find inequality Predicates.")
         if not self.aoa.done:
             self.info[INEQUALITY] = None
-            self.logger.error("Some error while Inequality Predicates extraction. Aborting extraction!")
+            self.error = "Some error while Inequality Predicates extraction. Aborting extraction!"
+            self.logger.error(self.error)
             return False, time_profile
         return True, time_profile
 
@@ -215,7 +219,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
                 delta, _ = get_constants_for(datatype)
                 val_lb_minus_one = get_format(datatype, get_val_plus_delta(datatype, lb, -1 * delta))
                 val_ub_plus_one = get_format(datatype, get_val_plus_delta(datatype, ub, 1 * delta))
-                where_condition = f"({attrib} < {val_lb_minus_one} or {attrib} > {val_ub_plus_one})"
+                where_condition = f"({attrib} <= {val_lb_minus_one} or {attrib} >= {val_ub_plus_one})"
             wheres.append(where_condition)
         where_condition = " and ".join(wheres) if len(wheres) else always
         self.logger.debug(where_condition)

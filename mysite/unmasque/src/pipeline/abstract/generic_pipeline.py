@@ -35,7 +35,6 @@ class PipeLineState(object):
 
 class GenericPipeLine(ABC):
     _instance = None
-    
 
     def __init__(self, connectionHelper, name):
         self.state = [WAITING]
@@ -54,24 +53,24 @@ class GenericPipeLine(ABC):
         self.core_relations = None
 
     def process(self, query: str):
-        result = None
         try:
             self.update_state(WAITING)
             exe_factory = ExecutableFactory()
             app = exe_factory.create_exe(self.connectionHelper)
             app.method_call_count = 0
             result = self.extract(query)
+            if result is None:
+                result = self.error
+                return result
             self.verify_correctness(query, result)
             self.time_profile.update_for_app(app.method_call_count)
-        except Exception as e:
-            self.logger.error(e)
-            return str(e)
-        else:
-            self.logger.info("Valid Execution")
             return result
+        except Exception as e:
+            self.error += str(e)
+            self.logger.error(self.error)
+            return self.error
         finally:
             self.update_state(DONE)
-            self.logger.info("Ended Execution")
 
     def doJob(self, query, qe=None):
         local_start_time = time.time()

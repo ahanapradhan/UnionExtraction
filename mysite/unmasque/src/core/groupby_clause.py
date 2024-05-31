@@ -1,8 +1,10 @@
 import ast
 
+from frozenlist._frozenlist import FrozenList
+
 from .dataclass.genPipeline_context import GenPipelineContext
 
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value, NUMBER_TYPES
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
@@ -32,7 +34,7 @@ class GroupBy(GenerationPipeLineBase):
                 # determine offset values for this attribute
                 curr_attrib_value = [0, 1, 1]
 
-                key_list = next((elt for elt in self.global_join_graph if attrib in elt), [])
+                key_list = self.joined_attribs  # next((elt for elt in self.global_join_graph if attrib in elt), [])
 
                 # For this table (tabname) and this attribute (attrib), fill all tables now
                 for tabname_inner in self.core_relations:
@@ -53,7 +55,7 @@ class GroupBy(GenerationPipeLineBase):
                         for attrib_inner in attrib_list_inner:
                             datatype = self.get_datatype((tabname_inner, attrib_inner))
 
-                            if has_attrib_key_condition(attrib, attrib_inner, key_list):
+                            if has_attrib_key_condition(attrib, attrib_inner, self.joined_attribs):
                                 self.insert_values_for_joined_attribs(attrib_inner, curr_attrib_value, datatype,
                                                                       insert_values, k, tabname_inner)
                             else:
@@ -133,16 +135,47 @@ class GroupBy(GenerationPipeLineBase):
         return val
 
     def get_insert_value_for_joined_attribs(self, datatype, attrib_inner, delta, tabname_inner):
+        self.logger.debug(tabname_inner, attrib_inner)
         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-            zero_val = self.filter_attrib_dict[
-                (tabname_inner, attrib_inner)][0]
-            zero_val = get_boundary_value(zero_val, is_ub=False)
-            zero_val = get_val_plus_delta(datatype, zero_val, delta)
-            one_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
-            one_val = get_boundary_value(one_val, is_ub=False)
-            val = min(zero_val, one_val)
+            val = self.__get_s_plus_k_val(attrib_inner, datatype, delta, tabname_inner)
         else:
             val = get_val_plus_delta(datatype, get_dummy_val_for(datatype), delta)
+        self.logger.debug(val)
+        return val
+
+    def __get_s_plus_k_val(self, attrib_inner, datatype, delta, tabname_inner):
+        if isinstance(self.filter_attrib_dict[(tabname_inner, attrib_inner)], tuple):  # range
+            zero_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+            zero_val = get_val_plus_delta(datatype, zero_val, delta)
+            one_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][1]
+            val = min(zero_val, one_val)
+        elif isinstance(self.filter_attrib_dict[(tabname_inner, attrib_inner)], FrozenList):  # IN
+            zero_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
+            i = 0
+            while i <= delta:
+                zero_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][i]
+                if not isinstance(zero_val, tuple):
+                    i += 1
+                    continue
+                else:
+                    zero_val, zone_val = zero_val[0], zero_val[-1]
+                    left = delta - i
+                    if datatype == 'date':
+                        gap = (zone_val - zero_val).days
+                    elif datatype in NUMBER_TYPES:
+                        gap = zone_val - zero_val
+                    else:
+                        raise ValueError
+                    if gap >= left:
+                        zero_val = get_val_plus_delta(datatype, zero_val, left)
+                        break
+                    else:
+                        i = left - gap
+            one_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][-1]
+            one_val = get_boundary_value(one_val, is_ub=True)
+            val = min(zero_val, one_val)
+        else:  # =
+            val = self.filter_attrib_dict[(tabname_inner, attrib_inner)]
         return val
 
     def remove_duplicates(self):

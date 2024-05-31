@@ -276,8 +276,7 @@ class OuterJoin(GenerationPipeLineBase):
         self.logger.debug(attrib, tabname)
         temp.append((attrib, tabname))
 
-    def update_attrib_to_see_impact(self, attrib: str, tabname: str) \
-            -> Tuple[Union[int, float, date, str], Union[int, float, date, str]]:
+    def update_attrib_to_see_impact(self, attrib: str, tabname: str):
         prev = self.connectionHelper.execute_sql_fetchone_0(
             self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
         val = 'NULL'

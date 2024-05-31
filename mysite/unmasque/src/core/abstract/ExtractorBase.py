@@ -31,7 +31,8 @@ class Base(TpchSanitizer):
         try:
             self.result = self.doAppCountJob(args)
         except Exception as e:
-            raise e
+            self.done = False
+            return str(e)
         else:
             self.done = True
             return self.result

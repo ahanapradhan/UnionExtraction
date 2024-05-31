@@ -48,10 +48,14 @@ class U2EquiJoin(FilterHolder):
                     remaining_group = [eq for eq in equi_join_group if eq not in done]
                     check_again_dict[key] = remaining_group
             partition_eq_dict = check_again_dict
-        for eq_join in self.algebraic_eq_predicates:
-            for pred in eq_join:
+        to_remove = []
+        for i, el_eq in enumerate(self.algebraic_eq_predicates):
+            for j, pred in enumerate(el_eq):
                 if len(pred) == 5:
                     ineqaoa_preds.append(pred)
+                    to_remove.append((i, j))
+        for tup in to_remove:
+            del self.algebraic_eq_predicates[tup[0]][tup[1]]
 
     def handle_unit_eq_group(self, equi_join_group, query) -> bool:
         filter_attribs = []

@@ -1,4 +1,5 @@
 import re
+from _decimal import Decimal
 
 import psycopg2
 import psycopg2.extras
@@ -80,7 +81,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def execute_sql_fetchall(self, sql, logger=None):
         cur = self.get_cursor()
-        #if logger is not None:
+        # if logger is not None:
         #    logger.debug("..cur execute.." + sql)
         try:
             cur.execute(sql)
@@ -101,7 +102,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
     def cus_execute_sqls(self, cur, sqls, logger=None):
         # print(cur)
         for sql in sqls:
-            #if logger is not None:
+            # if logger is not None:
             #    logger.debug("..cur execute.." + sql)
             try:
                 cur.execute(sql)
@@ -124,6 +125,8 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
             cur.execute(sql)
             prev = cur.fetchone()
             prev = prev[0]
+            if isinstance(prev, Decimal):
+                prev = float(prev)
             cur.close()
         except psycopg2.ProgrammingError as e:
             if logger is not None:
@@ -133,7 +136,7 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def cur_execute_sql_fetch_one(self, cur, sql, logger=None):
         prev = None
-        #if logger is not None:
+        # if logger is not None:
         #    logger.debug("..cur execute.." + sql)
         try:
             cur.execute(sql)

@@ -18,6 +18,12 @@ class Comparator(AppExtractorBase):
         return args[0], args[1]
 
     def doActualJob(self, args=None):
+        for tab in self.relations:
+            tab_size = self.db_restorer.restore_table_and_confirm(tab)
+            if not tab_size:
+                self.logger.error(f"Could not restore {tab}, cannot run result comparator!")
+                return None
+
         Q_h, Q_E = self.extract_params_from_args(args)
         if Q_E is None:
             self.logger.info("Got None to compare. Cannot do anything...sorry!")
@@ -28,11 +34,6 @@ class Comparator(AppExtractorBase):
             self.logger.error("Q_E is not semantically correct.")
             return None
 
-        for tab in self.relations:
-            tab_size = self.db_restorer.restore_table_and_confirm(tab)
-            if not tab_size:
-                self.logger.error(f"Could not restore {tab}, cannot run result comparator!")
-                return None
         matched = self.match(Q_h, Q_E)
         return matched
 

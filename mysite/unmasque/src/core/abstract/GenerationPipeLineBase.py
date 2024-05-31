@@ -112,8 +112,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             join_tabnames.append(join_tabname)
             self.update_with_val(other_attrib, join_tabname, val)
 
-    def update_attrib_to_see_impact(self, attrib: str, tabname: str) \
-            -> Tuple[Union[int, float, date, str], Union[int, float, date, str]]:
+    def update_attrib_to_see_impact(self, attrib: str, tabname: str):
         prev = self.connectionHelper.execute_sql_fetchone_0(
             self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
         val = self.get_different_s_val(attrib, tabname, prev)
@@ -161,7 +160,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             self.logger.info("Cannot generate a new s-val. Giving the old one!")
             return prev
 
-        lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][1]
+        lb, ub = self.filter_attrib_dict[key][0], self.filter_attrib_dict[key][-1]
         lb = get_boundary_value(lb, is_ub=False)
         ub = get_boundary_value(ub, is_ub=True)
         val = ub if prev == lb else lb

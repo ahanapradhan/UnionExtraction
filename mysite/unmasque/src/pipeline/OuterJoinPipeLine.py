@@ -22,7 +22,8 @@ class OuterJoinPipeLine(ExtractionPipeLine):
         self.update_state(OUTER_JOIN + DONE)
         self.time_profile.update_for_outer_join(oj.local_elapsed_time, oj.app_calls)
         if not oj.done:
-            self.logger.error("Error in outer join extractor")
+            self.error = "Error in outer join extractor"
+            self.logger.error(self.error)
             return eq
         if not check:
             self.logger.info("No outer join")

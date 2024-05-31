@@ -262,13 +262,11 @@ def is_same_tab_attrib(one: Union[Tuple[str, str], Union[int, Decimal, date]],
 def add_concrete_bounds_as_edge2(pred_list, edge_set, datatype):
     for pred in pred_list:
         ub, lb = get_UB(pred), get_LB(pred)
-        # if datatype == 'numeric':
-        #    ub, lb = round(get_UB(pred), 2), round(get_LB(pred), 2)
         if pred[2] == '<=':
             edge_set.append(((get_tab(pred), get_attrib(pred)), ub))
         elif pred[2] == '>=':
             edge_set.append((lb, (get_tab(pred), get_attrib(pred))))
-        elif pred[2] == 'range':
+        elif pred[2] in ['range', '=']:
             edge_set.append((lb, (get_tab(pred), get_attrib(pred))))
             edge_set.append(((get_tab(pred), get_attrib(pred)), ub))
 

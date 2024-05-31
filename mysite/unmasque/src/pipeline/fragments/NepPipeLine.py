@@ -44,7 +44,8 @@ class NepPipeLine(GenericPipeLine, ABC):
             self.update_state(NEP_COMPARATOR + DONE)
             if matched is None:
                 eq = self.q_generator.rewrite_for_NEP()
-                self.logger.error("Extracted Query is not semantically correct!..not going to try to extract NEP!")
+                self.error = "Extracted Query is not semantically correct!..not going to try to extract NEP!"
+                self.logger.error(self.error)
                 return eq
             if matched:
                 eq = self.q_generator.rewrite_for_NEP()

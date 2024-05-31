@@ -14,7 +14,7 @@ from ..util.aoa_utils import get_min, get_max, get_attrib, get_tab, get_UB, get_
     find_transitive_concrete_upperBs, find_transitive_concrete_lowerBs, need_permanent_mutation, \
     find_concrete_bound_from_filter_bounds, add_item_to_dict, get_op, remove_item_from_dict
 
-from ..util.utils import get_val_plus_delta, add_two, get_mid_val
+from ..util.utils import get_val_plus_delta, add_two, get_mid_val, get_min_and_max_val
 
 
 def check_redundancy(fl_list, a_ineq):
@@ -25,6 +25,18 @@ def check_redundancy(fl_list, a_ineq):
                 and get_LB(a_ineq) == get_LB(pred):
             return True
     return False
+
+
+def put_into_aoa_dict(aoa_dict, attrib, lb, tab, ub):
+    if (tab, attrib) in aoa_dict.keys() and aoa_dict[(tab, attrib)] != (lb, ub):
+        if lb > aoa_dict[(tab, attrib)][0]:
+            aoa_dict[(tab, attrib)] = (lb, aoa_dict[(tab, attrib)][1])
+        if ub < aoa_dict[(tab, attrib)][1]:
+            aoa_dict[(tab, attrib)] = (aoa_dict[(tab, attrib)][0], ub)
+    elif (tab, attrib) not in aoa_dict.keys():
+        aoa_dict[(tab, attrib)] = (lb, ub)
+    else:
+        pass
 
 
 class InequalityPredicate(FilterHolder):
@@ -372,6 +384,9 @@ class InequalityPredicate(FilterHolder):
         # whose d min dict getting mutation? callers or aoa?
 
     def __fill_in_internal_predicates(self):
+        self.arithmetic_filters.clear()
+        self.__move_arithmetic_preds_from_aoa_to_ineq()
+
         for a_eq in self.arithmetic_eq_predicates:
             self.arithmetic_filters.append(a_eq)
         to_remove = []
@@ -383,6 +398,42 @@ class InequalityPredicate(FilterHolder):
                 self.arithmetic_filters.append(a_ineq)
         for t_r in to_remove:
             self.arithmetic_ineq_predicates.remove(t_r)
+        self.arithmetic_filters.sort(key=lambda tup: (tup[0], tup[1]))
+
+    def __move_arithmetic_preds_from_aoa_to_ineq(self):
+        t_aoa = []
+        aoa_dict = {}
+        for aoa in self.aoa_predicates:
+            if isinstance(aoa[0], tuple) and isinstance(aoa[1], tuple):
+                continue
+            t_aoa.append(aoa)
+            if isinstance(aoa[0], tuple):
+                tab, attrib = aoa[0][0], aoa[0][1]
+                ub = aoa[1]
+                lb = get_min(self.constants_dict[self.get_datatype((tab, attrib))])
+                put_into_aoa_dict(aoa_dict, attrib, lb, tab, ub)
+            elif isinstance(aoa[1], tuple):
+                tab, attrib = aoa[1][0], aoa[1][1]
+                lb = aoa[0]
+                ub = get_max(self.constants_dict[self.get_datatype((tab, attrib))])
+                put_into_aoa_dict(aoa_dict, attrib, lb, tab, ub)
+        for t_a in t_aoa:
+            self.aoa_predicates.remove(t_a)
+        for key in aoa_dict.keys():
+            lb, ub = aoa_dict[key][0], aoa_dict[key][1]
+            if lb == ub:
+                self.arithmetic_ineq_predicates.append((key[0], key[1], '=', lb, ub))
+            else:
+                datatype = self.get_datatype((key[0], key[1]))
+                i_min, i_max = get_min_and_max_val(datatype)
+                if lb == i_min:
+                    self.arithmetic_ineq_predicates.append((key[0], key[1], '<=', lb, ub))
+                elif ub == i_max:
+                    self.arithmetic_ineq_predicates.append((key[0], key[1], '>=', lb, ub))
+                else:
+                    self.arithmetic_ineq_predicates.append((key[0], key[1], 'range', lb, ub))
+
+
 
     def __get_equi_join_group(self, tab_attrib: Tuple[str, str]) -> List[Tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:

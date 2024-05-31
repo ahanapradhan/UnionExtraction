@@ -63,10 +63,11 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.time_profile.update_for_from_clause(fc.local_elapsed_time, fc.app_calls)
         io = IOState(query, fc.core_relations)
         if not check or not fc.done:
-            self.logger.error("Some problem while extracting from clause. Aborting!")
+            self.error = "Some problem while extracting from clause. Aborting!"
+            self.logger.error(self.error)
             self.info[FROM_CLAUSE] = None
             io.output = ""
-            return None, self.time_profile
+            return None
         self.info[FROM_CLAUSE] = fc.core_relations
         self.IO[FROM_CLAUSE] = io.get_dic()
         self.core_relations = fc.core_relations
@@ -84,18 +85,19 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
         if not check:
-            self.logger.error("Some problem in Regular mutation pipeline. Aborting extraction!")
+            self.error += "Some problem in Regular mutation pipeline. Aborting extraction!"
+            self.logger.error(self.error)
             self.time_profile.update(time_profile)
             return None
 
         check, time_profile = self._extract_disjunction(self.aoa.arithmetic_filters,
                                                         core_relations, query, time_profile)
         if not check:
-            self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
+            self.error += "Some problem in disjunction pipeline. Aborting extraction!"
+            self.logger.error(self.error)
             self.time_profile.update(time_profile)
             return None
 
-        self.__gen_pipeline_preprocess()
         self.time_profile.update(time_profile)
         self.__gen_pipeline_preprocess()
 
@@ -116,7 +118,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             return None
         if not self.pj.done:
             self.info[PROJECTION] = None
-            self.logger.error("Some error while projection extraction. Aborting extraction!")
+            self.error = "Some error while projection extraction. Aborting extraction!"
+            self.logger.error(self.error)
             return None
         self.pgao_ctx.projection = self.pj
 
@@ -132,7 +135,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.logger.info("Cannot find group by attributes. ")
         if not gb.done:
             self.info[GROUP_BY] = None
-            self.logger.error("Some error while group by extraction. Aborting extraction!")
+            self.error = "Some error while group by extraction. Aborting extraction!"
+            self.logger.error(self.error)
             return None
         self.pgao_ctx.group_by = gb
 
@@ -148,7 +152,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.logger.info("Cannot find aggregations.")
         if not agg.done:
             self.info[AGGREGATE] = None
-            self.logger.error("Some error while extrating aggregations. Aborting extraction!")
+            self.error = "Some error while extrating aggregations. Aborting extraction!"
+            self.logger.error(self.error)
             return None
         self.pgao_ctx.aggregate = agg
 
@@ -164,7 +169,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.logger.info("Cannot find aggregations.")
         if not ob.done:
             self.info[ORDER_BY] = None
-            self.logger.error("Some error while extrating aggregations. Aborting extraction!")
+            self.error = "Some error while extrating aggregations. Aborting extraction!"
+            self.logger.error(self.error)
             return None
         self.pgao_ctx.order_by = ob
 
@@ -180,7 +186,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             self.logger.info("Cannot find limit.")
         if not lm.done:
             self.info[LIMIT] = None
-            self.logger.error("Some error while extracting limit. Aborting extraction!")
+            self.error = "Some error while extracting limit. Aborting extraction!"
+            self.logger.error(self.error)
             return None
 
         self.q_generator.get_datatype = self.filter_extractor.get_datatype  # method

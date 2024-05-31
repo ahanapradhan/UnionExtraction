@@ -66,6 +66,51 @@ def sort_merge(range_values, single_values, values):
         r_counter += 1
 
 
+def update_dict(B_dict, key, val, is_ub):
+    if not isinstance(key, tuple):
+        return
+    if key in B_dict.keys():
+        if is_ub:
+            if val < B_dict[key]:
+                B_dict[key] = val
+        else:
+            if val > B_dict[key]:
+                B_dict[key] = val
+    else:
+        B_dict[key] = val
+
+
+def update_transitive_bound(aoa_predicates, LB_dict, UB_dict, key, val, is_ub):
+    if is_ub:
+        update_dict(UB_dict, key, val, is_ub)
+        for aoa in aoa_predicates:
+            if aoa[0] == key:
+                update_dict(LB_dict, aoa[1], val, not is_ub)
+                break
+    else:
+        update_dict(LB_dict, key, val, is_ub)
+        for aoa in aoa_predicates:
+            if aoa[1] == key:
+                update_dict(UB_dict, aoa[0], val, not is_ub)
+                break
+
+
+def update_LB_UB_dicts(aoa_preds, LB_dict, UB_dict, l_attrib, l_dmin_val, r_attrib,
+                       r_dmin_val):
+    if isinstance(r_attrib, tuple):
+        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict,
+                                key=r_attrib, val=l_dmin_val, is_ub=False)
+    if isinstance(l_attrib, tuple):
+        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict,
+                                key=l_attrib, val=r_dmin_val, is_ub=True)
+    if not isinstance(r_attrib, tuple):
+        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict,
+                                key=l_attrib, val=r_dmin_val, is_ub=True)
+    if not isinstance(l_attrib, tuple):
+        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict,
+                                key=r_attrib, val=l_dmin_val, is_ub=False)
+
+
 class GenPipelineContext:
 
     def __init__(self, core_relations: List[str],
@@ -94,8 +139,10 @@ class GenPipelineContext:
         self.get_dmin_val = filter_extractor.get_dmin_val
         self.get_datatype = filter_extractor.get_datatype
         self.do_permanent_mutation = aoa_extractor.do_permanent_mutation
+        self.restore_dmin_from_dict = aoa_extractor.restore_d_min_from_dict
 
     def doJob(self):
+        self.restore_dmin_from_dict()
         self.__generate_arithmetic_conjunctive_disjunctions()
         self.do_permanent_mutation()
         self.__create_equi_join_graph()
@@ -113,14 +160,16 @@ class GenPipelineContext:
                 self.global_join_graph.append([join_graph_edge[i], join_graph_edge[i + 1]])
 
     def __construct_filter_attribs_dict(self) -> dict:
-        filter_attrib_dict = {}
-        # get filter values and their allowed minimum and maximum value
+        filter_attrib_dict, LB_dict, UB_dict = {}, {}, {}
         self.__add_arithmetic_filters(filter_attrib_dict)
-        LB_dict, UB_dict = self.__make_dmin_dict_from_aoa_le()
-        LB_dict, UB_dict = self.__make_dmin_dict_from_aoa_l(LB_dict, UB_dict)
+        LB_dict, UB_dict = self.__make_dmin_dict_from_aoa_le(self.global_aoa_le_predicates, LB_dict, UB_dict)
+        LB_dict, UB_dict = self.__make_dmin_dict_from_aoa_l(self.global_aoa_l_predicates, LB_dict, UB_dict)
         update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict)
         update_aoa_LB_UB(LB_dict, UB_dict, filter_attrib_dict)
         self.__update_aoa_single_bounds(LB_dict, UB_dict, filter_attrib_dict)
+        all_keys = list(filter_attrib_dict.keys())
+        for entry in all_keys:
+            self.__add_for_joined_attribs(entry, filter_attrib_dict)
         return filter_attrib_dict
 
     def __update_aoa_single_bounds(self, LB_dict: dict, UB_dict: dict, filter_attrib_dict):
@@ -152,9 +201,16 @@ class GenPipelineContext:
         for entry in self.filter_in_predicates:
             filter_attrib_dict[(entry[0], entry[1])] = entry[3]
 
-    def __make_dmin_dict_from_aoa_le(self) -> Tuple[dict, dict]:
-        LB_dict, UB_dict = {}, {}
-        for entry in self.global_aoa_le_predicates:
+    def __add_for_joined_attribs(self, entry, filter_attrib_dict):
+        for edge in self.__algebraic_eq_predicates:
+            if entry in edge:
+                others = [e for e in edge if len(e) == 2 and (e[0] != entry[0] or e[1] != entry[1])]
+                for o in others:
+                    filter_attrib_dict[o] = filter_attrib_dict[entry]
+                break
+
+    def __make_dmin_dict_from_aoa_le(self, global_aoa_le_predicates, LB_dict, UB_dict):
+        for entry in global_aoa_le_predicates:
             l_attrib, r_attrib = entry[0], entry[1]
             if isinstance(l_attrib, tuple):
                 l_dmin_val = self.get_dmin_val(l_attrib[1], l_attrib[0])
@@ -165,31 +221,9 @@ class GenPipelineContext:
             else:
                 r_dmin_val = r_attrib
 
-            if isinstance(r_attrib, tuple):
-                if r_attrib not in LB_dict.keys():
-                    self.__update_transitive_bound(LB_dict, r_attrib, l_dmin_val, is_ub=False)
-                else:
-                    if l_dmin_val > LB_dict[r_attrib]:
-                        self.__update_transitive_bound(LB_dict, r_attrib, l_dmin_val, is_ub=False)
-            if isinstance(l_attrib, tuple):
-                if l_attrib not in UB_dict.keys():
-                    self.__update_transitive_bound(UB_dict, l_attrib, r_dmin_val, is_ub=True)
-                else:
-                    if r_dmin_val < UB_dict[l_attrib]:
-                        self.__update_transitive_bound(UB_dict, l_attrib, r_dmin_val, is_ub=True)
+            update_LB_UB_dicts(global_aoa_le_predicates, LB_dict, UB_dict, l_attrib, l_dmin_val, r_attrib,
+                               r_dmin_val)
         return LB_dict, UB_dict
-
-    def __update_transitive_bound(self, _dict, key, val, is_ub):
-        _dict[key] = val
-        for aoa in self.global_aoa_le_predicates:
-            if is_ub:
-                if aoa[1] == key:
-                    if aoa[0] in _dict.keys():
-                        _dict[aoa[0]] = val
-            else:
-                if aoa[0] == key:
-                    if aoa[1] in _dict.keys():
-                        _dict[aoa[1]] = val
 
     def __update_filter_predicates_from_filter_dict(self):
         filter_dict = []
@@ -205,20 +239,23 @@ class GenPipelineContext:
                 continue
             bounds = self.filter_attrib_dict[key]
             datatype = self.get_datatype((key[0], key[1]))
-            if datatype == 'numeric':
-                if not isinstance(bounds, tuple):  # single value
-                    to_add.add((key[0], key[1], 'equal', float(bounds), float(bounds)))
-                else:
-                    to_add.add((key[0], key[1], 'range', float(bounds[0]), float(bounds[1])))
+            i_min, i_max = get_min_and_max_val(datatype)
+            if not isinstance(bounds, tuple):  # single value
+                op = '='
+                lb, ub = bounds, bounds
             else:
-                if not isinstance(bounds, tuple):  # single value
-                    to_add.add((key[0], key[1], 'equal', bounds, bounds))
+                lb, ub = bounds[0], bounds[1]
+                if lb == i_min:
+                    op = '<='
+                elif ub == i_max:
+                    op = '>='
                 else:
-                    to_add.add((key[0], key[1], 'range', bounds[0], bounds[1]))
+                    op = 'range'
+            to_add.add((key[0], key[1], op, lb, ub))
         self.arithmetic_filters.extend(list(to_add))
 
-    def __make_dmin_dict_from_aoa_l(self, LB_dict: dict, UB_dict: dict) -> Tuple[dict, dict]:
-        for entry in self.global_aoa_l_predicates:
+    def __make_dmin_dict_from_aoa_l(self, global_aoa_l_predicates, LB_dict: dict, UB_dict: dict) -> Tuple[dict, dict]:
+        for entry in global_aoa_l_predicates:
             datatype = self.get_datatype((entry[0]))
             delta, _ = get_constants_for(datatype)
 
@@ -227,18 +264,9 @@ class GenPipelineContext:
             r_dmin_val = self.get_dmin_val(r_attrib[1], r_attrib[0])
 
             r_lb = get_val_plus_delta(datatype, r_dmin_val, -1 * delta)
-            if l_attrib not in UB_dict.keys():
-                UB_dict[l_attrib] = r_lb
-            else:
-                if r_lb < UB_dict[l_attrib]:
-                    UB_dict[l_attrib] = r_lb
-
             l_ub = get_val_plus_delta(datatype, l_dmin_val, 1 * delta)
-            if r_attrib not in LB_dict.keys():
-                LB_dict[r_attrib] = l_ub
-            else:
-                if l_ub > LB_dict[r_attrib]:
-                    LB_dict[r_attrib] = l_ub
+
+            update_LB_UB_dicts(global_aoa_l_predicates, LB_dict, UB_dict, l_attrib, l_ub, r_attrib, r_lb)
 
         return LB_dict, UB_dict
 
@@ -250,7 +278,6 @@ class GenPipelineContext:
                     self.arithmetic_filters.append(p[non_empty_indices[0]])
                 continue
             tab_attribs = [(p[i][0], p[i][1]) for i in non_empty_indices]
-            datatypes = [self.get_datatype(tab_attribs[i]) for i in non_empty_indices]
             uniq_tab_attribs = set(tab_attribs)
             if len(uniq_tab_attribs) == 1:
                 tab, attrib = next(iter(uniq_tab_attribs))
@@ -260,21 +287,14 @@ class GenPipelineContext:
                     values.sort()
                 else:
                     values = []
-                    i_min, i_max = get_min_and_max_val(datatypes[0])
                     for i in non_empty_indices:
                         op = p[i][2]
                         if op == '=':
                             values.append(p[i][3])
                             continue
-                        elif op == 'range':
-                            i_min = p[i][3]
-                            i_max = p[i][4]
-                        elif op == '<=':
-                            i_max = p[i][4]
-                        elif op == '>=':
-                            i_min = p[i][3]
                         else:
-                            ValueError("Impossible operator Symbol!")
+                            i_min = p[i][3]
+                            i_max = p[i][4]
                         values.append((i_min, i_max))
                 self.__adjust_for_in_predicates(attrib, tab, values)
             else:
