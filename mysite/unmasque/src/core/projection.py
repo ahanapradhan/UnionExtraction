@@ -99,8 +99,7 @@ class Projection(GenerationPipeLineBase):
                 val, keys_to_skip = self.check_impact_of_bulk_attribs(attrib, new_result, projection_dep, query,
                                                                       tabname, keys_to_skip, s_value_dict)
             else:
-                val = self.check_impact_of_single_attrib(attrib, new_result, projection_dep, query,
-                                                         tabname)
+                val = self.check_impact_of_single_attrib(attrib, new_result, projection_dep, query, tabname)
             s_values.append((tabname, attrib, val))
 
         for i in range(len(projection_names)):
