@@ -163,7 +163,13 @@
                                                                 
                         </div>
                     </div>
-
+                    <div class="stage in_out" id="trap">
+                        <svg width="200" height="80" viewBox="0 0 217 89" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path data-state="trap" id="trapP" class="path inactive" d="M0.5 88.5V0.5H216.5V88.5H0.5Z" stroke="black" stroke-width="3"/>
+                        </svg>
+                                
+                        <div>TRAP</div> 
+                    </div>
                     <div class="container">
                         <div class="transition" id="nep_t">
                             <svg width="95" height="121" viewBox="0 0 95 121" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -603,7 +609,7 @@
                     console.log(data.curr_states)
                     console.log(data.done_states)
                     $("#progress-updates").html(data.progress_message);
-                    if(data.progress_message == "_WRONG"){
+                    if(data.curr_states[data.curr_states.length-1] == WRONG || data.curr_states[data.curr_states.length-1] == ERROR){
                         console.log("WRONG")
                         //setTimeout(() => window.location.href = "/unmasque/result/{{ token }}",5000)
                         return
@@ -653,6 +659,10 @@
                         //curr_state = data.progress_message
                     }
                     if(curr_state == "_DONE"){
+                        if(data.curr_states.find((x)=>x==WRONG||x==ERROR)){
+                            console.log("Error occurred or the Answer is wrong")
+                            $("#trapP").removeClass("running").removeClass("inactive").addClass("done")
+                        }
                         $("#res_btn").removeAttr("disabled")
                         $("#finished > svg > path").removeClass("running").addClass("done")
                         return

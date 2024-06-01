@@ -564,6 +564,17 @@ svg:has(>.path.done) + div{
     left: 190px;
 }
 
+#trap{
+    top: -335px;
+    left: -1196px;
+}
+
+#trap > div{
+    position: absolute;
+    top:22px;
+    left: 61px;
+}
+
 #res_comp > div{
     position: absolute;
     top:28px;

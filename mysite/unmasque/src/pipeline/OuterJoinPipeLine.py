@@ -1,6 +1,6 @@
 from ...src.core.outer_join import OuterJoin
 from ...src.pipeline.ExtractionPipeLine import ExtractionPipeLine
-from ...src.util.constants import OUTER_JOIN, START, RUNNING, DONE
+from ...src.util.constants import OUTER_JOIN, START, RUNNING, DONE, ERROR
 
 
 class OuterJoinPipeLine(ExtractionPipeLine):
@@ -24,6 +24,7 @@ class OuterJoinPipeLine(ExtractionPipeLine):
         if not oj.done:
             self.error = "Error in outer join extractor"
             self.logger.error(self.error)
+            self.update_state(ERROR)
             return eq
         if not check:
             self.logger.info("No outer join")

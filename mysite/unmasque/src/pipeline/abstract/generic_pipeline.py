@@ -6,7 +6,7 @@ from abc import abstractmethod, ABC
 from ...core.elapsed_time import create_zero_time_profile
 from ...core.factory.ExecutableFactory import ExecutableFactory
 from ...util.Log import Log
-from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING
+from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING, ERROR
 from ....src.core.executable import Executable
 from ....src.core.result_comparator import ResultComparator
 
@@ -61,6 +61,7 @@ class GenericPipeLine(ABC):
             result = self.extract(query)
             if result is None:
                 result = self.error
+                self.update_state(ERROR)
                 return result
             self.verify_correctness(query, result)
             self.time_profile.update_for_app(app.method_call_count)
@@ -68,6 +69,7 @@ class GenericPipeLine(ABC):
         except Exception as e:
             self.error += str(e)
             self.logger.error(self.error)
+            self.update_state(ERROR)
             return self.error
         finally:
             self.update_state(DONE)

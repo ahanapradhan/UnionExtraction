@@ -10,7 +10,7 @@ from ....src.core.view_minimizer import ViewMinimizer
 from ....src.pipeline.abstract.generic_pipeline import GenericPipeLine
 from ....src.util.aoa_utils import get_constants_for
 from ....src.util.constants import FILTER, INEQUALITY, DONE, RUNNING, START, EQUALITY, DB_MINIMIZATION, \
-    SAMPLING, RESTORE_DB
+    SAMPLING, RESTORE_DB, ERROR
 from ....src.util.utils import get_format, get_val_plus_delta
 
 
@@ -69,6 +69,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         if not check or not vm.done:
             self.error = "Cannot do database minimization. "
             self.logger.error(self.error)
+            self.update_state(ERROR)
             self.info[DB_MINIMIZATION] = None
             return False, time_profile
         self.db_restorer.update_last_restored_size(vm.all_sizes)
@@ -86,6 +87,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         time_profile.update_for_where_clause(self.filter_extractor.local_elapsed_time,
                                              self.filter_extractor.app_calls)
         if not self.filter_extractor.done:
+            self.update_state(ERROR)
             self.info[FILTER] = None
             self.error = "Some problem in filter extraction!"
             self.logger.error(self.error)
@@ -106,6 +108,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.update_state(EQUALITY + DONE)
         time_profile.update_for_where_clause(self.equi_join.local_elapsed_time, self.equi_join.app_calls)
         if not self.equi_join.done:
+            self.update_state(ERROR)
             self.info[EQUALITY] = None
             self.error = "Some problem in Equality predicate extraction!"
             self.logger.error(self.error)
@@ -136,6 +139,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             self.info[INEQUALITY] = None
             self.error = "Some error while Inequality Predicates extraction. Aborting extraction!"
             self.logger.error(self.error)
+            self.update_state(ERROR)
             return False, time_profile
         return True, time_profile
 
@@ -163,6 +167,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             try:
                 time_profile = self.__run_extraction_loop(all_eq_predicates, core_relations, ids, query, time_profile)
             except Exception as e:
+                self.update_state(ERROR)
                 self.logger.error("Error in disjunction loop. ", str(e))
                 return False, time_profile
         self.or_predicates = list(zip(*all_eq_predicates))
