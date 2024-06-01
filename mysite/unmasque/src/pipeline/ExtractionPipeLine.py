@@ -7,7 +7,7 @@ from ...src.pipeline.fragments.NepPipeLine import NepPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, PROJECTION, \
-    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, UNION
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, UNION, ERROR
 from ...src.core.aggregation import Aggregation
 from ...src.core.from_clause import FromClause
 from ...src.core.groupby_clause import GroupBy
@@ -63,6 +63,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.time_profile.update_for_from_clause(fc.local_elapsed_time, fc.app_calls)
         io = IOState(query, fc.core_relations)
         if not check or not fc.done:
+            self.update_state(ERROR)
             self.logger.error("Some problem while extracting from clause. Aborting!")
             self.info[FROM_CLAUSE] = None
             io.output = ""
@@ -84,6 +85,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
         if not check:
+            self.update_state(ERROR)
             self.logger.error("Some problem in Regular mutation pipeline. Aborting extraction!")
             self.time_profile.update(time_profile)
             return None
@@ -91,6 +93,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         check, time_profile = self._extract_disjunction(self.aoa.arithmetic_filters,
                                                         core_relations, query, time_profile)
         if not check:
+            self.update_state(ERROR)
             self.logger.error("Some problem in disjunction pipeline. Aborting extraction!")
             self.time_profile.update(time_profile)
             return None
@@ -111,10 +114,12 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.time_profile.update_for_projection(self.pj.local_elapsed_time, self.pj.app_calls)
         self.info[PROJECTION] = {'names': self.pj.projection_names, 'attribs': self.pj.projected_attribs}
         if not check:
+            self.update_state(ERROR)
             self.info[PROJECTION] = None
             self.logger.error("Cannot find projected attributes. ")
             return None
         if not self.pj.done:
+            self.update_state(ERROR)
             self.info[PROJECTION] = None
             self.logger.error("Some error while projection extraction. Aborting extraction!")
             return None
@@ -128,9 +133,11 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.time_profile.update_for_group_by(gb.local_elapsed_time, gb.app_calls)
         self.info[GROUP_BY] = gb.group_by_attrib
         if not check:
+            self.update_state(ERROR)
             self.info[GROUP_BY] = None
             self.logger.info("Cannot find group by attributes. ")
         if not gb.done:
+            self.update_state(ERROR)
             self.info[GROUP_BY] = None
             self.logger.error("Some error while group by extraction. Aborting extraction!")
             return None
@@ -144,9 +151,11 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.time_profile.update_for_aggregate(agg.local_elapsed_time, agg.app_calls)
         self.info[AGGREGATE] = agg.global_aggregated_attributes
         if not check:
+            self.update_state(ERROR)
             self.info[AGGREGATE] = None
             self.logger.info("Cannot find aggregations.")
         if not agg.done:
+            self.update_state(ERROR)
             self.info[AGGREGATE] = None
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
             return None
@@ -160,9 +169,11 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.time_profile.update_for_order_by(ob.local_elapsed_time, ob.app_calls)
         self.info[ORDER_BY] = ob.orderBy_string
         if not ob.has_orderBy:
+            self.update_state(ERROR)
             self.info[ORDER_BY] = None
             self.logger.info("Cannot find aggregations.")
         if not ob.done:
+            self.update_state(ERROR)
             self.info[ORDER_BY] = None
             self.logger.error("Some error while extrating aggregations. Aborting extraction!")
             return None
@@ -176,9 +187,11 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.time_profile.update_for_limit(lm.local_elapsed_time, lm.app_calls)
         self.info[LIMIT] = lm.limit
         if lm.limit is None:
+            self.update_state(ERROR)
             self.info[LIMIT] = None
             self.logger.info("Cannot find limit.")
         if not lm.done:
+            self.update_state(ERROR)
             self.info[LIMIT] = None
             self.logger.error("Some error while extracting limit. Aborting extraction!")
             return None
