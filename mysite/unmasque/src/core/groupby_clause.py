@@ -30,18 +30,16 @@ class GroupBy(GenerationPipeLineBase):
 
             for attrib in attrib_list:
                 self.truncate_core_relations()
-
+                self.logger.debug("Checking for attrib: ", attrib)
                 # determine offset values for this attribute
                 curr_attrib_value = [0, 1, 1]
 
-                key_list = self.joined_attribs  # next((elt for elt in self.global_join_graph if attrib in elt), [])
+                key_list = next((elt for elt in self.global_join_graph if attrib in elt), [])
 
                 # For this table (tabname) and this attribute (attrib), fill all tables now
                 for tabname_inner in self.core_relations:
                     attrib_list_inner = self.global_all_attribs[tabname_inner]
-
                     insert_rows = []
-
                     no_of_rows = 3 if tabname_inner == tabname else 1
                     key_path_flag = any(val in key_list for val in attrib_list_inner)
                     if tabname_inner != tabname and key_path_flag:
@@ -49,13 +47,13 @@ class GroupBy(GenerationPipeLineBase):
 
                     attrib_list_str = ",".join(attrib_list_inner)
                     att_order = f"({attrib_list_str})"
-
+                    self.logger.debug(f"for {tabname_inner} insert {no_of_rows} rows")
                     for k in range(no_of_rows):
                         insert_values = []
                         for attrib_inner in attrib_list_inner:
                             datatype = self.get_datatype((tabname_inner, attrib_inner))
 
-                            if has_attrib_key_condition(attrib, attrib_inner, self.joined_attribs):
+                            if has_attrib_key_condition(attrib, attrib_inner, key_list):
                                 self.insert_values_for_joined_attribs(attrib_inner, curr_attrib_value, datatype,
                                                                       insert_values, k, tabname_inner)
                             else:

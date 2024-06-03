@@ -17,13 +17,24 @@ class MyTestCase(BaseTestCase):
         self.pipeline = factory.create_pipeline(self.conn)
 
     def test_in_agg_aoa(self):
-        query = "select o_clerk, sum(2*o_totalprice + 35.90) as total_price, c_acctbal, n_name " \
+        query = "select o_clerk, avg(2*o_totalprice + 35.90) as total_price, c_acctbal, n_name " \
                 "from orders, customer, nation " \
                 "WHERE c_custkey = o_custkey and c_nationkey = n_nationkey and " \
-                "n_nationkey IN (1, 5, 10, 11, 12, 13) and c_acctbal < 7000 " \
+                "n_nationkey IN (1,3,5,4, 10, 11,12,13) and c_acctbal < 7000 " \
                 "and c_acctbal > 1000 and o_totalprice > 2500 and o_totalprice <= 15005.06 " \
                 "and c_acctbal <= o_totalprice group by o_clerk, c_acctbal, n_name " \
-                "ORDER BY total_price desc, o_clerk, c_acctbal, n_name LIMIT 30;"
+                "ORDER BY total_price desc, o_clerk, c_acctbal, n_name;"
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(self.pipeline.correct)
+
+    def test_in_agg_aoa_debug(self):
+        query = "select o_clerk, avg(2*o_totalprice + 1) as total_price, c_acctbal, n_name " \
+                "from orders, customer, nation " \
+                "WHERE c_custkey = o_custkey and c_nationkey = n_nationkey and c_acctbal < 7000 " \
+                "and c_acctbal > 1000 and o_totalprice > 2500 and o_totalprice <= 15005.06 " \
+                "and c_acctbal <= o_totalprice group by o_clerk, c_acctbal, n_name " \
+                "ORDER BY total_price desc, o_clerk, c_acctbal, n_name;"
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(self.pipeline.correct)

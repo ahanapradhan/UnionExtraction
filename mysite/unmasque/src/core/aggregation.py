@@ -172,7 +172,7 @@ class Aggregation(GenerationPipeLineBase):
                     self.logger.debug(self.dependencies, result_index,
                                       key_list, tabname, temp_vals, result_index)
 
-                    if len(self.dependencies[result_index]) > 1:
+                    if len(self.solution[result_index]) > 1:
                         self.logger.debug("Temp values", temp_vals)  # FOR DEBUG
                         s = 0
                         mi = max_int_val
@@ -259,9 +259,6 @@ class Aggregation(GenerationPipeLineBase):
 
                 for attrib_inner in attrib_list_inner:
                     datatype = self.get_datatype((tabname_inner, attrib_inner))
-
-                    self.logger.debug(tabname_inner, attrib_inner, datatype, a, b)
-
                     if (attrib_inner == attrib or attrib_inner in key_list) and k == no_of_rows - 1:
                         insert_values.append(b)
                     elif attrib_inner == attrib or attrib_inner in key_list:
@@ -292,6 +289,7 @@ class Aggregation(GenerationPipeLineBase):
                         else:
                             plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 2))
                         insert_values.append(plus_val)
+                    self.logger.debug(tabname_inner, attrib_inner, datatype, insert_values[-1])
                 insert_rows.append(tuple(insert_values))
 
             self.logger.debug("Attribute Ordering: ", att_order)  # FOR DEBUG
