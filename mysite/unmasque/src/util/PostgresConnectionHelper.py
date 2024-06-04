@@ -81,8 +81,8 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def execute_sql_fetchall(self, sql, logger=None):
         cur = self.get_cursor()
-        # if logger is not None:
-        #    logger.debug("..cur execute.." + sql)
+        if logger is not None:
+            logger.debug("..cur execute.." + sql)
         try:
             cur.execute(sql)
             res = cur.fetchall()

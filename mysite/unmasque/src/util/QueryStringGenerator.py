@@ -89,7 +89,6 @@ class QueryDetails:
             self.arithmetic_filters.remove(t_r)
 
 
-
 def get_formatted_value(datatype, value):
     if isinstance(value, FrozenList):
         v_list = list(value)
@@ -309,43 +308,19 @@ class QueryStringGenerator:
             if elt[2] == 'range':
                 _range_dict[(elt[0], elt[1])] = (elt[3], elt[4])
             elif elt[2] in ['!=', '<>']:
-                datatype = self.get_datatype((elt[0], elt[1]))
-                _nep_dict[(elt[0], elt[1])] = float(elt[3]) if datatype in NUMBER_TYPES else elt[3]
+                self._add_to_nep_dict(_nep_dict, elt)
         for elt in self._workingCopy.filter_in_predicates:
             if elt[2] == 'IN':
                 _in_dict[(elt[0], elt[1])] = list(elt[3])
 
         for key in _nep_dict.keys():
+            _nep_dict[key].sort()
+
+        for key in _nep_dict.keys():
             datatype = self.get_datatype(key)
-            if key in _range_dict \
-                    and _range_dict[key][0] <= _nep_dict[key] <= _range_dict[key][1]:
-                delta, _ = get_constants_for(datatype)
-                range1 = (_range_dict[key][0], get_val_plus_delta(datatype, _nep_dict[key], -1 * delta))
-                range2 = (get_val_plus_delta(datatype, _nep_dict[key], 1 * delta), _range_dict[key][1])
-                remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])), self._workingCopy.arithmetic_filters)
-                remove_item_from_list((key[0], key[1], 'range', _range_dict[key][0], _range_dict[key][1]),
-                                      self._workingCopy.arithmetic_filters)
-                if key in _in_dict:
-                    _in_dict[key].extend([range1, range2])
-                else:
-                    _in_dict[key] = [range1, range2]
-            if key in _in_dict:
-                if _nep_dict[key] in _in_dict[key]:
-                    _in_dict[key].remove(_nep_dict[key])
-                remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])), self._workingCopy.arithmetic_filters)
-                to_remove, to_add = [], []
-                for v_tup in _in_dict[key]:
-                    if isinstance(v_tup, tuple) and v_tup[0] <= _nep_dict[key] <= v_tup[1]:
-                        range1 = (v_tup[0], get_val_plus_delta(datatype, _nep_dict[key], -1 * delta))
-                        range2 = (get_val_plus_delta(datatype, _nep_dict[key], 1 * delta), v_tup[1])
-                        remove_item_from_list((key[0], key[1], '<>', str(_nep_dict[key])),
-                                              self._workingCopy.arithmetic_filters)
-                        to_add.extend([range1, range2])
-                        to_remove.append(v_tup)
-                for t_r in to_remove:
-                    _in_dict[key].remove(t_r)
-                for t_a in to_add:
-                    _in_dict[key].append(t_a)
+            delta, _ = get_constants_for(datatype)
+            for nep in _nep_dict[key]:
+                self.__check_for_each_neq(_in_dict, nep, _range_dict, datatype, delta, key)
 
         for key in _in_dict.keys():
             t_remove = []
@@ -357,6 +332,7 @@ class QueryStringGenerator:
                             t_remove.append(vi)
             for t_r in t_remove:
                 _in_dict[key].remove(t_r)
+            _in_dict[key] = tuple(sorted(_in_dict[key]))
             l_val = FrozenList(_in_dict[key])
             l_val.freeze()
             _in_dict[key] = l_val
@@ -369,6 +345,49 @@ class QueryStringGenerator:
             self._workingCopy.filter_in_predicates.remove(t_r)
         for key in _in_dict.keys():
             self._workingCopy.filter_in_predicates.append((key[0], key[1], 'IN', _in_dict[key], _in_dict[key]))
+
+    def _add_to_nep_dict(self, _nep_dict, elt):
+        datatype = self.get_datatype((elt[0], elt[1]))
+        if datatype == 'int':
+            value = int(elt[3])
+        elif datatype in NUMBER_TYPES:
+            value = float(elt[3])
+        else:
+            value = elt[3]
+        if (elt[0], elt[1]) in _nep_dict.keys():
+            _nep_dict[(elt[0], elt[1])].append(value)
+        else:
+            _nep_dict[(elt[0], elt[1])] = [value]
+
+    def __check_for_each_neq(self, _in_dict, nep, _range_dict, datatype, delta, key):
+        if key in _range_dict \
+                and _range_dict[key][0] <= nep <= _range_dict[key][1]:
+            range1 = (_range_dict[key][0], get_val_plus_delta(datatype, nep, -1 * delta))
+            range2 = (get_val_plus_delta(datatype, nep, 1 * delta), _range_dict[key][1])
+            remove_item_from_list((key[0], key[1], '<>', str(nep)), self._workingCopy.arithmetic_filters)
+            remove_item_from_list((key[0], key[1], 'range', _range_dict[key][0], _range_dict[key][1]),
+                                  self._workingCopy.arithmetic_filters)
+            if key in _in_dict:
+                _in_dict[key].extend([range1, range2])
+            else:
+                _in_dict[key] = [range1, range2]
+        if key in _in_dict:
+            if nep in _in_dict[key]:
+                _in_dict[key].remove(nep)
+            remove_item_from_list((key[0], key[1], '<>', str(nep)), self._workingCopy.arithmetic_filters)
+            to_remove, to_add = [], []
+            for v_tup in _in_dict[key]:
+                if isinstance(v_tup, tuple) and v_tup[0] <= nep <= v_tup[1]:
+                    range1 = (v_tup[0], get_val_plus_delta(datatype, nep, -1 * delta))
+                    range2 = (get_val_plus_delta(datatype, nep, 1 * delta), v_tup[1])
+                    remove_item_from_list((key[0], key[1], '<>', str(nep)),
+                                          self._workingCopy.arithmetic_filters)
+                    to_add.extend([range1, range2])
+                    to_remove.append(v_tup)
+            for t_r in to_remove:
+                _in_dict[key].remove(t_r)
+            for t_a in to_add:
+                _in_dict[key].append(t_a)
 
     def __consolidate_nep_filters_for_not_in(self):
         self.__absorb_nep_filters()

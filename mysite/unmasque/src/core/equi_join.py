@@ -51,7 +51,7 @@ class U2EquiJoin(FilterHolder):
         to_remove = []
         for i, el_eq in enumerate(self.algebraic_eq_predicates):
             for j, pred in enumerate(el_eq):
-                if len(pred) == 5:
+                if len(pred) > 2:
                     ineqaoa_preds.append(pred)
                     to_remove.append((i, j))
         for tup in to_remove:
@@ -60,13 +60,9 @@ class U2EquiJoin(FilterHolder):
     def handle_unit_eq_group(self, equi_join_group, query) -> bool:
         filter_attribs = []
         datatype = self.get_datatype(equi_join_group[0])
-        # prepared_attrib_list = self._prepare_attrib_list(equi_join_group)
-
         self._extract_filter_on_attrib_set(filter_attribs, query, equi_join_group, datatype)
         self.logger.debug("join group check", equi_join_group, filter_attribs)
         if len(filter_attribs) > 0:
-            # if self.is_it_equality_op(get_op(filter_attribs[0])):
-            #    return False
             equi_join_group.extend(filter_attribs)
         self.algebraic_eq_predicates.append(equi_join_group)
         return True
