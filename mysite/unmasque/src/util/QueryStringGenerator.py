@@ -218,12 +218,18 @@ class QueryStringGenerator:
         self._workingCopy.order_by_op = value.orderby_string
 
     @property
-    def arithmetic_predicates(self):
+    def arithmetic_disjunctions(self):
         return NotImplementedError
 
-    @arithmetic_predicates.setter
-    def arithmetic_predicates(self, remnants):
-        self._workingCopy.filter_in_predicates = remnants.filter_in_predicates
+    @arithmetic_disjunctions.setter
+    def arithmetic_disjunctions(self, remnants):
+        if isinstance(remnants, tuple):
+            if remnants not in self._workingCopy.filter_in_predicates:
+                self._workingCopy.filter_in_predicates.append(remnants)
+        else:
+            for pred in remnants.filter_in_predicates:
+                if pred not in self._workingCopy.filter_in_predicates:
+                    self._workingCopy.filter_in_predicates.append(pred)
         self._workingCopy.optimize_arithmetic_filters()
 
     @property
@@ -281,26 +287,36 @@ class QueryStringGenerator:
         for elt in val:
             tab, attrib, op, neg_val = elt[0], elt[1], elt[2], elt[3]
             datatype = self.get_datatype((tab, attrib))
-            format_val = get_format(datatype, neg_val)
-            if datatype == 'str':
-                output = self._getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
-                self.logger.debug(output)
-                if '%' in output or '_' in output:
-                    predicate = f"{tab}.{attrib} NOT LIKE '{str(output)}' "
-                    self._remove_exact_NE_string_predicate(elt)
-                    predicate_tuple = (tab, attrib, 'NOT LIKE', output)
-                else:
-                    predicate = f"{tab}.{attrib} {str(op)} \'{str(output)}\' "
-                    predicate_tuple = (tab, attrib, str(op), output)
+            if op == '<>':
+                predicate, predicate_tuple = self._extract_nep_op_info(attrib, datatype, elt, neg_val, op, query, tab)
+                self.filter_predicates = predicate_tuple
+            elif op == 'IN':
+                predicate = f"{tab}.{attrib} between {neg_val[0][0]} and {neg_val[0][1]} OR {tab}.{attrib} between {neg_val[1][0]} and {neg_val[1][1]}"
+                self.arithmetic_disjunctions = elt
             else:
-                predicate = f"{tab}.{attrib} {str(op)} {format_val}"
-                predicate_tuple = (tab, attrib, str(op), format_val)
-            self.filter_predicates = predicate_tuple
+                predicate = ""
 
             self._workingCopy.add_to_where_op(predicate)
 
         Q_E = self.write_query()
         return Q_E
+
+    def _extract_nep_op_info(self, attrib, datatype, elt, neg_val, op, query, tab):
+        format_val = get_format(datatype, neg_val)
+        if datatype == 'str':
+            output = self._getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
+            self.logger.debug(output)
+            if '%' in output or '_' in output:
+                predicate = f"{tab}.{attrib} NOT LIKE '{str(output)}' "
+                self._remove_exact_NE_string_predicate(elt)
+                predicate_tuple = (tab, attrib, 'NOT LIKE', output)
+            else:
+                predicate = f"{tab}.{attrib} {str(op)} \'{str(output)}\' "
+                predicate_tuple = (tab, attrib, str(op), output)
+        else:
+            predicate = f"{tab}.{attrib} {str(op)} {format_val}"
+            predicate_tuple = (tab, attrib, str(op), format_val)
+        return predicate, predicate_tuple
 
     def __absorb_nep_filters(self):
         _range_dict, _in_dict, _nep_dict = {}, {}, {}

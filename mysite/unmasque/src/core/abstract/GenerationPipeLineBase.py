@@ -43,7 +43,6 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.attrib_types_dict = genCtx.attrib_types_dict
         self.joined_attribs = genCtx.joined_attribs
         self.filter_in_predicates = genCtx.filter_in_predicates
-
         self.get_datatype = genCtx.get_datatype  # method
 
     def extract_params_from_args(self, args):

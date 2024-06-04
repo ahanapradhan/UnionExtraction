@@ -1,8 +1,11 @@
-from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from .abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
 from .abstract.MinimizerBase import Minimizer
+from .filter import Filter
 from .result_comparator import ResultComparator
 
 from typing import List
+
+from ..util.utils import get_min_and_max_val
 
 
 class NepComparator(ResultComparator):
@@ -90,20 +93,20 @@ class NepMinimizer(Minimizer):
         return self.reduce_Database_Instance(query, table)
 
     def reduce_Database_Instance(self, query, table):
-        self.getCoreSizes()
+        core_sizes = self.getCoreSizes()
         self.logger.debug("Inside get nep")
         tabname1 = self.connectionHelper.queries.get_tabname_1(table)
-        while self.all_sizes[table] > 1:
+        while core_sizes[table] > 1:
             self.logger.debug("Inside minimization loop")
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(table, tabname1)],
                                               self.logger)
-            end_ctid, start_ctid = self.get_start_and_end_ctids(self.all_sizes, query, table, tabname1)
+            end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, table, tabname1)
             self.logger.debug(end_ctid, start_ctid)
             if end_ctid is None:
                 self.connectionHelper.execute_sql(
                     [self.connectionHelper.queries.alter_table_rename_to(tabname1, table)], self.logger)
                 return False  # no role on NEP
-            self.all_sizes = self.update_with_remaining_size(self.all_sizes, end_ctid, start_ctid, table, tabname1)
+            core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, table, tabname1)
         return True
 
     def get_mid_ctids(self, core_sizes, tabname, tabname1):
@@ -174,6 +177,9 @@ class NEP(GenerationPipeLineBase):
 
     def __init__(self, connectionHelper, genCtx):
         super().__init__(connectionHelper, "NEP Extractor", genCtx)
+        self.filter_extractor = Filter(self.connectionHelper, self.core_relations, self.global_min_instance_dict)
+        self.filter_extractor.do_init()
+        self.get_datatype = self.filter_extractor.get_datatype
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
@@ -218,9 +224,10 @@ class NEP(GenerationPipeLineBase):
             val, prev = self.update_attrib_to_see_impact(attrib, tabname)
             self.update_attribs_bulk(join_tabnames, other_attribs, val)
             new_result = self.app.doJob(query)
-            self.update_with_val(attrib, tabname, prev)
+            join_tabnames.extend(tabname)
+            other_attribs.extend(attrib)
             self.update_attribs_bulk(join_tabnames, other_attribs, prev)
-            self.__update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
+            self.__update_filter_attribs_from_res(new_result, filterAttribs, join_tabnames, other_attribs, prev, query)
 
     def __check_per_single_attrib(self, attrib_list, filterAttribs, query, tabname):
         if self.joined_attribs is not None:
@@ -236,9 +243,36 @@ class NEP(GenerationPipeLineBase):
             self.update_with_val(attrib, tabname, val)
             new_result = self.app.doJob(query)
             self.update_with_val(attrib, tabname, prev)
-            self.__update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
+            self.__update_filter_attribs_from_res(new_result, filterAttribs, [tabname], [attrib], prev, query)
 
-    def __update_filter_attribs_from_res(self, new_result, filterAttribs, tabname, attrib, prev):
+    def __update_filter_attribs_from_res(self, new_result, filterAttribs, tabs, attribs, prev, query):
         if not self.app.isQ_result_empty(new_result):
-            filterAttribs.append((tabname, attrib, '<>', prev))
+            filterAttribs.append((tabs[-1], attribs[-1], '<>', prev))
             self.logger.debug(filterAttribs, '++++++_______++++++')
+            key = (tabs[-1], attribs[-1])
+            datatype = self.get_datatype(key)
+            if datatype in NUMBER_TYPES:
+                self.__do_binary_search(attribs, datatype, filterAttribs, key, prev, query, tabs)
+                self.update_attribs_bulk(tabs, attribs, prev)
+
+    def __do_binary_search(self, attribs, datatype, filterAttribs, key, prev, query, tabs):
+        self.logger.debug("Now have to do binary search")
+        filterAttribs.remove((tabs[-1], attribs[-1], '<>', prev))
+        if key in self.filter_attrib_dict.keys():
+            max_val = self.filter_attrib_dict[key][-1]
+            max_val = get_boundary_value(max_val, is_ub=True)
+            min_val = self.filter_attrib_dict[key][0]
+            min_val = get_boundary_value(min_val, is_ub=False)
+        else:
+            min_val, max_val = get_min_and_max_val(datatype)
+        in_attribs = []
+        self.restore_d_min_from_dict()
+        self.update_attribs_bulk(tabs, attribs, max_val)
+        self.filter_extractor.handle_filter_for_nonTextTypes([key], datatype, in_attribs, max_val, prev, query)
+        self.logger.debug(in_attribs)
+        self.restore_d_min_from_dict()
+        self.update_attribs_bulk(tabs, attribs, min_val)
+        self.filter_extractor.handle_filter_for_nonTextTypes([key], datatype, in_attribs, prev, min_val, query)
+        self.logger.debug(in_attribs)
+        filterAttribs.append((tabs[-1], attribs[-1], 'IN', [(in_attribs[0][3], in_attribs[0][4]),
+                                                            (in_attribs[1][3], in_attribs[1][4])]))
