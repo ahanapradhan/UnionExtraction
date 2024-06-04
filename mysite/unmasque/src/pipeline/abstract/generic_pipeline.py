@@ -49,7 +49,7 @@ class GenericPipeLine(ABC):
         self.logger = Log(name, connectionHelper.config.log_level)
         self.correct = False
         self.all_sizes = {}
-        self.error = None
+        self.error = ""
         self.core_relations = None
 
     def process(self, query: str):

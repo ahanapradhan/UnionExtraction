@@ -1,6 +1,6 @@
 from .OuterJoinPipeLine import OuterJoinPipeLine
 from ..core.union import Union
-from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE
+from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE, ERROR
 
 
 class UnionPipeLine(OuterJoinPipeLine):
@@ -61,9 +61,10 @@ class UnionPipeLine(OuterJoinPipeLine):
             u_Q = u_Q[1:-2] + ';'
         result = ""
         if self.pipeLineError:
-            result = f"Could not extract the query due to errors {self.state}." \
+            self.error += f"Could not extract the query due to errors." \
                      f"\nHere's what I have as a half-baked answer:\n{pstr}\n"
-            self.update_state(WRONG)
+            self.update_state(ERROR)
+            return None
         result += u_Q
         return result
 

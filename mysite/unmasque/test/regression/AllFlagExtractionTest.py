@@ -25,12 +25,28 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = False
-        self.conn.config.detect_nep = False
-        self.conn.config.detect_oj = False
-        self.conn.config.detect_or = True
+        self.conn.config.detect_union = True
+        self.conn.config.detect_nep = True
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_or = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+
+    def test_himangshu(self):
+        query = "SELECT l_shipmode, COUNT(*) FROM ORDERS, LINEITEM WHERE " \
+                "O_ORDERKEY = L_ORDERKEY AND O_ORDERSTATUS = 'O' AND L_SHIPDATE >= '1998-04-03' group by l_shipmode;"
+        self.do_test(query)
+
+    def test_nep_bin_search(self):
+        query = "select n_name from nation where n_nationkey between 2 and 5 or n_nationkey between 10 and 13;"
+        self.do_test(query)
+
+    def test_gopi_4june_acctbal(self):
+        query = "select c_name, avg(c_acctbal) as avg_balance, o_clerk from customer, orders " \
+                "where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' and " \
+                "o_orderdate <= DATE '1995-10-23' and c_acctbal = 121.65 group by c_name," \
+                " o_clerk order by c_name, o_clerk;"
+        self.do_test(query)
 
     def test_gnp_Q10(self):
         query = '''SELECT c_name, avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 

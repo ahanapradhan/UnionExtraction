@@ -28,14 +28,14 @@ class NepPipeLine(GenericPipeLine, ABC):
     def verify_correctness(self, query, result):
         raise NotImplementedError("Trouble!")
 
-    def _extract_NEP(self, core_relations, sizes, query, delivery):
+    def _extract_NEP(self, core_relations, sizes, query, genCtx):
         eq = self.q_generator.write_query()
         if not self.connectionHelper.config.detect_nep:
             self.logger.info("NEP check is disabled by config.")
             return eq
 
         nep_minimizer = NepMinimizer(self.connectionHelper, core_relations, sizes)
-        nep_extractor = NEP(self.connectionHelper, delivery)
+        nep_extractor = NEP(self.connectionHelper, genCtx)
 
         for i in range(self.NEP_CUTOFF):
             self.update_state(NEP_ + RESULT_COMPARE + START)
