@@ -49,7 +49,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
     def verify_correctness(self, query, result):
         GenericPipeLine.verify_correctness(self, query, result)
 
-    def extract(self, query):
+    def extract(self, query, speed):
         self.connectionHelper.connectUsingParams()
         self.info[UNION] = "SKIPPED"
         '''
