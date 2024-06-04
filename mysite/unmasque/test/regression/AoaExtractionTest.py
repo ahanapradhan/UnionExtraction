@@ -10,7 +10,7 @@ class MyTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = False
-        self.conn.config.detect_nep = False
+        self.conn.config.detect_nep = True
         self.conn.config.detect_oj = False
         self.conn.config.detect_or = True
         factory = PipeLineFactory()
@@ -20,7 +20,7 @@ class MyTestCase(BaseTestCase):
         query = "select o_clerk, avg(2*o_totalprice + 35.90) as total_price, c_acctbal, n_name " \
                 "from orders, customer, nation " \
                 "WHERE c_custkey = o_custkey and c_nationkey = n_nationkey and " \
-                "n_nationkey IN (1,3,5,4, 10, 11,12,13) and c_acctbal < 7000 " \
+                "n_nationkey IN (1,3,5,4, 10, 11) and c_acctbal < 7000 " \
                 "and c_acctbal > 1000 and o_totalprice > 2500 and o_totalprice <= 15005.06 " \
                 "and c_acctbal <= o_totalprice group by o_clerk, c_acctbal, n_name " \
                 "ORDER BY total_price desc, o_clerk, c_acctbal, n_name;"
