@@ -57,6 +57,15 @@ class GenericPipeLine(ABC):
             self.update_state(WAITING)
             exe_factory = ExecutableFactory()
             app = exe_factory.create_exe(self.connectionHelper)
+            try :
+                self.connectionHelper.connectUsingParams()
+                check_result = app.doJob(query)
+                self.connectionHelper.closeConnection()
+                if isinstance(check_result, str) :
+                    return check_result
+            except Exception as e :
+                self.connectionHelper.closeConnection()
+                return str(e)
             app.method_call_count = 0
             result = self.extract(query)
             if result is None:
