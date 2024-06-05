@@ -28,7 +28,7 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_union = True
         self.conn.config.detect_nep = True
         self.conn.config.detect_oj = True
-        self.conn.config.detect_or = False
+        self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
