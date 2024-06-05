@@ -85,18 +85,10 @@ class Filter(UN2WhereClause):
 
     def get_filter_predicates(self, query: str) -> list:
         filter_attribs = []
-        # total_attribs = 0
-        # d_plus_value = copy.deepcopy(self.global_d_plus_value)
-        # attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
-
         for tabname in self.core_relations:
             attrib_list = self.global_all_attribs[tabname]
-            # total_attribs += len(attrib_list)
             for attrib in attrib_list:
                 datatype = self.get_datatype((tabname, attrib))
-                # one_attrib = (tabname, attrib, attrib_max_length, d_plus_value)
-                # one_attrib = (tabname, attrib)  # , self.global_attrib_max_length, self.global_d_plus_value)
-                # self.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
                 self.extract_filter_on_attrib_set(filter_attribs, query, [(tabname, attrib)], datatype)
         return filter_attribs
 

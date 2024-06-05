@@ -218,14 +218,13 @@ class NEP(GenerationPipeLineBase):
         for attrib in joined_attribs:
             if attrib in skip_attribs:
                 continue
-            join_tabnames = []
             other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
             skip_attribs.extend(other_attribs)
+            join_tabnames = []
             val, prev = self.update_attrib_to_see_impact(attrib, tabname)
             self.update_attribs_bulk(join_tabnames, other_attribs, val)
             new_result = self.app.doJob(query)
-            join_tabnames.extend(tabname)
-            other_attribs.extend(attrib)
+            other_attribs.append(attrib)
             self.update_attribs_bulk(join_tabnames, other_attribs, prev)
             self.__update_filter_attribs_from_res(new_result, filterAttribs, join_tabnames, other_attribs, prev, query)
 
@@ -257,6 +256,7 @@ class NEP(GenerationPipeLineBase):
 
     def __do_binary_search(self, attribs, datatype, filterAttribs, key, prev, query, tabs):
         self.logger.debug("Now have to do binary search")
+        i_min, i_max = get_min_and_max_val(datatype)
         filterAttribs.remove((tabs[-1], attribs[-1], '<>', prev))
         if key in self.filter_attrib_dict.keys():
             max_val = self.filter_attrib_dict[key][-1]
@@ -264,7 +264,7 @@ class NEP(GenerationPipeLineBase):
             min_val = self.filter_attrib_dict[key][0]
             min_val = get_boundary_value(min_val, is_ub=False)
         else:
-            min_val, max_val = get_min_and_max_val(datatype)
+            min_val, max_val = i_min, i_max
         in_attribs = []
         self.restore_d_min_from_dict()
         self.update_attribs_bulk(tabs, attribs, max_val)
@@ -274,5 +274,8 @@ class NEP(GenerationPipeLineBase):
         self.update_attribs_bulk(tabs, attribs, min_val)
         self.filter_extractor.handle_filter_for_nonTextTypes([key], datatype, in_attribs, prev, min_val, query)
         self.logger.debug(in_attribs)
+        if (tabs[-1], attribs[-1], '>=', i_max, i_max) in in_attribs \
+                and (tabs[-1], attribs[-1], '<=', i_min, i_min) in in_attribs:
+            return
         filterAttribs.append((tabs[-1], attribs[-1], 'IN', [(in_attribs[0][3], in_attribs[0][4]),
                                                             (in_attribs[1][3], in_attribs[1][4])]))

@@ -106,6 +106,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return other_attribs
 
     def update_attribs_bulk(self, join_tabnames, other_attribs, val) -> None:
+        join_tabnames.clear()
         for other_attrib in other_attribs:
             join_tabname = self.find_tabname_for_given_attrib(other_attrib)
             join_tabnames.append(join_tabname)

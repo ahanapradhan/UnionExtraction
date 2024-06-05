@@ -25,9 +25,9 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
+        self.conn.config.detect_union = False
         self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = True
+        self.conn.config.detect_oj = False
         self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
@@ -38,7 +38,25 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_nep_bin_search(self):
-        query = "select n_name from nation where n_nationkey between 2 and 5 or n_nationkey between 10 and 13;"
+        query = "select n_name, r_name from nation, region where n_regionkey = r_regionkey and " \
+                "(n_nationkey between 2 and 5 or n_nationkey between 10 and 13);"
+        self.do_test(query)
+
+    def test_nep_bin_search1(self):
+        query = "Select l_shipmode, Sum(l_extendedprice) as revenue From lineitem " \
+                "Where l_orderkey between 125 and 135 OR l_orderkey between 236 and 369 " \
+                "and l_shipdate between '1993-01-01' and '1994-12-31' " \
+                "Group By l_shipmode " \
+                "Order By l_shipmode asc Limit 100;"
+        self.do_test(query)
+
+    def test_nep_bin_search2(self):
+        query = "select l_shipmode,sum(l_extendedprice) as revenue " \
+                "from lineitem " \
+                "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
+                "and ((l_orderkey > 124 and l_orderkey < 370) and " \
+                "l_orderkey NOT IN (133, 134, 135)) group by l_shipmode order by l_shipmode " \
+                "limit 100;"
         self.do_test(query)
 
     def test_gopi_4june_acctbal(self):

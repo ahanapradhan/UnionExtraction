@@ -226,6 +226,10 @@ class QueryStringGenerator:
         if isinstance(remnants, tuple):
             if remnants not in self._workingCopy.filter_in_predicates:
                 self._workingCopy.filter_in_predicates.append(remnants)
+                tab, attrib, op, neg_val = remnants[0], remnants[1], remnants[2], remnants[3]
+                self._workingCopy.arithmetic_filters.remove((tab, attrib, 'range',
+                                                             min(neg_val[0][0], neg_val[1][0]),
+                                                             max(neg_val[1][1], neg_val[0][1])))
         else:
             for pred in remnants.filter_in_predicates:
                 if pred not in self._workingCopy.filter_in_predicates:
@@ -293,6 +297,9 @@ class QueryStringGenerator:
             elif op == 'IN':
                 predicate = f"{tab}.{attrib} between {neg_val[0][0]} and {neg_val[0][1]} OR {tab}.{attrib} between {neg_val[1][0]} and {neg_val[1][1]}"
                 self.arithmetic_disjunctions = elt
+                # self._workingCopy.where_op.replace(f"{tab}.{attrib} between {neg_val[0][0]} and {neg_val[1][1]}", "")
+                # self._workingCopy.where_op.replace("and and ", "and ")
+                # self._workingCopy.where_op.replace("andand ", "and ")
             else:
                 predicate = ""
 
