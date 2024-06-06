@@ -107,7 +107,10 @@ class Projection(GenerationPipeLineBase):
                 attrib_tup = projection_dep[i][0]
                 projected_attrib.append(attrib_tup[1])
             else:
-                projected_attrib.append('')
+                if len(projection_dep[i]) == 0 and new_result[0][i] != '1' :
+                    projected_attrib.append(str(new_result[0][i]))
+                else:
+                    projected_attrib.append('')
 
         return projected_attrib, projection_names, projection_dep, True
 

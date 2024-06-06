@@ -25,6 +25,7 @@ class GroupBy(GenerationPipeLineBase):
         self.group_by_attrib = []
 
     def doExtractJob(self, query):
+        check_array = [0] * len(self.projected_attribs)
         for tabname in self.core_relations:
             attrib_list = self.global_all_attribs[tabname]
 
@@ -66,6 +67,15 @@ class GroupBy(GenerationPipeLineBase):
                 self.see_d_min()
                 new_result = self.app.doJob(query)
 
+                #checking for 1 as constant in select clause.
+                for i in range(len(self.projected_attribs)):
+                    if self.projected_attribs[i] == '' :
+                        for j in range(1, len(new_result)):
+                            if new_result[j][i] != '1':
+                                check_array [i] = 2
+                            elif new_result[j][i] == '1' and check_array[i] != 2:
+                                check_array [i] = 1
+
                 if self.app.isQ_result_empty(new_result):
                     self.logger.error('some error in generating new database. '
                                       'Result is empty. Can not identify Grouping')
@@ -79,6 +89,10 @@ class GroupBy(GenerationPipeLineBase):
                     self.has_groupby = True
 
         self.remove_duplicates()
+
+        for i in range(len(check_array)):
+            if (check_array[i] == 1):
+                self.projected_attribs[i] = '1'
 
         for elt in self.global_filter_predicates:
             if elt[1] not in self.group_by_attrib and elt[1] in self.projected_attribs and (
