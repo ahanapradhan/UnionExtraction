@@ -68,13 +68,15 @@ class GroupBy(GenerationPipeLineBase):
                 new_result = self.app.doJob(query)
 
                 #checking for 1 as constant in select clause.
+                count_there = 2
+                const_1_there = 1
                 for i in range(len(self.projected_attribs)):
-                    if self.projected_attribs[i] == '' :
-                        for j in range(1, len(new_result)):
+                    if self.projected_attribs[i] == '':
+                        for j in range(1, len(new_result)):  # skipping the header of result
                             if new_result[j][i] != '1':
-                                check_array [i] = 2
-                            elif new_result[j][i] == '1' and check_array[i] != 2:
-                                check_array [i] = 1
+                                check_array[i] = count_there
+                            elif new_result[j][i] == '1' and check_array[i] != count_there:
+                                check_array[i] = const_1_there
 
                 if self.app.isQ_result_empty(new_result):
                     self.logger.error('some error in generating new database. '
