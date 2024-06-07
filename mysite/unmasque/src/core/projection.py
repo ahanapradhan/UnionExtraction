@@ -5,6 +5,7 @@ import numpy as np
 from sympy import symbols, expand, collect, nsimplify, Rational, Integer
 
 from .dataclass.genPipeline_context import GenPipelineContext
+from ..util.constants import CONST_1_VALUE
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
@@ -107,9 +108,11 @@ class Projection(GenerationPipeLineBase):
                 attrib_tup = projection_dep[i][0]
                 projected_attrib.append(attrib_tup[1])
             else:
-                if len(projection_dep[i]) == 0 and new_result[0][i] != '1' :
+                if len(projection_dep[i]) == 0 and new_result[0][i] != CONST_1_VALUE :
+                    # If no dependency is there and value is not 1 in result this means it is constant.
                     projected_attrib.append(str(new_result[0][i]))
                 else:
+                    # No dependency and value is one so in groupby file will differentiate between count or 1.
                     projected_attrib.append('')
 
         return projected_attrib, projection_names, projection_dep, True

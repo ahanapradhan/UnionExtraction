@@ -7,6 +7,7 @@ from .dataclass.genPipeline_context import GenPipelineContext
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value, NUMBER_TYPES
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
+from ..util.constants import COUNT_THERE, CONST_1_THERE, CONST_1_VALUE
 
 NON_TEXT_TYPES = ['date', 'int', 'integer', 'numeric', 'float']
 
@@ -25,7 +26,9 @@ class GroupBy(GenerationPipeLineBase):
         self.group_by_attrib = []
 
     def doExtractJob(self, query):
+        # Array to check for 1 as constant or count in select clause. (will be used later)
         check_array = [0] * len(self.projected_attribs)
+
         for tabname in self.core_relations:
             attrib_list = self.global_all_attribs[tabname]
 
@@ -67,16 +70,14 @@ class GroupBy(GenerationPipeLineBase):
                 self.see_d_min()
                 new_result = self.app.doJob(query)
 
-                #checking for 1 as constant in select clause.
-                count_there = 2
-                const_1_there = 1
+                # Checking for 1 as constant in select clause or count is present.
                 for i in range(len(self.projected_attribs)):
                     if self.projected_attribs[i] == '':
                         for j in range(1, len(new_result)):  # skipping the header of result
-                            if new_result[j][i] != '1':
-                                check_array[i] = count_there
-                            elif new_result[j][i] == '1' and check_array[i] != count_there:
-                                check_array[i] = const_1_there
+                            if new_result[j][i] != CONST_1_VALUE:
+                                check_array[i] = COUNT_THERE
+                            elif new_result[j][i] == CONST_1_VALUE and check_array[i] != COUNT_THERE:
+                                check_array[i] = CONST_1_THERE
 
                 if self.app.isQ_result_empty(new_result):
                     self.logger.error('some error in generating new database. '
@@ -92,15 +93,11 @@ class GroupBy(GenerationPipeLineBase):
 
         self.remove_duplicates()
 
+        # Putting the value 1 where 1 is there in the result wrt array.
         for i in range(len(check_array)):
-            if (check_array[i] == 1):
-                self.projected_attribs[i] = '1'
+            if check_array[i] == CONST_1_THERE:
+                self.projected_attribs[i] = CONST_1_VALUE
 
-        for elt in self.global_filter_predicates:
-            if elt[1] not in self.group_by_attrib and elt[1] in self.projected_attribs and (
-                    elt[2] == '=' or elt[2] == 'equal'):
-                self.group_by_attrib.append(elt[1])
-        self.logger.debug(self.group_by_attrib)
         return True
 
     def insert_values_for_single_attrib(self, attrib_inner, datatype, insert_values, tabname_inner):
