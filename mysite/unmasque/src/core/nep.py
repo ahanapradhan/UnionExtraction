@@ -218,14 +218,13 @@ class NEP(GenerationPipeLineBase):
         for attrib in joined_attribs:
             if attrib in skip_attribs:
                 continue
-            join_tabnames = []
             other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
             skip_attribs.extend(other_attribs)
+            join_tabnames = []
             val, prev = self.update_attrib_to_see_impact(attrib, tabname)
             self.update_attribs_bulk(join_tabnames, other_attribs, val)
             new_result = self.app.doJob(query)
-            join_tabnames.extend(tabname)
-            other_attribs.extend(attrib)
+            other_attribs.append(attrib)
             self.update_attribs_bulk(join_tabnames, other_attribs, prev)
             self.__update_filter_attribs_from_res(new_result, filterAttribs, join_tabnames, other_attribs, prev, query)
 
@@ -249,30 +248,3 @@ class NEP(GenerationPipeLineBase):
         if not self.app.isQ_result_empty(new_result):
             filterAttribs.append((tabs[-1], attribs[-1], '<>', prev))
             self.logger.debug(filterAttribs, '++++++_______++++++')
-            key = (tabs[-1], attribs[-1])
-            datatype = self.get_datatype(key)
-            if datatype in NUMBER_TYPES:
-                self.__do_binary_search(attribs, datatype, filterAttribs, key, prev, query, tabs)
-                self.update_attribs_bulk(tabs, attribs, prev)
-
-    def __do_binary_search(self, attribs, datatype, filterAttribs, key, prev, query, tabs):
-        self.logger.debug("Now have to do binary search")
-        filterAttribs.remove((tabs[-1], attribs[-1], '<>', prev))
-        if key in self.filter_attrib_dict.keys():
-            max_val = self.filter_attrib_dict[key][-1]
-            max_val = get_boundary_value(max_val, is_ub=True)
-            min_val = self.filter_attrib_dict[key][0]
-            min_val = get_boundary_value(min_val, is_ub=False)
-        else:
-            min_val, max_val = get_min_and_max_val(datatype)
-        in_attribs = []
-        self.restore_d_min_from_dict()
-        self.update_attribs_bulk(tabs, attribs, max_val)
-        self.filter_extractor.handle_filter_for_nonTextTypes([key], datatype, in_attribs, max_val, prev, query)
-        self.logger.debug(in_attribs)
-        self.restore_d_min_from_dict()
-        self.update_attribs_bulk(tabs, attribs, min_val)
-        self.filter_extractor.handle_filter_for_nonTextTypes([key], datatype, in_attribs, prev, min_val, query)
-        self.logger.debug(in_attribs)
-        filterAttribs.append((tabs[-1], attribs[-1], 'IN', [(in_attribs[0][3], in_attribs[0][4]),
-                                                            (in_attribs[1][3], in_attribs[1][4])]))

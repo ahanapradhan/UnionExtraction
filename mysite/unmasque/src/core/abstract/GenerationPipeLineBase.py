@@ -2,7 +2,7 @@ import ast
 import copy
 import random
 from datetime import date, timedelta
-from typing import Union, Tuple
+from typing import Union
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..dataclass.genPipeline_context import GenPipelineContext
@@ -106,6 +106,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return other_attribs
 
     def update_attribs_bulk(self, join_tabnames, other_attribs, val) -> None:
+        join_tabnames.clear()
         for other_attrib in other_attribs:
             join_tabname = self.find_tabname_for_given_attrib(other_attrib)
             join_tabnames.append(join_tabname)
@@ -188,10 +189,3 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         for tab_key in self.global_all_attribs.keys():
             if find_attrib in self.global_all_attribs[tab_key]:
                 return tab_key
-        '''
-        for entry in self.global_attrib_types:
-            tabname = entry[0]
-            attrib = entry[1]
-            if attrib == find_attrib:
-                return tabname
-        '''

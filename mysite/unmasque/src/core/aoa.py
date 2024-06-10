@@ -39,6 +39,15 @@ def put_into_aoa_dict(aoa_dict, attrib, lb, tab, ub):
         pass
 
 
+def check_aoa_edge_set_validity(edge_set):
+    has_constant = False
+    for tup in edge_set:
+        if not isinstance(tup[0], tuple) or not isinstance(tup[1], tuple):
+            has_constant = True
+            break
+    return has_constant
+
+
 class InequalityPredicate(FilterHolder):
 
     def __init__(self, connectionHelper: AbstractConnectionHelper,
@@ -63,20 +72,33 @@ class InequalityPredicate(FilterHolder):
         self.restore_d_min_from_dict()
         if self.__ineaoa_enabled:
             self.__extract_aoa_core(query)
-            self.__cleanup_predicates()
         self.__fill_in_internal_predicates()
         self.restore_d_min_from_dict()
+        self.logger.debug("all aoa done")
         return True
 
+    def __create_joined_attribs(self):
+        ce = []
+        for tup in self.algebraic_eq_predicates:
+            for t in tup:
+                if t not in ce:
+                    ce.append(t)
+        return ce
+
     def __extract_aoa_core(self, query):
+        cleanup = False
         edge_set_dict = self.__algo4_create_edgeSet_E()
         self.logger.debug("edge_set_dict:", edge_set_dict)
+        if len(edge_set_dict):
+            cleanup = True
         for datatype in edge_set_dict.keys():
             E, L = self.algo7_find_aoa(edge_set_dict, datatype, query)
             self.logger.debug("E: ", E)
             self.logger.debug("L: ", L)
             self.aoa_predicates.extend(E)
             self.aoa_less_thans.extend(L)
+        if cleanup:
+            self.__cleanup_predicates()
 
     def __cleanup_predicates(self):
         self.__remove_arithmetic_eqs_from_aoa(self.aoa_predicates)
@@ -341,8 +363,10 @@ class InequalityPredicate(FilterHolder):
             ineq_group = filtered_dict[datatype]
             self.__create_dashed_edges(ineq_group, edge_set)
             optimize_edge_set(edge_set)
-            add_concrete_bounds_as_edge2(ineq_group, edge_set, datatype)
-            edge_set_dict[datatype] = edge_set
+            add_concrete_bounds_as_edge2(ineq_group, edge_set, self.__create_joined_attribs())
+            check = check_aoa_edge_set_validity(edge_set)
+            if check:
+                edge_set_dict[datatype] = edge_set
         return edge_set_dict
 
     def do_permanent_mutation(self):
@@ -397,7 +421,7 @@ class InequalityPredicate(FilterHolder):
             else:
                 self.arithmetic_filters.append(a_ineq)
         for t_r in to_remove:
-            self.arithmetic_ineq_predicates.remove(t_r)
+            remove_item_from_list(t_r, self.arithmetic_ineq_predicates)
         self.arithmetic_filters.sort(key=lambda tup: (tup[0], tup[1]))
 
     def __move_arithmetic_preds_from_aoa_to_ineq(self):
@@ -418,7 +442,7 @@ class InequalityPredicate(FilterHolder):
                 ub = get_max(self.constants_dict[self.get_datatype((tab, attrib))])
                 put_into_aoa_dict(aoa_dict, attrib, lb, tab, ub)
         for t_a in t_aoa:
-            self.aoa_predicates.remove(t_a)
+            remove_item_from_list(t_a, self.aoa_predicates)
         for key in aoa_dict.keys():
             lb, ub = aoa_dict[key][0], aoa_dict[key][1]
             if lb == ub:
@@ -432,8 +456,6 @@ class InequalityPredicate(FilterHolder):
                     self.arithmetic_ineq_predicates.append((key[0], key[1], '>=', lb, ub))
                 else:
                     self.arithmetic_ineq_predicates.append((key[0], key[1], 'range', lb, ub))
-
-
 
     def __get_equi_join_group(self, tab_attrib: Tuple[str, str]) -> List[Tuple[str, str]]:
         for eq in self.algebraic_eq_predicates:
@@ -502,7 +524,9 @@ class InequalityPredicate(FilterHolder):
     def __create_dashed_edge_from_oneTotwo(self, edge_set, one, two) -> None:
         tab_attrib = (get_tab(one), get_attrib(one))
         next_tab_attrib = (get_tab(two), get_attrib(two))
-        check = self.__is_dmin_val_leq_LB(two, one)
+        possible_join = [tab_attrib, next_tab_attrib]
+        check = self.__is_dmin_val_leq_LB(two, one) and not (possible_join in self.algebraic_eq_predicates
+                                                             or reversed(possible_join) in self.algebraic_eq_predicates)
         if check:
             edge_set.append(tuple([next_tab_attrib, tab_attrib]))
 
