@@ -260,9 +260,11 @@ def is_same_tab_attrib(one: Union[Tuple[str, str], Union[int, Decimal, date]],
 
 
 def add_concrete_bounds_as_edge2(pred_list, edge_set, joined_attribs):
+    skipped = []
     for pred in pred_list:
         tab, attrib, ub, lb = get_tab(pred), get_attrib(pred), get_UB(pred), get_LB(pred)
         if (tab, attrib) in joined_attribs:
+            skipped.append(pred)
             continue
         if pred[2] == '<=':
             edge_set.append(((tab, attrib), ub))
@@ -271,6 +273,7 @@ def add_concrete_bounds_as_edge2(pred_list, edge_set, joined_attribs):
         elif pred[2] in ['range', '=']:
             edge_set.append((lb, (tab, attrib)))
             edge_set.append(((tab, attrib), ub))
+    return skipped
 
 
 def split_directed_path(directed_path, is_UB):

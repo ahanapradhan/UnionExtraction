@@ -86,8 +86,8 @@ class InequalityPredicate(FilterHolder):
         return ce
 
     def __extract_aoa_core(self, query):
-        cleanup = False
-        edge_set_dict = self.__algo4_create_edgeSet_E()
+        cleanup, edge_set_dict = False, {}
+        edge_set_dict.update(self.__create_edge_setze())
         self.logger.debug("edge_set_dict:", edge_set_dict)
         if len(edge_set_dict):
             cleanup = True
@@ -99,6 +99,15 @@ class InequalityPredicate(FilterHolder):
             self.aoa_less_thans.extend(L)
         if cleanup:
             self.__cleanup_predicates()
+
+    def __create_edge_setze(self):
+        edge_set_dict, non_aoa = self.__algo4_create_edgeSet_E()
+        for n_a in non_aoa:
+            if n_a[2] == '=':
+                self.arithmetic_eq_predicates.append(n_a)
+            else:
+                self.arithmetic_ineq_predicates.append(n_a)
+        return edge_set_dict
 
     def __cleanup_predicates(self):
         self.__remove_arithmetic_eqs_from_aoa(self.aoa_predicates)
@@ -355,19 +364,19 @@ class InequalityPredicate(FilterHolder):
             bound_val = get_extreme(self.constants_dict[datatype])
         return bound_val
 
-    def __algo4_create_edgeSet_E(self) -> dict:
+    def __algo4_create_edgeSet_E(self):
         filtered_dict = self.__isolate_ineq_aoa_preds_per_datatype()
-        edge_set_dict = {}
+        edge_set_dict, not_aoa = {}, []
         for datatype in filtered_dict:
             edge_set = []
             ineq_group = filtered_dict[datatype]
             self.__create_dashed_edges(ineq_group, edge_set)
             optimize_edge_set(edge_set)
-            add_concrete_bounds_as_edge2(ineq_group, edge_set, self.__create_joined_attribs())
+            not_aoa.extend(add_concrete_bounds_as_edge2(ineq_group, edge_set, self.__create_joined_attribs()))
             check = check_aoa_edge_set_validity(edge_set)
             if check:
                 edge_set_dict[datatype] = edge_set
-        return edge_set_dict
+        return edge_set_dict, not_aoa
 
     def do_permanent_mutation(self):
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_less_thans))
