@@ -14,6 +14,10 @@ from ....src.util.constants import FILTER, INEQUALITY, DONE, RUNNING, START, EQU
 from ....src.util.utils import get_format, get_val_plus_delta
 
 
+def get_eq_filters(arithmetics):
+    return [pred for pred in arithmetics if pred[2] in ['equal', '=']]
+
+
 class DisjunctionPipeLine(GenericPipeLine, ABC):
 
     def __init__(self, connectionHelper, name):
