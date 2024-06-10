@@ -64,23 +64,22 @@ class U2EquiJoin(FilterHolder):
         self.logger.debug("join group check", equi_join_group, filter_attribs)
         if len(filter_attribs) > 0:
             equi_join_group.extend(filter_attribs)
-        self.algebraic_eq_predicates.append(equi_join_group)
+        if not len(filter_attribs) or filter_attribs[0][2] != '=':
+            self.algebraic_eq_predicates.append(equi_join_group)
+        else:
+            return False
         return True
 
     def handle_higher_eq_groups(self, equi_join_group, query):
         seq = list(range(len(equi_join_group)))
         t_all_paritions = merge_equivalent_paritions(seq)
-        done = None
         for part in t_all_paritions:
             check_part = min(part, key=len)
-            attrib_list = []
-            for i in check_part:
-                attrib_list.append(equi_join_group[i])
+            attrib_list = [equi_join_group[i] for i in check_part]
             check = self.handle_unit_eq_group(attrib_list, query)
             if check:
-                done = attrib_list
-                break
-        return done
+                return attrib_list
+        return None
 
     def algo2_preprocessing(self) -> Tuple[dict, list]:
         eq_groups_dict = {}
