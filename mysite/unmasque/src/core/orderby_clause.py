@@ -4,7 +4,7 @@ import frozenlist
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES
-from ...src.util.constants import COUNT, NO_ORDER, SUM
+from ...src.util.constants import COUNT, NO_ORDER, SUM, ORPHAN_COLUMN
 from ...src.util.utils import get_unused_dummy_val, get_dummy_val_for, \
     get_val_plus_delta, get_format, get_char
 
@@ -127,7 +127,7 @@ class OrderBy(GenerationPipeLineBase):
                     row_num = 3
             for elt in cand_list:
                 order = self.generateData(elt, self.orderby_list, query, row_num)
-                if order is None:
+                if order is None or elt.name == ORPHAN_COLUMN:
                     remove_list.append(elt)
                 elif order != NO_ORDER:
                     self.has_orderBy = True
@@ -138,6 +138,7 @@ class OrderBy(GenerationPipeLineBase):
             for elt in remove_list:
                 cand_list.remove(elt)
         curr_orderby_str = ", ".join(curr_orderby)
+
         self.logger.debug(curr_orderby_str)
         return curr_orderby_str
 
