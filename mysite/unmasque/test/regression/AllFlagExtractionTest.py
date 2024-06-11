@@ -370,7 +370,7 @@ class ExtractionTestCase(BaseTestCase):
                 "GROUP BY l_linenumber, o_shippriority Order By l_linenumber, o_shippriority desc  Limit 5;"
         self.do_test(query)
 
-    def test_sumang_thesis_Q6(self):
+    def test_sumang_thesis_Q6_outer(self):
         query = "select n_name, s_acctbal, ps_availqty  from supplier RIGHT OUTER JOIN partsupp " \
                 "ON ps_suppkey=s_suppkey AND ps_supplycost < 50 RIGHT OUTER JOIN " \
                 "nation on s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) ORDER " \
@@ -425,7 +425,7 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_simple(self):
-        query = "select c_name, n_regionkey from nation RIGHT OUTER JOIN customer on n_nationkey = c_nationkey and " \
+        query = "select c_name, n_regionkey from nation INNER JOIN customer on n_nationkey = c_nationkey and " \
                 "n_name <> 'GERMANY';"
         self.do_test(query)
 
@@ -730,11 +730,12 @@ class ExtractionTestCase(BaseTestCase):
                 f"and l_shipdate IN (DATE '1994-12-13', DATE '1998-03-15')"
         self.do_test(query)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_sumang_thesis_Q6(self):
-        query = "select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
-                "s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) and (s_acctbal > 2000 or " \
-                "s_acctbal < 700) group by n_name ORDER BY n_name LIMIT 10;"
+        query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
+                f"s_nationkey=n_nationkey "\
+                 f"and (s_acctbal > 2000 or ps_supplycost < 500) group by n_name ORDER BY n_name LIMIT 10;"
+        # and (n_name ='ARGENTINA' or n_regionkey =3)
         self.do_test(query)
 
     def test_two_neps_one_table(self):

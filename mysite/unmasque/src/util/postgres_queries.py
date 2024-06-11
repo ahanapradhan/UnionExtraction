@@ -82,6 +82,13 @@ class PostgresQueries(CommonQueries):
             esc_string = f"({esc_string})"
         return f"INSERT INTO {tab} {att_order}  VALUES {esc_string};"
 
+    def update_key_attrib_with_val(self, tab, attrib, value, prev, qoted):
+        if qoted:
+            value = f"'{value}'"
+            prev = f"'{prev}'"
+        query = f"UPDATE {tab} SET {attrib} = CASE WHEN {attrib} = {prev} THEN {value} WHEN {attrib} = {value} THEN {prev} ELSE {prev} END;"
+        return query
+
     def update_tab_attrib_with_value(self, tab, attrib, value):
         str_value = str(value)
         query = f"UPDATE {tab}  SET {attrib}={str_value};"
