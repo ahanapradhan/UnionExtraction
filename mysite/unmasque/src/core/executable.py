@@ -1,5 +1,5 @@
 from ...src.core.abstract.ExtractorBase import Base
-from ...src.util.constants import REL_ERROR, RELATION
+from ...src.util.constants import REL_ERROR, RELATION, ORPHAN_COLUMN
 
 
 def get_result_as_tuple_1(res, result):
@@ -24,6 +24,9 @@ def is_error(msg):
 def add_header(description, result):
     if description is not None and not is_error(description):
         colnames = [desc[0] for desc in description]
+        for i in range(len(colnames)):
+            if colnames[i] == '?column?': # Changing the name of column to legitimate name.
+                colnames[i] = ORPHAN_COLUMN
         result.append(tuple(colnames))
 
 

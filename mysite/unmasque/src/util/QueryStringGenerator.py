@@ -10,7 +10,7 @@ from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_co
 from ..core.abstract.GenerationPipeLineBase import NUMBER_TYPES
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
-from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX
+from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX, ORPHAN_COLUMN
 from ..util.utils import get_format, get_min_and_max_val, get_val_plus_delta
 
 
@@ -523,7 +523,9 @@ class QueryStringGenerator:
                     elt = self._workingCopy.global_aggregated_attributes[i][1] + '(' + elt + ')'
 
             if elt != self._workingCopy.projection_names[i] and self._workingCopy.projection_names[i] != '':
-                elt = elt + ' as ' + self._workingCopy.projection_names[i]
+                if self._workingCopy.projection_names[i] == ORPHAN_COLUMN:
+                    elt = elt
+                else : elt = elt + ' as ' + self._workingCopy.projection_names[i]
             self._workingCopy.select_op = elt if not i else f'{self._workingCopy.select_op}, {elt}'
 
     def __generate_group_by_clause(self):
