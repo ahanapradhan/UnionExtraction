@@ -218,12 +218,22 @@ class QueryStringGenerator:
         self._workingCopy.order_by_op = value.orderby_string
 
     @property
-    def arithmetic_predicates(self):
+    def arithmetic_disjunctions(self):
         return NotImplementedError
 
-    @arithmetic_predicates.setter
-    def arithmetic_predicates(self, remnants):
-        self._workingCopy.filter_in_predicates = remnants.filter_in_predicates
+    @arithmetic_disjunctions.setter
+    def arithmetic_disjunctions(self, remnants):
+        if isinstance(remnants, tuple):
+            if remnants not in self._workingCopy.filter_in_predicates:
+                self._workingCopy.filter_in_predicates.append(remnants)
+                tab, attrib, op, neg_val = remnants[0], remnants[1], remnants[2], remnants[3]
+                self._workingCopy.arithmetic_filters.remove((tab, attrib, 'range',
+                                                             min(neg_val[0][0], neg_val[1][0]),
+                                                             max(neg_val[1][1], neg_val[0][1])))
+        else:
+            for pred in remnants.filter_in_predicates:
+                if pred not in self._workingCopy.filter_in_predicates:
+                    self._workingCopy.filter_in_predicates.append(pred)
         self._workingCopy.optimize_arithmetic_filters()
 
     @property
@@ -281,116 +291,41 @@ class QueryStringGenerator:
         for elt in val:
             tab, attrib, op, neg_val = elt[0], elt[1], elt[2], elt[3]
             datatype = self.get_datatype((tab, attrib))
-            format_val = get_format(datatype, neg_val)
-            if datatype == 'str':
-                output = self._getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
-                self.logger.debug(output)
-                if '%' in output or '_' in output:
-                    predicate = f"{tab}.{attrib} NOT LIKE '{str(output)}' "
-                    self._remove_exact_NE_string_predicate(elt)
-                    predicate_tuple = (tab, attrib, 'NOT LIKE', output)
-                else:
-                    predicate = f"{tab}.{attrib} {str(op)} \'{str(output)}\' "
-                    predicate_tuple = (tab, attrib, str(op), output)
+            if op == '<>':
+                predicate, predicate_tuple = self._extract_nep_op_info(attrib, datatype, elt, neg_val, op, query, tab)
+                self.filter_predicates = predicate_tuple
+            elif op == 'IN':
+                predicate = f"{tab}.{attrib} between {neg_val[0][0]} and {neg_val[0][1]} OR {tab}.{attrib} between {neg_val[1][0]} and {neg_val[1][1]}"
+                self.arithmetic_disjunctions = elt
+                # self._workingCopy.where_op.replace(f"{tab}.{attrib} between {neg_val[0][0]} and {neg_val[1][1]}", "")
+                # self._workingCopy.where_op.replace("and and ", "and ")
+                # self._workingCopy.where_op.replace("andand ", "and ")
             else:
-                predicate = f"{tab}.{attrib} {str(op)} {format_val}"
-                predicate_tuple = (tab, attrib, str(op), format_val)
-            self.filter_predicates = predicate_tuple
+                predicate = ""
 
             self._workingCopy.add_to_where_op(predicate)
 
         Q_E = self.write_query()
         return Q_E
 
-    def __absorb_nep_filters(self):
-        _range_dict, _in_dict, _nep_dict = {}, {}, {}
-        for elt in self._workingCopy.arithmetic_filters:
-            if elt[2] == 'range':
-                _range_dict[(elt[0], elt[1])] = (elt[3], elt[4])
-            elif elt[2] in ['!=', '<>']:
-                self._add_to_nep_dict(_nep_dict, elt)
-        for elt in self._workingCopy.filter_in_predicates:
-            if elt[2] == 'IN':
-                _in_dict[(elt[0], elt[1])] = list(elt[3])
-
-        for key in _nep_dict.keys():
-            _nep_dict[key].sort()
-
-        for key in _nep_dict.keys():
-            datatype = self.get_datatype(key)
-            delta, _ = get_constants_for(datatype)
-            for nep in _nep_dict[key]:
-                self.__check_for_each_neq(_in_dict, nep, _range_dict, datatype, delta, key)
-
-        for key in _in_dict.keys():
-            t_remove = []
-            in_vals = _in_dict[key]
-            for vi in in_vals:
-                for vj in in_vals:
-                    if not isinstance(vi, tuple) and isinstance(vj, tuple):
-                        if vj[0] <= vi <= vj[1]:
-                            t_remove.append(vi)
-            for t_r in t_remove:
-                _in_dict[key].remove(t_r)
-            _in_dict[key] = tuple(sorted(_in_dict[key]))
-            l_val = FrozenList(_in_dict[key])
-            l_val.freeze()
-            _in_dict[key] = l_val
-
-        t_remove = []
-        for elt in self._workingCopy.filter_in_predicates:
-            if (elt[0], elt[1]) in _in_dict.keys():
-                t_remove.append(elt)
-        for t_r in t_remove:
-            self._workingCopy.filter_in_predicates.remove(t_r)
-        for key in _in_dict.keys():
-            self._workingCopy.filter_in_predicates.append((key[0], key[1], 'IN', _in_dict[key], _in_dict[key]))
-
-    def _add_to_nep_dict(self, _nep_dict, elt):
-        datatype = self.get_datatype((elt[0], elt[1]))
-        if datatype == 'int':
-            value = int(elt[3])
-        elif datatype in NUMBER_TYPES:
-            value = float(elt[3])
-        else:
-            value = elt[3]
-        if (elt[0], elt[1]) in _nep_dict.keys():
-            _nep_dict[(elt[0], elt[1])].append(value)
-        else:
-            _nep_dict[(elt[0], elt[1])] = [value]
-
-    def __check_for_each_neq(self, _in_dict, nep, _range_dict, datatype, delta, key):
-        if key in _range_dict \
-                and _range_dict[key][0] <= nep <= _range_dict[key][1]:
-            range1 = (_range_dict[key][0], get_val_plus_delta(datatype, nep, -1 * delta))
-            range2 = (get_val_plus_delta(datatype, nep, 1 * delta), _range_dict[key][1])
-            remove_item_from_list((key[0], key[1], '<>', str(nep)), self._workingCopy.arithmetic_filters)
-            remove_item_from_list((key[0], key[1], 'range', _range_dict[key][0], _range_dict[key][1]),
-                                  self._workingCopy.arithmetic_filters)
-            if key in _in_dict:
-                _in_dict[key].extend([range1, range2])
+    def _extract_nep_op_info(self, attrib, datatype, elt, neg_val, op, query, tab):
+        format_val = get_format(datatype, neg_val)
+        if datatype == 'str':
+            output = self._getStrFilterValue(query, elt[0], elt[1], elt[3], max_str_len)
+            self.logger.debug(output)
+            if '%' in output or '_' in output:
+                predicate = f"{tab}.{attrib} NOT LIKE '{str(output)}' "
+                self._remove_exact_NE_string_predicate(elt)
+                predicate_tuple = (tab, attrib, 'NOT LIKE', output)
             else:
-                _in_dict[key] = [range1, range2]
-        if key in _in_dict:
-            if nep in _in_dict[key]:
-                _in_dict[key].remove(nep)
-            remove_item_from_list((key[0], key[1], '<>', str(nep)), self._workingCopy.arithmetic_filters)
-            to_remove, to_add = [], []
-            for v_tup in _in_dict[key]:
-                if isinstance(v_tup, tuple) and v_tup[0] <= nep <= v_tup[1]:
-                    range1 = (v_tup[0], get_val_plus_delta(datatype, nep, -1 * delta))
-                    range2 = (get_val_plus_delta(datatype, nep, 1 * delta), v_tup[1])
-                    remove_item_from_list((key[0], key[1], '<>', str(nep)),
-                                          self._workingCopy.arithmetic_filters)
-                    to_add.extend([range1, range2])
-                    to_remove.append(v_tup)
-            for t_r in to_remove:
-                _in_dict[key].remove(t_r)
-            for t_a in to_add:
-                _in_dict[key].append(t_a)
+                predicate = f"{tab}.{attrib} {str(op)} \'{str(output)}\' "
+                predicate_tuple = (tab, attrib, str(op), output)
+        else:
+            predicate = f"{tab}.{attrib} {str(op)} {format_val}"
+            predicate_tuple = (tab, attrib, str(op), format_val)
+        return predicate, predicate_tuple
 
     def __consolidate_nep_filters_for_not_in(self):
-        self.__absorb_nep_filters()
         t_remove = []
         nep_dict = {}
         for elt in self._workingCopy.arithmetic_filters:

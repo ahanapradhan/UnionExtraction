@@ -47,15 +47,6 @@ class Filter(UN2WhereClause):
                  core_relations: List[str],
                  global_min_instance_dict: dict):
         super().__init__(connectionHelper, core_relations, global_min_instance_dict, "Filter")
-        # init data
-        self.global_attrib_types = []
-        self.global_all_attribs = {}
-        self.global_d_plus_value = {}  # this is the tuple from D_min
-        self.global_attrib_max_length = {}
-
-        self.global_attrib_types_dict = {}
-        self.global_attrib_dict = {}
-
         self.filter_predicates = None
 
     def do_init(self):
@@ -71,7 +62,7 @@ class Filter(UN2WhereClause):
             self.global_attrib_types.extend(this_attribs)
 
             for entry in this_attribs:
-                self.global_attrib_types_dict[(entry[0], entry[1])] = entry[2]
+                self.attrib_types_dict[(entry[0], entry[1])] = entry[2]
 
             self.global_attrib_max_length.update(
                 {(tabname, row[0].lower()): int(str(row[2])) for row in res if is_int(str(row[2]))})
@@ -94,18 +85,10 @@ class Filter(UN2WhereClause):
 
     def get_filter_predicates(self, query: str) -> list:
         filter_attribs = []
-        # total_attribs = 0
-        # d_plus_value = copy.deepcopy(self.global_d_plus_value)
-        # attrib_max_length = copy.deepcopy(self.global_attrib_max_length)
-
         for tabname in self.core_relations:
             attrib_list = self.global_all_attribs[tabname]
-            # total_attribs += len(attrib_list)
             for attrib in attrib_list:
                 datatype = self.get_datatype((tabname, attrib))
-                # one_attrib = (tabname, attrib, attrib_max_length, d_plus_value)
-                # one_attrib = (tabname, attrib)  # , self.global_attrib_max_length, self.global_d_plus_value)
-                # self.extract_filter_on_attrib_set(filter_attribs, query, [one_attrib], datatype)
                 self.extract_filter_on_attrib_set(filter_attribs, query, [(tabname, attrib)], datatype)
         return filter_attribs
 

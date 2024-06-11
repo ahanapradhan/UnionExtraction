@@ -61,10 +61,6 @@ class FromClause(AppExtractorBase):
                 self.connectionHelper.execute_sql([self.connectionHelper.reset_timeout()])
             except Exception as error:
                 self.logger.info(str(error))
-                # if REL_ERROR in str(error):
-                #    self.core_relations.append(tabname)
-                # else:
-                # self.logger.error("Error Occurred in table extraction. Error: " + str(error))
             finally:
                 self.connectionHelper.rollback_transaction()
 

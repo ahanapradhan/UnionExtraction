@@ -1,15 +1,16 @@
 import copy
+from typing import Tuple
 
 from ....src.core.abstract.MutationPipeLineBase import MutationPipeLineBase
 from ....src.util.aoa_utils import get_tab, get_attrib, get_constants_for
 from ....src.util.utils import get_format, get_min_and_max_val
-from typing import Tuple
 
 
 class UN2WhereClause(MutationPipeLineBase):
     SUPPORTED_DATATYPES = ['int', 'date', 'numeric', 'number']
     TEXT_EQUALITY_OP = 'equal'
     MATH_EQUALITY_OP = '='
+    init_done = False
 
     def __init__(self, connectionHelper,
                  core_relations,
@@ -20,19 +21,19 @@ class UN2WhereClause(MutationPipeLineBase):
         self.global_all_attribs = {}
         self.global_d_plus_value = {}  # this is the tuple from D_min
         self.global_attrib_max_length = {}
-
-        self.global_attrib_types_dict = {}
-        self.global_attrib_dict = {}
-
+        self.attrib_types_dict = {}
         self.global_min_instance_dict_bkp = copy.deepcopy(self.global_min_instance_dict)
         self.constants_dict = {}
-        self.init_done = False
+
+    def do_init(self):
+        pass
 
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         if not self.init_done:
             self.mock = self.mock
             self.init_constants()
+            # self.do_init()
             self.init_done = True
         return query
 
@@ -70,13 +71,13 @@ class UN2WhereClause(MutationPipeLineBase):
             self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tabname), [vals])
 
     def get_datatype(self, tab_attrib: Tuple[str, str]) -> str:
-        if any(x in self.global_attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
+        if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
             return 'int'
-        elif 'date' in self.global_attrib_types_dict[tab_attrib]:
+        elif 'date' in self.attrib_types_dict[tab_attrib]:
             return 'date'
-        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'varchar2']):
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'varchar2']):
             return 'str'
-        elif any(x in self.global_attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
             return 'numeric'
         else:
             raise ValueError

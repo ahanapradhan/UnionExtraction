@@ -25,12 +25,46 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
+        self.conn.config.detect_union = False
         self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = True
+        self.conn.config.detect_oj = False
         self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+
+    def test_himangshu(self):
+        query = "SELECT l_shipmode, COUNT(*) FROM ORDERS, LINEITEM WHERE " \
+                "O_ORDERKEY = L_ORDERKEY AND O_ORDERSTATUS = 'O' AND L_SHIPDATE >= '1998-04-03' group by l_shipmode;"
+        self.do_test(query)
+
+    def test_nep_bin_search(self):
+        query = "select n_name, r_name from nation, region where n_regionkey = r_regionkey and " \
+                "(n_nationkey between 2 and 5 or n_nationkey between 10 and 13);"
+        self.do_test(query)
+
+    def test_nep_bin_search1(self):
+        query = "Select l_shipmode, Sum(l_extendedprice) as revenue From lineitem " \
+                "Where l_orderkey between 125 and 135 OR l_orderkey between 236 and 369 " \
+                "and l_shipdate between '1993-01-01' and '1994-12-31' " \
+                "Group By l_shipmode " \
+                "Order By l_shipmode asc Limit 100;"
+        self.do_test(query)
+
+    def test_nep_bin_search2(self):
+        query = "select l_shipmode,sum(l_extendedprice) as revenue " \
+                "from lineitem " \
+                "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
+                "and ((l_orderkey > 124 and l_orderkey < 370) and " \
+                "l_orderkey NOT IN (133, 134, 135)) group by l_shipmode order by l_shipmode " \
+                "limit 100;"
+        self.do_test(query)
+
+    def test_gopi_4june_acctbal(self):
+        query = "select c_name, avg(c_acctbal) as avg_balance, o_clerk from customer, orders " \
+                "where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' and " \
+                "o_orderdate <= DATE '1995-10-23' and c_acctbal = 121.65 group by c_name," \
+                " o_clerk order by c_name, o_clerk;"
+        self.do_test(query)
 
     def test_gnp_Q10(self):
         query = '''SELECT c_name, avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 

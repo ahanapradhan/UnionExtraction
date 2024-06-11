@@ -102,7 +102,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
             return None
 
         self.time_profile.update(time_profile)
-        self.__gen_pipeline_preprocess()
+        self.__gen_pipeline_preprocess(core_relations)
 
         '''
         Projection Extraction
@@ -206,7 +206,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.q_generator.get_datatype = self.filter_extractor.get_datatype  # method
         self.q_generator.from_clause = core_relations
         self.q_generator.algebraic_predicates = self.aoa
-        self.q_generator.arithmetic_predicates = self.genPipelineCtx
+        self.q_generator.arithmetic_disjunctions = self.genPipelineCtx
 
         self.q_generator.pgaoCtx = self.pgao_ctx
         self.q_generator.limit = lm
@@ -216,13 +216,12 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.time_profile.update(time_profile)
 
         eq = self._extract_NEP(core_relations, self.all_sizes, query, self.genPipelineCtx)
-
         self.time_profile.update_for_app(lm.app.method_call_count)
         return eq
 
-    def __gen_pipeline_preprocess(self):
+    def __gen_pipeline_preprocess(self, core_relations):
         self.logger.debug("aoa post-process.")
-        self.genPipelineCtx = GenPipelineContext(self.core_relations, self.aoa,
+        self.genPipelineCtx = GenPipelineContext(core_relations, self.aoa,
                                                  self.filter_extractor, self.global_min_instance_dict,
                                                  self.or_predicates)
         self.logger.debug(self.genPipelineCtx.arithmetic_filters)

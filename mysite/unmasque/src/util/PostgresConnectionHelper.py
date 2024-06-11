@@ -71,13 +71,20 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
 
     def connectUsingParams(self):
         self.conn = psycopg2.connect(self.paramString)
+        with self.conn.cursor() as set_cur:
+            set_cur.execute("SET max_parallel_workers_per_gather = 0;")
 
     def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
         for param in params:
             if logger is not None:
                 logger.debug(sql, param)
-            cur.execute(sql, param)
-        cur.close()
+            try:
+                cur.execute(sql, param)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(str(e))
+            # finally:
+            #    cur.close()
 
     def execute_sql_fetchall(self, sql, logger=None):
         cur = self.get_cursor()
@@ -87,13 +94,14 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
             cur.execute(sql)
             res = cur.fetchall()
             des = cur.description
-            cur.close()
         except psycopg2.ProgrammingError as e:
             if logger is not None:
                 logger.error(e)
                 logger.error(e.diag.message_detail)
             des = str(e)
             raise ValueError(des)
+        # finally:
+        #    cur.close()
         return res, des
 
     def get_DictCursor(self):
@@ -114,8 +122,8 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
             # print("..done")
             except ValueError as e:
                 raise e
-
-        cur.close()
+            # finally:
+            #    cur.close()
 
     def cur_execute_sql_fetch_one_0(self, cur, sql, logger=None):
         prev = None
@@ -127,11 +135,12 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
             prev = prev[0]
             if isinstance(prev, Decimal):
                 prev = float(prev)
-            cur.close()
         except psycopg2.ProgrammingError as e:
             if logger is not None:
                 logger.error(e)
                 logger.error(e.diag.message_detail)
+        # finally:
+        #    cur.close()
         return prev
 
     def cur_execute_sql_fetch_one(self, cur, sql, logger=None):
@@ -141,9 +150,10 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
         try:
             cur.execute(sql)
             prev = cur.fetchone()
-            cur.close()
         except psycopg2.ProgrammingError as e:
             if logger is not None:
                 logger.error(e)
                 logger.error(e.diag.message_detail)
+        # finally:
+        #    cur.close()
         return prev

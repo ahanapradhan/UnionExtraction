@@ -70,6 +70,8 @@ class AbstractConnectionHelper:
 
     def closeConnection(self):
         if self.conn is not None:
+            if not self.get_cursor().closed:
+                self.get_cursor().close()
             self.conn.close()
             self.conn = None
 

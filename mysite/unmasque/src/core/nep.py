@@ -1,8 +1,11 @@
-from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from .abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
 from .abstract.MinimizerBase import Minimizer
+from .filter import Filter
 from .result_comparator import ResultComparator
 
 from typing import List
+
+from ..util.utils import get_min_and_max_val
 
 
 class NepComparator(ResultComparator):
@@ -90,20 +93,20 @@ class NepMinimizer(Minimizer):
         return self.reduce_Database_Instance(query, table)
 
     def reduce_Database_Instance(self, query, table):
-        self.getCoreSizes()
+        core_sizes = self.getCoreSizes()
         self.logger.debug("Inside get nep")
         tabname1 = self.connectionHelper.queries.get_tabname_1(table)
-        while self.all_sizes[table] > 1:
+        while core_sizes[table] > 1:
             self.logger.debug("Inside minimization loop")
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(table, tabname1)],
                                               self.logger)
-            end_ctid, start_ctid = self.get_start_and_end_ctids(self.all_sizes, query, table, tabname1)
+            end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, table, tabname1)
             self.logger.debug(end_ctid, start_ctid)
             if end_ctid is None:
                 self.connectionHelper.execute_sql(
                     [self.connectionHelper.queries.alter_table_rename_to(tabname1, table)], self.logger)
                 return False  # no role on NEP
-            self.all_sizes = self.update_with_remaining_size(self.all_sizes, end_ctid, start_ctid, table, tabname1)
+            core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, table, tabname1)
         return True
 
     def get_mid_ctids(self, core_sizes, tabname, tabname1):
@@ -174,6 +177,9 @@ class NEP(GenerationPipeLineBase):
 
     def __init__(self, connectionHelper, genCtx):
         super().__init__(connectionHelper, "NEP Extractor", genCtx)
+        self.filter_extractor = Filter(self.connectionHelper, self.core_relations, self.global_min_instance_dict)
+        self.filter_extractor.do_init()
+        self.get_datatype = self.filter_extractor.get_datatype
 
     def extract_params_from_args(self, args):
         return args[0][0], args[0][1]
@@ -212,15 +218,15 @@ class NEP(GenerationPipeLineBase):
         for attrib in joined_attribs:
             if attrib in skip_attribs:
                 continue
-            join_tabnames = []
             other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
             skip_attribs.extend(other_attribs)
+            join_tabnames = []
             val, prev = self.update_attrib_to_see_impact(attrib, tabname)
             self.update_attribs_bulk(join_tabnames, other_attribs, val)
             new_result = self.app.doJob(query)
-            self.update_with_val(attrib, tabname, prev)
+            other_attribs.append(attrib)
             self.update_attribs_bulk(join_tabnames, other_attribs, prev)
-            self.__update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
+            self.__update_filter_attribs_from_res(new_result, filterAttribs, join_tabnames, other_attribs, prev, query)
 
     def __check_per_single_attrib(self, attrib_list, filterAttribs, query, tabname):
         if self.joined_attribs is not None:
@@ -236,9 +242,9 @@ class NEP(GenerationPipeLineBase):
             self.update_with_val(attrib, tabname, val)
             new_result = self.app.doJob(query)
             self.update_with_val(attrib, tabname, prev)
-            self.__update_filter_attribs_from_res(new_result, filterAttribs, tabname, attrib, prev)
+            self.__update_filter_attribs_from_res(new_result, filterAttribs, [tabname], [attrib], prev, query)
 
-    def __update_filter_attribs_from_res(self, new_result, filterAttribs, tabname, attrib, prev):
+    def __update_filter_attribs_from_res(self, new_result, filterAttribs, tabs, attribs, prev, query):
         if not self.app.isQ_result_empty(new_result):
-            filterAttribs.append((tabname, attrib, '<>', prev))
+            filterAttribs.append((tabs[-1], attribs[-1], '<>', prev))
             self.logger.debug(filterAttribs, '++++++_______++++++')

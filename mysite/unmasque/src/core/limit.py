@@ -26,12 +26,12 @@ class Limit(GenerationPipeLineBase):
 
     def doLimitExtractJob(self, query):
         grouping_attribute_values = {}
-        pre_assignment = self.get_pre_assignment()
+        pre_assignment = self.__get_pre_assignment()
         gb_tab_attribs = [(self.find_tabname_for_given_attrib(attrib), attrib)
                           for attrib in self.global_groupby_attributes]
 
         total_combinations = 1
-        self.decide_number_of_rows(gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations)
+        self.__decide_number_of_rows(gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations)
 
         gen_dict = {}
 
@@ -41,16 +41,21 @@ class Limit(GenerationPipeLineBase):
             att_order = f"({attrib_list_str})"
             insert_rows = []
             for k in range(self.no_rows):
-                self.determine_k_insert_rows(attrib_list, gb_tab_attribs, grouping_attribute_values, insert_rows,
-                                             k, table)
+                self.__determine_k_insert_rows(attrib_list, gb_tab_attribs, grouping_attribute_values, insert_rows,
+                                               k, table)
             self.insert_attrib_vals_into_table(att_order, attrib_list, insert_rows, table, insert_logger=False)
             gen_dict[table] = insert_rows
 
             new_result = self.app.doJob(query)
             if not self.app.isQ_result_empty(new_result):
                 if 4 <= len(new_result) <= self.no_rows:
-                    self.limit = len(new_result) - 1  # excluding the header column
-                    self.logger.debug(f"Limit {self.limit}")
+                    if self.limit is not None and self.limit == len(new_result) - 1:
+                        self.limit = len(new_result) - 1  # excluding the header column
+                        self.logger.debug(f"Finalized Limit {self.limit}")
+                        break
+                    else:
+                        self.limit = len(new_result) - 1  # excluding the header column
+                        self.logger.debug(f"Limit {self.limit}")
                 else:
                     if self.limit is not None:
                         self.limit = None
@@ -58,8 +63,8 @@ class Limit(GenerationPipeLineBase):
                         break
         return True
 
-    def determine_k_insert_rows(self, attrib_list_inner, gb_tab_attribs, grouping_attribute_values, insert_rows, k,
-                                tabname_inner):
+    def __determine_k_insert_rows(self, attrib_list_inner, gb_tab_attribs, grouping_attribute_values, insert_rows, k,
+                                  tabname_inner):
         insert_values = []
         for attrib_inner in attrib_list_inner:
             datatype = self.get_datatype((tabname_inner, attrib_inner))
@@ -74,7 +79,7 @@ class Limit(GenerationPipeLineBase):
                 self.insert_text_attrib(attrib_inner, insert_values, k, tabname_inner)
         insert_rows.append(tuple(insert_values))
 
-    def decide_number_of_rows(self, gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations):
+    def __decide_number_of_rows(self, gb_tab_attribs, grouping_attribute_values, pre_assignment, total_combinations):
         if pre_assignment:
             # GET LIMITS FOR ALL GROUPBY ATTRIBUTES
             group_lists = []
@@ -85,8 +90,8 @@ class Limit(GenerationPipeLineBase):
                     break
                 datatype = self.get_datatype(elt)
                 if datatype in NON_TEXT_TYPES:
-                    tot_values = self.compute_total_values(datatype, elt, total_combinations)
-                    self.get_temp_total_values(datatype, elt, temp, tot_values)
+                    tot_values = self.__compute_total_values(datatype, elt, total_combinations)
+                    self.__get_temp_total_values(datatype, elt, temp, tot_values)
                 else:
                     if '%' in self.filter_attrib_dict[elt] or '_' in self.filter_attrib_dict[elt]:
                         pre_assignment = False
@@ -108,7 +113,7 @@ class Limit(GenerationPipeLineBase):
         if pre_assignment:
             self.no_rows = min(self.no_rows, total_combinations)
 
-    def get_temp_total_values(self, datatype, elt, temp, tot_values):
+    def __get_temp_total_values(self, datatype, elt, temp, tot_values):
         if datatype == 'date':
             for k in range(tot_values):
                 date_val = get_val_plus_delta('date', self.filter_attrib_dict[elt][0], k)
@@ -118,7 +123,7 @@ class Limit(GenerationPipeLineBase):
             for k in range(tot_values):
                 temp.append(lb + k)
 
-    def compute_total_values(self, datatype, elt, total_combinations):
+    def __compute_total_values(self, datatype, elt, total_combinations):
         tot_values = 0
         for in_pred in self.filter_in_predicates:
             if (in_pred[0], in_pred[1]) == elt:
@@ -183,7 +188,7 @@ class Limit(GenerationPipeLineBase):
                 else:
                     self.joined_attrib_valDict[edge_key] = [s_val_plus_k]
 
-    def get_pre_assignment(self):
+    def __get_pre_assignment(self):
         pre_assignment = True
         for elt in self.global_groupby_attributes:
             if elt in self.joined_attribs:
