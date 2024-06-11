@@ -100,6 +100,10 @@ class GenericPipeLine(ABC):
         rc = ResultComparator(self.connectionHelper, True, self.core_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
+        if not matched:
+            rc = ResultComparator(self.connectionHelper, False, self.core_relations)
+            self.update_state(RESULT_COMPARE + RUNNING)
+            matched = rc.doJob(query, result)
         self.info[RESULT_COMPARE] = matched
         self.connectionHelper.closeConnection()
 

@@ -24,6 +24,9 @@ def is_error(msg):
 def add_header(description, result):
     if description is not None and not is_error(description):
         colnames = [desc[0] for desc in description]
+        for i in range(len(colnames)):
+            if colnames[i] == '?column?':
+                colnames[i] = "'?column?'"
         result.append(tuple(colnames))
 
 

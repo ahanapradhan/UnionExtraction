@@ -588,7 +588,9 @@ class QueryStringGenerator:
                     elt = self._workingCopy.global_aggregated_attributes[i][1] + '(' + elt + ')'
 
             if elt != self._workingCopy.projection_names[i] and self._workingCopy.projection_names[i] != '':
-                elt = elt + ' as ' + self._workingCopy.projection_names[i]
+                if self._workingCopy.projection_names[i] == "'?column?'":
+                    elt = elt
+                else : elt = elt + ' as ' + self._workingCopy.projection_names[i]
             self._workingCopy.select_op = elt if not i else f'{self._workingCopy.select_op}, {elt}'
 
     def __generate_group_by_clause(self):

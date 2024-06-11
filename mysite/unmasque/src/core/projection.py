@@ -6,7 +6,8 @@ from sympy import symbols, expand, collect, nsimplify, Rational, Integer
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from ..util.constants import CONST_1_VALUE
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value, \
+    NON_TEXT_TYPES
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
 from ...src.util.utils import count_empty_lists_in, find_diff_idx, get_format
@@ -120,7 +121,7 @@ class Projection(GenerationPipeLineBase):
         return projected_attrib, projection_names, projection_dep, True
 
     def get_projection_column_type(self, query, projection_names):
-        mod_query = query[:-1]
+        mod_query = query.replace(";",'')
         datatype_names = []
         for i in projection_names:
             typecheck_query = str('SELECT pg_typeof(' + i + ') AS data_type FROM (' + mod_query + ') AS subquery limit 1;')
