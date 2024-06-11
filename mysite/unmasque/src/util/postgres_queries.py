@@ -86,7 +86,7 @@ class PostgresQueries(CommonQueries):
         if qoted:
             value = f"'{value}'"
             prev = f"'{prev}'"
-        query = f"UPDATE {tab} SET {attrib} = CASE WHEN {attrib} = {prev} THEN {value} WHEN {attrib} = {value} THEN {prev} ELSE {prev} END;"
+        query = f"UPDATE {tab} SET {attrib} = CASE WHEN {attrib} = {prev} THEN {value} WHEN {attrib} = {value} THEN {prev} ELSE {attrib} END;"
         return query
 
     def update_tab_attrib_with_value(self, tab, attrib, value):
