@@ -26,9 +26,9 @@ class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = False
-        self.conn.config.detect_nep = True
+        self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
-        self.conn.config.detect_or = False
+        self.conn.config.detect_or = True
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
 
@@ -733,9 +733,20 @@ class ExtractionTestCase(BaseTestCase):
     # @pytest.mark.skip
     def test_sumang_thesis_Q6(self):
         query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
-                f"s_nationkey=n_nationkey "\
-                 f"and (s_acctbal > 2000 or ps_supplycost < 500) group by n_name ORDER BY n_name LIMIT 10;"
-        # and (n_name ='ARGENTINA' or n_regionkey =3)
+                f"s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) "\
+                 f"and (s_acctbal > 2000 or ps_supplycost > 500) group by n_name ORDER BY n_name LIMIT 10;"
+        self.do_test(query)
+
+    def test_sumang_thesis_Q6_easyOR(self):
+        query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
+                f"s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) "\
+                 f"and (s_acctbal > 2000 or ps_supplycost = 559.33) group by n_name ORDER BY n_name LIMIT 10;"
+        self.do_test(query)
+
+    def test_sumang_thesis_Q6_easyOR_1(self):
+        query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
+                f"s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) "\
+                 f"and (s_acctbal > 2000 or ps_supplycost = 838.16) group by n_name ORDER BY n_name LIMIT 10;"
         self.do_test(query)
 
     def test_two_neps_one_table(self):
