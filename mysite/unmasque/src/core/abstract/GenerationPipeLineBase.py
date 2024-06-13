@@ -4,6 +4,8 @@ import random
 from datetime import date, timedelta
 from typing import Union
 
+from frozenlist._frozenlist import FrozenList
+
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..dataclass.genPipeline_context import GenPipelineContext
 from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
@@ -75,7 +77,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def get_s_val_for_textType(self, attrib_inner, tabname_inner) -> str:
         filtered_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)]
-        if isinstance(filtered_val, tuple):
+        if isinstance(filtered_val, FrozenList):
             filtered_val = filtered_val[0]
         return filtered_val
 

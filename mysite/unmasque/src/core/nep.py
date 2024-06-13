@@ -1,11 +1,9 @@
-from .abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
+from typing import List
+
+from .abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES
 from .abstract.MinimizerBase import Minimizer
 from .filter import Filter
 from .result_comparator import ResultComparator
-
-from typing import List
-
-from ..util.utils import get_min_and_max_val
 
 
 class NepComparator(ResultComparator):
@@ -210,6 +208,12 @@ class NEP(GenerationPipeLineBase):
             self.__check_per_single_attrib(attrib_list, filterAttribs, query, tabname)
         return filterAttribs
 
+    def __update_key_attib_with_val(self, tabs, attribs, value, prev):
+        for tup in list(zip(tabs, attribs)):
+            datatype = self.get_datatype(tup)
+            qoted = False if datatype in NUMBER_TYPES else True
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.update_key_attrib_with_val(tup[0], tup[1], value, prev, qoted)])
+
     def __check_per_joined_attrib(self, attrib_list, filterAttribs, query, tabname):
         if self.joined_attribs is None:
             return
@@ -220,12 +224,14 @@ class NEP(GenerationPipeLineBase):
                 continue
             other_attribs = self.get_other_attribs_in_eqJoin_grp(attrib)
             skip_attribs.extend(other_attribs)
-            join_tabnames = []
+            join_tabnames = [self.find_tabname_for_given_attrib(attrb) for attrb in other_attribs]
             val, prev = self.update_attrib_to_see_impact(attrib, tabname)
-            self.update_attribs_bulk(join_tabnames, other_attribs, val)
+            self.__update_key_attib_with_val(join_tabnames, other_attribs, val, prev)
+            # self.see_d_min()
             new_result = self.app.doJob(query)
             other_attribs.append(attrib)
-            self.update_attribs_bulk(join_tabnames, other_attribs, prev)
+            join_tabnames.append(tabname)
+            self.__update_key_attib_with_val(join_tabnames, other_attribs, prev, val)
             self.__update_filter_attribs_from_res(new_result, filterAttribs, join_tabnames, other_attribs, prev, query)
 
     def __check_per_single_attrib(self, attrib_list, filterAttribs, query, tabname):
