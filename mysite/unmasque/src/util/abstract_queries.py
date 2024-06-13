@@ -111,6 +111,10 @@ class CommonQueries(ABC):
         pass
 
     @abstractmethod
+    def update_key_attrib_with_val(self, tab, attrib, value, prev, qoted):
+        pass
+
+    @abstractmethod
     def update_tab_attrib_with_value(self, tab, attrib, value):
         pass
 

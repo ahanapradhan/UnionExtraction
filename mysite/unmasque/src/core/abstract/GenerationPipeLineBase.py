@@ -2,7 +2,9 @@ import ast
 import copy
 import random
 from datetime import date, timedelta
-from typing import Union, Tuple
+from typing import Union
+
+from frozenlist._frozenlist import FrozenList
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..dataclass.genPipeline_context import GenPipelineContext
@@ -75,7 +77,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def get_s_val_for_textType(self, attrib_inner, tabname_inner) -> str:
         filtered_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)]
-        if isinstance(filtered_val, tuple):
+        if isinstance(filtered_val, FrozenList):
             filtered_val = filtered_val[0]
         return filtered_val
 
@@ -189,10 +191,3 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         for tab_key in self.global_all_attribs.keys():
             if find_attrib in self.global_all_attribs[tab_key]:
                 return tab_key
-        '''
-        for entry in self.global_attrib_types:
-            tabname = entry[0]
-            attrib = entry[1]
-            if attrib == find_attrib:
-                return tabname
-        '''

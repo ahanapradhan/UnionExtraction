@@ -57,13 +57,13 @@ class GenericPipeLine(ABC):
             self.update_state(WAITING)
             exe_factory = ExecutableFactory()
             app = exe_factory.create_exe(self.connectionHelper)
-            try :
+            try:
                 self.connectionHelper.connectUsingParams()
                 check_result = app.doJob(query)
                 self.connectionHelper.closeConnection()
-                if isinstance(check_result, str) :
+                if isinstance(check_result, str):
                     return check_result
-            except Exception as e :
+            except Exception as e:
                 self.connectionHelper.closeConnection()
                 return str(e)
             app.method_call_count = 0
@@ -100,6 +100,10 @@ class GenericPipeLine(ABC):
         rc = ResultComparator(self.connectionHelper, True, self.core_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
+        if not matched:
+            rc = ResultComparator(self.connectionHelper, False, self.core_relations)
+            self.update_state(RESULT_COMPARE + RUNNING)
+            matched = rc.doJob(query, result)
         self.info[RESULT_COMPARE] = matched
         self.connectionHelper.closeConnection()
 

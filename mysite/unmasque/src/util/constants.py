@@ -30,6 +30,12 @@ COUNT = 'Count'
 COUNT_STAR = 'Count(*)'
 NO_ORDER = 'noorder'
 
+# To differentiate between count and constants in SELECT clause.
+CONST_1_VALUE = '1'
+COUNT_THERE = 2
+CONST_1_THERE = 1
+ORPHAN_COLUMN = "'?column?'"
+
 IDENTICAL_EXPR = "identical_expr_nc"
 # we use 1 and 999 to limit, otw overflow can occur
 pr_min = 1

@@ -2,6 +2,8 @@ import ast
 import copy
 import math
 
+from frozenlist._frozenlist import FrozenList
+
 from .dataclass.genPipeline_context import GenPipelineContext
 from .projection import get_param_values_external
 from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
@@ -282,9 +284,7 @@ class Aggregation(GenerationPipeLineBase):
                     else:
                         # check for filter
                         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
-                            attrib_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)]
-                            if isinstance(attrib_val, tuple):
-                                attrib_val = attrib_val[0]
+                            attrib_val = self.get_s_val_for_textType(attrib_inner, tabname_inner)
                             plus_val = attrib_val.replace('%', '')
                         else:
                             plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), 2))

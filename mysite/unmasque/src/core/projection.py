@@ -1,14 +1,16 @@
 import math
 import random
-
+import ast
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify, Rational, Integer
 
 from .dataclass.genPipeline_context import GenPipelineContext
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
+from ..util.constants import CONST_1_VALUE
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value, \
+    NON_TEXT_TYPES
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
-from ...src.util.utils import count_empty_lists_in, find_diff_idx
+from ...src.util.utils import count_empty_lists_in, find_diff_idx, get_format
 
 
 def round_expr(expr, num_digits):
@@ -81,6 +83,8 @@ class Projection(GenerationPipeLineBase):
             return [], [], [], False
 
         projection_names = list(new_result[0])
+        projection_coulumn_type = self.get_projection_column_type(query, projection_names)
+
         new_result = new_result[1:]
         projected_attrib = []
         keys_to_skip = []
@@ -107,9 +111,26 @@ class Projection(GenerationPipeLineBase):
                 attrib_tup = projection_dep[i][0]
                 projected_attrib.append(attrib_tup[1])
             else:
-                projected_attrib.append('')
+                if len(projection_dep[i]) == 0 and new_result[0][i] != CONST_1_VALUE :
+                    # If no dependency is there and value is not 1 in result this means it is constant.
+                    projected_attrib.append(get_format(projection_coulumn_type[i], new_result[0][i]))
+                else:
+                    # No dependency and value is one so in groupby file will differentiate between count or 1.
+                    projected_attrib.append('')
 
         return projected_attrib, projection_names, projection_dep, True
+
+    def get_projection_column_type(self, query, projection_names):
+        mod_query = query.replace(";",'')
+        datatype_names = []
+        for i in projection_names:
+            typecheck_query = str('SELECT pg_typeof(' + i + ') AS data_type FROM (' + mod_query + ') AS subquery limit 1;')
+            type_result = self.app.doJob(typecheck_query)
+            modified_str = str(type_result[1])
+            modified_str = modified_str[1:-2]
+            datatype_names.append(modified_str)
+        datatype_names = [element.strip("'") for element in datatype_names]
+        return datatype_names
 
     def check_impact_of_bulk_attribs(self, attrib, new_result, projection_dep, query, tabname,
                                      keys_to_skip, s_value_dict):
