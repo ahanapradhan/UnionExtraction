@@ -190,7 +190,6 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue('s_name' in gb.group_by_attrib)
         self.conn.closeConnection()
 
-
     """
     def test_gb_Q1(self):
         global_min_instance_dict = {}

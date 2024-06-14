@@ -2,8 +2,6 @@ import ast
 import copy
 import math
 
-from frozenlist._frozenlist import FrozenList
-
 from .dataclass.genPipeline_context import GenPipelineContext
 from .projection import get_param_values_external
 from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char

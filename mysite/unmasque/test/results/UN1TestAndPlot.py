@@ -10,7 +10,8 @@ from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.src.validator import validate_gb, validate_ob, Ob_suffix, count_ob, same_hidden_ob, \
     pretty_print
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
-from mysite.unmasque.test.results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, Q16_nep, Q3_1, Q16_nep_2, \
+from mysite.unmasque.test.results.tpch_kapil_report import Q1, Q2, Q4, Q5, Q6, Q11, Q10, Q3, Q16, Q17, Q18, Q21, \
+    Q16_nep, Q3_1, Q16_nep_2, \
     Q_r, Q_dt
 
 
