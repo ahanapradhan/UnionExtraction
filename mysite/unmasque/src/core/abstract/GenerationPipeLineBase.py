@@ -46,6 +46,9 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         self.joined_attribs = genCtx.joined_attribs
         self.filter_in_predicates = genCtx.filter_in_predicates
         self.get_datatype = genCtx.get_datatype  # method
+        self.multi_attrib_or_predicates = genCtx.multi_attrib_or_predicates
+        self._mut_dict = {}
+
 
     def extract_params_from_args(self, args):
         return args[0]
@@ -106,6 +109,29 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                 other_attribs.remove(attrib)
                 break
         return other_attribs
+
+    def _mutate_or_param(self, tab, attrib):
+        if (tab, attrib) in self._mut_dict.keys():
+            return
+        replace_idx = None
+        for i, group in enumerate(self.multi_attrib_or_predicates):
+            for j, pred in enumerate(group):
+                if (pred[0], pred[1]) == (tab, attrib):
+                    replace_idx = (i, len(group) - j - 1)
+                    break
+            if replace_idx is not None:
+                break
+        if replace_idx is not None:
+            pred = self.multi_attrib_or_predicates[replace_idx[0]][replace_idx[1]]
+            r_tab, r_attrib, r_val = pred[0], pred[1], pred[3]
+            if (r_tab, r_attrib) in self._mut_dict.keys():
+                return
+            all_r_attribs = self.get_other_attribs_in_eqJoin_grp(r_attrib)
+            all_r_attribs.append(r_attrib)
+            all_r_tabs = []
+            self.update_attribs_bulk(all_r_tabs, all_r_attribs, r_val)
+            for i in range(len(all_r_tabs)):
+                self._mut_dict[(all_r_tabs[i], all_r_attribs[i])] = r_val
 
     def update_attribs_bulk(self, join_tabnames, other_attribs, val) -> None:
         join_tabnames.clear()

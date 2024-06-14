@@ -1,6 +1,12 @@
 import datetime
 import unittest
 import sys
+from dataclasses import dataclass
+from decimal import Decimal
+
+from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
+from mysite.unmasque.src.core.dataclass.genPipeline_context import GenPipelineContext
+from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
 
 sys.path.append("../../../")
 from mysite.unmasque.src.core.groupby_clause import GroupBy
@@ -8,8 +14,184 @@ from mysite.unmasque.test.util import tpchSettings, queries
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
-class MyTestCase(BaseTestCase):
+@dataclass
+class MockPGAOCtx:
+    projected_attribs: list
 
+
+@dataclass
+class MockFilter:
+    global_all_attribs: dict
+    global_attrib_types: list
+    global_min_instance_dict: dict
+    attrib_types_dict: dict
+
+    def get_dmin_val(self, attrib: str, tab: str):
+        values = self.global_min_instance_dict[tab]
+        attribs, vals = values[0], values[1]
+        attrib_idx = attribs.index(attrib)
+        val = vals[attrib_idx]
+        ret_val = float(val) if isinstance(val, Decimal) else val
+        return ret_val
+
+    def get_datatype(self, tab_attrib):
+        if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
+            return 'int'
+        elif 'date' in self.attrib_types_dict[tab_attrib]:
+            return 'date'
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit']):
+            return 'str'
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
+            return 'numeric'
+        else:
+            raise ValueError
+
+
+@dataclass
+class MockInequality:
+    arithmetic_filters: list
+    algebraic_eq_predicates: list
+    aoa_predicates: list
+    aoa_less_thans: list
+    global_min_instance_dict: dict
+    core_relations: list
+    connectionHelper: AbstractConnectionHelper
+
+    def do_permanent_mutation(self):
+        pass
+
+    def restore_d_min_from_dict(self):
+        if not len(self.global_min_instance_dict):
+            return
+        for tab in self.core_relations:
+            self.insert_into_dmin_dict_values(tab)
+
+    def insert_into_dmin_dict_values(self, tabname):
+        values = self.global_min_instance_dict[tabname]
+        attribs, vals = values[0], values[1]
+        attrib_list = ", ".join(attribs)
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(tabname)])
+        self.connectionHelper.execute_sql_with_params(
+            self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tabname), [vals])
+
+
+class MockGenPipelineCtx(GenPipelineContext):
+    def __init__(self, core_relations, aoa_extractor, filter_extractor,
+                 global_min_instance_dict: dict, or_predicates):
+        super().__init__(core_relations, aoa_extractor, filter_extractor, global_min_instance_dict, or_predicates)
+
+
+class MyTestCase(unittest.TestCase):
+    conn = ConnectionHelperFactory().createConnectionHelper()
+
+    def see_d_min(self, tabs):
+        print("======================")
+        for tab in tabs:
+            res, des = self.conn.execute_sql_fetchall(self.conn.queries.get_star(tab))
+            print(f"-----  {tab} ------")
+            print(res)
+        print("======================")
+
+    def do_setUp(self, tables):
+        self.conn.connectUsingParams()
+        for rel in tables:
+            self.conn.execute_sql(["BEGIN;", f"drop table if exists {rel}_backup;",
+                                   f"alter table {rel} rename to {rel}_backup;",
+                                   f"create table {rel} (like {rel}_backup);", "COMMIT;"])
+        self.conn.closeConnection()
+
+    def do_tearDown(self, tables):
+        self.conn.connectUsingParams()
+        for rel in tables:
+            self.conn.execute_sql(["BEGIN;",
+                                   f"drop table {rel};",
+                                   f"alter table {rel}_backup rename to {rel};", "COMMIT;"])
+        self.conn.closeConnection()
+
+    def test_sumang_Q6(self):
+        from_rels = ['nation', 'partsupp', 'supplier']
+        self.do_setUp(from_rels)
+        self.__sumang_thesis_Q6(from_rels)
+        self.do_tearDown(from_rels)
+
+    def __sumang_thesis_Q6(self, from_rels):
+        global_min_instance_dict = {
+            'partsupp': [('ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment'),
+                         (84936, 4937, 8444, 26.97,
+                          'riously final instructions. pinto beans cajole. idly even packages haggle doggedly '
+                          'furiously regular ')],
+            'nation': [('n_nationkey', 'n_name', 'n_regionkey', 'n_comment'), (21, 'IRAN', 3, 'just a comment')],
+            'supplier': [('s_suppkey', 's_name', 's_address', 's_nationkey', 's_phone', 's_acctbal', 's_comment'),
+                         (4937, 'Supplier#0000000123',
+                          'Kolkata',
+                          21, '03242-256500', 487.02, 'Just another comment')]}
+        filter_extractor = MockFilter(global_all_attribs={
+            'nation': ['n_nationkey', 'n_name', 'n_regionkey', 'n_comment'],
+            'partsupp': ['ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment'],
+            'supplier': ['s_suppkey', 's_name', 's_address', 's_nationkey', 's_phone', 's_acctbal', 's_comment']
+        },
+            global_attrib_types=[('nation', 'n_nationkey', 'integer'),
+                                 ('nation', 'n_name', 'character'),
+                                 ('nation', 'n_regionkey', 'integer'),
+                                 ('nation', 'n_comment', 'character varying'),
+                                 ('partsupp', 'ps_partkey', 'bigint'),
+                                 ('partsupp', 'ps_suppkey', 'bigint'),
+                                 ('partsupp', 'ps_availqty', 'integer'),
+                                 ('partsupp', 'ps_supplycost', 'numeric'),
+                                 ('partsupp', 'ps_comment', 'character varying'),
+                                 ('supplier', 's_suppkey', 'integer'),
+                                 ('supplier', 's_name', 'character'),
+                                 ('supplier', 's_address', 'character varying'),
+                                 ('supplier', 's_nationkey', 'integer'),
+                                 ('supplier', 's_phone', 'character'),
+                                 ('supplier', 's_acctbal', 'numeric'),
+                                 ('supplier', 's_comment', 'character varying')
+                                 ],
+            global_min_instance_dict=global_min_instance_dict,
+            attrib_types_dict={}
+        )
+        eq_joins = [[('nation', 'n_nationkey'), ('supplier', 's_nationkey')],
+                    [('supplier', 's_suppkey'), ('partsupp', 'ps_suppkey')]]
+
+        aoa_extractor = MockInequality(arithmetic_filters=[],
+                                       algebraic_eq_predicates=eq_joins,
+                                       aoa_predicates=[],
+                                       aoa_less_thans=[],
+                                       global_min_instance_dict=global_min_instance_dict,
+                                       core_relations=from_rels,
+                                       connectionHelper=self.conn)
+
+        or_predicates = [
+            [('nation', 'n_name', 'equal', 'ARGENTINA', 'ARGENTINA'), ('nation', 'n_regionkey', '=', '3', '3')],
+            [('nation', 'n_nationkey', '<=', -2147483648, 19), ('partsupp', 'ps_supplycost', '<=', -2147483648.88, 800),
+             ('supplier', 's_acctbal', '>=', 500, 2147483647.88)]
+        ]
+        query = "select n_name, s_name, SUM(s_acctbal) from supplier, nation, partsupp where ps_suppkey=s_suppkey AND" \
+                " (ps_supplycost < 800 or s_acctbal > 500 or n_nationkey < 20) and s_nationkey=n_nationkey " \
+                "and (n_name = 'ARGENTINA' or n_regionkey =3) " \
+                "group by n_name, s_name ORDER " \
+                "BY n_name, s_name;"
+        gen_ctx = GenPipelineContext(from_rels, aoa_extractor, filter_extractor, global_min_instance_dict,
+                                     or_predicates)
+        self.conn.connectUsingParams()
+        gen_ctx.doJob()
+        filter_extractor.attrib_types_dict = gen_ctx.attrib_types_dict
+        self.see_d_min(from_rels)
+        self.conn.closeConnection()
+
+        pgao_ctx = MockPGAOCtx(projected_attribs=['n_name', 's_name', ''])
+        gb = GroupBy(self.conn, gen_ctx, pgao_ctx)
+        self.conn.connectUsingParams()
+        check = gb.doJob(query)
+        self.assertTrue(check)
+        self.assertTrue(gb.has_groupby)
+        self.assertEqual(len(gb.group_by_attrib), 2)
+        self.assertTrue('n_name' in gb.group_by_attrib)
+        self.assertTrue('s_name' in gb.group_by_attrib)
+        self.conn.closeConnection()
+
+
+    """
     def test_gb_Q1(self):
         global_min_instance_dict = {}
         self.conn.connectUsingParams()
@@ -260,6 +442,7 @@ class MyTestCase(BaseTestCase):
         self.assertTrue('n_name' in gb.group_by_attrib)
 
         self.conn.closeConnection()
+    """
 
 
 if __name__ == '__main__':

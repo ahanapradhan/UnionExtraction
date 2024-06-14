@@ -33,6 +33,7 @@ class GroupBy(GenerationPipeLineBase):
             attrib_list = self.global_all_attribs[tabname]
 
             for attrib in attrib_list:
+                self._mutate_or_param(tabname, attrib)
                 self.truncate_core_relations()
                 self.logger.debug("Checking for attrib: ", attrib)
                 # determine offset values for this attribute
@@ -55,6 +56,7 @@ class GroupBy(GenerationPipeLineBase):
                     for k in range(no_of_rows):
                         insert_values = []
                         for attrib_inner in attrib_list_inner:
+                            self._mutate_or_param(tabname_inner, attrib_inner)
                             datatype = self.get_datatype((tabname_inner, attrib_inner))
 
                             if has_attrib_key_condition(attrib, attrib_inner, key_list):
@@ -102,13 +104,18 @@ class GroupBy(GenerationPipeLineBase):
 
     def insert_values_for_single_attrib(self, attrib_inner, datatype, insert_values, tabname_inner):
         if datatype in NON_TEXT_TYPES:
-            val = self.get_insert_value_for_single_attrib(datatype, attrib_inner, tabname_inner)
+            if (tabname_inner, attrib_inner) in self._mut_dict.keys():
+                val = self._mut_dict[(tabname_inner, attrib_inner)]
+            else:
+                val = self.get_insert_value_for_single_attrib(datatype, attrib_inner, tabname_inner)
             if datatype == 'date':
                 insert_values.append(ast.literal_eval(get_format('date', val)))
             else:
                 insert_values.append(get_format('int', val))
         else:
-            if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
+            if (tabname_inner, attrib_inner) in self._mut_dict.keys():
+                char_val = self._mut_dict[(tabname_inner, attrib_inner)]
+            elif (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                 filtered_val = self.get_s_val_for_textType(attrib_inner, tabname_inner)
                 char_val = filtered_val.replace('%', '')
             else:
@@ -119,14 +126,20 @@ class GroupBy(GenerationPipeLineBase):
                                          tabname_inner):
         delta = curr_attrib_value[k]
         if datatype in NON_TEXT_TYPES:
-            val = self.get_insert_value_for_joined_attribs(datatype, attrib_inner,
+            if (tabname_inner, attrib_inner) in self._mut_dict.keys():
+                val = self._mut_dict[(tabname_inner, attrib_inner)]
+            else:
+                val = self.get_insert_value_for_joined_attribs(datatype, attrib_inner,
                                                            delta, tabname_inner)
             if datatype == 'date':
                 insert_values.append(ast.literal_eval(get_format('date', val)))
             else:
                 insert_values.append(get_format('int', val))
         else:
-            plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), delta))
+            if (tabname_inner, attrib_inner) in self._mut_dict.keys():
+                plus_val = self._mut_dict[(tabname_inner, attrib_inner)]
+            else:
+                plus_val = get_char(get_val_plus_delta('char', get_dummy_val_for('char'), delta))
             if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                 filtered_val = self.get_s_val_for_textType(attrib_inner, tabname_inner)
                 if '_' in filtered_val:
