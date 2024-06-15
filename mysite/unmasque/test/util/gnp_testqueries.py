@@ -413,7 +413,17 @@ GQ56 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) 
         group by o_shippriority, o_orderdate, l_orderkey
         order by l_orderkey, o_orderdate, revenue desc limit 10;'''
 
+# Only count queries.
+GQ57 = '''select count(p_mfgr) 
+        from part, partsupp 
+        where p_partkey = ps_partkey and p_brand = 'Brand#33' and p_retailprice > 700  
+        and p_size > 3 and ps_suppkey <= 1000;'''
 
+GQ58 = '''SELECT count(c_name) as rolex, count(o_clerk) as viola
+        FROM customer, orders
+        where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14'
+        and o_orderdate <= DATE '1995-10-23' and
+        c_acctbal > 0 and c_acctbal < 30.04;'''
 
 
 
