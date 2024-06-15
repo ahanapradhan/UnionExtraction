@@ -1,4 +1,5 @@
 import os
+import shutil
 import unittest
 
 import pytest
@@ -15,7 +16,8 @@ from ..util.gnp_testqueries import GQ1, GQ2, GQ3, GQ4, GQ5, GQ6, GQ7, GQ8, GQ9, 
 class MyTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.extracted_ULatest = "UN1_tests_new"
+        self.working_dir = "unmasque/test/"
+        self.extracted_ULatest = self.working_dir + "UN1_tests_new"
         self.hq_keys = ["Q1", "Q3", "Q2", "Q10", "Q11", "Q21", "Q18", "Q6", "Q5", "Q4", "Q17", "Q16",
                         "GQ1", "GQ2", "GQ3", "GQ4", "GQ5", "GQ6", "GQ7", "GQ8", "GQ9", "GQ10", "GQ11",
                         "GQ12", "GQ13", "GQ14", "GQ15", "GQ16", "GQ17", "GQ18", "GQ19", "GQ20", "GQ21",
@@ -29,7 +31,7 @@ class MyTestCase(BaseTestCase):
                     GQ32, GQ33, GQ34, GQ35, GQ36, GQ37, GQ38, GQ39, GQ40, GQ41, GQ42, GQ43, GQ44, GQ45, GQ46,
                     GQ47, GQ48, GQ49, GQ50, GQ51, GQ52, GQ53, GQ54, GQ55, GQ56, GQ57, GQ58]
 
-        self.extracted_U_old = "UN1_Tests_old"
+        self.extracted_U_old = self.working_dir + "UN1_Tests_old"
         self.latex_filename = "ExpResults.tex"
         self.conn.config.detect_union = False
         self.conn.config.detect_nep = False
@@ -37,6 +39,21 @@ class MyTestCase(BaseTestCase):
         self.conn.config.detect_or = False
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
+        self.do_setup()
+
+    def do_setup(self):
+        if os.path.exists(self.extracted_U_old):
+            # If the folder exists, delete all the items in it
+            for filename in os.listdir(self.extracted_U_old):
+                file_path = os.path.join(self.extracted_U_old, filename)
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+        else:
+            # If the folder doesn't exist, create it
+            os.makedirs(self.extracted_U_old)
+        print(f"The '{self.extracted_U_old}' folder has been created or cleared.")
 
     @pytest.mark.skip
     def test_latex(self):
@@ -44,13 +61,15 @@ class MyTestCase(BaseTestCase):
 
     def do_test(self, query, key):
         u_Q = self.pipeline.doJob(query)
+        if not os.path.exists(self.extracted_U_old):
+            os.makedirs(self.extracted_U_old)
         print(u_Q)
         record_file = open("extraction_result.sql", "a")
         record_file.write("\n --- START OF ONE EXTRACTION EXPERIMENT\n")
         record_file.write(" --- input query:\n ")
         record_file.write(query)
         record_file.write("\n")
-        with open(self.extracted_U_old + "/e_" + key, "w") as myfile:
+        with open(self.extracted_U_old + "/e_" + key + ".sql", "w") as myfile:
             myfile.write(u_Q)
         record_file.write("\n --- END OF ONE EXTRACTION EXPERIMENT\n")
         self.pipeline.time_profile.print()

@@ -14,8 +14,15 @@ class TPCHRestore:
 
     def doJob(self):
         self.conn.connectUsingParams()
-        self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
-                              f"create schema {self.user_schema};"], self.logger)
+        self.conn.execute_sql([f"SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' "
+                               f"FROM pg_tables WHERE schemaname = '{self.user_schema}' "
+                               f"ORDER BY schemaname, tablename;",
+                               f"SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' "
+                               f"FROM pg_views "
+                               f"WHERE schemaname = '{self.user_schema}' "
+                               f"ORDER BY schemaname, viewname;"])
+        # self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
+        #                       f"create schema {self.user_schema};"], self.logger)
         for tab in self.relations:
             # print(f"Recreating {tab}")
             self.conn.execute_sql(
