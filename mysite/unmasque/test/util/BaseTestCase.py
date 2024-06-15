@@ -4,9 +4,9 @@ import sys
 import unittest
 from _decimal import Decimal
 
-from mysite.unmasque.src.core.abstract.abstractConnection import AbstractConnectionHelper
-from mysite.unmasque.src.util import constants
-from mysite.unmasque.src.util.utils import get_unused_dummy_val, get_format, get_char
+from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
+from ...src.util import constants
+from ...src.util.utils import get_unused_dummy_val, get_format, get_char
 from ...test.util.TPCH_backup_restore import TPCHRestore
 from ...src.util.ConnectionFactory import ConnectionHelperFactory
 from ...src.util.PostgresConnectionHelper import PostgresConnectionHelper
