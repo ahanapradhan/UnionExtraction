@@ -128,7 +128,6 @@ class GenPipelineContext:
         self.global_min_instance_dict = copy.deepcopy(global_min_instance_dict)
         self.__or_predicates = or_predicates
         self.filter_in_predicates = []
-        self.multi_attrib_or_predicates = []
 
         self.__algebraic_eq_predicates = aoa_extractor.algebraic_eq_predicates
         self.global_join_graph = []
@@ -299,10 +298,7 @@ class GenPipelineContext:
                         values.append((i_min, i_max))
                 self.__adjust_for_in_predicates(attrib, tab, values)
             else:
-                preds = []
-                for i in non_empty_indices:
-                    preds.append(p[i])
-                self.multi_attrib_or_predicates.append(preds)
+                raise ValueError("Disjunction on Multiple Attributes are out of scope!")
 
     def __adjust_for_in_predicates(self, attrib, tab, _values):
         values = []
