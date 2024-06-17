@@ -512,11 +512,10 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         self.do_test(query)
 
-
     def test_filter(self):
         lower = 10
         upper = 16
-        query = f"SELECT avg(s_nationkey) FROM supplier WHERE s_suppkey >= {lower} and s_suppkey <= {upper};"
+        query = f"SELECT count(*) as totalRows, avg(s_nationkey) as avgKey FROM supplier WHERE s_suppkey >= {lower} and s_suppkey <= {upper};"
         self.do_test(query)
 
     def test_extraction_Q4(self):
@@ -666,8 +665,8 @@ class ExtractionTestCase(BaseTestCase):
     # @pytest.mark.skip
     def test_sumang_thesis_Q6(self):
         query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
-                f"s_nationkey=n_nationkey "\
-                 f"and (s_acctbal > 2000 or ps_supplycost < 500) group by n_name ORDER BY n_name LIMIT 10;"
+                f"s_nationkey=n_nationkey " \
+                f"and (s_acctbal > 2000 or ps_supplycost < 500) group by n_name ORDER BY n_name LIMIT 10;"
         # and (n_name ='ARGENTINA' or n_regionkey =3)
         self.do_test(query)
 

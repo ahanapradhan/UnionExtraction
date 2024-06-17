@@ -24,7 +24,7 @@ class ZeroResultExecutable(Executable):
             return True
         if len(Res) == 2:
             data = Res[-1]
-            check = all(val == '0' for val in data)
+            check = all(val in [0, '0', None, 'None'] for val in data)
         return check
 
     def isQ_result_has_no_data(self, Res):
