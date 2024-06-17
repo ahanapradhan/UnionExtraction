@@ -393,7 +393,7 @@ class InequalityPredicate(FilterHolder):
     def do_permanent_mutation(self) -> dict:
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_less_thans))
         if not len(directed_paths):
-            return {}
+            return self.global_min_instance_dict
         for path in directed_paths:
             num, datatype = len(path), self.get_datatype(path[0])
             dmin_vals = [self.get_dmin_val(get_attrib(tab_attrib), get_tab(tab_attrib)) for tab_attrib in path]
