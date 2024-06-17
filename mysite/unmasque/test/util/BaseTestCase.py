@@ -134,18 +134,6 @@ class BaseTestCase(unittest.TestCase):
         print('BasicTest.__init__')
         super(BaseTestCase, self).__init__(*args, **kwargs)
 
-    # @classmethod
-    # def setUpClass(cls):
-    #    signal.signal(signal.SIGINT, signal_handler)
-
-    # def run(self, result=None):
-    #    try:
-    #        super(BaseTestCase, self).run(result)
-    #    except Exception as e:
-    #        # Handle the exception here
-    #        print(f"Exception occurred: {e}")
-    #        self.sanitizer.doJob()
-
     def get_dmin_val(self, attrib: str, tab: str):
         values = self.global_min_instance_dict[tab]
         attribs, vals = values[0], values[1]
@@ -175,10 +163,6 @@ class BaseTestCase(unittest.TestCase):
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
         self.sanitizer.doJob()
-
-    # def tearDown(self):
-    # self.sanitizer.doJob()
-    #   super().tearDown()
 
 
 if __name__ == '__main__':

@@ -14,19 +14,22 @@ class TPCHRestore:
 
     def doJob(self):
         self.conn.connectUsingParams()
-        self.conn.execute_sql(["BEGIN;", f"SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' "
-                               f"FROM pg_tables WHERE schemaname = '{self.user_schema}' "
-                               f"ORDER BY schemaname, tablename;",
-                               f"SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' "
-                               f"FROM pg_views "
-                               f"WHERE schemaname = '{self.user_schema}' "
-                               f"ORDER BY schemaname, viewname;", "COMMIT;"])
-        # self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
-        #                       f"create schema {self.user_schema};"], self.logger)
+        self.conn.begin_transaction()
+        tables = self.conn.execute_sql_fetchall(
+            f"SELECT tablename from pg_tables where schemaname = '{self.user_schema}';")
+        for table in tables[0]:
+            self.conn.execute_sql([f"DROP TABLE {self.user_schema}.{table[0]};"])
+        views = self.conn.execute_sql_fetchall(
+            f"SELECT viewname from pg_views where schemaname = '{self.user_schema}';")
+        for view in views[0]:
+            self.conn.execute_sql([f"DROP VIEW {self.user_schema}.{view[0]};"])
+        '''
+        self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
+                              f"create schema {self.user_schema};"], self.logger)
+        '''
         for tab in self.relations:
-            # print(f"Recreating {tab}")
             self.conn.execute_sql(
                 [f"create table if not exists {self.user_schema}.{tab} as select * from {self.backup_schema}.{tab};",
-                 f"ALTER TABLE {self.user_schema}.{tab} SET (autovacuum_enabled = false);"
-                 "commit;"], self.logger)
+                 f"ALTER TABLE {self.user_schema}.{tab} SET (autovacuum_enabled = false);"], self.logger)
+        self.conn.commit_transaction()
         self.conn.closeConnection()
