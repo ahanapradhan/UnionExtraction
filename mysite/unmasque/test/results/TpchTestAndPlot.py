@@ -1,6 +1,6 @@
 import unittest
 
-from mysite.unmasque.src.core.executable import Executable
+from mysite.unmasque.src.core.executables.executable import Executable
 from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
 from mysite.unmasque.test.results.UN1TestAndPlot import TpchExtractionPipelineTestCase
 

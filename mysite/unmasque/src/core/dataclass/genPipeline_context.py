@@ -37,13 +37,14 @@ def update_arithmetic_aoa_commons(LB_dict, UB_dict, filter_attrib_dict):
             continue
         if len(filter_attrib_dict[attrib]) > 2:  # IN
             continue
-        if attrib in LB_dict.keys() and filter_attrib_dict[attrib][0] < LB_dict[attrib]:
-            filter_attrib_dict[attrib] = (LB_dict[attrib], filter_attrib_dict[attrib][1])
+        if attrib in LB_dict.keys():
+            if filter_attrib_dict[attrib][0] < LB_dict[attrib]:
+                filter_attrib_dict[attrib] = (LB_dict[attrib], filter_attrib_dict[attrib][1])
             del LB_dict[attrib]
-        if attrib in UB_dict.keys() and \
-                (len(filter_attrib_dict[attrib]) > 1 and filter_attrib_dict[attrib][1] > UB_dict[attrib]) \
-                or (len(filter_attrib_dict[attrib]) == 1 and filter_attrib_dict[attrib][0] > UB_dict[attrib]):
-            filter_attrib_dict[attrib] = (filter_attrib_dict[attrib][0], UB_dict[attrib])
+        if attrib in UB_dict.keys():
+            if (len(filter_attrib_dict[attrib]) > 1 and filter_attrib_dict[attrib][1] > UB_dict[attrib]) \
+                    or (len(filter_attrib_dict[attrib]) == 1 and filter_attrib_dict[attrib][0] > UB_dict[attrib]):
+                filter_attrib_dict[attrib] = (filter_attrib_dict[attrib][0], UB_dict[attrib])
             del UB_dict[attrib]
 
 
@@ -83,32 +84,27 @@ def update_dict(B_dict, key, val, is_ub):
 def update_transitive_bound(aoa_predicates, LB_dict, UB_dict, key, val, is_ub):
     if is_ub:
         update_dict(UB_dict, key, val, is_ub)
+        '''
         for aoa in aoa_predicates:
             if aoa[0] == key:
                 update_dict(LB_dict, aoa[1], val, not is_ub)
                 break
+        '''
     else:
         update_dict(LB_dict, key, val, is_ub)
+        '''
         for aoa in aoa_predicates:
             if aoa[1] == key:
                 update_dict(UB_dict, aoa[0], val, not is_ub)
                 break
+        '''
 
 
-def update_LB_UB_dicts(aoa_preds, LB_dict, UB_dict, l_attrib, l_dmin_val, r_attrib,
-                       r_dmin_val):
+def update_LB_UB_dicts(aoa_preds, LB_dict, UB_dict, l_attrib, l_ub, r_attrib, r_lb):
     if isinstance(r_attrib, tuple):
-        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict,
-                                key=r_attrib, val=l_dmin_val, is_ub=False)
+        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict, key=r_attrib, val=r_lb, is_ub=False)
     if isinstance(l_attrib, tuple):
-        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict,
-                                key=l_attrib, val=r_dmin_val, is_ub=True)
-    if not isinstance(r_attrib, tuple):
-        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict,
-                                key=l_attrib, val=r_dmin_val, is_ub=True)
-    if not isinstance(l_attrib, tuple):
-        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict,
-                                key=r_attrib, val=l_dmin_val, is_ub=False)
+        update_transitive_bound(aoa_preds, LB_dict=LB_dict, UB_dict=UB_dict, key=l_attrib, val=l_ub, is_ub=True)
 
 
 class GenPipelineContext:
@@ -144,7 +140,8 @@ class GenPipelineContext:
     def doJob(self):
         self.restore_dmin_from_dict()
         self.__generate_arithmetic_conjunctive_disjunctions()
-        self.do_permanent_mutation()
+        g_mut_dict = self.do_permanent_mutation()
+        self.global_min_instance_dict = copy.deepcopy(g_mut_dict)
         self.__create_equi_join_graph()
         self.attrib_types_dict = {(entry[0], entry[1]): entry[2] for entry in self.global_attrib_types}
         self.filter_attrib_dict = self.__construct_filter_attribs_dict()
@@ -263,8 +260,8 @@ class GenPipelineContext:
             l_dmin_val = self.get_dmin_val(l_attrib[1], l_attrib[0])
             r_dmin_val = self.get_dmin_val(r_attrib[1], r_attrib[0])
 
-            r_lb = get_val_plus_delta(datatype, r_dmin_val, -1 * delta)
-            l_ub = get_val_plus_delta(datatype, l_dmin_val, 1 * delta)
+            l_ub = get_val_plus_delta(datatype, r_dmin_val, -1 * delta)
+            r_lb = get_val_plus_delta(datatype, l_dmin_val, 1 * delta)
 
             update_LB_UB_dicts(global_aoa_l_predicates, LB_dict, UB_dict, l_attrib, l_ub, r_attrib, r_lb)
 

@@ -4,7 +4,7 @@ import unittest
 import pytest
 from pygnuplot import gnuplot
 
-from mysite.unmasque.src.core.executable import Executable
+from mysite.unmasque.src.core.executables.executable import Executable
 from mysite.unmasque.src.core.result_comparator import ResultComparator
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.test.src.validator import validate_gb, validate_ob, Ob_suffix, count_ob, same_hidden_ob, \

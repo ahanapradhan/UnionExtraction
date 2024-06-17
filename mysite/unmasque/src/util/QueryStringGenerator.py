@@ -297,9 +297,6 @@ class QueryStringGenerator:
             elif op == 'IN':
                 predicate = f"{tab}.{attrib} between {neg_val[0][0]} and {neg_val[0][1]} OR {tab}.{attrib} between {neg_val[1][0]} and {neg_val[1][1]}"
                 self.arithmetic_disjunctions = elt
-                # self._workingCopy.where_op.replace(f"{tab}.{attrib} between {neg_val[0][0]} and {neg_val[1][1]}", "")
-                # self._workingCopy.where_op.replace("and and ", "and ")
-                # self._workingCopy.where_op.replace("andand ", "and ")
             else:
                 predicate = ""
 
@@ -525,7 +522,8 @@ class QueryStringGenerator:
             if elt != self._workingCopy.projection_names[i] and self._workingCopy.projection_names[i] != '':
                 if self._workingCopy.projection_names[i] == ORPHAN_COLUMN:
                     elt = elt
-                else : elt = elt + ' as ' + self._workingCopy.projection_names[i]
+                else:
+                    elt = elt + ' as ' + self._workingCopy.projection_names[i]
             self._workingCopy.select_op = elt if not i else f'{self._workingCopy.select_op}, {elt}'
 
     def __generate_group_by_clause(self):

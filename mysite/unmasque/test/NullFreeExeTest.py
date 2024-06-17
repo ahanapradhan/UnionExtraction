@@ -1,6 +1,6 @@
 import unittest
 
-from mysite.unmasque.src.core.nullfree_executable import NullFreeExecutable
+from mysite.unmasque.src.core.executables.nullfree_executable import NullFreeExecutable
 from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
 
 

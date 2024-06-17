@@ -7,7 +7,6 @@ from ...core.elapsed_time import create_zero_time_profile
 from ...core.factory.ExecutableFactory import ExecutableFactory
 from ...util.Log import Log
 from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING, ERROR
-from ....src.core.executable import Executable
 from ....src.core.result_comparator import ResultComparator
 
 

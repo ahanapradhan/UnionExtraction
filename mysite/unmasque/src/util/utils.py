@@ -206,6 +206,8 @@ def get_random_number(datatype, lb, ub):
 
 
 def get_val_plus_delta(datatype, min_val, delta):
+    if min_val is None:
+        return None
     plus_delta = min_val
     try:
         if datatype == 'date':

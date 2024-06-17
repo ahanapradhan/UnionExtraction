@@ -1,6 +1,6 @@
 import unittest
 
-from mysite.unmasque.src.core.executable import Executable
+from mysite.unmasque.src.core.executables.executable import Executable
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 

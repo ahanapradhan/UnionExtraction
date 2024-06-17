@@ -3,7 +3,7 @@ import os
 import unittest
 from pygnuplot import gnuplot
 
-from mysite.unmasque.src.core.executable import Executable
+from mysite.unmasque.src.core.executables.executable import Executable
 from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 

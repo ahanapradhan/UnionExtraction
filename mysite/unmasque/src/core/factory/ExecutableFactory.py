@@ -1,6 +1,5 @@
-from ..ZeroResultExecutable import ZeroResultExecutable
-from ....src.core.executable import Executable
-from ....src.core.nullfree_executable import NullFreeExecutable
+from ..executables.ZeroResultExecutable import ZeroResultExecutable
+from ..executables.nullfree_executable import NullFreeExecutable
 
 
 class ExecutableFactory:
@@ -18,6 +17,6 @@ class ExecutableFactory:
         if detect_outer_join:
             obj = NullFreeExecutable(connectionHelper)
         else:
-            obj = ZeroResultExecutable(connectionHelper)#Executable(connectionHelper)
+            obj = ZeroResultExecutable(connectionHelper)  # to handle pure count queries # Executable(connectionHelper)
         self.app = obj
         return obj

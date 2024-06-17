@@ -2,7 +2,7 @@ import unittest
 from frozenlist import FrozenList
 from mysite.unmasque.src.core.orderby_clause import check_sort_order
 from mysite.unmasque.src.util.configParser import Config
-from ..src.core.nullfree_executable import is_result_nonempty_nullfree
+from mysite.unmasque.src.core.executables.nullfree_executable import is_result_nonempty_nullfree
 from ..src.util import utils
 from ..src.util.PostgresConnectionHelper import PostgresConnectionHelper
 

@@ -3,7 +3,7 @@ import sys
 import unittest
 
 from mysite.unmasque.src.core.dataclass.generation_pipeline_package import GenPipeLineContext
-from mysite.unmasque.src.core.executable import Executable
+from mysite.unmasque.src.core.executables.executable import Executable
 from mysite.unmasque.src.util.constants import IDENTICAL_EXPR
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase, create_dmin_for_test
 

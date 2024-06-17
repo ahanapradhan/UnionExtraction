@@ -1,4 +1,4 @@
-from .executable import Executable
+from ....src.core.executables.executable import Executable
 
 
 class ZeroResultExecutable(Executable):

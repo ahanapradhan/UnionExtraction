@@ -1,5 +1,5 @@
-from ...src.core.abstract.ExtractorBase import Base
-from ...src.util.constants import REL_ERROR, RELATION, ORPHAN_COLUMN
+from ..abstract.ExtractorBase import Base
+from ...util.constants import REL_ERROR, RELATION, ORPHAN_COLUMN
 
 
 def get_result_as_tuple_1(res, result):
