@@ -1,7 +1,7 @@
 from abc import ABC
 
 from .AppExtractorBase import AppExtractorBase
-from mysite.unmasque.src.core.executables.nullfree_executable import NullFreeExecutable
+from ..executables.nullfree_executable import NullFreeExecutable
 
 
 def mid_ctid_calculate_shortcut(size):
