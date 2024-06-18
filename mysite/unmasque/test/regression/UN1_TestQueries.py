@@ -58,6 +58,10 @@ class MyTestCase(BaseTestCase):
     def test_latex(self):
         self.create_latex_table_of_queries()
 
+    def setUp(self):
+        super().setUp()
+        del self.pipeline
+
     def do_test(self, query, key):
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
@@ -75,6 +79,7 @@ class MyTestCase(BaseTestCase):
         record_file.write("\n --- END OF ONE EXTRACTION EXPERIMENT\n")
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
+        del factory
 
     def create_latex_table_of_queries(self):
         if os.path.isfile(self.latex_filename):
