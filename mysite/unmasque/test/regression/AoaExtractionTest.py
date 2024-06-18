@@ -2,7 +2,7 @@ import unittest
 
 import pytest
 
-from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
+from ...src.core.factory.PipeLineFactory import PipeLineFactory
 from ...test.util.BaseTestCase import BaseTestCase
 
 
@@ -15,12 +15,17 @@ class MyTestCase(BaseTestCase):
         self.conn.config.detect_or = True
         self.pipeline = None
 
+    def setUp(self):
+        super().setUp()
+        del self.pipeline
+
     def do_test(self, query):
         factory = PipeLineFactory()
         self.pipeline = factory.create_pipeline(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(self.pipeline.correct)
+        del factory
 
     def test_in_agg_aoa(self):
         query = "select o_clerk, avg(2*o_totalprice + 35.90) as total_price, c_acctbal, n_name " \

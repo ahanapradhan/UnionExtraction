@@ -4,9 +4,9 @@ from datetime import date, timedelta
 
 import pytest
 
-from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
-from mysite.unmasque.test.util import queries
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from ...src.core.factory.PipeLineFactory import PipeLineFactory
+from ..util import queries
+from ..util.BaseTestCase import BaseTestCase
 
 
 def generate_random_dates():
@@ -29,8 +29,7 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_nep = True
         self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
-        factory = PipeLineFactory()
-        self.pipeline = factory.create_pipeline(self.conn)
+        self.pipeline = None
 
     def test_himangshu(self):
         query = "SELECT l_shipmode, COUNT(*) FROM ORDERS, LINEITEM WHERE " \
@@ -701,7 +700,13 @@ class ExtractionTestCase(BaseTestCase):
                 "and n_name not LIKE 'MO%' LIMIT 40;"
         self.do_test(query)
 
+    def setUp(self):
+        super().setUp()
+        del self.pipeline
+
     def do_test(self, query):
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
         u_Q = self.pipeline.doJob(query)
         print(u_Q)
         record_file = open("extraction_result.sql", "a")
@@ -716,6 +721,7 @@ class ExtractionTestCase(BaseTestCase):
         record_file.write("\n --- END OF ONE EXTRACTION EXPERIMENT\n")
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
+        del factory
 
     def test_UQ10_1_1(self):
         query = "Select l_shipmode, o_clerk " \
