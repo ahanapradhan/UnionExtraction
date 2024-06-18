@@ -4,7 +4,6 @@ from ...test.util import tpchSettings
 
 
 class TPCHRestore:
-    user_schema = "public"
     backup_schema = "tpch_restore"
 
     def __init__(self, conn: AbstractConnectionHelper):
@@ -14,22 +13,40 @@ class TPCHRestore:
 
     def doJob(self):
         self.conn.connectUsingParams()
-        self.conn.begin_transaction()
+
         tables = self.conn.execute_sql_fetchall(
-            f"SELECT tablename from pg_tables where schemaname = '{self.user_schema}';")
+            f"SELECT tablename from pg_tables where schemaname = '{self.conn.config.schema}' "
+            f"and tableowner = '{self.conn.config.user}';")
         for table in tables[0]:
-            self.conn.execute_sql([f"DROP TABLE {self.user_schema}.{table[0]};"])
+            try:
+                self.conn.begin_transaction()
+                self.conn.execute_sql([f"DROP TABLE {self.conn.config.schema}.{table[0]} cascade;"])
+            except Exception as e:
+                self.conn.rollback_transaction()
+                print(e)
+            else:
+                self.conn.commit_transaction()
         views = self.conn.execute_sql_fetchall(
-            f"SELECT viewname from pg_views where schemaname = '{self.user_schema}';")
+            f"SELECT viewname from pg_views where schemaname = '{self.conn.config.schema}' and "
+            f"viewowner = '{self.conn.config.user}';")
         for view in views[0]:
-            self.conn.execute_sql([f"DROP VIEW {self.user_schema}.{view[0]};"])
+            try:
+                self.conn.begin_transaction()
+                self.conn.execute_sql([f"DROP VIEW {self.conn.config.schema}.{view[0]} cascade;"])
+            except Exception as e:
+                self.conn.rollback_transaction()
+                print(e)
+            else:
+                self.conn.commit_transaction()
         '''
         self.conn.execute_sql([f"drop schema {self.user_schema} cascade;",
                               f"create schema {self.user_schema};"], self.logger)
         '''
+        self.conn.begin_transaction()
         for tab in self.relations:
             self.conn.execute_sql(
-                [f"create table if not exists {self.user_schema}.{tab} as select * from {self.backup_schema}.{tab};",
-                 f"ALTER TABLE {self.user_schema}.{tab} SET (autovacuum_enabled = false);"], self.logger)
+                [f"create table if not exists {self.conn.config.schema}.{tab} "
+                 f"as select * from {self.backup_schema}.{tab};",
+                 f"ALTER TABLE {self.conn.config.schema}.{tab} SET (autovacuum_enabled = false);"], self.logger)
         self.conn.commit_transaction()
         self.conn.closeConnection()
