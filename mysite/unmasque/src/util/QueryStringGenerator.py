@@ -1,17 +1,14 @@
-import ast
 import copy
 from _decimal import Decimal
 
-import frozenlist
 from frozenlist._frozenlist import FrozenList
 
-from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_constants_for, get_tab, get_attrib, \
+from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_tab, get_attrib, \
     get_LB, get_op, get_UB, add_item_to_list
-from ..core.abstract.GenerationPipeLineBase import NUMBER_TYPES
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
 from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX, ORPHAN_COLUMN
-from ..util.utils import get_format, get_min_and_max_val, get_val_plus_delta
+from ..util.utils import get_format, get_min_and_max_val
 
 
 def append_clause(output, clause, param):
