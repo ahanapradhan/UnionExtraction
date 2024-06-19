@@ -37,8 +37,7 @@ class MyTestCase(BaseTestCase):
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
-        factory = PipeLineFactory()
-        self.pipeline = factory.create_pipeline(self.conn)
+        self.pipeline = None
         self.do_setup()
 
     def do_setup(self):
@@ -57,7 +56,13 @@ class MyTestCase(BaseTestCase):
 
     #@pytest.mark.skip
 
+    def setUp(self):
+        super().setUp()
+        del self.pipeline
+
     def do_test(self, query, key):
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
         u_Q = self.pipeline.doJob(query)
         if not os.path.exists(self.extracted_U_old):
             os.makedirs(self.extracted_U_old)
@@ -72,6 +77,7 @@ class MyTestCase(BaseTestCase):
         record_file.write("\n --- END OF ONE EXTRACTION EXPERIMENT\n")
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
+        del factory
 
 
     def test_plot01_Q1(self):
