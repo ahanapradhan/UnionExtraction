@@ -123,7 +123,7 @@ class OrderBy(GenerationPipeLineBase):
             self.has_orderBy = False
             row_num = 2
             for elt in cand_list:
-                if COUNT in elt.aggregation or SUM in elt.aggregation:
+                if COUNT in elt.aggregation :
                     row_num = 3
             for elt in cand_list:
                 order = self.generateData(elt, self.orderby_list, query, row_num)
