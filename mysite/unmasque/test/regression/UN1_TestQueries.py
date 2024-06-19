@@ -16,8 +16,8 @@ from ..util.gnp_testqueries import GQ1, GQ2, GQ3, GQ4, GQ5, GQ6, GQ7, GQ8, GQ9, 
 class MyTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.working_dir = "unmasque/test/"
-        self.extracted_ULatest = self.working_dir + "UN1_tests_new"
+        self.working_dir = "/home/kaptaan/Downloads/cpode/"
+        self.extracted_ULatest = self.working_dir + "UN1_tests_new/"
         self.hq_keys = ["Q1", "Q3", "Q2", "Q10", "Q11", "Q21", "Q18", "Q6", "Q5", "Q4", "Q17", "Q16",
                         "GQ1", "GQ2", "GQ3", "GQ4", "GQ5", "GQ6", "GQ7", "GQ8", "GQ9", "GQ10", "GQ11",
                         "GQ12", "GQ13", "GQ14", "GQ15", "GQ16", "GQ17", "GQ18", "GQ19", "GQ20", "GQ21",
@@ -54,9 +54,7 @@ class MyTestCase(BaseTestCase):
             os.makedirs(self.extracted_U_old)
         print(f"The '{self.extracted_U_old}' folder has been created or cleared.")
 
-    @pytest.mark.skip
-    def test_latex(self):
-        self.create_latex_table_of_queries()
+    #@pytest.mark.skip
 
     def setUp(self):
         super().setUp()
@@ -81,93 +79,48 @@ class MyTestCase(BaseTestCase):
         self.assertTrue(self.pipeline.correct)
         del factory
 
-    def create_latex_table_of_queries(self):
-        if os.path.isfile(self.latex_filename):
-            os.remove(self.latex_filename)
 
-        print(self.hqs)
-
-        eqs = []
-        # Iterate directory
-        for path in os.listdir(self.extracted_U_old):
-            # check if current path is a file
-            if os.path.isfile(os.path.join(self.extracted_U_old, path)):
-                eqs.append(path)
-        print(eqs)
-
-        self.assertEqual(len(self.hqs), len(eqs))
-
-        with open(self.latex_filename, 'a') as expt:
-            expt.write("{\\tiny\n\\begin{longtable}{|p{0.5cm}|p{7cm}|p{7cm}|}\n"
-                       "\\hline\n"
-                       "{\\bf Q. No.} & {\\bf Hidden Query} & {\\bf Extracted Query} \\\\\\hline\\hline\n")
-
-            i = 0
-            for hq in self.hqs:
-                expt.write(self.hq_keys[i] + "&\n")
-                with open(os.path.join(self.extracted_U_old, "e_" + self.hq_keys[i] + ".sql"), 'r') as file:
-                    content = file.read()
-                    splited_data = content.splitlines()
-                    extracted_query = ' '.join(splited_data)
-                    extracted_query = extracted_query.replace("_", "\_")
-                    extracted_query = extracted_query.replace("%", "\%")
-                print(extracted_query)
-
-                expt.write(extracted_query + "&\n")
-
-                with open(os.path.join(self.extracted_ULatest, "e_" + self.hq_keys[i] + ".sql"), 'r') as file:
-                    content = file.read()
-                    splited_data = content.splitlines()
-                    extracted_query = ' '.join(splited_data)
-                    extracted_query = extracted_query.replace("_", "\_")
-                    extracted_query = extracted_query.replace("%", "\%")
-                print(extracted_query)
-                expt.write(extracted_query + "\\\\\hline\n")
-                i += 1
-
-            expt.write("\\end{longtable}}")
-
-    def test_plot1_Q1(self):
+    def test_plot01_Q1(self):
         query = Q1
         key = "Q1"
         self.do_test(query, key)
 
     # @pytest.mark.skip
-    def test_plot2_Q2(self):
+    def test_plot02_Q2(self):
         query = Q2
         self.do_test(query, "Q2")
 
     # @pytest.mark.skip
-    def test_plot3_Q3(self):
+    def test_plot03_Q3(self):
         query = Q3
         self.do_test(query, "Q3")
 
     # @pytest.mark.skip
-    def test_plot4_Q4(self):
+    def test_plot04_Q4(self):
         query = Q4
         self.do_test(query, "Q4")
 
     # @pytest.mark.skip
-    def test_plot5_Q5(self):
+    def test_plot05_Q5(self):
         query = Q5
         self.do_test(query, "Q5")
 
     # @pytest.mark.skip
-    def test_plot6_Q6(self):
+    def test_plot06_Q6(self):
         query = Q6
         self.do_test(query, "Q6")
 
     # @pytest.mark.skip
-    def test_plot7_Q10(self):
+    def test_plot07_Q10(self):
         query = Q10
         self.do_test(query, "Q10")
 
     # @pytest.mark.skip
-    def test_plot8_Q11(self):
+    def test_plot08_Q11(self):
         query = Q11
         self.do_test(query, "Q11")
 
-    def test_plot9_Q16(self):
+    def test_plot09_Q16(self):
         query = Q16
         self.do_test(query, "Q16")
 
@@ -389,31 +342,31 @@ class MyTestCase(BaseTestCase):
         query = GQ51
         self.do_test(query, "GQ51")
 
-    def test_plot67_GQ52(self):
+    def test_plot64_GQ52(self):
         query = GQ52
         self.do_test(query, "GQ52")
 
-    def test_plot68_GQ53(self):
+    def test_plot65_GQ53(self):
         query = GQ53
         self.do_test(query, "GQ53")
 
-    def test_plot69_GQ54(self):
+    def test_plot66_GQ54(self):
         query = GQ54
         self.do_test(query, "GQ54")
 
-    def test_plot70_GQ55(self):
+    def test_plot67_GQ55(self):
         query = GQ55
         self.do_test(query, "GQ55")
 
-    def test_plot71_GQ56(self):
+    def test_plot68_GQ56(self):
         query = GQ56
         self.do_test(query, "GQ56")
 
-    def test_plot72_GQ56(self):
+    def test_plot69_GQ57(self):
         query = GQ57
         self.do_test(query, "GQ57")
 
-    def test_plot73_GQ58(self):
+    def test_plot70_GQ58(self):
         query = GQ58
         self.do_test(query, "GQ58")
 
