@@ -39,3 +39,10 @@
  --- extracted query:
  Some problem in filter extraction!Some problem in Regular mutation pipeline. Aborting extraction!
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select l_orderkey as orderkey, sum(l_discount*(1 + l_tax)) as revenue, o_totalprice as totalprice, o_shippriority as shippriority from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate < '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_totalprice, o_shippriority order by revenue desc, totalprice limit 10;
+ --- extracted query:
+ Some problem in filter extraction!Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT

@@ -444,30 +444,6 @@ def find_concrete_bound_from_filter_bounds(attrib, edge_set, prev_bound, is_uppe
         prev_bound = prev_list[0]  # only one concrete bound possible
     return prev_bound
 
-
-def do_numeric_drama(other_LB, datatype, my_val, delta, satisfied) -> bool:
-    # all the following DRAMA is to handle "numeric" datatype
-    if datatype == 'numeric':
-        bck_diff_1 = Decimal(my_val) - other_LB
-        alt_sat = True
-        if not satisfied:
-            if bck_diff_1 > 0:
-                alt_sat = alt_sat & (abs(bck_diff_1) <= delta)
-        return alt_sat or satisfied
-    return satisfied
-
-
-def is_equal(one, other, datatype):
-    '''
-    if datatype == 'numeric':
-        diff = abs(one - other)
-        delta, _ = get_constants_for(datatype)
-        return diff <= delta
-    else:
-    '''
-    return one == other
-
-
 def conseq(nums):
     for i in range(len(nums) - 1):
         if nums[i] == nums[i + 1]:
