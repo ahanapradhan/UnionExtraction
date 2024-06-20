@@ -1,17 +1,13 @@
 import copy
 import datetime
-import itertools
 import math
-import random
+from decimal import Decimal, localcontext, ROUND_DOWN
 from itertools import combinations
-from random import randint
 
 from dateutil.relativedelta import relativedelta
 
-from decimal import Decimal, localcontext, ROUND_DOWN
-
 from ...src.util import constants
-from ...src.util.constants import dummy_int, dummy_date, dummy_char
+from ...src.util.constants import dummy_int, dummy_date, dummy_char, NUMBER_TYPES
 
 
 def get_header_from_cursour_desc(desc):
@@ -147,7 +143,7 @@ def get_datatype_of_val(val):
 
 
 def get_unused_dummy_val(datatype, value_used):
-    if datatype in ['int', 'integer', 'numeric', 'float']:
+    if datatype in NUMBER_TYPES:
         dint = constants.dummy_int
     elif datatype == 'date':
         dint = constants.dummy_date
@@ -161,7 +157,7 @@ def get_unused_dummy_val(datatype, value_used):
     while dint in value_used:
         dint = get_val_plus_delta(datatype, dint, 1)
 
-    if datatype in ['int', 'integer', 'numeric', 'float']:
+    if datatype in NUMBER_TYPES:
         constants.dummy_int = dint
     elif datatype == 'date':
         constants.dummy_date = dint
@@ -176,9 +172,9 @@ def get_unused_dummy_val(datatype, value_used):
 def get_datatype_from_typesList(list_type):
     if 'date' in list_type:
         datatype = 'date'
-    elif 'int' in list_type:
+    elif 'int' in list_type or 'integer' in list_type:
         datatype = 'int'
-    elif 'numeric' in list_type:
+    elif 'numeric' in list_type or 'decimal' in list_type or 'Decimal' in list_type:
         datatype = 'numeric'
     else:
         datatype = 'text'
@@ -186,23 +182,12 @@ def get_datatype_from_typesList(list_type):
 
 
 def get_dummy_val_for(datatype):
-    if datatype in ['int', 'numeric', 'float', 'Decimal']:
+    if datatype in NUMBER_TYPES:
         return dummy_int
     elif datatype == 'date':
         return dummy_date
     else:
         return dummy_char
-
-
-def get_random_number(datatype, lb, ub):
-    if datatype == 'int':
-        return randint(lb, ub)
-    elif datatype == 'numeric':
-        lb, ub = round(Decimal(lb), 2) * 100, round(Decimal(ub), 2) * 100
-        num = round(Decimal(random.randrange(lb, ub) / 100), 2)
-        return num
-    else:
-        raise ValueError
 
 
 def get_val_plus_delta(datatype, min_val, delta):
@@ -228,7 +213,7 @@ def get_min_and_max_val(datatype):
         return constants.min_date_val, constants.max_date_val
     elif datatype == 'int':
         return constants.min_int_val, constants.max_int_val
-    elif datatype in ['numeric', 'float', 'Decimal']:
+    elif datatype in ['numeric', 'float', 'Decimal', 'decimal']:
         return constants.min_numeric_val, constants.max_numeric_val
     else:
         return constants.min_int_val, constants.max_int_val
@@ -243,11 +228,9 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
 
 
 def get_format(datatype, val):
-    if datatype == 'date' or datatype == 'char' \
-            or datatype == 'character' \
-            or datatype == 'character varying' or datatype == 'str':
+    if datatype in ['date', 'char', 'character', 'character varying', 'str', 'text', 'varchar']:
         return f'\'{str(val)}\''
-    elif datatype == 'float' or datatype == 'numeric':
+    elif datatype in ['float', 'numeric', 'decimal']:
         val = float(val)
         return str(round(val, 3))
     return str(val)
@@ -292,17 +275,10 @@ def get_mid_val(datatype, high, low, div=2):
 def get_cast_value(datatype, val):
     if datatype == 'int':
         return int(val)
-    elif datatype == 'float' or datatype == 'numeric':
+    elif datatype in ['float', 'numeric', 'decimal']:
         return float(val)
     else:  # date
         return val
-
-
-def get_test_value_for(datatype, val, precision):
-    if datatype == 'float' or datatype == 'numeric':
-        return round(val, precision)
-    elif datatype == 'int':
-        return int(val)
 
 
 def get_char(dchar):

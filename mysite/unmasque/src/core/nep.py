@@ -1,6 +1,7 @@
 from typing import List
 
-from .abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES
+from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from ..util.constants import NUMBER_TYPES
 from .abstract.MinimizerBase import Minimizer
 from .filter import Filter
 from .result_comparator import ResultComparator

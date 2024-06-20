@@ -3,7 +3,8 @@ import copy
 import frozenlist
 
 from .dataclass.genPipeline_context import GenPipelineContext
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase
+from ..util.constants import NON_TEXT_TYPES
 from ...src.util.constants import COUNT, NO_ORDER, SUM, ORPHAN_COLUMN
 from ...src.util.utils import get_unused_dummy_val, get_dummy_val_for, \
     get_val_plus_delta, get_format, get_char

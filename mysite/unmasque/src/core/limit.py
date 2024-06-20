@@ -6,7 +6,8 @@ import frozenlist as frozenlist
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from .dataclass.pgao_context import PGAOcontext
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NON_TEXT_TYPES, get_boundary_value
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value
+from ..util.constants import NON_TEXT_TYPES
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
 
 

@@ -1,13 +1,14 @@
 import copy
 from typing import Tuple
 
+from ...util.constants import NON_TEXT_TYPES
 from ....src.core.abstract.MutationPipeLineBase import MutationPipeLineBase
 from ....src.util.aoa_utils import get_tab, get_attrib, get_constants_for
 from ....src.util.utils import get_format, get_min_and_max_val
 
 
 class UN2WhereClause(MutationPipeLineBase):
-    SUPPORTED_DATATYPES = ['int', 'date', 'numeric', 'number']
+    SUPPORTED_DATATYPES = NON_TEXT_TYPES
     TEXT_EQUALITY_OP = 'equal'
     MATH_EQUALITY_OP = '='
     init_done = False
@@ -30,11 +31,8 @@ class UN2WhereClause(MutationPipeLineBase):
 
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
-        #if not self.init_done:
         self.mock = self.mock
         self.init_constants()
-            # self.do_init()
-        #    self.init_done = True
         return query
 
     def init_constants(self) -> None:
@@ -75,9 +73,9 @@ class UN2WhereClause(MutationPipeLineBase):
             return 'int'
         elif 'date' in self.attrib_types_dict[tab_attrib]:
             return 'date'
-        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'varchar2']):
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'varchar2','varchar']):
             return 'str'
-        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['numeric', 'float']):
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['numeric', 'float', 'decimal']):
             return 'numeric'
         else:
             raise ValueError
