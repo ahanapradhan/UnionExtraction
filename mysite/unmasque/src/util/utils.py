@@ -211,9 +211,9 @@ def get_val_plus_delta(datatype, min_val, delta):
 def get_min_and_max_val(datatype):
     if datatype == 'date':
         return constants.min_date_val, constants.max_date_val
-    elif datatype == 'int':
+    elif datatype in ['int', 'integer', 'number']:
         return constants.min_int_val, constants.max_int_val
-    elif datatype in ['numeric', 'float', 'Decimal', 'decimal']:
+    elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
         return constants.min_numeric_val, constants.max_numeric_val
     else:
         return constants.min_int_val, constants.max_int_val
@@ -230,7 +230,7 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
 def get_format(datatype, val):
     if datatype in ['date', 'char', 'character', 'character varying', 'str', 'text', 'varchar']:
         return f'\'{str(val)}\''
-    elif datatype in ['float', 'numeric', 'decimal']:
+    elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
         val = float(val)
         return str(round(val, 3))
     return str(val)
@@ -275,7 +275,7 @@ def get_mid_val(datatype, high, low, div=2):
 def get_cast_value(datatype, val):
     if datatype == 'int':
         return int(val)
-    elif datatype in ['float', 'numeric', 'decimal']:
+    elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
         return float(val)
     else:  # date
         return val

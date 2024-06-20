@@ -19,13 +19,15 @@ class ZeroResultExecutable(Executable):
 
     def isQ_result_empty(self, Res):
         # self.logger.debug("exe: isQ_result_empty")
-        check = False
         if len(Res) <= 1:
             return True
-        if len(Res) == 2:
-            data = Res[-1]
-            check = all(val in [0, '0', None, 'None'] for val in data)
-        return check
+        if len(Res) >= 2:
+            data = Res[1:]
+            for row in data:
+                check = all(val in [0, '0', None, 'None'] for val in row)
+                if not check:
+                    return False
+        return True
 
     def isQ_result_has_no_data(self, Res):
         return self.isQ_result_empty(Res)

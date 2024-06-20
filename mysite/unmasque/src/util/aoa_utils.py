@@ -495,7 +495,7 @@ def get_constants_for(datatype):
     if datatype in ['int', 'date', 'number', 'integer']:
         while_cut_off = 0
         delta = 1
-    elif datatype in ['numeric', 'float', 'decimal']:
+    elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
         while_cut_off = 0.00
         delta = 0.01
     else:

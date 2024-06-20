@@ -98,5 +98,5 @@ NO_REDUCTION = "NO_REDUCTION"
 
 REL_ERROR = "does not exist"
 RELATION = "Relation"
-NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number', 'decimal', 'Decimal']
+NUMBER_TYPES = ['int', 'integer', 'number', 'numeric', 'float', 'decimal', 'Decimal']
 NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
