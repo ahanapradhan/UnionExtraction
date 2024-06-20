@@ -75,7 +75,7 @@ class UN2WhereClause(MutationPipeLineBase):
             return 'date'
         elif any(x in self.attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'varchar2','varchar']):
             return 'str'
-        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['numeric', 'float', 'decimal']):
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['numeric', 'float', 'decimal', 'Decimal']):
             return 'numeric'
         else:
             raise ValueError
