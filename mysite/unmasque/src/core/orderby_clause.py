@@ -124,7 +124,7 @@ class OrderBy(GenerationPipeLineBase):
             self.has_orderBy = False
             row_num = 2
             for elt in cand_list:
-                if COUNT in elt.aggregation :
+                if COUNT in elt.aggregation:
                     row_num = 3
             for elt in cand_list:
                 order = self.generateData(elt, self.orderby_list, query, row_num)
@@ -176,11 +176,11 @@ class OrderBy(GenerationPipeLineBase):
     def generateData(self, obj, orderby_list, query, row_num):
         # check if it is a key attribute, #NO CHECKING ON KEY ATTRIBUTES
         self.logger.debug(obj.attrib)
-        # key_elt = None
-        # if obj.attrib in self.joined_attribs:
-        #    for elt in self.global_join_graph:
-        #        if obj.attrib in elt:
-        #            key_elt = elt
+        key_elt = None
+        if obj.attrib in self.joined_attribs:
+            for elt in self.global_join_graph:
+                if obj.attrib in elt:
+                    key_elt = elt
 
         if not obj.dependency:
             # ATTRIBUTES TO GET SAME VALUE FOR BOTH ROWS
@@ -221,12 +221,14 @@ class OrderBy(GenerationPipeLineBase):
                                 first, second = self.get_text_value(attrib_inner, tabname_inner)
                         else:
                             first = self.get_dmin_val(attrib_inner, tabname_inner)
-                            second = first  # get_val_plus_delta(datatype, first,
+                            second = get_val_plus_delta(datatype, first,
+                                                        1) if attrib_inner in self.joined_attribs else first  # first  # get_val_plus_delta(datatype, first,
                             #            1) if attrib_inner in self.joined_attribs else first
                         insert_values1.append(first)
                         insert_values2.append(second)
                         if k == no_of_db - 1 and (any([(attrib_inner in i) for i in
-                                                       obj.attrib_dependency]) or COUNT in obj.aggregation):  # \
+                                                       obj.attrib_dependency]) or 'Count' in obj.aggregation) or (
+                                k == no_of_db - 1 and key_elt and attrib_inner in key_elt):  # \
                             # or (k == no_of_db - 1 and key_elt and attrib_inner in key_elt):
                             # swap first and second
                             insert_values2[-1], insert_values1[-1] = insert_values1[-1], insert_values2[-1]

@@ -137,7 +137,7 @@ GQ17 = '''SELECT c_name, avg(c_acctbal) as max_balance,o_clerk
 GQ18 = '''SELECT c_name, c_acctbal as max_balance,o_orderdate 
         FROM customer, orders 
         where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14'
-        and o_orderdate = DATE '1995-10-23' and c_acctbal = 121.65;'''
+        and o_orderdate = DATE '1995-10-23' and c_acctbal = 511.69;'''
 
 # Constant = 1, 7 and count in projection.
 GQ19 = '''SELECT c_name, count(o_clerk), 7, 1
@@ -189,7 +189,7 @@ GQ25 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) 
         from customer, orders, lineitem 
         where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate  < '1995-03-15' and l_shipdate > '1995-03-15' 
         group by l_orderkey, o_orderdate, o_shippriority 
-        order by l_orderkey, revenue desc, o_orderdate,  limit 10;'''
+        order by l_orderkey, revenue desc, o_orderdate limit 10;'''
 
 GQ26 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, 
             o_shippriority  
@@ -232,7 +232,7 @@ GQ31 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) 
         from customer, orders, lineitem 
         where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate  < '1995-03-15' and l_shipdate > '1995-03-15' 
         group by l_orderkey, o_shippriority, o_orderdate
-        order by l_orderkey, revenue desc, o_orderdate,  limit 10;'''
+        order by l_orderkey, revenue desc, o_orderdate limit 10;'''
 
 GQ32 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, 
             o_shippriority  
@@ -275,7 +275,7 @@ GQ37 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) 
         from customer, orders, lineitem 
         where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate  < '1995-03-15' and l_shipdate > '1995-03-15' 
         group by o_orderdate, l_orderkey, o_shippriority 
-        order by l_orderkey, revenue desc, o_orderdate,  limit 10;'''
+        order by l_orderkey, revenue desc, o_orderdate limit 10;'''
 
 GQ38 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, 
             o_shippriority  
@@ -318,7 +318,7 @@ GQ43 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) 
         from customer, orders, lineitem 
         where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate  < '1995-03-15' and l_shipdate > '1995-03-15' 
         group by o_orderdate, o_shippriority, l_orderkey 
-        order by l_orderkey, revenue desc, o_orderdate,  limit 10;'''
+        order by l_orderkey, revenue desc, o_orderdate limit 10;'''
 
 GQ44 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, 
             o_shippriority  
@@ -361,7 +361,7 @@ GQ49 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) 
         from customer, orders, lineitem 
         where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate  < '1995-03-15' and l_shipdate > '1995-03-15' 
         group by o_shippriority, l_orderkey, o_orderdate
-        order by l_orderkey, revenue desc, o_orderdate,  limit 10;'''
+        order by l_orderkey, revenue desc, o_orderdate limit 10;'''
 
 GQ50 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, 
             o_shippriority  
@@ -404,7 +404,7 @@ GQ55 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) 
         from customer, orders, lineitem 
         where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate  < '1995-03-15' and l_shipdate > '1995-03-15' 
         group by o_shippriority, o_orderdate, l_orderkey
-        order by l_orderkey, revenue desc, o_orderdate,  limit 10;'''
+        order by l_orderkey, revenue desc, o_orderdate limit 10;'''
 
 GQ56 = '''select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, 
             o_shippriority  
@@ -424,6 +424,11 @@ GQ58 = '''SELECT count(c_name) as rolex, count(o_clerk) as viola
         where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14'
         and o_orderdate <= DATE '1995-10-23' and
         c_acctbal > 0 and c_acctbal < 30.04;'''
+
+GQ59 = '''select p_mfgr, 7 as viola, p_partkey, 1 as rolex
+        from part, partsupp
+        where p_partkey = ps_partkey and p_brand = ’Brand#33’
+        and p_retailprice > 700 and p_size > 3 and ps_suppkey <= 1000;'''
 
 
 
