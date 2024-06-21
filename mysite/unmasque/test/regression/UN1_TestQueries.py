@@ -370,6 +370,10 @@ class MyTestCase(BaseTestCase):
         query = GQ58
         self.do_test(query, "GQ58")
 
+    def test_plot71_GQ59(self):
+        query = GQ59
+        self.do_test(query, "GQ58")
+
 
 if __name__ == '__main__':
     unittest.main()
