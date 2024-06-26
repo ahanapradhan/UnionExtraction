@@ -93,7 +93,10 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         if not self.filter_extractor.done:
             self.update_state(ERROR)
             self.info[FILTER] = None
-            self.error = "Some problem in filter extraction!"
+            if check:
+                self.error = check
+            else:
+                self.error = "Some problem in filter extraction!"
             self.logger.error(self.error)
             return False, time_profile
         if not check:
@@ -114,7 +117,10 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         if not self.equi_join.done:
             self.update_state(ERROR)
             self.info[EQUALITY] = None
-            self.error = "Some problem in Equality predicate extraction!"
+            if check:
+                self.error = check
+            else:
+                self.error = "Some problem in Equality predicate extraction!"
             self.logger.error(self.error)
             return False, time_profile
         if not check:
@@ -141,7 +147,10 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             self.logger.info("Cannot find inequality Predicates.")
         if not self.aoa.done:
             self.info[INEQUALITY] = None
-            self.error = "Some error while Inequality Predicates extraction. Aborting extraction!"
+            if check:
+                self.error = check
+            else:
+                self.error = "Some error while Inequality Predicates extraction. Aborting extraction!"
             self.logger.error(self.error)
             self.update_state(ERROR)
             return False, time_profile
