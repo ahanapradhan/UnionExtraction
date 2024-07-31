@@ -58,6 +58,8 @@ class Initiator(Base):
         all_relations = []
         temp = []
         for row in all_pkfk:
+            if not len(row):
+                continue
             all_relations.append(row[0])
             if row[2].upper() == 'Y':
                 self.global_pk_dict[row[0]] = self.global_pk_dict.get(row[0], '') + ("," if row[0] in temp else '') + \

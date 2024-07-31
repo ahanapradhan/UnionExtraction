@@ -1,7 +1,5 @@
 TABLE_NAME,ATTRIBUTE_NAME,IS_PK,IS_FK,REFERENCING_TABLE,REFERENCING_ATTRIBUTE
-
 call_center,cc_call_center_sk,y,n,,
-
 catalog_page,cp_catalog_page_sk,y,n,,
 catalog_returns,cr_item_sk,y,y,item,i_item_sk
 catalog_returns,cr_order_number,y,n,,

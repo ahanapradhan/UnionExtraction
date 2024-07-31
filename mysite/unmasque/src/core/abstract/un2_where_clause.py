@@ -36,6 +36,8 @@ class UN2WhereClause(MutationPipeLineBase):
         return query
 
     def init_constants(self) -> None:
+        if len(self.constants_dict.keys()):
+            return
         for datatype in self.SUPPORTED_DATATYPES:
             i_min, i_max = get_min_and_max_val(datatype)
             delta, _ = get_constants_for(datatype)

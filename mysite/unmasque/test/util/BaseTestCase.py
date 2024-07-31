@@ -162,7 +162,7 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
-        self.sanitizer.doJob()
+        # self.sanitizer.doJob()
 
 
 if __name__ == '__main__':
