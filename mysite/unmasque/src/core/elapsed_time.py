@@ -185,8 +185,9 @@ class ElapsedTime:
         self.table_string = '''<table class="min_tab">'''
         self.table_string += '''<tr><th>Stage</th><th>Time Taken (s)</th><th>Exec Called</th></tr>'''
         for i in range(len(self.clause_keys)):
-            if i!=len(self.clause_keys)-1:
-                self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(times[i]) + '</td><td>' +str(app[i])+ '</td></tr>'
+            if i != len(self.clause_keys) - 1:
+                self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(times[i]) + '</td><td>' + str(
+                    app[i]) + '</td></tr>'
             else:
                 self.table_string += '<tr><td>' + self.clause_keys[i] + '</td><td>' + str(
                     round(times[i])) + '</td><td>' + str(sum(app)) + '</td></tr>'
@@ -215,6 +216,7 @@ class ElapsedTime:
     def get_app_calls(self):
         apps = [self.app_from_clause,
                 self.app_union,
+                self.app_db_restore,
                 self.app_sampling,
                 self.app_view_min,
                 self.app_where_clause,
