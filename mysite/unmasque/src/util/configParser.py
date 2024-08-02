@@ -4,7 +4,7 @@ from pathlib import Path
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
-    DETECT_OJ, LIMIT, OPTIONS_SECTION
+    DETECT_OJ, LIMIT, OPTIONS_SECTION, WORK_MEM
 
 
 class Config:
@@ -17,6 +17,7 @@ class Config:
 
     def __init__(self):
         # default values
+        self.workmem = None
         self.limit_limit = 1000
         self.database = "postgres"
         # self.index_maker = "create_indexes.sql"
@@ -100,11 +101,16 @@ class Config:
         elif detect_oj.lower() == "yes":
             self.detect_oj = True
 
-        self.load_limit(config_object)
+        self.load_optionals(config_object)
 
-    def load_limit(self, config_object):
+    def load_optionals(self, config_object):
         try:
             limit_config = config_object.get(OPTIONS_SECTION, LIMIT.lower())
             self.limit_limit = int(limit_config)
+        except:
+            pass
+        try:
+            workmem_config = config_object.get(OPTIONS_SECTION, WORK_MEM.lower())
+            self.workmem = int(workmem_config)
         except:
             pass

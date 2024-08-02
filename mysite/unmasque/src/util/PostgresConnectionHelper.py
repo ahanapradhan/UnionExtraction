@@ -73,6 +73,8 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
         self.conn = psycopg2.connect(self.paramString)
         with self.conn.cursor() as set_cur:
             set_cur.execute("SET max_parallel_workers_per_gather = 0;")
+            if self.config.workmem is not None:
+                set_cur.execute(f"SET work_mem = '{self.config.workmem}';")
 
     def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
         for param in params:
