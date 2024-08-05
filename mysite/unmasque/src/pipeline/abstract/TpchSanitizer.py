@@ -36,7 +36,8 @@ class TpchSanitizer:
         backup_name = self.connectionHelper.queries.get_backup(table)
         self.connectionHelper.execute_sql([drop_fn(table),
                                            self.connectionHelper.queries.create_table_as_select_star_from(table,
-                                                                                                          backup_name), "commit;"],
+                                                                                                          backup_name),
+                                           "commit;"],
                                           self.logger)
 
     def backup_one_table(self, table):
@@ -45,10 +46,7 @@ class TpchSanitizer:
         backup_name = self.connectionHelper.queries.get_backup(table)
         self.connectionHelper.begin_transaction()
         self.connectionHelper.execute_sqls_with_DictCursor(
-            [self.connectionHelper.queries.create_table_as_select_star_from(backup_name,
-                                                                            table),
-             f"ALTER TABLE {backup_name} SET (autovacuum_enabled = false);"
-             ],
+            [self.connectionHelper.queries.create_table_as_select_star_from(backup_name, table)],
             self.logger)
         self.connectionHelper.commit_transaction()
         self.logger.debug(f"... done")

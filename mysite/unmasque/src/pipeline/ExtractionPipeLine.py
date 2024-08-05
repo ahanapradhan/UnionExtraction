@@ -213,10 +213,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         eq = self.q_generator.formulate_query_string()
         self.logger.debug("extracted query:\n", eq)
 
-        self.time_profile.update(time_profile)
-
         eq = self._extract_NEP(core_relations, self.all_sizes, query, self.genPipelineCtx)
-        self.time_profile.update_for_app(lm.app.method_call_count)
         return eq
 
     def __gen_pipeline_preprocess(self, core_relations):
