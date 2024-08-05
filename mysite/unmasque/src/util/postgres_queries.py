@@ -4,12 +4,12 @@ from .utils import get_format
 
 class PostgresQueries(CommonQueries):
     def create_table_as_select_star_from_where(self, tab, fromtab, where):
-        return f"Create table {tab} as (Select * from {fromtab} where {where}); " \
-               f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
+        return f"Create table {tab} as (Select * from {fromtab} where {where}); "  # \
+        # f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
 
     def create_table_as_select_star_from_limit_1(self, tab, fromtab):
-        return f"Create table {tab} as (Select * from {fromtab} limit 1); " \
-               f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
+        return f"Create table {tab} as (Select * from {fromtab} limit 1); "  # \
+        # f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
 
     def form_update_query_with_value(self, update_string, datatype, val):
         update_val = get_format(datatype, val)
@@ -34,11 +34,12 @@ class PostgresQueries(CommonQueries):
         return f"Alter view {tab} rename to {retab};"
 
     def create_table_like(self, tab, ctab):
-        return f"Create table {tab} (like {ctab}); ALTER TABLE {tab} SET (autovacuum_enabled = false);"
+        return f"Create table {tab} (like {ctab}); "  # \
+        # f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
 
     def create_table_as_select_star_from(self, tab, fromtab):
-        return f"Create table if not exists {tab} as select * from {fromtab}; " \
-               f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
+        return f"Create table if not exists {tab} as select * from {fromtab}; "  # \
+        # f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
 
     def get_row_count(self, tab):
         return f"select count(*) from {tab};"
@@ -70,8 +71,8 @@ class PostgresQueries(CommonQueries):
         _start_citd = str(start_ctid)
         _end_ctid = str(end_ctid)
         return f"create table {tab} as select * from {fromtab} " \
-               f"where ctid >= '{_start_citd}' and ctid <= '{_end_ctid}'; " \
-               f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
+               f"where ctid >= '{_start_citd}' and ctid <= '{_end_ctid}'; "  # \
+        # f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
 
     def get_ctid_from(self, min_or_max, tabname):
         return f"select {min_or_max}(ctid) from {tabname};"

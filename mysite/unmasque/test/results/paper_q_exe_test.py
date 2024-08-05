@@ -2,17 +2,13 @@ import os
 import time
 
 from mysite.unmasque.src.core.executables.executable import Executable
+from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
 
 class MyTestCase(BaseTestCase):
-    def __init__(self, *args, **kwargs):
-        super(BaseTestCase, self).__init__(*args, **kwargs)
-        self.conn.config.detect_union = False
-        self.conn.config.detect_oj = False
-        self.conn.config.detect_nep = False
-        self.conn.config.detect_or = False
-        self.app = Executable(self.conn)
+    conn = ConnectionHelperFactory().createConnectionHelper()
+    app = Executable(conn)
 
     def test_T5_sql(self):
         test_key = "e_T5.sql"
@@ -30,12 +26,12 @@ class MyTestCase(BaseTestCase):
 
     def do_testJob(self, query, test_key):
         self.conn.connectUsingParams()
-        start_t = time.time()
         res = self.app.doJob(query)
-        end_t = time.time()
         self.conn.closeConnection()
         with open(os.path.join("query_exe_times", test_key), 'w') as file:
-            file.write(str(end_t - start_t))
+            file.write(str(self.app.local_elapsed_time))
+        print(len(res))
+        print(self.app.local_elapsed_time)
 
     def test_Q6_sql(self):
         test_key = "e_Q6.sql"
