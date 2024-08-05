@@ -3,6 +3,9 @@ from .utils import get_format
 
 
 class PostgresQueries(CommonQueries):
+    def analyze_table(self, tab):
+        return f"ANALYZE {tab};"
+
     def create_table_as_select_star_from_where(self, tab, fromtab, where):
         return f"Create table {tab} as (Select * from {fromtab} where {where}); "  # \
         # f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
@@ -15,7 +18,7 @@ class PostgresQueries(CommonQueries):
         update_val = get_format(datatype, val)
         return f"{update_string} {update_val};"
 
-    DEBUG_QUERY = "select pid, state, query from pg_stat_activity where datname = 'tpch';"
+    DEBUG_QUERY = "select pid, state, query from pg_stat_activity where datname = 'tpch20';"
     TERMINATE_STUCK_QUERIES = "SELECT pg_terminate_backend(pid);"
 
     def get_explain_query(self, sql):
