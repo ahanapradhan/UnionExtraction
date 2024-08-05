@@ -102,6 +102,7 @@ class GenericPipeLine(ABC):
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
         if not matched:
+            self.logger.debug("Hash comparator failed. Going for comparison!..")
             rc = ResultComparator(self.connectionHelper, False, self.core_relations)
             self.update_state(RESULT_COMPARE + RUNNING)
             matched = rc.doJob(query, result)
