@@ -1,4 +1,4 @@
-from ...src.core.executable import Executable
+from .executable import Executable
 
 
 def log_result(Res, logger):

@@ -1,5 +1,7 @@
-from ...src.core.abstract.ExtractorBase import Base
-from ...src.util.constants import REL_ERROR, RELATION, ORPHAN_COLUMN
+import time
+
+from ..abstract.ExtractorBase import Base
+from ...util.constants import REL_ERROR, RELATION, ORPHAN_COLUMN
 
 
 def get_result_as_tuple_1(res, result):
@@ -42,7 +44,10 @@ class Executable(Base):
         query = self.extract_params_from_args(args)
         result = []
         try:
+            start_t = time.time()
             res, description = self.connectionHelper.execute_sql_fetchall(query, self.logger)
+            end_t = time.time()
+            self.logger.debug(f"Exe time: {str(end_t - start_t)}")
             add_header(description, result)
             if res is not None:
                 result = get_result_as_tuple_1(res, result)

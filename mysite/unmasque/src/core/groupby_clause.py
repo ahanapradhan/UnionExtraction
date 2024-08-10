@@ -4,12 +4,10 @@ from frozenlist._frozenlist import FrozenList
 
 from .dataclass.genPipeline_context import GenPipelineContext
 
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value, NUMBER_TYPES
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util.utils import get_dummy_val_for, get_val_plus_delta, get_format, get_char
-from ..util.constants import COUNT_THERE, CONST_1_THERE, CONST_1_VALUE
-
-NON_TEXT_TYPES = ['date', 'int', 'integer', 'numeric', 'float']
+from ..util.constants import COUNT_THERE, CONST_1_THERE, CONST_1_VALUE, NUMBER_TYPES, NON_TEXT_TYPES
 
 
 def has_attrib_key_condition(attrib, attrib_inner, key_list):

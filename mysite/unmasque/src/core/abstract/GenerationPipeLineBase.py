@@ -8,11 +8,9 @@ from frozenlist._frozenlist import FrozenList
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..dataclass.genPipeline_context import GenPipelineContext
+from ...util.constants import NON_TEXT_TYPES
 from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
-
-NUMBER_TYPES = ['int', 'integer', 'numeric', 'float', 'number', 'Decimal']
-NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
 
 
 def generate_random_date(lb, ub):

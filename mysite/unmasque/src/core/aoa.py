@@ -188,32 +188,31 @@ class InequalityPredicate(FilterHolder):
         find_transitive_concrete_upperBs(E, to_remove)
         find_transitive_concrete_lowerBs(E, to_remove)
 
-        cb_list_with_nones = map(lambda x: x if (not isinstance(x[0], tuple) or not isinstance(x[1], tuple)) else None,
-                                 E)
-        cb_list = list(filter(lambda ub: ub is not None, cb_list_with_nones))
-
-        self.__find_transitive_concrete_L_Bounds(L, cb_list, to_remove, is_UB=True)
-        self.__find_transitive_concrete_L_Bounds(L, cb_list, to_remove, is_UB=False)
+        self.__find_transitive_concrete_L_Bounds(L, E, to_remove, is_UB=True)
+        self.__find_transitive_concrete_L_Bounds(L, E, to_remove, is_UB=False)
 
         for t_r in to_remove:
             remove_item_from_list(t_r, E)
 
-    def __find_transitive_concrete_L_Bounds(self, L: List[Tuple], cb_list: list, to_remove: list, is_UB: bool) -> None:
-        if not len(L) or not len(cb_list):
+    def __find_transitive_concrete_L_Bounds(self, L: List[Tuple], E: list, to_remove: list, is_UB: bool) -> None:
+        if not len(L) or not len(E):
             return
         for edge in L:
             datatype = self.get_datatype(edge[0])
             coeff = -1 if is_UB else 1
             lup, gup = None, None
-            lup = find_concrete_bound_from_filter_bounds(edge[0], cb_list, lup, is_upper_bound=is_UB)
-            gup = find_concrete_bound_from_filter_bounds(edge[1], cb_list, gup, is_upper_bound=is_UB)
+            lup = find_concrete_bound_from_filter_bounds(edge[0], E, lup, is_upper_bound=is_UB)
+            if lup is None:
+                lup = self.__what_is_possible_bound_val(E, L, edge[0], datatype, is_UB)
+            gup = find_concrete_bound_from_filter_bounds(edge[1], E, gup, is_upper_bound=is_UB)
+            if gup is None:
+                gup = self.__what_is_possible_bound_val(E, L, edge[1], datatype, is_UB)
             base_b = gup if is_UB else lup
             other_b = lup if is_UB else gup
-            if gup is not None and lup is not None:
-                base_op_one = get_val_plus_delta(datatype, base_b, coeff * get_delta(self.constants_dict[datatype]))
-                if other_b == base_op_one:
-                    redundant_pred = (edge[0], lup) if is_UB else (gup, edge[1])
-                    to_remove.append(redundant_pred)
+            base_op_one = get_val_plus_delta(datatype, base_b, coeff * get_delta(self.constants_dict[datatype]))
+            if other_b == base_op_one:
+                redundant_pred = (edge[0], lup) if is_UB else (gup, edge[1])
+                to_remove.append(redundant_pred)
 
     def __find_concrete_bound_from_edge_set(self, attrib, edge_set, datatype, is_UB):
         col_ps_getter = find_ge_attribs_from_edge_set if is_UB else find_le_attribs_from_edge_set
@@ -344,16 +343,29 @@ class InequalityPredicate(FilterHolder):
             for col_i in reversed(path):
                 self.__extract_dormant_concrete_bound(E, L, col_i, datatype, query, is_UB=True)
 
+    def __what_is_concrete_bound_val(self, tab_attrib, is_UB):
+        compare_op = '<=' if is_UB else '>='
+        for pred in self.arithmetic_filters:
+            if (pred[0], pred[1]) == tab_attrib:
+                if pred[2] in ['equal', '=', compare_op, 'range']:
+                    if is_UB:
+                        return pred[4]
+                    else:
+                        return pred[3]
+        return None
+
     def __what_is_possible_bound_val(self, E, L, col_src, datatype, is_UB):
         get_extreme = get_max if is_UB else get_min
         find_e_attribs_from_edge_set = find_ge_attribs_from_edge_set if is_UB else find_le_attribs_from_edge_set
         factor = -1 if is_UB else 1
-        bound_val = None
         col_list = find_e_attribs_from_edge_set(col_src, E)
         if len(col_list):
             col_next = col_list[0]
             bound_val = self.__what_is_possible_bound_val(E, L, col_next, datatype, is_UB)
         else:
+            bound_val = self.__what_is_concrete_bound_val(col_src, is_UB)
+            if bound_val is not None:
+                return bound_val
             col_list = find_e_attribs_from_edge_set(col_src, L)
             if len(col_list):
                 col_next = col_list[0]
@@ -378,10 +390,10 @@ class InequalityPredicate(FilterHolder):
                 edge_set_dict[datatype] = edge_set
         return edge_set_dict, not_aoa
 
-    def do_permanent_mutation(self):
+    def do_permanent_mutation(self) -> dict:
         directed_paths = find_all_chains(create_adjacency_map_from_aoa_predicates(self.aoa_less_thans))
         if not len(directed_paths):
-            return
+            return self.global_min_instance_dict
         for path in directed_paths:
             num, datatype = len(path), self.get_datatype(path[0])
             dmin_vals = [self.get_dmin_val(get_attrib(tab_attrib), get_tab(tab_attrib)) for tab_attrib in path]
@@ -413,7 +425,7 @@ class InequalityPredicate(FilterHolder):
                 self.logger.debug(new_vals)
                 for i in range(num):
                     self.mutate_dmin_with_val(datatype, path[i], new_vals[i])
-        self.global_min_instance_dict = copy.deepcopy(self.filter_extractor.global_min_instance_dict)
+        return self.filter_extractor.global_min_instance_dict
         # whose d min dict getting mutation? callers or aoa?
 
     def __fill_in_internal_predicates(self):

@@ -1,7 +1,7 @@
 from abc import ABC
 
 from .AppExtractorBase import AppExtractorBase
-from ..nullfree_executable import NullFreeExecutable
+from ..executables.nullfree_executable import NullFreeExecutable
 
 
 def mid_ctid_calculate_shortcut(size):
@@ -162,12 +162,6 @@ class Minimizer(AppExtractorBase, ABC):
         res, des = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(table))
         for row in res:
             self.logger.debug(row)
-        '''
-        for tab in self.core_relations:
-            res, des = self.connectionHelper.execute_sql_fetchall(get_star(tab))
-            for row in res:
-                self.logger.debug(row)
-        '''
 
     def restore_d_min(self):
         for tab in self.core_relations:

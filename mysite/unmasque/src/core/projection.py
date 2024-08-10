@@ -1,13 +1,12 @@
 import math
 import random
-import ast
+
 import numpy as np
 from sympy import symbols, expand, collect, nsimplify, Rational, Integer
 
 from .dataclass.genPipeline_context import GenPipelineContext
-from ..util.constants import CONST_1_VALUE
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value, \
-    NON_TEXT_TYPES
+from ..util.constants import CONST_1_VALUE, NUMBER_TYPES
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
 from ...src.util.utils import count_empty_lists_in, find_diff_idx, get_format
@@ -88,10 +87,7 @@ class Projection(GenerationPipeLineBase):
         new_result = new_result[1:]
         projected_attrib = []
         keys_to_skip = []
-        projection_dep = []
-        for i in range(len(projection_names)):
-            projection_dep.append([])
-
+        projection_dep = [[] for _ in projection_names]
         s_value_dict = {}
 
         for entry in self.global_attrib_types:
@@ -111,7 +107,7 @@ class Projection(GenerationPipeLineBase):
                 attrib_tup = projection_dep[i][0]
                 projected_attrib.append(attrib_tup[1])
             else:
-                if len(projection_dep[i]) == 0 and new_result[0][i] != CONST_1_VALUE :
+                if len(projection_dep[i]) == 0 and new_result[0][i] != CONST_1_VALUE:
                     # If no dependency is there and value is not 1 in result this means it is constant.
                     projected_attrib.append(get_format(projection_coulumn_type[i], new_result[0][i]))
                 else:
@@ -121,10 +117,11 @@ class Projection(GenerationPipeLineBase):
         return projected_attrib, projection_names, projection_dep, True
 
     def get_projection_column_type(self, query, projection_names):
-        mod_query = query.replace(";",'')
+        mod_query = query.replace(";", '')
         datatype_names = []
         for i in projection_names:
-            typecheck_query = str('SELECT pg_typeof(' + i + ') AS data_type FROM (' + mod_query + ') AS subquery limit 1;')
+            typecheck_query = str(
+                'SELECT pg_typeof(' + i + ') AS data_type FROM (' + mod_query + ') AS subquery limit 1;')
             type_result = self.app.doJob(typecheck_query)
             modified_str = str(type_result[1])
             modified_str = modified_str[1:-2]

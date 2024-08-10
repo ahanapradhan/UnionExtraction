@@ -1,17 +1,14 @@
-import ast
 import copy
 from _decimal import Decimal
 
-import frozenlist
 from frozenlist._frozenlist import FrozenList
 
-from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_constants_for, get_tab, get_attrib, \
+from .aoa_utils import remove_item_from_list, find_tables_from_predicate, get_tab, get_attrib, \
     get_LB, get_op, get_UB, add_item_to_list
-from ..core.abstract.GenerationPipeLineBase import NUMBER_TYPES, NON_TEXT_TYPES
 from ..core.factory.ExecutableFactory import ExecutableFactory
 from ..util.Log import Log
 from ..util.constants import COUNT, SUM, max_str_len, AVG, MIN, MAX, ORPHAN_COLUMN
-from ..util.utils import get_format, get_min_and_max_val, get_val_plus_delta
+from ..util.utils import get_format, get_min_and_max_val
 
 
 def append_clause(output, clause, param):
@@ -26,7 +23,6 @@ class QueryDetails:
 
         self.eq_join_predicates = []
         self.filter_in_predicates = []
-        self.multi_attrib_or_predicates = []
         self.arithmetic_filters = []
         self.filter_not_in_predicates = []
         self.aoa_less_thans = []
@@ -86,10 +82,6 @@ class QueryDetails:
                         to_remove.append(ar_fil)
                     elif op == 'range' and (get_LB(ar_fil), get_UB(ar_fil)) in get_LB(fl_in):
                         to_remove.append(ar_fil)
-        for mul in self.multi_attrib_or_predicates:
-            for m_tup in mul:
-                if m_tup in self.arithmetic_filters:
-                    to_remove.append(m_tup)
         for t_r in to_remove:
             self.arithmetic_filters.remove(t_r)
 
@@ -239,9 +231,6 @@ class QueryStringGenerator:
             for pred in remnants.filter_in_predicates:
                 if pred not in self._workingCopy.filter_in_predicates:
                     self._workingCopy.filter_in_predicates.append(pred)
-            for pred in remnants.multi_attrib_or_predicates:
-                if pred not in self._workingCopy.multi_attrib_or_predicates:
-                    self._workingCopy.multi_attrib_or_predicates.append(pred)
         self._workingCopy.optimize_arithmetic_filters()
 
     @property
@@ -349,10 +338,7 @@ class QueryStringGenerator:
                 self.logger.debug("NOT IN FOUND..")
                 for v in value:
                     t_remove.append((key[0], key[1], key[2], v))
-                all_neps = [get_format(datatype, v) for v in value]
-                if datatype in NON_TEXT_TYPES:
-                    all_neps = sorted(all_neps)
-                f_value = FrozenList(all_neps)
+                f_value = FrozenList([get_format(datatype, v) for v in value])
                 f_value.freeze()
                 self._workingCopy.filter_not_in_predicates.append((key[0], key[1], 'NOT IN', f_value, f_value))
                 self.logger.debug(self._workingCopy.filter_not_in_predicates)
@@ -490,20 +476,14 @@ class QueryStringGenerator:
             predicates.append(self.get_aoa_string(aoa))
 
     def __generate_arithmetic_pure_conjunctions(self, predicates):
+        # self._workingCopy.optimize_arithmetic_filters()
+
         apc_predicates = self._workingCopy.filter_in_predicates \
                          + self._workingCopy.arithmetic_filters \
                          + self._workingCopy.filter_not_in_predicates
         for a_eq in apc_predicates:
             pred = self.formulate_predicate_from_filter(a_eq)
             add_item_to_list(pred, predicates)
-
-        for p_tup in self._workingCopy.multi_attrib_or_predicates:
-            strs = []
-            for pred in p_tup:
-                pred_str = self.formulate_predicate_from_filter(pred)
-                strs.append(pred_str)
-            or_pred = " OR ".join(strs)
-            add_item_to_list(f"({or_pred})", predicates)
 
     def __optimize_group_by_attributes(self):
         for i in range(len(self._workingCopy.global_projected_attributes)):

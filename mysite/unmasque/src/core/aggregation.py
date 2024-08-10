@@ -7,7 +7,8 @@ from frozenlist._frozenlist import FrozenList
 from .dataclass.genPipeline_context import GenPipelineContext
 from .projection import get_param_values_external
 from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
-from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, NUMBER_TYPES, get_boundary_value
+from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value
+from ..util.constants import NUMBER_TYPES
 from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
 from ...src.util.constants import min_int_val, max_int_val
 

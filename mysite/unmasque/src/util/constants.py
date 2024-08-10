@@ -87,6 +87,7 @@ RESULT_COMPARE = "RESULT COMPARATOR"
 RESTORE_DB = "RESTORE DATABASE"
 OUTER_JOIN = "OUTER JOIN"
 NEP_COMPARATOR = "NEP_COMPARATOR"
+WORK_MEM = "work_mem"
 
 
 NEP_ = "NEP"
@@ -98,3 +99,5 @@ NO_REDUCTION = "NO_REDUCTION"
 
 REL_ERROR = "does not exist"
 RELATION = "Relation"
+NUMBER_TYPES = ['int', 'integer', 'number', 'numeric', 'float', 'decimal', 'Decimal']
+NON_TEXT_TYPES = ['date'] + NUMBER_TYPES

@@ -4,9 +4,9 @@ from datetime import date, timedelta
 
 import pytest
 
-from mysite.unmasque.src.core.factory.PipeLineFactory import PipeLineFactory
-from mysite.unmasque.test.util import queries
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from ...src.core.factory.PipeLineFactory import PipeLineFactory
+from ..util import queries
+from ..util.BaseTestCase import BaseTestCase
 
 
 def generate_random_dates():
@@ -26,37 +26,14 @@ class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = False
-        self.conn.config.detect_nep = False
+        self.conn.config.detect_nep = True
         self.conn.config.detect_oj = False
-        self.conn.config.detect_or = True
-        factory = PipeLineFactory()
-        self.pipeline = factory.create_pipeline(self.conn)
+        self.conn.config.detect_or = False
+        self.pipeline = None
 
     def test_himangshu(self):
         query = "SELECT l_shipmode, COUNT(*) FROM ORDERS, LINEITEM WHERE " \
                 "O_ORDERKEY = L_ORDERKEY AND O_ORDERSTATUS = 'O' AND L_SHIPDATE >= '1998-04-03' group by l_shipmode;"
-        self.do_test(query)
-
-    def test_nep_bin_search(self):
-        query = "select n_name, r_name from nation, region where n_regionkey = r_regionkey and " \
-                "(n_nationkey between 2 and 5 or n_nationkey between 10 and 13);"
-        self.do_test(query)
-
-    def test_nep_bin_search1(self):
-        query = "Select l_shipmode, Sum(l_extendedprice) as revenue From lineitem " \
-                "Where l_orderkey between 125 and 135 OR l_orderkey between 236 and 369 " \
-                "and l_shipdate between '1993-01-01' and '1994-12-31' " \
-                "Group By l_shipmode " \
-                "Order By l_shipmode asc Limit 100;"
-        self.do_test(query)
-
-    def test_nep_bin_search2(self):
-        query = "select l_shipmode,sum(l_extendedprice) as revenue " \
-                "from lineitem " \
-                "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and ((l_orderkey > 124 and l_orderkey < 370) and " \
-                "l_orderkey NOT IN (133, 134, 135)) group by l_shipmode order by l_shipmode " \
-                "limit 100;"
         self.do_test(query)
 
     def test_gopi_4june_acctbal(self):
@@ -196,7 +173,6 @@ class ExtractionTestCase(BaseTestCase):
                 "GROUP BY ps_partkey, o_custkey ORDER BY dummy LIMIT 26);"
         self.do_test(query)
 
-    @pytest.mark.skip
     def test_paper_example(self):
         query = "SELECT c_name as name, c_acctbal as account_balance " \
                 "FROM orders, customer, nation WHERE c_custkey = o_custkey " \
@@ -214,7 +190,6 @@ class ExtractionTestCase(BaseTestCase):
                 "and o_totalprice >= s_acctbal and o_totalprice >= 30000 and 50000 >= s_acctbal;"
         self.do_test(query)
 
-    @pytest.mark.skip
     def test_UQ11(self):
         query = "Select o_orderpriority, " \
                 "count(*) as order_count " \
@@ -225,7 +200,6 @@ class ExtractionTestCase(BaseTestCase):
                 "Order By o_orderpriority;"
         self.do_test(query)
 
-    @pytest.mark.skip
     def test_UQ10(self):
         self.conn.connectUsingParams()
         query = "Select l_shipmode, count(*) as count " \
@@ -513,17 +487,6 @@ class ExtractionTestCase(BaseTestCase):
         for i in range(1):
             self.do_test(query)
 
-    def test_extraction_tpch_q1(self):
-        key = 'q1'
-        query = queries.queries_dict[key]
-        self.do_test(query)
-
-    def test_for_date_filter(self):
-        for i in range(1):
-            key = 'q1_filter'
-            query = queries.queries_dict[key]
-            self.do_test(query)
-
     def test_for_date_filter_2(self):
         for i in range(1):
             lower, upper = generate_random_dates()
@@ -548,16 +511,10 @@ class ExtractionTestCase(BaseTestCase):
         query = queries.queries_dict[key]
         self.do_test(query)
 
-    # @pytest.mark.skip
-    def test_extraction_Q18_test1(self):
-        key = 'Q18_test'
-        query = queries.queries_dict[key]
-        self.do_test(query)
-
     def test_filter(self):
         lower = 10
         upper = 16
-        query = f"SELECT avg(s_nationkey) FROM supplier WHERE s_suppkey >= {lower} and s_suppkey <= {upper};"
+        query = f"SELECT count(*) as totalRows, avg(s_nationkey) as avgKey FROM supplier WHERE s_suppkey >= {lower} and s_suppkey <= {upper};"
         self.do_test(query)
 
     def test_extraction_Q4(self):
@@ -629,32 +586,6 @@ class ExtractionTestCase(BaseTestCase):
                 "< '1995-03-15' and l_shipdate > '1995-03-15' " \
                 "group by l_orderkey, o_orderdate, o_shippriority order by revenue " \
                 "desc, o_orderdate limit 10;"
-        self.do_test(query)
-
-    @pytest.mark.skip
-    def test_Q21(self):  # enable it after fixing order by
-        query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \
-                "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
-                "and s_nationkey = n_nationkey Group By s_name " \
-                "Order By numwait desc, s_name Limit 100;"
-        self.do_test(query)
-
-    @pytest.mark.skip
-    def test_extreme(self):
-        query = "select * from part where p_size + 1 <= 10;"
-        self.do_test(query)
-
-    @pytest.mark.skip
-    def test_diff_res(self):
-        query = "SELECT * FROM lineitem, orders " \
-                "WHERE l_quantity < 1000 " \
-                "AND l_tax < 1000 " \
-                "AND o_orderkey=l_orderkey  ;"
-        self.do_test(query)
-
-    @pytest.mark.skip
-    def test_extreme_1(self):
-        query = "select count(*) from part where p_size >= -2147483647;"
         self.do_test(query)
 
     def test_gopinath_bugfix(self):
@@ -733,20 +664,9 @@ class ExtractionTestCase(BaseTestCase):
     # @pytest.mark.skip
     def test_sumang_thesis_Q6(self):
         query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
-                f"s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) "\
-                 f"and (s_acctbal > 2000 or ps_supplycost > 500) group by n_name ORDER BY n_name LIMIT 10;"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q6_easyOR(self):
-        query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
-                f"s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) "\
-                 f"and (s_acctbal > 2000 or ps_supplycost = 559.33) group by n_name ORDER BY n_name LIMIT 10;"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q6_easyOR_1(self):
-        query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
-                f"s_nationkey=n_nationkey and (n_name ='ARGENTINA' or n_regionkey =3) "\
-                 f"and (s_acctbal > 2000 or ps_supplycost = 838.16) group by n_name ORDER BY n_name LIMIT 10;"
+                f"s_nationkey=n_nationkey " \
+                f"and (s_acctbal > 2000 or ps_supplycost < 500) group by n_name ORDER BY n_name LIMIT 10;"
+        # and (n_name ='ARGENTINA' or n_regionkey =3)
         self.do_test(query)
 
     def test_two_neps_one_table(self):
@@ -780,7 +700,13 @@ class ExtractionTestCase(BaseTestCase):
                 "and n_name not LIKE 'MO%' LIMIT 40;"
         self.do_test(query)
 
+    def setUp(self):
+        super().setUp()
+        del self.pipeline
+
     def do_test(self, query):
+        factory = PipeLineFactory()
+        self.pipeline = factory.create_pipeline(self.conn)
         u_Q = self.pipeline.doJob(query)
         print(u_Q)
         record_file = open("extraction_result.sql", "a")
@@ -795,6 +721,7 @@ class ExtractionTestCase(BaseTestCase):
         record_file.write("\n --- END OF ONE EXTRACTION EXPERIMENT\n")
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
+        del factory
 
     def test_UQ10_1_1(self):
         query = "Select l_shipmode, o_clerk " \

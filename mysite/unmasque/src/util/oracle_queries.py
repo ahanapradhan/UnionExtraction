@@ -3,6 +3,15 @@ from .utils import get_format
 
 
 class OracleQueries(CommonQueries):
+    def get_non_null_row_count(self, tab):
+        pass
+
+    def update_key_attrib_with_val(self, tab, attrib, value, prev, qoted):
+        pass
+
+    def analyze_table(self, tab):
+        pass
+
     schema = None
 
     def create_table_as_select_star_from_where(self, tab, fromtab, where):
