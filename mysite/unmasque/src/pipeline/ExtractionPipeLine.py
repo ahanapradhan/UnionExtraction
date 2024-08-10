@@ -40,8 +40,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.global_pk_dict = None
         self.pgao_ctx = PGAOcontext()
 
-    def process(self, query: str):
-        return GenericPipeLine.process(self, query)
+    def process(self, query: str, speed: float):
+        return GenericPipeLine.process(self, query, speed)
 
     def doJob(self, query, qe=None):
         return GenericPipeLine.doJob(self, query, qe)

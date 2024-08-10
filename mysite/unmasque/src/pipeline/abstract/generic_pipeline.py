@@ -51,7 +51,7 @@ class GenericPipeLine(ABC):
         self.error = ""
         self.core_relations = None
 
-    def process(self, query: str, speed: float):
+    def process(self, query, speed=1.0):
         try:
             self.update_state(WAITING)
             exe_factory = ExecutableFactory()
