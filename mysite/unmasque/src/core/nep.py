@@ -169,7 +169,7 @@ class NepMinimizer(Minimizer):
         return True
 
     def match(self, query, Q_E):
-        return self.nep_comparator.doJob(query, Q_E)
+        return self.nep_comparator.doJob(query, Q_E)[0]
 
 
 class NEP(GenerationPipeLineBase):
