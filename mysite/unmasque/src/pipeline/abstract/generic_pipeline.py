@@ -50,6 +50,7 @@ class GenericPipeLine(ABC):
         self.all_sizes = {}
         self.error = ""
         self.core_relations = None
+        self.error_string = None
 
     def process(self, query: str):
         try:
