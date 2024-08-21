@@ -83,11 +83,10 @@ class PostgresQueries(CommonQueries):
         return f"INSERT INTO {tab} {att_order}  VALUES {esc_string};"
 
     def update_sql_query_tab_date_attrib_value(self, tab, attrib, value):
-        if value in ['None', None]:
+        if value in ['None', None, 'NULL']:
             query = f"UPDATE {tab} SET {attrib} = NULL;"
         else:
             query = f"UPDATE {tab} SET {attrib} = DATE {value};"
-        print(query)
         return query
 
     def update_key_attrib_with_val(self, tab, attrib, value, prev, qoted):
@@ -99,12 +98,10 @@ class PostgresQueries(CommonQueries):
 
     def update_tab_attrib_with_value(self, tab, attrib, value):
         query = f"UPDATE {tab}  SET {attrib}={str(value)};"
-        print(query)
         return query
 
     def update_tab_attrib_with_quoted_value(self, tab, attrib, value):
         query = f"UPDATE {tab}  SET {attrib}= '{value}';"
-        # print(query)
         return query
 
     def update_sql_query_tab_attribs(self, tab, attrib):

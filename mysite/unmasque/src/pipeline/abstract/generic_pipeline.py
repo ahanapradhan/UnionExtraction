@@ -70,6 +70,7 @@ class GenericPipeLine(ABC):
             if result is None:
                 result = self.error
                 self.update_state(ERROR)
+                self.logger.error("Could not extract correct query. Not going to compare result! bye..")
                 return result
             self.verify_correctness(query, result)
             self.time_profile.update_for_app(app.method_call_count)
@@ -99,10 +100,12 @@ class GenericPipeLine(ABC):
         rc = ResultComparator(self.connectionHelper, True, self.core_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched = rc.doJob(query, result)
+        """
         if not matched:
             rc = ResultComparator(self.connectionHelper, False, self.core_relations)
             self.update_state(RESULT_COMPARE + RUNNING)
             matched = rc.doJob(query, result)
+        """
         self.info[RESULT_COMPARE] = matched
         self.connectionHelper.closeConnection()
 
