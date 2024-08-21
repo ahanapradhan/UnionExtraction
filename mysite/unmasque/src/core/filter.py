@@ -89,6 +89,7 @@ class Filter(UN2WhereClause):
             attrib_list = self.global_all_attribs[tabname]
             for attrib in attrib_list:
                 datatype = self.get_datatype((tabname, attrib))
+                self.logger.debug(f"Checking filter for {tabname}.{attrib} of datatype {datatype}")
                 self.extract_filter_on_attrib_set(filter_attribs, query, [(tabname, attrib)], datatype)
         return filter_attribs
 

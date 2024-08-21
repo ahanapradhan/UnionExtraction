@@ -18,6 +18,8 @@ class UnionPipeLine(OuterJoinPipeLine):
         self.update_state(UNION + DONE)
         self.connectionHelper.closeConnection()
 
+        print(f"Union identified: {p}")
+
         self.info[UNION] = [list(ele) for ele in p]
         self.__update_time_profile(union, union_profile)
         self.core_relations = [item for subset in p for item in subset]
@@ -38,7 +40,12 @@ class UnionPipeLine(OuterJoinPipeLine):
 
             self.connectionHelper.connectUsingParams()
             self.__nullify_relations(nullify)
-            eq = self._after_from_clause_extract(query, core_relations)
+            try:
+                self.logger.debug(f"trying to extract a subquery with FROM clause {core_relations}")
+                eq = self._after_from_clause_extract(query, core_relations)
+            except Exception as e:
+                self.logger.error(e)
+                eq = None
             self.__revert_nullifications(nullify)
             self.q_generator.reset()
             self.connectionHelper.closeConnection()
@@ -50,7 +57,7 @@ class UnionPipeLine(OuterJoinPipeLine):
                 u_eq.append(eq)
             else:
                 self.pipeLineError = True
-                break
+                # break
 
         result = self.__post_process(pstr, u_eq)
         return result
@@ -62,7 +69,8 @@ class UnionPipeLine(OuterJoinPipeLine):
         result = ""
         if self.pipeLineError:
             self.error += f"Could not extract the query due to errors." \
-                     f"\nHere's what I have as a half-baked answer:\n{pstr}\n"
+                          f"\nHere's what I have as a half-baked answer:\n{pstr}\n" \
+                          f"whatever I could form: {u_Q}\n"
             self.update_state(ERROR)
             return None
         result += u_Q

@@ -228,6 +228,8 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
 
 
 def get_format(datatype, val):
+    if val in [None, 'None']:
+        return 'NULL'
     if datatype in ['date', 'char', 'character', 'character varying', 'str', 'text', 'varchar']:
         return f'\'{str(val)}\''
     elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
