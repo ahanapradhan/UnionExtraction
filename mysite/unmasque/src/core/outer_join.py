@@ -43,6 +43,7 @@ class OuterJoin(GenerationPipeLineBase):
 
         set_possible_queries, fp_on = self.__formulateQueries(final_edge_seq, query)
         self.__remove_semantically_nonEq_queries(new_join_graph, query, set_possible_queries, fp_on)
+        self.logger.debug(f"sem eq queries: {self.sem_eq_queries}")
         if not len(self.sem_eq_queries):
             return False
         self.Q_E = self.sem_eq_queries[0]
@@ -312,9 +313,33 @@ class OuterJoin(GenerationPipeLineBase):
         all_aoa = self.q_gen.algebraic_inequalities
         self.logger.debug("all_aoa predicates: ", all_aoa)
         for aoa in all_aoa:
-            tab_attrib = get_one_tab_attrib_from_aoa_pred(aoa)
-            self.__check_on_or_where(get_tab(tab_attrib), get_attrib(tab_attrib),
-                                     aoa_pred_on, aoa_pred_where, aoa, query)
+            one, op, other = aoa[0], aoa[1], aoa[2]
+            prev_one = self.connectionHelper.execute_sql_fetchone_0(
+                self.connectionHelper.queries.select_attribs_from_relation([get_attrib(one)], get_tab(one)))
+            prev_other = self.connectionHelper.execute_sql_fetchone_0(
+                self.connectionHelper.queries.select_attribs_from_relation([get_attrib(other)], get_tab(other)))
+
+            if op == '<':
+                self.update_with_val(get_attrib(one), get_tab(one), prev_other)
+                self.update_with_val(get_attrib(other), get_tab(other), prev_one)
+
+            else:  # '<='
+                new_one = self.get_other_than_dmin_val_nonText(get_attrib(one), get_tab(one), prev_one)
+                new_other = self.get_other_than_dmin_val_nonText(get_attrib(other), get_tab(other), prev_other)
+                if new_one < prev_one:
+                    self.update_with_val(get_attrib(other), get_tab(other), new_one)
+                elif new_other > prev_other:
+                    self.update_with_val(get_attrib(one), get_tab(one), new_other)
+
+            res_hq = self.app.doJob(query)
+            self.logger.debug(f"res_hq: {res_hq}")
+            if len(res_hq) == 1:
+                aoa_pred_where.append(aoa)
+            else:
+                aoa_pred_on.append(aoa)
+            self.update_with_val(get_attrib(one), get_tab(one), prev_one)
+            self.update_with_val(get_attrib(other), get_tab(other), prev_other)
+
         self.logger.debug(aoa_pred_on, aoa_pred_where)
         return aoa_pred_on, aoa_pred_where
 
