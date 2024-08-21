@@ -34,11 +34,11 @@ class ViewMinimizer(Minimizer):
         return self.reduce_Database_Instance(query,
                                              True) if self.cs2_passed else self.reduce_Database_Instance(query, False)
 
-    def do_binary_halving(self, core_sizes,
-                          query,
-                          tabname,
-                          rctid,
-                          tabname1):
+    def do_viewBased_binary_halving(self, core_sizes,
+                                    query,
+                                    tabname,
+                                    rctid,
+                                    tabname1):
         end_ctid, end_page, start_ctid, start_page = extract_start_and_end_page(self.logger, rctid)
         while start_page < end_page - 1:
             mid_page = int((start_page + end_page) / 2)
@@ -67,9 +67,9 @@ class ViewMinimizer(Minimizer):
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, view_name)])
             rctid = self.connectionHelper.execute_sql_fetchone(
                 self.connectionHelper.queries.get_min_max_ctid(view_name))
-            core_sizes = self.do_binary_halving(core_sizes, query, tabname, rctid, view_name)
-            core_sizes = self.do_binary_halving_1(core_sizes, query, tabname,
-                                                  self.connectionHelper.queries.get_tabname_1(tabname))
+            core_sizes = self.do_viewBased_binary_halving(core_sizes, query, tabname, rctid, view_name)
+            core_sizes = self.do_copyBased_binary_halving(core_sizes, query, tabname,
+                                                          self.connectionHelper.queries.get_tabname_1(tabname))
 
             if not self.sanity_check(query):
                 return False
@@ -83,7 +83,27 @@ class ViewMinimizer(Minimizer):
         self.populate_dict_info()
         return True
 
-    def do_binary_halving_1(self, core_sizes, query, tabname, tabname1):
+    def reduce_Database_Instance_kapil(self, query, cs_pass):
+        core_sizes = self.getCoreSizes()
+
+        for tabname in self.core_relations:
+            view_name = self.connectionHelper.queries.get_tabname_1(
+                tabname) if cs_pass else self.connectionHelper.queries.get_restore_name(tabname)
+            core_sizes = self.do_copyBased_binary_halving(core_sizes, query, tabname, view_name)
+
+            if not self.sanity_check(query):
+                return False
+
+        for tabname in self.core_relations:
+            self.connectionHelper.execute_sql(
+                [self.connectionHelper.queries.drop_table_cascade(self.connectionHelper.queries.get_tabname_4(tabname)),
+                 self.connectionHelper.queries.create_table_as_select_star_from(
+                     self.connectionHelper.queries.get_tabname_4(tabname), tabname)])
+
+        self.populate_dict_info()
+        return True
+
+    def do_copyBased_binary_halving(self, core_sizes, query, tabname, tabname1):
         while int(core_sizes[tabname]) > self.max_row_no:
             end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, tabname1)
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, tabname1)
