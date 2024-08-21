@@ -25,11 +25,16 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = False
-        self.conn.config.detect_nep = False
-        self.conn.config.detect_oj = False
+        self.conn.config.detect_union = True
+        self.conn.config.detect_nep = True
+        self.conn.config.detect_oj = True
         self.conn.config.detect_or = False
         self.pipeline = None
+
+    def test_tpcds_sampleBig(self):
+        query = """select s_store_id from store where s_number_employees > 5 limit 10;
+    """
+        self.do_test(query)
 
     def test_tpcds_sampleQ(self):
         query = f"SELECT cc_name, avg(cc_tax_percentage) from call_center group by cc_name order by cc_name desc limit 10;"

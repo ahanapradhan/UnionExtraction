@@ -19,26 +19,78 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    hq = "Select n_name, sum(l_extendedprice * (1 - l_discount)) as revenue " \
-         "From customer, orders, lineitem, supplier, nation, region " \
-         "Where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and " \
-         "c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and " \
-         "r_name = 'MIDDLE EAST' and o_orderdate >= date '1994-01-01' and o_orderdate < date " \
-         "'1994-01-01' + interval '1' year " \
-         "Group By n_name " \
-         "Order by revenue desc Limit 100;"
+    hq = """
+    with ssr as (select s_store_id,sum(sales_price) as sales,
+sum(profit) as profit,sum(return_amt) as returns,
+sum(net_loss) as profit_loss 
+from ( select ss_store_sk as store_sk,ss_sold_date_sk as date_sk,ss_ext_sales_price as sales_price,
+ss_net_profit as profit,cast(0 as decimal(7,2)) as return_amt,cast(0 as decimal(7,2)) as net_loss 
+from store_sales 
 
-    hq = "select l_orderkey, sum(l_extendedprice*(1 - l_discount) - o_totalprice) as revenue, o_orderdate, " \
-         "o_shippriority  from customer, orders, " \
-         "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and " \
-         "o_orderdate " \
-         "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by " \
-         "revenue " \
-         "desc, o_orderdate limit 10;"
-    hq = '''select dt.d_year,item.i_brand_id brand_id,item.i_brand brand,sum(ss_sales_price) sum_agg from date_dim dt,store_sales,item where dt.d_date_sk = store_sales.ss_sold_date_sk and store_sales.ss_item_sk = item.i_item_sk and item.i_manufact_id = 816 and dt.d_moy=11 group by dt.d_year,item.i_brand,item.i_brand_id order by dt.d_year,sum_agg desc,brand_id limit 100; '''
+union all 
+select sr_store_sk as store_sk,sr_returned_date_sk as date_sk,cast(0 as decimal(7,2)) as sales_price,
+cast(0 as decimal(7,2)) as profit,sr_return_amt as return_amt,sr_net_loss as net_loss 
+from store_returns ) 
+salesreturns,
+date_dim,
+store 
+where date_sk = d_date_sk and 
+d_date between cast('2000-08-19' as date) and (cast('2000-08-19' as date) + interval '14' day) 
+and store_sk = s_store_sk group by s_store_id),
+
+csr as (select cp_catalog_page_id,sum(sales_price) as sales,sum(profit) as profit,sum(return_amt) as returns,
+sum(net_loss) as profit_loss 
+from ( 
+select cs_catalog_page_sk as page_sk,cs_sold_date_sk as date_sk,cs_ext_sales_price as sales_price,
+cs_net_profit as profit,cast(0 as decimal(7,2)) as return_amt,cast(0 as decimal(7,2)) as net_loss 
+from catalog_sales 
+union all 
+select cr_catalog_page_sk as page_sk,cr_returned_date_sk as date_sk,cast(0 as decimal(7,2)) as sales_price,
+cast(0 as decimal(7,2)) as profit,cr_return_amount as return_amt,cr_net_loss as net_loss 
+from catalog_returns 
+) salesreturns,
+date_dim,
+catalog_page 
+where date_sk = d_date_sk 
+and d_date between cast('2000-08-19' as date) and (cast('2000-08-19' as date) + interval '14' day) 
+and page_sk = cp_catalog_page_sk group by cp_catalog_page_id),
+
+wsr as (select web_site_id,sum(sales_price) as sales,sum(profit) as profit,sum(return_amt) as returns,
+sum(net_loss) as profit_loss 
+from ( 
+select ws_web_site_sk as wsr_web_site_sk,ws_sold_date_sk as date_sk,
+ws_ext_sales_price as sales_price,ws_net_profit as profit,cast(0 as decimal(7,2)) as return_amt,
+cast(0 as decimal(7,2)) as net_loss 
+from web_sales 
+union all 
+select ws_web_site_sk as wsr_web_site_sk,wr_returned_date_sk as date_sk,cast(0 as decimal(7,2)) as sales_price,
+cast(0 as decimal(7,2)) as profit,wr_return_amt as return_amt,wr_net_loss as net_loss 
+from web_returns 
+left outer join 
+web_sales on ( wr_item_sk = ws_item_sk and wr_order_number = ws_order_number) ) salesreturns,
+date_dim,
+web_site 
+where date_sk = d_date_sk 
+and d_date between cast('2000-08-19' as date) and (cast('2000-08-19' as date) + interval '14' day) 
+and wsr_web_site_sk = web_site_sk group by web_site_id) 
+select channel,id,sum(sales) as sales,sum(returns) as returns,sum(profit) as profit 
+from (select 'store channel' as channel,'store' || s_store_id as id,sales,returns,
+(profit - profit_loss) as profit from ssr 
+union all 
+select 'catalog channel' as channel,'catalog_page' || cp_catalog_page_id as id,sales,
+returns,(profit - profit_loss) as profit from csr 
+union all 
+select 'web channel' as channel,'web_site' || web_site_id as id,sales,returns,
+(profit - profit_loss) as profit from wsr ) x group by rollup (channel,id) 
+order by channel,id limit 100; 
+
+    """
+
+    #hq = """select s_store_id from store where s_number_employees > 5 limit 10;
+    #"""
     conn = ConnectionHelperFactory().createConnectionHelper()
-    conn.config.detect_union = False
-    conn.config.detect_oj = False
+    conn.config.detect_union = True
+    conn.config.detect_oj = True
     conn.config.detect_nep = False
     conn.config.detect_or = False
     signal.signal(signal.SIGTERM, signal_handler)
