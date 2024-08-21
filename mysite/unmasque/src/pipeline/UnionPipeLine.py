@@ -57,7 +57,8 @@ class UnionPipeLine(OuterJoinPipeLine):
                 u_eq.append(eq)
             else:
                 self.pipeLineError = True
-                # break
+                self.error += f"\nCould not extract the query due to errors in subquery with FROM {str(core_relations)}"
+                break
 
         result = self.__post_process(pstr, u_eq)
         return result
@@ -68,8 +69,7 @@ class UnionPipeLine(OuterJoinPipeLine):
             u_Q = u_Q[1:-2] + ';'
         result = ""
         if self.pipeLineError:
-            self.error += f"Could not extract the query due to errors." \
-                          f"\nHere's what I have as a half-baked answer:\n{pstr}\n" \
+            self.error += f"\nHere's what I have as a half-baked answer:\n{pstr}\n" \
                           f"whatever I could form: {u_Q}\n"
             self.update_state(ERROR)
             return None
