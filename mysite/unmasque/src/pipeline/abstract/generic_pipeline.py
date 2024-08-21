@@ -50,7 +50,6 @@ class GenericPipeLine(ABC):
         self.all_sizes = {}
         self.error = ""
         self.core_relations = None
-        self.error_string = None
 
     def process(self, query: str):
         try:
@@ -96,23 +95,44 @@ class GenericPipeLine(ABC):
         self.time_profile.update_for_total_time(local_end_time - local_start_time)
         return result
 
+    def verify_correctness_kapil(self, query, result):
+        self.update_state(RESULT_COMPARE + START)
+        self.connectionHelper.connectUsingParams(True)
+        rc = ResultComparator(self.connectionHelper, False, self.core_relations)
+        self.update_state(RESULT_COMPARE + RUNNING)
+        matched, restore_time = rc.doJob(query, result)
+        self.info[RESULT_COMPARE] = matched
+        self.connectionHelper.closeConnection()
+
+        self.time_profile.update_for_result_comparator(rc.local_elapsed_time - restore_time, rc.app_calls)
+        self.time_profile.update_for_db_restore(restore_time, 0)
+        if matched:
+            self.logger.info("Extracted Query is Correct.")
+            self.correct = True
+        else:
+            self.logger.info("Extracted Query seems different!.")
+            self.correct = False
+            self.update_state(WRONG)
+        self.update_state(RESULT_COMPARE + DONE)
+
     def verify_correctness(self, query, result):
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams(True)
         rc = ResultComparator(self.connectionHelper, True, self.core_relations)
-        rc.full_db_restore = True
         self.update_state(RESULT_COMPARE + RUNNING)
         matched, restore_time = rc.doJob(query, result)
-        self.time_profile.update_for_result_comparator(rc.local_elapsed_time - restore_time, rc.app_calls)
-        self.time_profile.update_for_db_restore(restore_time, 0)
+        """
         if not matched:
             self.logger.debug("Hash comparator failed. Going for comparison!..")
             rc = ResultComparator(self.connectionHelper, False, self.core_relations)
             self.update_state(RESULT_COMPARE + RUNNING)
-            matched = rc.match(query, result)
+            matched = rc.doJob(query, result)
+        """
         self.info[RESULT_COMPARE] = matched
         self.connectionHelper.closeConnection()
 
+        self.time_profile.update_for_result_comparator(rc.local_elapsed_time - restore_time, rc.app_calls)
+        self.time_profile.update_for_db_restore(restore_time, 0)
         if matched:
             self.logger.info("Extracted Query is Correct.")
             self.correct = True
