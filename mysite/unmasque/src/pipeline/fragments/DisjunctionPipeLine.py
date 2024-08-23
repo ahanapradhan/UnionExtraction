@@ -47,7 +47,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         Correlated Sampling
         """
         self.update_state(SAMPLING + START)
-        cs2 = Cs2(self.connectionHelper, self.db_restorer.last_restored_size, core_relations, self.key_lists)
+        cs2 = Cs2(self.connectionHelper, self.all_sizes, core_relations, self.key_lists)
         self.update_state(SAMPLING + RUNNING)
         check = cs2.doJob(query)
         self.update_state(SAMPLING + DONE)

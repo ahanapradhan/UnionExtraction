@@ -29,6 +29,7 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_nep = True
         self.conn.config.detect_oj = True
         self.conn.config.detect_or = False
+        self.conn.config.use_cs2 = True
         self.pipeline = None
 
     def test_ij_aoa_scalar(self):
@@ -147,9 +148,11 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_main_cmd_query(self):
-        query = "SELECT c_custkey as order_id, COUNT(*) AS total FROM " \
-                "customer, orders where c_custkey = o_custkey and o_orderdate >= '1995-01-01' GROUP BY c_custkey " \
-                "ORDER BY order_id desc LIMIT 10;"
+        query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, " \
+                "supplier, nation         "\
+                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
+                 "'ARGENTINA' Group By "\
+                 "ps_COMMENT         Order by value desc Limit 100;"
         self.do_test(query)
 
     def test_unionQ(self):
@@ -348,12 +351,17 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_outer_join_agg(self):
-        query = "(select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, " \
-                "sum(l_discount) as sum_disc_price, sum(l_tax) as sum_charge, avg(l_quantity) as avg_qty, avg(l_extendedprice) " \
-                "as avg_price, avg(l_discount) as avg_disc, count(*) as count_order from lineitem where l_shipdate <= date " \
+        query = "(select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as " \
+                "sum_base_price, " \
+                "sum(l_discount) as sum_disc_price, sum(l_tax) as sum_charge, avg(l_quantity) as avg_qty, " \
+                "avg(l_extendedprice) " \
+                "as avg_price, avg(l_discount) as avg_disc, count(*) as count_order from lineitem where l_shipdate <= " \
+                "date " \
                 "'1998-12-01' - interval '71 days' group by l_returnflag, l_linestatus order by l_returnflag, l_linestatus)" \
-                " UNION ALL (select c_mktsegment, o_orderstatus, sum(c_acctbal) as sum_qty, sum(o_totalprice) as sum_base_price," \
-                "sum(c_acctbal) as sum_disc_price, sum(o_totalprice) as sum_charge, avg(c_acctbal) as avg_qty, avg(o_totalprice) " \
+                "UNION ALL (select c_mktsegment, o_orderstatus, sum(c_acctbal) as sum_qty, sum(o_totalprice) as " \
+                "sum_base_price," \
+                "sum(c_acctbal) as sum_disc_price, sum(o_totalprice) as sum_charge, avg(c_acctbal) as avg_qty, " \
+                "avg(o_totalprice) " \
                 "as avg_price, avg(c_acctbal) as avg_disc, count(*) as count_order from customer, orders where c_custkey = o_custkey" \
                 " and o_totalprice > 7000 group by c_mktsegment, o_orderstatus ORDER BY c_mktsegment, o_orderstatus DESC);"
         self.do_test(query)
@@ -407,6 +415,10 @@ class ExtractionTestCase(BaseTestCase):
                 " ps_supplycost < 50 and s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) " \
                 "group by n_name ORDER " \
                 "BY n_name;"
+        self.do_test(query)
+
+    def test_copyMinimizer(self):
+        query = "select n_name, c_name from customer, nation where n_nationkey = c_nationkey and c_acctbal < 5000;"
         self.do_test(query)
 
     def test_multiple_outer_join(self):
@@ -712,6 +724,13 @@ class ExtractionTestCase(BaseTestCase):
                 f"and l_shipdate IN (DATE '1994-12-13', DATE '1998-03-15')"
         self.do_test(query)
 
+    def test_for_disjunction_check(self):
+        query = f"select c_mktsegment as segment from customer,nation,orders, lineitem where " \
+                f"c_acctbal between 9000 and 10000 and c_nationkey = " \
+                f"n_nationkey and c_custkey = o_custkey and l_orderkey = o_orderkey " \
+                f"and (n_name = 'BRAZIL' or n_regionkey = 3)"
+        self.do_test(query)
+
     # @pytest.mark.skip
     def test_sumang_thesis_Q6(self):
         query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
@@ -797,6 +816,23 @@ class ExtractionTestCase(BaseTestCase):
                 "and n_name = 'INDIA' " \
                 "and o_orderdate between '1998-01-01' and '1998-01-05' " \
                 "and o_totalprice <= c_acctbal;"
+        self.do_test(query)
+
+    def test_paper_big1(self):
+        query = """
+(SELECT s_name as entity_name, n_name as country, avg(l_extendedprice*(1 - l_discount)) as price
+FROM supplier, lineitem, orders, nation, region
+WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey and n_regionkey = r_regionkey
+and s_nationkey = n_nationkey and r_name <> 'ASIA'
+and o_totalprice > s_acctbal 
+and o_totalprice >= 30000 and s_acctbal < 50000
+ and o_orderdate between DATE  '1994-01-01' and DATE '1994-01-05'
+group by n_name, s_name, s_acctbal 
+ order by price desc limit 10);
+ """
+        self.conn.config.detect_union = False
+        self.conn.config.detect_oj = False
+        self.conn.config.detect_nep = True
         self.do_test(query)
 
 
