@@ -13,7 +13,7 @@ class MyTestCase(BaseTestCase):
 
         from_rels = tpchSettings.from_rels['tpch_query1']
         cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
-        sizes = cs2.getSizes_cs()
+        sizes = cs2.__getSizes_cs()
         self.assertEqual(len(sizes), 8)
         cs2.doJob(queries.tpch_query1)
         self.assertTrue(cs2.passed)
@@ -27,7 +27,7 @@ class MyTestCase(BaseTestCase):
 
         from_rels = tpchSettings.from_rels['tpch_query3']
         cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
-        sizes = cs2.getSizes_cs()
+        sizes = cs2.__getSizes_cs()
         self.assertEqual(len(sizes), 8)
         cs2.doJob(queries.tpch_query3)
         self.assertTrue(cs2.passed)
@@ -42,7 +42,7 @@ class MyTestCase(BaseTestCase):
 
         from_rels = tpchSettings.from_rels['Q17']
         cs2 = Cs2(self.conn, tpchSettings.relations, from_rels, tpchSettings.key_lists)
-        sizes = cs2.getSizes_cs()
+        sizes = cs2.__getSizes_cs()
         self.assertEqual(len(sizes), 8)
         cs2.doJob(queries.Q17)
         self.assertTrue(cs2.passed)
