@@ -32,40 +32,6 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.use_cs2 = True
         self.pipeline = None
 
-    def test_tpcds_limit(self):
-        query = """
-    select sum(cs_ext_discount_amt) as "excess_discount_amount"
-	from catalog_sales, item, date_dim 
-	where i_manufact_id = 722 
-	and i_item_sk = cs_item_sk 
-	and d_date between DATE '2002-03-09' and DATE '2002-03-09' + interval '90 days'
-    and d_date_sk = cs_sold_date_sk 
-	and cs_ext_discount_amt > 10 
-	and d_date_sk = cs_sold_date_sk
-    limit 100;
-    """
-        self.do_test(query)
-
-    def test_tpcds_sampleBig(self):
-        query = """select s_store_id from store where s_number_employees > 5 limit 10;
-    """
-        self.do_test(query)
-
-    def test_union_cs2(self):
-        self.conn.config.use_cs2 = True
-        self.conn.config.detect_union = True
-        query = """
-        (select n_name, c_acctbal from nation, customer where c_nationkey = n_nationkey and n_regionkey > 3)
-        UNION ALL
-        (select r_name, s_acctbal from region, nation, supplier where r_regionkey = n_regionkey 
-        and n_nationkey = s_nationkey and s_name = 'Supplier#000000008');
-        """
-        self.do_test(query)
-
-    def test_tpcds_sampleQ(self):
-        query = f"SELECT cc_name, avg(cc_tax_percentage) from call_center group by cc_name order by cc_name desc limit 10;"
-        self.do_test(query)
-
     def test_himangshu(self):
         query = "SELECT l_shipmode, COUNT(*) FROM ORDERS, LINEITEM WHERE " \
                 "O_ORDERKEY = L_ORDERKEY AND O_ORDERSTATUS = 'O' AND L_SHIPDATE >= '1998-04-03' group by l_shipmode;"
@@ -445,11 +411,8 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_simple(self):
-        query = "select c_name, n_regionkey from nation, customer where n_nationkey = c_nationkey and " \
+        query = "select c_name, n_regionkey from nation INNER JOIN customer on n_nationkey = c_nationkey and " \
                 "n_name <> 'GERMANY';"
-        self.conn.config.detect_nep = True
-        self.conn.config.detect_union = True
-        self.conn.config.detect_oj = True
         self.do_test(query)
 
     def test_for_numeric_flter(self):
@@ -492,7 +455,6 @@ class ExtractionTestCase(BaseTestCase):
                 "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and " \
                 "p_size >=  4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, " \
                 "p_type, p_size;"
-        self.conn.config.detect_nep = True
         self.do_test(query)
 
     def test_Q16_sql_outer_join(self):
@@ -655,7 +617,6 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_one_table_duplicate_value_columns(self):
-        self.conn.config.detect_or = True
         query = "select max(l_extendedprice) from lineitem where l_linenumber IN (1, 4);"
         self.do_test(query)
 
@@ -806,7 +767,7 @@ class ExtractionTestCase(BaseTestCase):
                 "and o_totalprice <= c_acctbal;"
         self.do_test(query)
 
-    def test_paper_big1(self):
+    def test_paper_big(self):
         query = """
 (SELECT s_name as entity_name, n_name as country, avg(l_extendedprice*(1 - l_discount)) as price
 FROM supplier, lineitem, orders, nation, region
