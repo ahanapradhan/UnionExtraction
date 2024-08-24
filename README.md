@@ -41,7 +41,7 @@ Follow the link https://www.postgresql.org/download/ to download and install the
 3. (In case the above command gives error as `malloc.h` not found, showing the filenames, go inside dbgen folder, open the file and replace `malloc.h` with `stdlib.h`)
 
 ## Sample TPCH Data  
-TPCH (sf=0.1) data is provided at: https://github.com/ahanapradhan/UnionExtraction/blob/master/mysite/unmasque/test/experiments/data/tpch_tiny.zip  
+TPCH 100MB (sf=0.1) data is provided at: https://github.com/ahanapradhan/UnionExtraction/blob/master/mysite/unmasque/test/experiments/data/tpch_tiny.zip  
 The load.sql file in the folder needs to be updated with the corresponding location of the data .csv files.
 
 ## Loading TPCH Data using DuckDB
