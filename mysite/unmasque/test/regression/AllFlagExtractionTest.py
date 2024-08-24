@@ -25,12 +25,63 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = False
-        self.conn.config.detect_nep = False
-        self.conn.config.detect_oj = False
+        self.conn.config.detect_union = True
+        self.conn.config.detect_nep = True
+        self.conn.config.detect_oj = True
         self.conn.config.detect_or = False
-        self.conn.config.use_cs2 = True
+        self.conn.config.use_cs2 = False
         self.pipeline = None
+
+    def test_ij_aoa_scalar(self):
+        query = """
+        SELECT s_name as entity_name, n_name as country, avg(l_extendedprice*(1 - l_discount)) as price 
+                FROM supplier, lineitem, orders, nation, region
+                WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
+                and s_nationkey = n_nationkey and n_regionkey = r_regionkey
+                and r_name <> 'ASIA'
+                and o_orderdate between '1994-01-01' and DATE '1994-01-05'
+                and o_totalprice > s_acctbal
+                and o_totalprice >= 30000 and s_acctbal < 50000
+                group by n_name, s_name, s_acctbal
+                order by entity_name, price 
+                limit 10;"""
+        self.do_test(query)
+
+    def test_paper_big(self):
+        query = """
+                (SELECT c_name as entity_name, n_name as country, o_totalprice as price
+                from orders LEFT OUTER JOIN 
+                customer on c_custkey = o_custkey and c_acctbal >= o_totalprice and
+                o_orderstatus = 'F' LEFT OUTER JOIN nation ON c_nationkey = n_nationkey 
+                where o_orderdate between DATE  '1994-01-01' and DATE '1994-01-05'
+                group by n_name, c_name, o_totalprice
+                order by price
+                limit 10) 
+                UNION ALL 
+                (SELECT s_name as entity_name, n_name as country, avg(l_extendedprice*(1 - l_discount)) as price 
+                FROM supplier, lineitem, orders, nation, region
+                WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
+                and s_nationkey = n_nationkey and n_regionkey = r_regionkey
+                and r_name <> 'ASIA'
+                and o_orderdate between '1994-01-01' and DATE '1994-01-05'
+                and o_totalprice > s_acctbal
+                and o_totalprice >= 30000 and s_acctbal < 50000
+                group by n_name, s_name, s_acctbal
+                order by entity_name, price 
+                limit 10);
+                """
+        self.do_test(query)
+
+    def test_oj_aoa(self):
+        query = """SELECT c_name as entity_name, n_name as country, o_totalprice as price
+        from orders LEFT OUTER JOIN 
+        customer on c_custkey = o_custkey and c_acctbal >= o_totalprice and
+        o_orderstatus = 'F' LEFT OUTER JOIN nation ON c_nationkey = n_nationkey 
+        where o_orderdate between DATE  '1994-01-01' and DATE '1994-01-05'
+        group by n_name, c_name, o_totalprice
+        order by price
+        limit 10;"""
+        self.do_test(query)
 
     def test_himangshu(self):
         query = "SELECT l_shipmode, COUNT(*) FROM ORDERS, LINEITEM WHERE " \
@@ -783,7 +834,7 @@ class ExtractionTestCase(BaseTestCase):
                 "and o_totalprice <= c_acctbal;"
         self.do_test(query)
 
-    def test_paper_big(self):
+    def test_paper_big1(self):
         query = """
 (SELECT s_name as entity_name, n_name as country, avg(l_extendedprice*(1 - l_discount)) as price
 FROM supplier, lineitem, orders, nation, region
