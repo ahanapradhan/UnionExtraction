@@ -36,7 +36,8 @@ class Cs2(AppExtractorBase):
     def __getSizes_cs(self):
         if not self.sizes:
             for table in self.all_relations:
-                self.sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(self.connectionHelper.queries.get_row_count(table))
+                self.sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(
+                    self.connectionHelper.queries.get_row_count(table))
         return self.sizes
 
     def extract_params_from_args(self, args):
@@ -68,10 +69,10 @@ class Cs2(AppExtractorBase):
 
     def _restore(self):
         for table in self.core_relations:
+            backup_tab = self.connectionHelper.queries.get_backup(table)
             self.connectionHelper.execute_sqls_with_DictCursor([
-                self.connectionHelper.queries.create_table_as_select_star_from(table,
-                       self.connectionHelper.queries.get_backup(table))])
-            self.connectionHelper.execute_sql(self.connectionHelper.queries.analyze_table(table))
+                self.connectionHelper.queries.create_table_like(table,backup_tab),
+                self.connectionHelper.queries.insert_into_tab_select_star_fromtab(table, backup_tab)])
 
     def __correlated_sampling(self, query, sizes):
         self.logger.debug("Starting correlated sampling ")
@@ -79,7 +80,8 @@ class Cs2(AppExtractorBase):
         # choose base table from each key list> sample it> sample remaining tables based on base table
         for table in self.core_relations:
             self.connectionHelper.execute_sqls_with_DictCursor([self.connectionHelper.queries.create_table_like(table,
-                                                                                                                self.connectionHelper.queries.get_backup(table))])
+                                                                                                                self.connectionHelper.queries.get_backup(
+                                                                                                                    table))])
 
         self.__do_for_key_lists(sizes)
 
@@ -104,7 +106,8 @@ class Cs2(AppExtractorBase):
         if len(self.global_key_lists) == 0:
             for table in not_sampled_tables:
                 self.connectionHelper.execute_sqls_with_DictCursor(["insert into " + table +
-                                                                    " select * from " + self.connectionHelper.queries.get_backup(table)
+                                                                    " select * from " + self.connectionHelper.queries.get_backup(
+                    table)
                                                                     + " tablesample system("
                                                                     + str(self.seed_sample_size_per) + ");"])
                 res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(table))
@@ -126,7 +129,8 @@ class Cs2(AppExtractorBase):
                     + base_key + ") not in (select distinct("
                     + base_key + ") from "
                     + base_table + ")  Limit " + str(limit_row) + " ;"])
-                res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(base_table))
+                res = self.connectionHelper.execute_sql_fetchone_0(
+                    self.connectionHelper.queries.get_row_count(base_table))
                 self.logger.debug(base_table, res)
 
             # sample remaining tables from key_list using the sampled base table
@@ -146,5 +150,6 @@ class Cs2(AppExtractorBase):
                         + key2 + " not in (select distinct("
                         + key2 + ") from "
                         + tabname2 + " ) Limit " + str(limit_row) + " ;"])
-                    res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(tabname2))
+                    res = self.connectionHelper.execute_sql_fetchone_0(
+                        self.connectionHelper.queries.get_row_count(tabname2))
                     self.logger.debug(tabname2, res)
