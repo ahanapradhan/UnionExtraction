@@ -19,6 +19,7 @@ class Limit(GenerationPipeLineBase):
         self.global_groupby_attributes = genCtx.group_by_attrib
         self.joined_attrib_valDict = {}
         self.no_rows = self.connectionHelper.config.limit_limit
+        self.rmin_card = genCtx.projection
 
     def doExtractJob(self, query):
         result = self.doLimitExtractJob(query)
@@ -49,13 +50,20 @@ class Limit(GenerationPipeLineBase):
 
             new_result = self.app.doJob(query)
             if not self.app.isQ_result_empty(new_result):
-                if 4 <= len(new_result) <= self.no_rows:
-                    if self.limit is not None and self.limit == len(new_result) - 1:
-                        self.limit = len(new_result) - 1  # excluding the header column
+                """                 
+                ideally dmin at the start of proj module should produce 2 row result. header + 1 row data
+                but, union + outer join may cause extra invalid data.
+                all of them cannot be discarded simply due to having NULL values
+                So, assuming ideal data at proj module start, calculating the valid rows in other modules
+                """
+                fresh_result_card = len(new_result) - self.rmin_card + 2
+                if 4 <= fresh_result_card <= self.no_rows:
+                    if self.limit is not None and self.limit == fresh_result_card - 1:
+                        self.limit = fresh_result_card - 1  # excluding the header column
                         self.logger.debug(f"Finalized Limit {self.limit}")
                         break
                     else:
-                        self.limit = len(new_result) - 1  # excluding the header column
+                        self.limit = fresh_result_card - 1  # excluding the header column
                         self.logger.debug(f"Limit {self.limit}")
                 else:
                     if self.limit is not None:

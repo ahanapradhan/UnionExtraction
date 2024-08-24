@@ -84,6 +84,8 @@ def count_empty_lists_in(l):
 def find_diff_idx(list1, list2):
     diffs = []
     for sub_list1, sub_list2 in zip(list1, list2):
+        if 'None' in sub_list1 or 'None' in sub_list2:
+            continue
         for i, (item1, item2) in enumerate(zip(sub_list1, sub_list2)):
             if item1 != item2 and i not in diffs:
                 diffs.append(i)

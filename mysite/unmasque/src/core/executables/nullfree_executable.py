@@ -117,6 +117,16 @@ class NullFreeExecutable(Executable):
         yes = not self.is_attrib_all_null(Res, attrib)
         return yes
 
+    def get_nullfree_row(self, Res):
+        for row in Res[1:]:
+            if 'None' not in row:
+                return row
+        return None
+
+    def get_all_nullfree_rows(self, Res):
+        null_free = [row for row in Res[1:] if 'None' not in row]
+        return null_free
+
     def isQ_result_no_full_nullfree_row(self, Res):
         return is_result_no_full_nullfree_row(Res, self.logger)
 
