@@ -29,7 +29,7 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_nep = True
         self.conn.config.detect_oj = True
         self.conn.config.detect_or = False
-        self.conn.config.use_cs2 = True
+        self.conn.config.use_cs2 = False
         self.pipeline = None
 
     def test_ij_aoa_scalar(self):

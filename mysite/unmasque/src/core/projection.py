@@ -240,7 +240,7 @@ class Projection(GenerationPipeLineBase):
                     self.update_attrib_in_table(j_c, value, self.find_tabname_for_given_attrib(j_c))
 
             exe_result = self.app.doJob(query)
-            if not self.app.isQ_result_empty(exe_result):
+            if not self.app.isQ_result_no_full_nullfree_row(exe_result):
                 b[i][0] = self.app.get_attrib_val(exe_result, idx)
         self.logger.debug("Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
