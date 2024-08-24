@@ -230,10 +230,11 @@ class Aggregation(GenerationPipeLineBase):
                         self.logger.error('some error in generating new database. '
                                           'Result is empty. Can not identify aggregation')
                         return False
-                    elif len(new_result) > 2:
+                    nullfree_rows = self.app.get_all_nullfree_rows(new_result)
+                    if len(nullfree_rows) > 1:
                         continue
 
-                    self.analyze(agg_array, self.global_projected_attributes[result_index], new_result, result_index)
+                    self.analyze(agg_array, self.global_projected_attributes[result_index], nullfree_rows, result_index)
 
         for i in range(len(self.global_projected_attributes)):
             if self.global_projected_attributes[i] == '':
@@ -301,7 +302,7 @@ class Aggregation(GenerationPipeLineBase):
 
     def analyze(self, agg_array, attrib, new_result, result_index):
         self.logger.debug("analyze")
-        new_result = list(new_result[1])
+        new_result = list(new_result[0])
         new_result = [x.strip() for x in new_result]
         check_value = round(float(new_result[result_index]), 2) if is_number(new_result[result_index]) \
             else str(new_result[result_index])

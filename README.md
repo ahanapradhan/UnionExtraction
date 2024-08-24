@@ -38,7 +38,14 @@ Follow the link https://www.postgresql.org/download/ to download and install the
 ### Prepare TPCH data on PostgreSQL using DBGEN
 1. Download the code `tpch-pgsql` from the link: [https://github.com/Data-Science-Platform/tpch-pgsql/tree/master](https://github.com/ahanapradhan/tpch-pgsql).  
 2. Follow the `tpch-pgsql` project Readme to prepare and load the data.  
-3. (In case the above command gives error as `malloc.h` not found, showing the filenames, go inside dbgen folder, open the file and replace `malloc.h` with `stdlib.h`)  
+3. (In case the above command gives error as `malloc.h` not found, showing the filenames, go inside dbgen folder, open the file and replace `malloc.h` with `stdlib.h`)
+
+## Sample TPCH Data  
+TPCH 100MB (sf=0.1) data is provided at: https://github.com/ahanapradhan/UnionExtraction/blob/master/mysite/unmasque/test/experiments/data/tpch_tiny.zip  
+The load.sql file in the folder needs to be updated with the corresponding location of the data .csv files.
+
+## Loading TPCH Data using DuckDB
+https://duckdb.org/docs/extensions/tpch.html
 
 # Setting up IDE
 A developement environment for python project is required next. Here is the link to PyCharm Community Edition: https://www.jetbrains.com/pycharm/download/  (Any other IDE is also fine)
