@@ -101,6 +101,8 @@ class GenericPipeLine(ABC):
         rc = ResultComparator(self.connectionHelper, True, self.core_relations)
         self.update_state(RESULT_COMPARE + RUNNING)
         matched, restore_time = rc.doJob(query, result)
+        self.time_profile.update_for_result_comparator(rc.local_elapsed_time - restore_time, rc.app_calls)
+        self.time_profile.update_for_db_restore(restore_time, 0)
         if not matched:
             self.logger.debug("Hash comparator failed. Going for comparison!..")
             rc = ResultComparator(self.connectionHelper, False, self.core_relations)
