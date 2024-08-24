@@ -69,11 +69,10 @@ class Cs2(AppExtractorBase):
 
     def _restore(self):
         for table in self.core_relations:
+            backup_tab = self.connectionHelper.queries.get_backup(table)
             self.connectionHelper.execute_sqls_with_DictCursor([
-                self.connectionHelper.queries.create_table_as_select_star_from(table,
-                                                                               self.connectionHelper.queries.get_backup(
-                                                                                   table))])
-            self.connectionHelper.execute_sql(self.connectionHelper.queries.analyze_table(table))
+                self.connectionHelper.queries.create_table_like(table,backup_tab),
+                self.connectionHelper.queries.insert_into_tab_select_star_fromtab(table, backup_tab)])
 
     def __correlated_sampling(self, query, sizes):
         self.logger.debug("Starting correlated sampling ")
