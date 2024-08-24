@@ -29,7 +29,7 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
-        self.conn.config.use_cs2 = False
+        self.conn.config.use_cs2 = True
         self.pipeline = None
 
     def test_tpcds_limit(self):
@@ -121,10 +121,17 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_main_cmd_query(self):
         query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, " \
+<<<<<<< HEAD
                 "supplier, nation         " \
                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
                 "'ARGENTINA' Group By " \
                 "ps_COMMENT         Order by value desc Limit 100;"
+=======
+                "supplier, nation         "\
+                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
+                 "'ARGENTINA' Group By "\
+                 "ps_COMMENT         Order by value desc Limit 100;"
+>>>>>>> 5a0e565... cs2 bugfix
         self.do_test(query)
 
     def test_unionQ(self):
