@@ -1,3 +1,5 @@
+import time
+
 from ..abstract.ExtractorBase import Base
 from ...util.constants import REL_ERROR, RELATION, ORPHAN_COLUMN
 
@@ -25,7 +27,7 @@ def add_header(description, result):
     if description is not None and not is_error(description):
         colnames = [desc[0] for desc in description]
         for i in range(len(colnames)):
-            if colnames[i] == '?column?':  # Changing the name of column to legitimate name.
+            if colnames[i] == '?column?': # Changing the name of column to legitimate name.
                 colnames[i] = ORPHAN_COLUMN
         result.append(tuple(colnames))
 
@@ -42,7 +44,10 @@ class Executable(Base):
         query = self.extract_params_from_args(args)
         result = []
         try:
+            start_t = time.time()
             res, description = self.connectionHelper.execute_sql_fetchall(query, self.logger)
+            end_t = time.time()
+            self.logger.debug(f"Exe time: {str(end_t - start_t)}")
             add_header(description, result)
             if res is not None:
                 result = get_result_as_tuple_1(res, result)
@@ -55,7 +60,7 @@ class Executable(Base):
         return Res[1]
 
     def get_all_nullfree_rows(self, Res):
-        return Res[1:]
+        return [self.get_nullfree_row(Res)]
 
     def is_attrib_all_null(self, Res, attrib):
         return self.isQ_result_empty(Res)

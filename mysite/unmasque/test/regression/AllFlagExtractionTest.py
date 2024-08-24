@@ -51,6 +51,16 @@ class ExtractionTestCase(BaseTestCase):
     """
         self.do_test(query)
 
+    def test_union_cs2(self):
+        self.conn.config.use_cs2 = True
+        self.conn.config.detect_union = True
+        query = """
+        (select n_name, c_acctbal from nation, customer where c_nationkey = n_nationkey and n_regionkey > 3)
+        UNION ALL
+        (select r_name, s_acctbal from region, nation, supplier where r_regionkey = n_regionkey and n_nationkey = s_nationkey and s_name LIKE '%008');
+        """
+        self.do_test(query)
+
     def test_tpcds_sampleQ(self):
         query = f"SELECT cc_name, avg(cc_tax_percentage) from call_center group by cc_name order by cc_name desc limit 10;"
         self.do_test(query)
@@ -121,17 +131,10 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_main_cmd_query(self):
         query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, " \
-<<<<<<< HEAD
-                "supplier, nation         " \
-                "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
-                "'ARGENTINA' Group By " \
-                "ps_COMMENT         Order by value desc Limit 100;"
-=======
                 "supplier, nation         "\
                  "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
                  "'ARGENTINA' Group By "\
                  "ps_COMMENT         Order by value desc Limit 100;"
->>>>>>> 5a0e565... cs2 bugfix
         self.do_test(query)
 
     def test_unionQ(self):
@@ -797,7 +800,7 @@ class ExtractionTestCase(BaseTestCase):
                 "and o_totalprice <= c_acctbal;"
         self.do_test(query)
 
-    def test_paper_big(self):
+    def test_paper_big1(self):
         query = """
 (SELECT s_name as entity_name, n_name as country, avg(l_extendedprice*(1 - l_discount)) as price
 FROM supplier, lineitem, orders, nation, region
