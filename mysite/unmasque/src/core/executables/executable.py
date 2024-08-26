@@ -60,7 +60,7 @@ class Executable(Base):
         return Res[1]
 
     def get_all_nullfree_rows(self, Res):
-        return [self.get_nullfree_row(Res)]
+        return Res[1:]
 
     def is_attrib_all_null(self, Res, attrib):
         return self.isQ_result_empty(Res)
