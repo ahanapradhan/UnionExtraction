@@ -9,7 +9,7 @@ from ....src.util.constants import FILTER, DONE, NEP_, RUNNING, START, DB_MINIMI
 class NepPipeLine(GenericPipeLine, ABC):
     def __init__(self, connectionHelper, name="NEP PipeLine"):
         super().__init__(connectionHelper, name)
-        self.NEP_CUTOFF = 5
+        self.NEP_CUTOFF = 10
         self.q_generator = QueryStringGenerator(self.connectionHelper)
 
     @abstractmethod
