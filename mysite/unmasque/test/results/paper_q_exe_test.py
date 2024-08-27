@@ -10,6 +10,32 @@ class MyTestCase(BaseTestCase):
     conn = ConnectionHelperFactory().createConnectionHelper()
     app = Executable(conn)
 
+    def test_paper_big(self):
+        test_key = "e_paper_big.sql"
+        query = """
+        (SELECT c_name as entity_name, n_name as country, o_totalprice as price
+                from orders LEFT OUTER JOIN 
+                customer on c_custkey = o_custkey and c_acctbal >= o_totalprice and
+                o_orderstatus = 'F' LEFT OUTER JOIN nation ON c_nationkey = n_nationkey 
+                where o_orderdate between DATE  '1994-01-01' and DATE '1994-01-05'
+                group by n_name, c_name, o_totalprice
+                order by price
+                limit 10) 
+                UNION ALL 
+                (SELECT s_name as entity_name, n_name as country, avg(l_extendedprice*(1 - l_discount)) as price 
+                FROM supplier, lineitem, orders, nation, region
+                WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
+                and s_nationkey = n_nationkey and n_regionkey = r_regionkey
+                and o_orderdate between '1994-01-01' and DATE '1994-01-05'
+                and o_totalprice > s_acctbal
+                and o_totalprice >= 30000 and s_acctbal < 50000
+                and r_name <> 'ASIA'
+                group by n_name, s_name, s_acctbal
+                order by entity_name, price 
+                limit 10);
+        """
+        self.do_testJob(query, test_key)
+
     def test_T5_sql(self):
         test_key = "e_T5.sql"
         query = "(select c_name,n_name from customer, nation " \
@@ -22,6 +48,32 @@ class MyTestCase(BaseTestCase):
     def test_Q18_sql(self):
         test_key = "e_Q18.sql"
         query = "Select c_name, o_orderdate, o_totalprice,  sum(l_quantity) From customer, orders, lineitem       Where c_phone Like '27-_%'       and c_custkey = o_custkey       and o_orderkey = l_orderkey       Group By c_name, o_orderdate, o_totalprice       Order by o_orderdate, o_totalprice desc Limit 100;"
+        self.do_testJob(query, test_key)
+
+    def test_e_paper_bigsql(self):
+        test_key = "e_paper_big.sql"
+        query = """
+        (SELECT c_name as entity_name, n_name as country, o_totalprice as price
+                from orders LEFT OUTER JOIN 
+                customer on c_custkey = o_custkey and c_acctbal >= o_totalprice and
+                o_orderstatus = 'F' LEFT OUTER JOIN nation ON c_nationkey = n_nationkey 
+                where o_orderdate between DATE  '1994-01-01' and DATE '1994-01-05'
+                group by n_name, c_name, o_totalprice
+                order by price
+                limit 10) 
+                UNION ALL 
+                (SELECT s_name as entity_name, n_name as country, avg(l_extendedprice*(1 - l_discount)) as price  
+                FROM supplier, lineitem, orders, nation, region
+                WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
+                and s_nationkey = n_nationkey and n_regionkey = r_regionkey
+                and o_orderdate between date '1994-01-01' and DATE '1994-01-05'
+                and o_totalprice > s_acctbal
+                and o_totalprice >= 30000 and s_acctbal < 50000
+				 and r_name <> 'ASIA'
+                group by n_name, s_name
+                order by entity_name, price 
+                limit 10);
+        """
         self.do_testJob(query, test_key)
 
     def do_testJob(self, query, test_key):

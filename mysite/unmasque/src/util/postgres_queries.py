@@ -37,7 +37,7 @@ class PostgresQueries(CommonQueries):
         return f"Alter view {tab} rename to {retab};"
 
     def create_table_like(self, tab, ctab):
-        return f"Create table {tab} (like {ctab}); "  # \
+        return f"Create table if not exists {tab} (like {ctab}); "  # \
         # f"ALTER TABLE {tab} SET (autovacuum_enabled = false);"
 
     def create_table_as_select_star_from(self, tab, fromtab):

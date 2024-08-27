@@ -10,6 +10,7 @@ class PGAOcontext:
         self.joined_attribs = None
         self.projection_names = None
         self.projected_attribs = None
+        self.pj_rmin_card = 0
         self.has_groupby = None
         self.group_by_attrib = None
         self.projection_dependencies = None
@@ -20,7 +21,7 @@ class PGAOcontext:
 
     @property
     def projection(self):
-        raise NotImplementedError
+        return self.pj_rmin_card # used in limit
 
     @projection.setter
     def projection(self, value: Projection):
@@ -30,6 +31,7 @@ class PGAOcontext:
         self.projection_dependencies = value.dependencies
         self.projection_solution = value.solution
         self.projection_param_list = value.param_list
+        self.pj_rmin_card = value.rmin_card
 
     @property
     def group_by(self):

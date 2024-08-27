@@ -254,7 +254,7 @@ class OrderBy(GenerationPipeLineBase):
                     return None
                 if len(new_result) == 2:
                     return None
-                data = new_result[1:]
+                data = self.app.get_all_nullfree_rows(new_result)
                 check_res = []
                 for d in data:
                     check_res.append(d[obj.index])

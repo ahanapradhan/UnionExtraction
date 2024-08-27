@@ -21,3 +21,5 @@ mysite/unmasque/src/pipeline/abstract/__init__.py
 *.patch
 *.ini
 mysite/unmasque/test/regression/extraction_result.sql
+*.csv
+*.sql

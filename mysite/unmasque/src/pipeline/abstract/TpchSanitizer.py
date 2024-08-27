@@ -35,20 +35,19 @@ class TpchSanitizer:
         drop_fn = self.get_drop_fn(table)
         backup_name = self.connectionHelper.queries.get_backup(table)
         self.connectionHelper.execute_sql([drop_fn(table),
-                                           self.connectionHelper.queries.create_table_as_select_star_from(table,
-                                                                                                          backup_name),
-                                           self.connectionHelper.queries.analyze_table(table),
-                                           "commit;"],
+                                           self.connectionHelper.queries.create_table_like(table, backup_name),
+                                           self.connectionHelper.queries.insert_into_tab_select_star_fromtab(
+                                               table, backup_name)],
                                           self.logger)
 
     def backup_one_table(self, table):
         self.logger.debug(f"Backing up {table}...")
+        self.connectionHelper.begin_transaction()
         self.drop_derived_relations(table)
         backup_name = self.connectionHelper.queries.get_backup(table)
-        self.connectionHelper.begin_transaction()
         self.connectionHelper.execute_sqls_with_DictCursor(
-            [self.connectionHelper.queries.create_table_as_select_star_from(backup_name, table),
-             self.connectionHelper.queries.analyze_table(backup_name)],
+            [self.connectionHelper.queries.create_table_like(backup_name, table),
+             self.connectionHelper.queries.insert_into_tab_select_star_fromtab(backup_name, table)],
             self.logger)
         self.connectionHelper.commit_transaction()
         self.logger.debug(f"... done")

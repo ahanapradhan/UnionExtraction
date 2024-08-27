@@ -81,11 +81,11 @@ class GroupBy(GenerationPipeLineBase):
                     self.logger.error('some error in generating new database. '
                                       'Result is empty. Can not identify Grouping')
                     return False
-                elif len(new_result) == 3:
-                    # 3 is WITH HEADER so it is checking for two rows
+                nonEmpty_rows = self.app.get_all_nullfree_rows(new_result)
+                if len(nonEmpty_rows) == 2:
                     self.group_by_attrib.append(attrib)
                     self.has_groupby = True
-                elif len(new_result) == 2:
+                elif len(nonEmpty_rows) == 1:
                     # It indicates groupby on at least one attribute
                     self.has_groupby = True
 
