@@ -3,7 +3,7 @@ from ...src.util.Log import Log
 from ...test.util import tpchSettings
 
 
-class TPCHRestore:
+class TPCDSRestore:
     backup_schema = "tpcds_restore"
 
     def __init__(self, conn: AbstractConnectionHelper):
