@@ -4,7 +4,7 @@ from ...test.util import tpchSettings
 
 
 class TPCHRestore:
-    backup_schema = "tpch_restore"
+    backup_schema = "tpcds_restore"
 
     def __init__(self, conn: AbstractConnectionHelper):
         self.conn = conn

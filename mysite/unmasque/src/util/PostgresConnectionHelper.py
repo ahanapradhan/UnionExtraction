@@ -69,10 +69,11 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
         self.closeConnection()
         return OK
 
-    def connectUsingParams(self):
+    def connectUsingParams(self, no_parallel=False):
         self.conn = psycopg2.connect(self.paramString)
-        with self.conn.cursor() as set_cur:
-            set_cur.execute("SET max_parallel_workers_per_gather = 0;")
+        if no_parallel:
+            with self.conn.cursor() as set_cur:
+                set_cur.execute("SET max_parallel_workers_per_gather = 0;")
 
     def cus_execute_sql_with_params(self, cur, sql, params, logger=None):
         for param in params:

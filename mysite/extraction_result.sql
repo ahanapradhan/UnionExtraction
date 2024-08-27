@@ -402,3 +402,37 @@ Here's what I have as a half-baked answer:
 FROM(q1) = { date_dim, catalog_page, catalog_sales }, FROM(q2) = { web_sales, date_dim, web_site }, FROM(q3) = { catalog_returns, date_dim, catalog_page }, FROM(q4) = { date_dim, store, store_sales }, FROM(q5) = { date_dim, store, store_returns }
 
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ 
+    select sum(cs_ext_discount_amt) as "excess_discount_amount"
+	from catalog_sales, item, date_dim 
+	where i_manufact_id = 722 
+	and i_item_sk = cs_item_sk 
+	and d_date between DATE '2002-03-09' and DATE '2002-03-09' + interval '90 days'
+    and d_date_sk = cs_sold_date_sk 
+	and cs_ext_discount_amt > 10 
+	and d_date_sk = cs_sold_date_sk
+    limit 100;
+    
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ 
+    select sum(cs_ext_discount_amt) as "excess_discount_amount"
+	from catalog_sales, item, date_dim 
+	where i_manufact_id = 722 
+	and i_item_sk = cs_item_sk 
+	and d_date between DATE '2002-03-09' and DATE '2002-03-09' + interval '90 days'
+    and d_date_sk = cs_sold_date_sk 
+	and cs_ext_discount_amt > 10 
+	and d_date_sk = cs_sold_date_sk
+    limit 100;
+    
+ --- extracted query:
+ connectUsingParams() takes 1 positional argument but 2 were given
+ --- END OF ONE EXTRACTION EXPERIMENT

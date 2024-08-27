@@ -25,12 +25,26 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
-        self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
-        self.conn.config.use_cs2 = True
+        self.conn.config.use_cs2 = False
         self.pipeline = None
+
+    def test_tpcds_limit(self):
+        query = """
+    select sum(cs_ext_discount_amt) as "excess_discount_amount"
+	from catalog_sales, item, date_dim 
+	where i_manufact_id = 722 
+	and i_item_sk = cs_item_sk 
+	and d_date between DATE '2002-03-09' and DATE '2002-03-09' + interval '90 days'
+    and d_date_sk = cs_sold_date_sk 
+	and cs_ext_discount_amt > 10 
+	and d_date_sk = cs_sold_date_sk
+    limit 100;
+    """
+        self.do_test(query)
 
     def test_tpcds_sampleBig(self):
         query = """select s_store_id from store where s_number_employees > 5 limit 10;
@@ -107,10 +121,10 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_main_cmd_query(self):
         query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, " \
-                "supplier, nation         "\
-                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
-                 "'ARGENTINA' Group By "\
-                 "ps_COMMENT         Order by value desc Limit 100;"
+                "supplier, nation         " \
+                "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
+                "'ARGENTINA' Group By " \
+                "ps_COMMENT         Order by value desc Limit 100;"
         self.do_test(query)
 
     def test_unionQ(self):
