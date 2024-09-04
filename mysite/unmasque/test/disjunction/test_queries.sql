@@ -1,9 +1,9 @@
 -- DQ1
   select n_name, c_acctbal from nation, customer WHERE n_nationkey = c_nationkey and 
-  n_nationkey IN (1, 2, 3, 5, 4, 10) and c_acctbal < 7000 and c_acctbal > 1000 ORDER BY c_acctbal;
+  n_nationkey IN (1, 2, 3, 5, 4, 10, 13, 14, 15) and c_acctbal < 7000 and c_acctbal > 1000 ORDER BY c_acctbal;
 
 -- DQ2
-select n_name, c_acctbal from nation LEFT OUTER JOIN customer ON n_nationkey = c_nationkey and c_nationkey > 3 and 
+select n_name, c_acctbal from nation, customer where n_nationkey = c_nationkey and c_nationkey > 3 and 
   n_nationkey < 20 and c_nationkey != 10 and c_acctbal < 7000 LIMIT 200;
 
 -- DQ3
@@ -16,14 +16,13 @@ select avg(ps_supplycost) as cost from part, partsupp where p_partkey = ps_partk
   and (p_brand = 'Brand#52' or p_brand = 'Brand#12' or p_container = 'LG CASE');
 
 -- DQ5
-select p_size, ps_suppkey, count(*) as low_line_count from part RIGHT OUTER JOIN partsupp on 
+select p_size, ps_suppkey, count(*) as low_line_count from part. partsupp where 
   p_partkey = ps_partkey and p_brand IN ('Brand#52', 'Brand#34', 'Brand#15') and p_container IN ('WRAP BOX', 'MED BOX') 
   GROUP BY p_size, ps_suppkey  ORDER BY ps_suppkey desc LIMIT 30);
 
 -- DQ6
-select n_name, s_acctbal, ps_availqty  from supplier RIGHT OUTER JOIN partsupp 
-  ON ps_suppkey=s_suppkey AND ps_supplycost < 50 RIGHT OUTER JOIN 
-  nation on s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) ORDER BY n_name;
+select n_name, s_acctbal, ps_availqty  from supplier, partsupp, nation where 
+  ps_suppkey=s_suppkey AND ps_supplycost < 50 and s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) ORDER BY n_name;
 
 -- DQ7
 select l_shipmode,sum(l_extendedprice) as revenue from lineitem 
