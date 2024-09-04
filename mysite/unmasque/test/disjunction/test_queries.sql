@@ -9,7 +9,7 @@ select n_name, c_acctbal from nation, customer where n_nationkey = c_nationkey a
 -- DQ3
 select sum(l_extendedprice) as revenue from lineitem 
   where l_shipdate >= date '1994-01-01' and l_shipdate < date '1994-01-01' + interval '1' year 
-  and (l_quantity between 24 and 42 or l_quantity >= 50);
+  and (l_quantity < 10 or l_quantity between 24 and 42 or l_quantity >= 50);
 
 -- DQ4
 select avg(ps_supplycost) as cost from part, partsupp where p_partkey = ps_partkey 
