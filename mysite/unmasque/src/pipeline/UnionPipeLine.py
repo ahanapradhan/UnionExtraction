@@ -8,7 +8,7 @@ class UnionPipeLine(OuterJoinPipeLine):
     def __init__(self, connectionHelper, name="Union PipeLine"):
         super().__init__(connectionHelper, name)
 
-    def extract(self, query, speed):
+    def extract(self, query):
         # opening and closing connection actions are vital.
         self.connectionHelper.connectUsingParams()
         self.update_state(UNION + START)
