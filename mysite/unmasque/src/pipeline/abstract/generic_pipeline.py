@@ -51,7 +51,7 @@ class GenericPipeLine(ABC):
         self.error = ""
         self.core_relations = None
 
-    def process(self, query, speed=1.0):
+    def process(self, query: str):
         try:
             self.update_state(WAITING)
             exe_factory = ExecutableFactory()
@@ -68,7 +68,7 @@ class GenericPipeLine(ABC):
                 return str(e)
             """
             app.method_call_count = 0
-            result = self.extract(query, speed)
+            result = self.extract(query)
             if result is None:
                 result = self.error
                 self.update_state(ERROR)
@@ -84,11 +84,11 @@ class GenericPipeLine(ABC):
         finally:
             self.update_state(DONE)
 
-    def doJob(self, query, qe=None, speed=0.5):
+    def doJob(self, query, qe=None):
         local_start_time = time.time()
         if qe is None:
             qe = []
-        result = self.process(query, speed)
+        result = self.process(query)
         qe.clear()
         qe.append(result)
         local_end_time = time.time()
@@ -141,7 +141,7 @@ class GenericPipeLine(ABC):
         self.update_state(RESULT_COMPARE + DONE)
 
     @abstractmethod
-    def extract(self, query, speed):
+    def extract(self, query):
         pass
 
     def update_state(self, state):
