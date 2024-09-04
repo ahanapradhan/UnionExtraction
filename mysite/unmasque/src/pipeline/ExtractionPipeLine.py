@@ -40,8 +40,8 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.global_pk_dict = None
         self.pgao_ctx = PGAOcontext()
 
-    def process(self, query: str):
-        return GenericPipeLine.process(self, query)
+    def process(self, query: str, speed: float):
+        return GenericPipeLine.process(self, query, speed)
 
     def doJob(self, query, qe=None):
         return GenericPipeLine.doJob(self, query, qe)
@@ -49,7 +49,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
     def verify_correctness(self, query, result):
         GenericPipeLine.verify_correctness(self, query, result)
 
-    def extract(self, query):
+    def extract(self, query, speed):
         self.connectionHelper.connectUsingParams()
         self.info[UNION] = "SKIPPED"
         '''
