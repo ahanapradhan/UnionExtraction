@@ -84,28 +84,28 @@ Please explore the individual directories for more details on the code and its p
 ## Configuration
 inside `mysite` directory, there are two files as follows:  
 pkfkrelations.csv --> contains key details for the TPCH schema. If any other schema is to be used, change this file accordingly.
-config.ini --> This contains database login credentials, and flags for optional features. Change the fields accordingly.  
+config.ini --> This contains database login credentials and flags for optional features. Change the fields accordingly.  
 
-### Config File Detals:
+### Config File Details:
 `database` section: set your database credentials.  
 
 `support` section: give support file name. The support file should be present in the same directory of this config file.
 
-`logging` section: set logging level. Developer mode is `DEBUG`. Other valid levels are `INFO`, `ERROR`.
+`logging` section: set logging level. The developer mode is `DEBUG`. Other valid levels are `INFO`, `ERROR`.
 
-`feature` section: set flags for advanced features, as indicated by the flag names. Included features are, `UNION`, `OUTER JOIN`, `<>` or `!=` operator in arithmetic filter predicates and `IN` operator. 
+`feature` section: set flags for advanced features, as the flag names indicate. Included features are, `UNION`, `OUTER JOIN`, `<>` or `!=` operator in arithmetic filter predicates and `IN` operator. 
 
-`options` section: extractor options. E.g. Max value for `LIMIT` clause is 1000. If user needs to set higher value, use `limit=value`.
+`options` section: extractor options. E.g. the maximum value for `LIMIT` clause is 1000. If the user needs to set a higher value, use `limit=value`.
 
 
 ### Running Unmasque
 Open `mysite/unmasque/src/main_cmd.py` file.  
 This script has one default input specified.  
 Change this query to try Unmasque for various inputs.  
-`test.util` package has `queries.py` file, containing few sample queries. Any of them can be used for testing.
+`test.util` package has `queries.py` file, containing a few sample queries. Any of them can be used for testing.
 
 #### From Command Line:
-Change current directory to `mysite`.
+Change the current directory to `mysite`.
 Use the following command:  
 `python -m unmasque.src.main_cmd` 
 
@@ -115,6 +115,6 @@ the `main` function in main_cmd.py can be run from the IDE.
 (Current code uses relative imports in main_cmd.py script. If that causes import related error while trying to run from IDE, please change the imports to absolute.)
 
 #### From GUI:
-In terminal, go inside `unmasque` folder and start the django app using command: `python3 manage.py runserver`
-Once the server is up at 8080 port of localhost, the GUI can be accessed through the link: `http://localhost:8080/unmasque/`
+In the terminal, go inside `unmasque` folder and start the Django app using the command: `python3 manage.py runserver`
+Once the server is up at the 8080 port of localhost, the GUI can be accessed through the link: `http://localhost:8080/unmasque/`
 
