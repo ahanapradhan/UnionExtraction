@@ -99,6 +99,7 @@ class GenericPipeLine(ABC):
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams(True)
         rc = ResultComparator(self.connectionHelper, True, self.core_relations)
+        rc.full_db_restore = True
         self.update_state(RESULT_COMPARE + RUNNING)
         matched, restore_time = rc.doJob(query, result)
         self.time_profile.update_for_result_comparator(rc.local_elapsed_time - restore_time, rc.app_calls)

@@ -1,3 +1,5 @@
+import time
+
 from ....src.core.abstract.AppExtractorBase import AppExtractorBase
 from ....src.core.db_restorer import DbRestorer
 
@@ -13,16 +15,23 @@ class Comparator(AppExtractorBase):
         self.row_count_r_e = 0
         self.row_count_r_h = 0
         self.db_restorer = DbRestorer(self.connectionHelper, self.relations)
+        self.full_db_restore = False
 
     def extract_params_from_args(self, args):
         return args[0], args[1]
 
     def doActualJob(self, args=None):
-        for tab in self.relations:
-            tab_size = self.db_restorer.restore_table_and_confirm(tab)
-            if not tab_size:
-                self.logger.error(f"Could not restore {tab}, cannot run result comparator!")
-                return None
+        start_t = time.time()
+        if self.full_db_restore:
+            self.restore_db_finally()
+        else:
+            for tab in self.relations:
+                tab_size = self.db_restorer.restore_table_and_confirm(tab)
+                if not tab_size:
+                    self.logger.error(f"Could not restore {tab}, cannot run result comparator!")
+                    return None
+        end_t = time.time()
+        restore_time = end_t - start_t
 
         Q_h, Q_E = self.extract_params_from_args(args)
         if Q_E is None:
@@ -35,7 +44,7 @@ class Comparator(AppExtractorBase):
             return None
 
         matched = self.match(Q_h, Q_E)
-        return matched
+        return matched, restore_time
 
     def create_view_from_Q_E(self, Q_E):
         try:
