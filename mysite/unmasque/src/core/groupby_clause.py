@@ -18,7 +18,7 @@ class GroupBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper: AbstractConnectionHelper,
                  genPipelineCtx: GenPipelineContext,
                  pgao_ctx):
-        super().__init__(connectionHelper, "Group By", genPipelineCtx)
+        super().__init__(connectionHelper, "Group_By", genPipelineCtx)
         self.projected_attribs = pgao_ctx.projected_attribs
         self.has_groupby = False
         self.group_by_attrib = []

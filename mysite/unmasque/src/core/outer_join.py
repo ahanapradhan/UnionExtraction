@@ -15,7 +15,7 @@ class OuterJoin(GenerationPipeLineBase):
                  genPipelineCtx: GenPipelineContext,
                  q_gen: QueryStringGenerator,
                  genCtx: PGAOcontext):
-        super().__init__(connectionHelper, "Outer Join", genPipelineCtx)
+        super().__init__(connectionHelper, "Outer_Join", genPipelineCtx)
         self.global_pk_dict = global_pk_dict
         self.sem_eq_queries = None
         self.importance_dict = {}

@@ -15,7 +15,7 @@ class U2EquiJoin(FilterHolder):
                  filter_predicates: list,
                  filter_extractor: Filter,
                  global_min_instance_dict: dict):
-        super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor, "Equi Join")
+        super().__init__(connectionHelper, core_relations, global_min_instance_dict, filter_extractor, "Equi_Join")
         self.algebraic_eq_predicates = []
         self.arithmetic_eq_predicates = []
         self.filter_predicates = filter_predicates

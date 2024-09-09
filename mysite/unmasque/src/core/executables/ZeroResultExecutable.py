@@ -3,7 +3,7 @@ from ....src.core.executables.executable import Executable
 
 class ZeroResultExecutable(Executable):
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "Zero Result Executable")
+        super().__init__(connectionHelper, "Zero_Result_Executable")
 
     def is_attrib_all_null(self, Res, attrib):
         return self.isQ_result_empty(Res)

@@ -65,7 +65,7 @@ class OrderBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper,
                  genPipelineCtx: GenPipelineContext,
                  pgao_Ctx):
-        super().__init__(connectionHelper, "Order By", genPipelineCtx)
+        super().__init__(connectionHelper, "Order_By", genPipelineCtx)
         self.values_used = []
         self.global_projection_names = pgao_Ctx.projection_names
         self.projected_attribs = pgao_Ctx.projected_attribs

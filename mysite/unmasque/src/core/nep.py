@@ -64,7 +64,7 @@ class NepComparator(ResultComparator):
 class NepMinimizer(Minimizer):
 
     def __init__(self, connectionHelper, core_relations, all_sizes):
-        super().__init__(connectionHelper, core_relations, all_sizes, "NEP Minimizer")
+        super().__init__(connectionHelper, core_relations, all_sizes, "NEP_Minimizer")
         self.Q_E = None
         self.nep_comparator = NepComparator(self.connectionHelper, core_relations)
 
