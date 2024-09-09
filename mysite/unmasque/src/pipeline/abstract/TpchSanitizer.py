@@ -31,6 +31,13 @@ class TpchSanitizer:
             self.sanitize_one_table(table)
         self.connectionHelper.commit_transaction()
 
+    def restore_db_finally(self):
+        for table in self.all_relations:
+            self.drop_derived_relations(table)
+            drop_fn = self.get_drop_fn(table)
+            self.connectionHelper.execute_sql([drop_fn(table),
+                                               self.connectionHelper.queries.alter_table_rename_to(self.connectionHelper.queries.get_backup(table), table)])
+
     def restore_one_table(self, table):
         self.drop_derived_relations(table)
         drop_fn = self.get_drop_fn(table)
@@ -55,8 +62,7 @@ class TpchSanitizer:
 
     def sanitize_one_table(self, table):
         self.restore_one_table(table)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table("temp"),
-                                           self.connectionHelper.queries.drop_view("r_e"),
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view("r_e"),
                                            self.connectionHelper.queries.drop_table("r_h")])
 
     def get_drop_fn(self, table):

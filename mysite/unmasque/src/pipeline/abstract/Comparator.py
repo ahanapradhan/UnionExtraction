@@ -15,17 +15,21 @@ class Comparator(AppExtractorBase):
         self.row_count_r_e = 0
         self.row_count_r_h = 0
         self.db_restorer = DbRestorer(self.connectionHelper, self.relations)
+        self.full_db_restore = False
 
     def extract_params_from_args(self, args):
         return args[0], args[1]
 
     def doActualJob(self, args=None):
         start_t = time.time()
-        for tab in self.relations:
-            tab_size = self.db_restorer.restore_table_and_confirm(tab)
-            if not tab_size:
-                self.logger.error(f"Could not restore {tab}, cannot run result comparator!")
-                return None
+        if self.full_db_restore:
+            self.restore_db_finally()
+        else:
+            for tab in self.relations:
+                tab_size = self.db_restorer.restore_table_and_confirm(tab)
+                if not tab_size:
+                    self.logger.error(f"Could not restore {tab}, cannot run result comparator!")
+                    return None
         end_t = time.time()
         restore_time = end_t - start_t
 
