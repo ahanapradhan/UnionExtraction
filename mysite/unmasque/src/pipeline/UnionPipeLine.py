@@ -5,7 +5,7 @@ from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE, ER
 
 class UnionPipeLine(OuterJoinPipeLine):
 
-    def __init__(self, connectionHelper, name="Union PipeLine"):
+    def __init__(self, connectionHelper, name="Union_PipeLine"):
         super().__init__(connectionHelper, name)
 
     def extract(self, query):
@@ -83,7 +83,7 @@ class UnionPipeLine(OuterJoinPipeLine):
 
     def __nullify_relations(self, relations):
         for tab in relations:
-            backup_name = self.connectionHelper.queries.get_tabname_un(tab)
+            backup_name = self.connectionHelper.queries.get_union_tabname(tab)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, backup_name),
                                                self.connectionHelper.queries.create_table_like(tab, backup_name)],
                                               self.logger)
@@ -93,7 +93,7 @@ class UnionPipeLine(OuterJoinPipeLine):
         for tab in relations:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(tab),
                                                self.connectionHelper.queries.alter_table_rename_to(
-                                                   self.connectionHelper.queries.get_tabname_un(tab), tab)],
+                                                   self.connectionHelper.queries.get_union_tabname(tab), tab)],
                                               self.logger)
             self.all_sizes[tab] = self.connectionHelper.execute_sql_fetchone_0(
                 self.connectionHelper.queries.get_row_count(tab))

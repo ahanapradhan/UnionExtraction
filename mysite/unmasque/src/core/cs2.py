@@ -116,8 +116,7 @@ class Cs2(AppExtractorBase):
             base_t = get_base_t(key_list, sizes)
 
             # Sample base table
-            base_table = key_list[base_t][0]
-            base_key = key_list[base_t][1]
+            base_table, base_key = key_list[base_t][0], key_list[base_t][1]
             if base_table in self.core_relations:
                 limit_row = sizes[base_table]
                 self.connectionHelper.execute_sqls_with_DictCursor([
@@ -129,17 +128,17 @@ class Cs2(AppExtractorBase):
                 self.logger.debug(base_table, res)
 
             # sample remaining tables from key_list using the sampled base table
-            for i in range(0, len(key_list)):
-                tabname2 = key_list[i][0]
-                key2 = key_list[i][1]
+            for key_item in key_list:
+                sampled_table,  key = key_item[0], key_item[1]
 
-                # if tabname2 in not_sampled_tables:
-                if tabname2 != base_table and tabname2 in self.core_relations:
-                    limit_row = sizes[tabname2]
+                # if sampled_table in not_sampled_tables:
+                if sampled_table != base_table and sampled_table in self.core_relations:
+                    limit_row = sizes[sampled_table]
                     self.connectionHelper.execute_sqls_with_DictCursor([
-                        f"insert into {tabname2} select * from {self.connectionHelper.queries.get_backup(tabname2)} "
-                        f"where {key2} in (select distinct({base_key}) from {base_table}) and {key2} "
-                        f"not in (select distinct({key2}) from {tabname2}) Limit {limit_row} ;"])
+                        f"insert into {sampled_table} select * from "
+                        f"{self.connectionHelper.queries.get_backup(sampled_table)} "
+                        f"where {key} in (select distinct({base_key}) from {base_table}) and {key} "
+                        f"not in (select distinct({key}) from {sampled_table}) Limit {limit_row} ;"])
                     res = self.connectionHelper.execute_sql_fetchone_0(
-                        self.connectionHelper.queries.get_row_count(tabname2))
-                    self.logger.debug(tabname2, res)
+                        self.connectionHelper.queries.get_row_count(sampled_table))
+                    self.logger.debug(sampled_table, res)

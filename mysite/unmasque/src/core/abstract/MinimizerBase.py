@@ -46,23 +46,23 @@ class Minimizer(AppExtractorBase, ABC):
                                           query,
                                           start_ctid,
                                           tabname,
-                                          tabname1):
+                                          dirty_tab):
         if isinstance(self.app, NullFreeExecutable):
             end_ctid, start_ctid = self.check_sanity_when_nullfree_exe(end_ctid, mid_ctid1, mid_ctid2, query,
                                                                        start_ctid,
-                                                                       tabname, tabname1)
+                                                                       tabname, dirty_tab)
         else:
             end_ctid, start_ctid = self.check_sanity_when_base_exe(end_ctid, mid_ctid1, mid_ctid2, query,
                                                                    start_ctid,
-                                                                   tabname, tabname1)
+                                                                   tabname, dirty_tab)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
         return end_ctid, start_ctid
 
-    def check_sanity_when_nullfree_exe(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname, tabname1):
-        if self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
+    def check_sanity_when_nullfree_exe(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname, dirty_tab):
+        if self.check_result_for_half(mid_ctid2, end_ctid, dirty_tab, tabname, query):
             # Take the lower half
             start_ctid = mid_ctid2
-        elif self.check_result_for_half(start_ctid, mid_ctid1, tabname1, tabname, query):
+        elif self.check_result_for_half(start_ctid, mid_ctid1, dirty_tab, tabname, query):
             # Take the upper half
             end_ctid = mid_ctid1
         else:
@@ -70,8 +70,8 @@ class Minimizer(AppExtractorBase, ABC):
             start_ctid, end_ctid = None, None
         return end_ctid, start_ctid
 
-    def check_sanity_when_base_exe(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname, tabname1):
-        if self.check_result_for_half(mid_ctid2, end_ctid, tabname1, tabname, query):
+    def check_sanity_when_base_exe(self, end_ctid, mid_ctid1, mid_ctid2, query, start_ctid, tabname, dirty_tab):
+        if self.check_result_for_half(mid_ctid2, end_ctid, dirty_tab, tabname, query):
             # Take the lower half
             start_ctid = mid_ctid2
         else:
@@ -79,12 +79,12 @@ class Minimizer(AppExtractorBase, ABC):
             end_ctid = mid_ctid1
         return end_ctid, start_ctid
 
-    def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, tabname1)])
-        end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
+    def get_start_and_end_ctids(self, core_sizes, query, tabname, dirty_tab):
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, dirty_tab)])
+        end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, dirty_tab)
 
         if mid_ctid1 is None:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname1, tabname)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(dirty_tab, tabname)])
             return None, None
 
         self.logger.debug(start_ctid, mid_ctid1, mid_ctid2, end_ctid)
@@ -94,17 +94,17 @@ class Minimizer(AppExtractorBase, ABC):
                                                                       query,
                                                                       start_ctid,
                                                                       tabname,
-                                                                      tabname1)
+                                                                      dirty_tab)
         return end_ctid, start_ctid
 
-    def get_mid_ctids(self, core_sizes, tabname, tabname1):
-        start_page, start_row = self.get_boundary("min", tabname1)
-        end_page, end_row = self.get_boundary("max", tabname1)
+    def get_mid_ctids(self, core_sizes, tabname, dirty_tab):
+        start_page, start_row = self.get_boundary("min", dirty_tab)
+        end_page, end_row = self.get_boundary("max", dirty_tab)
         start_ctid = "(" + str(start_page) + "," + str(start_row) + ")"
         end_ctid = "(" + str(end_page) + "," + str(end_row) + ")"
         mid_ctid1, mid_ctid2 = mid_ctid_calculate_shortcut(core_sizes[tabname])
         if start_ctid == mid_ctid1:
-            mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
+            mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(dirty_tab)
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid
 
     def get_boundary(self, min_or_max, tabname):
@@ -126,12 +126,12 @@ class Minimizer(AppExtractorBase, ABC):
             return True  # this half works
         return False  # this half does not work
 
-    def update_with_remaining_size(self, core_sizes, end_ctid, start_ctid, tabname, tabname1):
+    def update_with_remaining_size(self, core_sizes, end_ctid, start_ctid, tabname, dirty_tab):
         self.logger.debug(start_ctid, end_ctid)
         self.connectionHelper.execute_sql(
             [self.connectionHelper.queries.create_table_as_select_star_from_ctid(end_ctid, start_ctid, tabname,
-                                                                                 tabname1),
-             self.connectionHelper.queries.drop_table_cascade(tabname1)], self.logger)
+                                                                                 dirty_tab),
+             self.connectionHelper.queries.drop_table_cascade(dirty_tab)], self.logger)
         core_sizes[tabname] = self.connectionHelper.execute_sql_fetchone_0(
             self.connectionHelper.queries.get_row_count(tabname), self.logger)
         self.logger.debug("REMAINING TABLE SIZE", core_sizes[tabname])
@@ -167,6 +167,6 @@ class Minimizer(AppExtractorBase, ABC):
         for tab in self.core_relations:
             drop_fn = self.get_drop_fn(tab)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_as_select_star_from(
-                self.connectionHelper.queries.get_tabname_4(tab), tab),
+                self.connectionHelper.queries.get_dmin_tabname(tab), tab),
                 drop_fn(tab), self.connectionHelper.queries.alter_table_rename_to(
-                    self.connectionHelper.queries.get_tabname_4(tab), tab)])
+                    self.connectionHelper.queries.get_dmin_tabname(tab), tab)])
