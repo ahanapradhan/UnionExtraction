@@ -63,13 +63,10 @@ class TpchSanitizer:
             if self.connectionHelper.is_view_or_table(table) == 'table' else self.connectionHelper.queries.drop_view
 
     def drop_derived_relations(self, table):
-        derived_objects = [self.connectionHelper.queries.get_tabname_1(table),
-                           self.connectionHelper.queries.get_tabname_4(table),
-                           self.connectionHelper.queries.get_tabname_un(table),
+        derived_objects = [self.connectionHelper.queries.get_dmin_tabname(table),
+                           self.connectionHelper.queries.get_union_tabname(table),
                            self.connectionHelper.queries.get_tabname_nep(table),
-                           self.connectionHelper.queries.get_restore_name(table),
-                           table + "2",
-                           table + "3"]
+                           self.connectionHelper.queries.get_restore_name(table)]
         drop_fns = [self.get_drop_fn(tab) for tab in derived_objects]
         for n in range(len(derived_objects)):
             drop_object = derived_objects[n]

@@ -33,7 +33,7 @@ class MutationPipeLineBase(AppExtractorBase, ABC):
             self.connectionHelper.execute_sql([
                 self.connectionHelper.queries.truncate_table(tab),
                 self.connectionHelper.queries.insert_into_tab_select_star_fromtab(
-                    tab, self.connectionHelper.queries.get_tabname_4(tab))])
+                    tab, self.connectionHelper.queries.get_dmin_tabname(tab))])
 
     def extract_params_from_args(self, args):
         return args[0]
