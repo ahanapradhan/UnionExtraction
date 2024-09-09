@@ -1,7 +1,6 @@
 import copy
 
 from ...util.Log import Log
-from ...util.constants import UNMASQUE
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 from typing import List
 
@@ -31,13 +30,6 @@ class TpchSanitizer:
             self.sanitize_one_table(table)
         self.connectionHelper.commit_transaction()
 
-    def restore_db_finally(self):
-        for table in self.all_relations:
-            self.drop_derived_relations(table)
-            drop_fn = self.get_drop_fn(table)
-            self.connectionHelper.execute_sql([drop_fn(table),
-                                               self.connectionHelper.queries.alter_table_rename_to(self.connectionHelper.queries.get_backup(table), table)])
-
     def restore_one_table(self, table):
         self.drop_derived_relations(table)
         drop_fn = self.get_drop_fn(table)
@@ -62,7 +54,8 @@ class TpchSanitizer:
 
     def sanitize_one_table(self, table):
         self.restore_one_table(table)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view("r_e"),
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table("temp"),
+                                           self.connectionHelper.queries.drop_view("r_e"),
                                            self.connectionHelper.queries.drop_table("r_h")])
 
     def get_drop_fn(self, table):
@@ -70,16 +63,15 @@ class TpchSanitizer:
             if self.connectionHelper.is_view_or_table(table) == 'table' else self.connectionHelper.queries.drop_view
 
     def drop_derived_relations(self, table):
-        derived_tables = self.connectionHelper.execute_sql_fetchall(f"select tablename from pg_tables "
-                                                                    f"where schemaname = '{self.connectionHelper.config.schema}' "
-                                                                    f"and tablename LIKE '{table}%{UNMASQUE}';")[0]
-        derived_views = self.connectionHelper.execute_sql_fetchall(f"select viewname from pg_views "
-                                                                   f"where schemaname = '{self.connectionHelper.config.schema}' "
-                                                                   f"and viewname LIKE '{table}%{UNMASQUE}';")[0]
-        derived_objects = derived_tables + derived_views
-        for obj in derived_objects:
-            drop_fn = self.get_drop_fn(obj)
-            self.connectionHelper.execute_sql([drop_fn(obj)])
+        derived_objects = [self.connectionHelper.queries.get_dmin_tabname(table),
+                           self.connectionHelper.queries.get_union_tabname(table),
+                           self.connectionHelper.queries.get_tabname_nep(table),
+                           self.connectionHelper.queries.get_restore_name(table)]
+        drop_fns = [self.get_drop_fn(tab) for tab in derived_objects]
+        for n in range(len(derived_objects)):
+            drop_object = derived_objects[n]
+            drop_command = drop_fns[n]
+            self.connectionHelper.execute_sql([drop_command(drop_object)])
 
     def get_all_sizes(self):
         for tab in self.all_relations:

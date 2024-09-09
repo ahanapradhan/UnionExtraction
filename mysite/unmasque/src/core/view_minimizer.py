@@ -34,11 +34,11 @@ class ViewMinimizer(Minimizer):
         return self.reduce_Database_Instance(query, True) if self.cs2_passed \
             else self.reduce_Database_Instance(query, False)
 
-    def do_interPage_viewBased_binary_halving(self, core_sizes,
-                                              query,
-                                              tabname,
-                                              rctid,
-                                              dirty_tab):
+    def do_viewBased_binary_halving(self, core_sizes,
+                                    query,
+                                    tabname,
+                                    rctid,
+                                    dirty_tab):
         end_ctid, end_page, start_ctid, start_page = extract_start_and_end_page(self.logger, rctid)
         while start_page < end_page - 1:
             mid_page = int((start_page + end_page) / 2)
@@ -67,9 +67,9 @@ class ViewMinimizer(Minimizer):
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, view_name)])
             rctid = self.connectionHelper.execute_sql_fetchone(
                 self.connectionHelper.queries.get_min_max_ctid(view_name))
-            core_sizes = self.do_interPage_viewBased_binary_halving(core_sizes, query, tabname, rctid, view_name)
-            core_sizes = self.do_intraPage_copyBased_binary_halving(core_sizes, query, tabname,
-                                                                    self._get_dirty_name(tabname))
+            core_sizes = self.do_viewBased_binary_halving(core_sizes, query, tabname, rctid, view_name)
+            core_sizes = self.do_copyBased_binary_halving(core_sizes, query, tabname,
+                                                          self._get_dirty_name(tabname))
 
             if not self.sanity_check(query):
                 return False
@@ -89,7 +89,7 @@ class ViewMinimizer(Minimizer):
         for tabname in self.core_relations:
             view_name = self._get_dirty_name(tabname) if cs_pass \
                 else self.connectionHelper.queries.get_restore_name(tabname)
-            core_sizes = self.do_intraPage_copyBased_binary_halving(core_sizes, query, tabname, view_name)
+            core_sizes = self.do_copyBased_binary_halving(core_sizes, query, tabname, view_name)
 
             if not self.sanity_check(query):
                 return False
@@ -103,7 +103,7 @@ class ViewMinimizer(Minimizer):
         self.populate_dict_info()
         return True
 
-    def do_intraPage_copyBased_binary_halving(self, core_sizes, query, tabname, dirty_tab):
+    def do_copyBased_binary_halving(self, core_sizes, query, tabname, dirty_tab):
         while int(core_sizes[tabname]) > self.max_row_no:
             end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, tabname, dirty_tab)
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, tabname, dirty_tab)
