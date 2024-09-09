@@ -4,7 +4,7 @@ from ...src.pipeline.abstract.Comparator import Comparator
 class ResultComparator(Comparator):
 
     def __init__(self, connectionHelper, isHash, core_relations=None):
-        super().__init__(connectionHelper, "Result Comparator", True, core_relations)
+        super().__init__(connectionHelper, "Result_Comparator", True, core_relations)
         self.isHash = isHash
 
     def is_match(self, len1, len2):

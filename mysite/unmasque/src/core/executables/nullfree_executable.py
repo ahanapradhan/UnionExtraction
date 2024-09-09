@@ -88,7 +88,7 @@ def is_result_no_full_nullfree_row(res, logger):
 
 class NullFreeExecutable(Executable):
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "Null Free Executable")
+        super().__init__(connectionHelper, "Null_Free_Executable")
 
     def is_attrib_all_null(self, Res, attrib):
         idx = Res[0].index(attrib)

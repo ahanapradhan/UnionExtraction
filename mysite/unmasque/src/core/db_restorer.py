@@ -3,7 +3,7 @@ from .abstract.abstractConnection import AbstractConnectionHelper
 
 
 class DbRestorer(AppExtractorBase):
-    def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list, name="Database Restorer"):
+    def __init__(self, connectionHelper: AbstractConnectionHelper, core_relations: list, name="Database_Restorer"):
         super().__init__(connectionHelper, name)
         self.relations = []
         self.last_restored_size = {}
@@ -34,8 +34,7 @@ class DbRestorer(AppExtractorBase):
 
     def sanitize_one_table_where(self, table, where):
         self.restore_one_table_where(table, where)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table("temp"),
-                                           self.connectionHelper.queries.drop_view("r_e"),
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view("r_e"),
                                            self.connectionHelper.queries.drop_table("r_h")])
 
     def doActualJob(self, args=None):
