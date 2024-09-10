@@ -47,6 +47,7 @@ class Projection(GenerationPipeLineBase):
         Suppose a column is dependent on a and b, corresponding index of that column in param_list will contain, [a,b,a*b]
         """
         self.param_list = []
+        self.rmin_card = 0
 
     def doExtractJob(self, query):
         s_values = []
@@ -80,6 +81,8 @@ class Projection(GenerationPipeLineBase):
                               "Result is empty. Can not identify "
                               "projections completely.")
             return [], [], [], False
+
+        self.rmin_card = len(new_result)
 
         projection_names = list(new_result[0])
         projection_coulumn_type = self.get_projection_column_type(query, projection_names)
@@ -240,8 +243,9 @@ class Projection(GenerationPipeLineBase):
                     self.update_attrib_in_table(j_c, value, self.find_tabname_for_given_attrib(j_c))
 
             exe_result = self.app.doJob(query)
-            if not self.app.isQ_result_empty(exe_result):
-                b[i][0] = self.app.get_attrib_val(exe_result, idx)
+            if not self.app.isQ_result_no_full_nullfree_row(exe_result):
+                null_free_row = self.app.get_nullfree_row(exe_result)
+                b[i][0] = null_free_row[idx]
         self.logger.debug("Coeff", coeff)
         solution = np.linalg.solve(coeff, b)
         solution = np.around(solution, decimals=2)

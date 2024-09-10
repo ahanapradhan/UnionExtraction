@@ -27,7 +27,7 @@ def add_header(description, result):
     if description is not None and not is_error(description):
         colnames = [desc[0] for desc in description]
         for i in range(len(colnames)):
-            if colnames[i] == '?column?': # Changing the name of column to legitimate name.
+            if colnames[i] == '?column?':  # Changing the name of column to legitimate name.
                 colnames[i] = ORPHAN_COLUMN
         result.append(tuple(colnames))
 
@@ -55,6 +55,12 @@ class Executable(Base):
             self.logger.error("Executable could not be run. Error: " + str(error))
             raise error
         return result
+
+    def get_nullfree_row(self, Res):
+        return Res[1]
+
+    def get_all_nullfree_rows(self, Res):
+        return Res[1:]
 
     def is_attrib_all_null(self, Res, attrib):
         return self.isQ_result_empty(Res)

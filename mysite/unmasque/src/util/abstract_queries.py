@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from mysite.unmasque.src.util.constants import UNMASQUE
+
 
 class CommonQueries(ABC):
 
@@ -72,23 +74,11 @@ class CommonQueries(ABC):
     def drop_view(self, tab):
         pass
 
-    def get_tabname_nep_min(self, tab):
-        return f"{tab}_nep_min"
+    def get_dmin_tabname(self, tab):
+        return f"{tab}_{UNMASQUE}_dmin"
 
-    def get_tabname_1(self, tab):
-        return f"{tab}1"
-
-    def get_tabname_4(self, tab):
-        return f"{tab}4"
-
-    def get_tabname_un(self, tab):
-        return f"{tab}_un"
-
-    def get_tabname_nep(self, tab):
-        return f"{tab}_nep"
-
-    def get_tabname_2(self, tab):
-        return f"{tab}2"
+    def get_union_tabname(self, tab):
+        return f"{tab}_{UNMASQUE}_union"
 
     @abstractmethod
     def create_view_as(self, view, q):

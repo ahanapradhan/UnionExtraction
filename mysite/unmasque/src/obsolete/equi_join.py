@@ -106,7 +106,7 @@ class EquiJoin(WhereClause):
             for val in join_keys:
                 self.connectionHelper.execute_sql(
                     [self.connectionHelper.queries.insert_into_tab_select_star_fromtab(val[0],
-                                                                                       self.connectionHelper.queries.get_tabname_4(
+                                                                                       self.connectionHelper.queries.get_dmin_tabname(
                                                                                            val[0]))])
         self.refine_join_graph(join_graph)
 

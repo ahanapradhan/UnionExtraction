@@ -65,7 +65,7 @@ class OrderBy(GenerationPipeLineBase):
     def __init__(self, connectionHelper,
                  genPipelineCtx: GenPipelineContext,
                  pgao_Ctx):
-        super().__init__(connectionHelper, "Order By", genPipelineCtx)
+        super().__init__(connectionHelper, "Order_By", genPipelineCtx)
         self.values_used = []
         self.global_projection_names = pgao_Ctx.projection_names
         self.projected_attribs = pgao_Ctx.projected_attribs
@@ -254,7 +254,7 @@ class OrderBy(GenerationPipeLineBase):
                     return None
                 if len(new_result) == 2:
                     return None
-                data = new_result[1:]
+                data = self.app.get_all_nullfree_rows(new_result)
                 check_res = []
                 for d in data:
                     check_res.append(d[obj.index])

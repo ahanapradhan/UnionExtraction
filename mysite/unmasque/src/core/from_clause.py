@@ -35,8 +35,8 @@ class FromClause(AppExtractorBase):
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(tabname, "temp"),
-                     self.connectionHelper.queries.create_table_like(tabname, "temp")], self.logger)
+                    [self.connectionHelper.queries.alter_table_rename_to(tabname, self._get_dirty_name(tabname)),
+                     self.connectionHelper.queries.create_table_like(tabname, self._get_dirty_name(tabname))], self.logger)
                 new_result = self.app.doJob(query)
                 if self.app.isQ_result_no_full_nullfree_row(new_result):
                     self.core_relations.append(tabname)
@@ -51,7 +51,7 @@ class FromClause(AppExtractorBase):
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(tabname, "temp")], self.logger)
+                    [self.connectionHelper.queries.alter_table_rename_to(tabname, self._get_dirty_name(tabname))], self.logger)
 
                 if self.timeout:
                     self.connectionHelper.execute_sql([self.connectionHelper.set_timeout_to_2s()])

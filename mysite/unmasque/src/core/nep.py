@@ -64,7 +64,7 @@ class NepComparator(ResultComparator):
 class NepMinimizer(Minimizer):
 
     def __init__(self, connectionHelper, core_relations, all_sizes):
-        super().__init__(connectionHelper, core_relations, all_sizes, "NEP Minimizer")
+        super().__init__(connectionHelper, core_relations, all_sizes, "NEP_Minimizer")
         self.Q_E = None
         self.nep_comparator = NepComparator(self.connectionHelper, core_relations)
 
@@ -94,30 +94,29 @@ class NepMinimizer(Minimizer):
     def reduce_Database_Instance(self, query, table):
         core_sizes = self.getCoreSizes()
         self.logger.debug("Inside get nep")
-        tabname1 = self.connectionHelper.queries.get_tabname_1(table)
         while core_sizes[table] > 1:
             self.logger.debug("Inside minimization loop")
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(table, tabname1)],
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(table, self._get_dirty_name(table))],
                                               self.logger)
-            end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, table, tabname1)
+            end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, table, self._get_dirty_name(table))
             self.logger.debug(end_ctid, start_ctid)
             if end_ctid is None:
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(tabname1, table)], self.logger)
+                    [self.connectionHelper.queries.alter_table_rename_to(self._get_dirty_name(table), table)], self.logger)
                 return False  # no role on NEP
-            core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, table, tabname1)
+            core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, table, self._get_dirty_name(table))
         return True
 
-    def get_mid_ctids(self, core_sizes, tabname, tabname1):
-        start_page, start_row = self.get_boundary("min", tabname1)
-        end_page, end_row = self.get_boundary("max", tabname1)
+    def get_mid_ctids(self, core_sizes, tabname, dirty_tab):
+        start_page, start_row = self.get_boundary("min", dirty_tab)
+        end_page, end_row = self.get_boundary("max", dirty_tab)
         start_ctid = f"({str(start_page)},{str(start_row)})"
         end_ctid = f"({str(end_page)},{str(end_row)})"
-        mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(tabname1)
+        mid_ctid1, mid_ctid2 = self.determine_mid_ctid_from_db(dirty_tab)
         return end_ctid, mid_ctid1, mid_ctid2, start_ctid
 
-    def get_start_and_end_ctids(self, core_sizes, query, tabname, tabname1):
-        end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, tabname1)
+    def get_start_and_end_ctids(self, core_sizes, query, tabname, dirty_tab):
+        end_ctid, mid_ctid1, mid_ctid2, start_ctid = self.get_mid_ctids(core_sizes, tabname, dirty_tab)
 
         if mid_ctid1 is None:
             return None, None
@@ -129,7 +128,7 @@ class NepMinimizer(Minimizer):
                                                                       query,
                                                                       start_ctid,
                                                                       tabname,
-                                                                      tabname1)
+                                                                      dirty_tab)
         return end_ctid, start_ctid
 
     def create_view_execute_app_drop_view(self,
@@ -139,10 +138,10 @@ class NepMinimizer(Minimizer):
                                           query,
                                           start_ctid,
                                           tabname,
-                                          tabname1):
+                                          dirty_tab):
         end_ctid, start_ctid = self.check_sanity_when_nullfree_exe(end_ctid, mid_ctid1, mid_ctid2, query,
                                                                    start_ctid,
-                                                                   tabname, tabname1)
+                                                                   tabname, dirty_tab)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
         return end_ctid, start_ctid
 

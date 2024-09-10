@@ -6,7 +6,7 @@ from ...src.core.from_clause import FromClause
 class UnionFromClause(Schema, AppExtractorBase):
 
     def __init__(self, connectionHelper):
-        super().__init__(connectionHelper, "Union From Clause")
+        super().__init__(connectionHelper, "Union_fc")
         self.comtabs = None
         self.fromtabs = None
         self.to_nullify = None
@@ -22,8 +22,8 @@ class UnionFromClause(Schema, AppExtractorBase):
         self.to_nullify = s_set.difference(self.comtabs)
         self.logger.debug("to nullify " + str(self.to_nullify))
         for tab in self.to_nullify:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, self.connectionHelper.queries.get_tabname_1(tab)),
-                                               self.connectionHelper.queries.create_table_like(tab, self.connectionHelper.queries.get_tabname_1(tab))])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, self._get_dirty_name(tab)),
+                                               self.connectionHelper.queries.create_table_like(tab, self._get_dirty_name(tab))])
 
     def run_query(self, QH):
         return self.app.doJob(QH)
@@ -31,8 +31,8 @@ class UnionFromClause(Schema, AppExtractorBase):
     def revert_nullify(self):
         for tab in self.to_nullify:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
-                                               self.connectionHelper.queries.alter_table_rename_to(self.connectionHelper.queries.get_tabname_1(tab), tab),
-                                               self.connectionHelper.queries.drop_table(self.connectionHelper.queries.get_tabname_1(tab))])
+                                               self.connectionHelper.queries.alter_table_rename_to(self._get_dirty_name(tab), tab),
+                                               self.connectionHelper.queries.drop_table(self._get_dirty_name(tab))])
 
     def get_partial_QH(self, QH):
         return self.doJob(QH)
