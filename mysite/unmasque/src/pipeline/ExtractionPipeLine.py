@@ -63,7 +63,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.time_profile.update_for_from_clause(fc.local_elapsed_time, fc.app_calls)
         io = IOState(query, fc.core_relations)
         if not check or not fc.done:
-            self.error = "Some problem while extracting from clause. Aborting!"
+            self.error = check if check else self.error_string
             self.logger.error(self.error)
             self.update_state(ERROR)
             self.info[FROM_CLAUSE] = None
@@ -123,7 +123,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         if not self.pj.done:
             self.update_state(ERROR)
             self.info[PROJECTION] = None
-            self.error = "Some error while projection extraction. Aborting extraction!"
+            self.error = check if check else self.error_string
             self.logger.error(self.error)
             return None
         self.pgao_ctx.projection = self.pj
@@ -142,7 +142,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         if not gb.done:
             self.update_state(ERROR)
             self.info[GROUP_BY] = None
-            self.error = "Some error while group by extraction. Aborting extraction!"
+            self.error = check if check else self.error_string
             self.logger.error(self.error)
             return None
         self.pgao_ctx.group_by = gb
@@ -161,7 +161,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         if not agg.done:
             self.update_state(ERROR)
             self.info[AGGREGATE] = None
-            self.error = "Some error while extrating aggregations. Aborting extraction!"
+            self.error = check if check else self.error_string
             self.logger.error(self.error)
             return None
         self.pgao_ctx.aggregate = agg
@@ -180,7 +180,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         if not ob.done:
             self.update_state(ERROR)
             self.info[ORDER_BY] = None
-            self.error = "Some error while extrating aggregations. Aborting extraction!"
+            self.error = check if check else self.error_string
             self.logger.error(self.error)
             return None
         self.pgao_ctx.order_by = ob
@@ -199,7 +199,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         if not lm.done:
             self.update_state(ERROR)
             self.info[LIMIT] = None
-            self.error = "Some error while extracting limit. Aborting extraction!"
+            self.error = check if check else self.error_string
             self.logger.error(self.error)
             return None
 
