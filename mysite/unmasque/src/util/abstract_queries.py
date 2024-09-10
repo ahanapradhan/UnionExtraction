@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ...src.util.constants import UNMASQUE
+from mysite.unmasque.src.util.constants import UNMASQUE
 
 
 class CommonQueries(ABC):
@@ -34,6 +34,10 @@ class CommonQueries(ABC):
 
     @abstractmethod
     def create_table_as_select_star_from(self, tab, fromtab):
+        pass
+
+    @abstractmethod
+    def analyze_table(self, tab):
         pass
 
     @abstractmethod
@@ -75,9 +79,6 @@ class CommonQueries(ABC):
 
     def get_union_tabname(self, tab):
         return f"{tab}_{UNMASQUE}_union"
-
-    def get_tabname_nep(self, tab):
-        return f"{tab}_{UNMASQUE}_nep"
 
     @abstractmethod
     def create_view_as(self, view, q):
