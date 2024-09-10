@@ -474,6 +474,7 @@ class ExtractionTestCase(BaseTestCase):
     def test_simple(self):
         query = "select c_name, n_regionkey from nation INNER JOIN customer on n_nationkey = c_nationkey and " \
                 "n_name <> 'GERMANY';"
+        self.conn.config.detect_nep = True
         self.do_test(query)
 
     def test_for_numeric_flter(self):
