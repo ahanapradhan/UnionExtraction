@@ -80,6 +80,9 @@ class CommonQueries(ABC):
     def get_union_tabname(self, tab):
         return f"{tab}_{UNMASQUE}_union"
 
+    def get_tabname_nep(self, tab):
+        return f"{tab}_{UNMASQUE}_nep"
+
     @abstractmethod
     def create_view_as(self, view, q):
         pass

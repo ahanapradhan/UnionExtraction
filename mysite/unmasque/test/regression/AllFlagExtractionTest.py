@@ -78,7 +78,8 @@ class ExtractionTestCase(BaseTestCase):
         query = """
         (select n_name, c_acctbal from nation, customer where c_nationkey = n_nationkey and n_regionkey > 3)
         UNION ALL
-        (select r_name, s_acctbal from region, nation, supplier where r_regionkey = n_regionkey and n_nationkey = s_nationkey and s_name LIKE '%008');
+        (select r_name, s_acctbal from region, nation, supplier where r_regionkey = n_regionkey 
+        and n_nationkey = s_nationkey and s_name = 'Supplier#000000008');
         """
         self.do_test(query)
 
@@ -472,8 +473,11 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_simple(self):
-        query = "select c_name, n_regionkey from nation INNER JOIN customer on n_nationkey = c_nationkey and " \
+        query = "select c_name, n_regionkey from nation, customer where n_nationkey = c_nationkey and " \
                 "n_name <> 'GERMANY';"
+        self.conn.config.detect_nep = True
+        self.conn.config.detect_union = True
+        self.conn.config.detect_oj = True
         self.do_test(query)
 
     def test_for_numeric_flter(self):
@@ -516,6 +520,7 @@ class ExtractionTestCase(BaseTestCase):
                 "Where p_partkey = ps_partkey and p_brand <> 'Brand#45' and p_type NOT Like 'SMALL PLATED%' and " \
                 "p_size >=  4 Group By p_brand, p_type, p_size Order by supplier_cnt desc, p_brand, " \
                 "p_type, p_size;"
+        self.conn.config.detect_nep = True
         self.do_test(query)
 
     def test_Q16_sql_outer_join(self):
@@ -678,6 +683,7 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_one_table_duplicate_value_columns(self):
+        self.conn.config.detect_or = True
         query = "select max(l_extendedprice) from lineitem where l_linenumber IN (1, 4);"
         self.do_test(query)
 
