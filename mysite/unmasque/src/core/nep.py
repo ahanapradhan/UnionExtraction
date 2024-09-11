@@ -232,7 +232,7 @@ class NEP(GenerationPipeLineBase):
             other_attribs.append(attrib)
             join_tabnames.append(tabname)
             self.__update_key_attib_with_val(join_tabnames, other_attribs, prev, val)
-            self.__update_filter_attribs_from_res(new_result, filterAttribs, join_tabnames, other_attribs, prev, query)
+            self.__update_filter_attribs_from_res(new_result, filterAttribs, join_tabnames, other_attribs, prev)
 
     def __check_per_single_attrib(self, attrib_list, filterAttribs, query, tabname):
         if self.joined_attribs is not None:
@@ -248,9 +248,9 @@ class NEP(GenerationPipeLineBase):
             self.update_with_val(attrib, tabname, val)
             new_result = self.app.doJob(query)
             self.update_with_val(attrib, tabname, prev)
-            self.__update_filter_attribs_from_res(new_result, filterAttribs, [tabname], [attrib], prev, query)
+            self.__update_filter_attribs_from_res(new_result, filterAttribs, [tabname], [attrib], prev)
 
-    def __update_filter_attribs_from_res(self, new_result, filterAttribs, tabs, attribs, prev, query):
+    def __update_filter_attribs_from_res(self, new_result, filterAttribs, tabs, attribs, prev):
         if not self.app.isQ_result_empty(new_result):
             filterAttribs.append((tabs[-1], attribs[-1], '<>', prev))
             self.logger.debug(filterAttribs, '++++++_______++++++')
