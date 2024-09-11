@@ -37,10 +37,6 @@ class CommonQueries(ABC):
         pass
 
     @abstractmethod
-    def analyze_table(self, tab):
-        pass
-
-    @abstractmethod
     def create_table_as_select_star_from_where(self, tab, fromtab, where):
         pass
 
