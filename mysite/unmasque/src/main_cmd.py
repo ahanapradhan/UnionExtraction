@@ -20,15 +20,14 @@ def signal_handler(signum, frame):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     hq = """
-    select sum(cs_ext_discount_amt) as "excess discount amount"
+    select sum(cs_ext_discount_amt) as "excess_discount_amount"
 	from catalog_sales, item, date_dim 
 	where i_manufact_id = 722 
 	and i_item_sk = cs_item_sk 
 	and d_date between DATE '2002-03-09' and DATE '2002-03-09' + interval '90 days'
     and d_date_sk = cs_sold_date_sk 
 	and cs_ext_discount_amt > 10 
-	and d_date_sk = cs_sold_date_sk
-    limit 100;
+	and d_date_sk = cs_sold_date_sk;
     """
 
     #hq = """select s_store_id from store where s_number_employees > 5 limit 10;
