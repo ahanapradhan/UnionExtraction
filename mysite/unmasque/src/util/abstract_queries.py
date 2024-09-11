@@ -37,6 +37,10 @@ class CommonQueries(ABC):
         pass
 
     @abstractmethod
+    def analyze_table(self, tab):
+        pass
+
+    @abstractmethod
     def create_table_as_select_star_from_where(self, tab, fromtab, where):
         pass
 
@@ -75,6 +79,9 @@ class CommonQueries(ABC):
 
     def get_union_tabname(self, tab):
         return f"{tab}_{UNMASQUE}_union"
+
+    def get_tabname_nep(self, tab):
+        return f"{tab}_{UNMASQUE}_nep"
 
     @abstractmethod
     def create_view_as(self, view, q):
