@@ -19,9 +19,11 @@ class ExecutableFactory:
         self.query = query
 
     def create_exe(self, connectionHelper):
+        if self.app is not None:
+            return self.app
         check = connectionHelper.config.detect_oj
         if check and self.query is not None:
-            connectionHelper.connectUsingParams()
+            connectionHelper.connectUsingParams(True)
             sql_query = pd.read_sql_query(self.query, connectionHelper.conn)
             df = pd.DataFrame(sql_query)
             check = df.isnull().values.any()
