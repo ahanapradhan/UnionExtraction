@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from mysite.unmasque.src.util.constants import UNMASQUE
+from ...src.util.constants import UNMASQUE
 
 
 class CommonQueries(ABC):

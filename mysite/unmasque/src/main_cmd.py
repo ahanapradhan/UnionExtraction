@@ -19,32 +19,30 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    hq = "Select n_name, sum(l_extendedprice * (1 - l_discount)) as revenue " \
-         "From customer, orders, lineitem, supplier, nation, region " \
-         "Where c_custkey = o_custkey and l_orderkey = o_orderkey and l_suppkey = s_suppkey and " \
-         "c_nationkey = s_nationkey and s_nationkey = n_nationkey and n_regionkey = r_regionkey and " \
-         "r_name = 'MIDDLE EAST' and o_orderdate >= date '1994-01-01' and o_orderdate < date " \
-         "'1994-01-01' + interval '1' year " \
-         "Group By n_name " \
-         "Order by revenue desc Limit 100;"
-
-    hq = "select l_orderkey, sum(l_extendedprice*(1 - l_discount) - o_totalprice) as revenue, o_orderdate, " \
-         "o_shippriority  from customer, orders, " \
-         "lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and " \
-         "o_orderdate " \
-         "< '1995-03-15' and l_shipdate > '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by " \
-         "revenue " \
-         "desc, o_orderdate limit 10;"
-
-    hq = f"SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name" \
-         f" from orders LEFT OUTER JOIN customer" \
-         f" on c_custkey = o_custkey and o_orderstatus = 'F' " \
-         f"group by o_custkey, o_clerk, c_name order by key LIMIT 95;"
+    hq = """ 
+    (SELECT c_name as entity_name, n_name as country, o_totalprice as price
+from orders LEFT OUTER JOIN customer on c_custkey = o_custkey
+and c_acctbal >= o_totalprice and c_acctbal >= 9000
+LEFT OUTER JOIN nation ON c_nationkey = n_nationkey  
+	where o_totalprice < 15000
+group by n_name, c_name, o_totalprice
+order by price, country asc, entity_name desc limit 20)
+UNION ALL (SELECT s_name as entity_name, n_name as country,
+avg(l_extendedprice*(1 - l_discount)) as price
+FROM supplier, lineitem, orders, nation, region
+WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
+and s_nationkey = n_nationkey and n_regionkey = r_regionkey
+and o_totalprice > s_acctbal
+and o_totalprice >= 30000 and s_acctbal < 50000
+and r_name <> 'EUROPE'
+group by n_name, s_name
+order by price desc, country desc, entity_name asc limit 10);
+"""
 
     conn = ConnectionHelperFactory().createConnectionHelper()
     conn.config.detect_union = True
     conn.config.detect_oj = True
-    conn.config.detect_nep = False
+    conn.config.detect_nep = True
     conn.config.detect_or = True
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
