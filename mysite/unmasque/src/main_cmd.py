@@ -1,8 +1,8 @@
 import signal
 import sys
 
-from .util.ConnectionFactory import ConnectionHelperFactory
-from .core.factory.PipeLineFactory import PipeLineFactory
+from ..src.util.ConnectionFactory import ConnectionHelperFactory
+from ..src.core.factory.PipeLineFactory import PipeLineFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
 
 
@@ -19,24 +19,31 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    hq = """
-    select sum(cs_ext_discount_amt) as "excess_discount_amount"
-	from catalog_sales, item, date_dim 
-	where i_manufact_id = 722 
-	and i_item_sk = cs_item_sk 
-	and d_date between DATE '2002-03-09' and DATE '2002-03-09' + interval '90 days'
-    and d_date_sk = cs_sold_date_sk 
-	and cs_ext_discount_amt > 10 
-	and d_date_sk = cs_sold_date_sk;
-    """
+    hq = """ 
+    (SELECT c_name as entity_name, n_name as country, o_totalprice as price
+from orders LEFT OUTER JOIN customer on c_custkey = o_custkey
+and c_acctbal >= o_totalprice and c_acctbal >= 9000
+LEFT OUTER JOIN nation ON c_nationkey = n_nationkey  
+	where o_totalprice < 15000
+group by n_name, c_name, o_totalprice
+order by price, country asc, entity_name desc limit 20)
+UNION ALL (SELECT s_name as entity_name, n_name as country,
+avg(l_extendedprice*(1 - l_discount)) as price
+FROM supplier, lineitem, orders, nation, region
+WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
+and s_nationkey = n_nationkey and n_regionkey = r_regionkey
+and o_totalprice > s_acctbal
+and o_totalprice >= 30000 and s_acctbal < 50000
+and r_name <> 'EUROPE'
+group by n_name, s_name
+order by price desc, country desc, entity_name asc limit 10);
+"""
 
-    #hq = """select s_store_id from store where s_number_employees > 5 limit 10;
-    #"""
     conn = ConnectionHelperFactory().createConnectionHelper()
-    conn.config.detect_union = False
-    conn.config.detect_oj = False
-    conn.config.detect_nep = False
-    conn.config.detect_or = False
+    conn.config.detect_union = True
+    conn.config.detect_oj = True
+    conn.config.detect_nep = True
+    conn.config.detect_or = True
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     factory = PipeLineFactory()

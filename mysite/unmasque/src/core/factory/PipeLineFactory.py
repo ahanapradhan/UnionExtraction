@@ -90,7 +90,7 @@ class PipeLineFactory:
             return pipe.get_state()
 
         return WAITING
-    
+
     def get_pipeline_all_states(self, token):
         pipe = self.get_pipeline_obj(token)
         if pipe:
@@ -126,8 +126,7 @@ class PipeLineFactory:
         pipe = self.get_pipeline_obj(token)
         if pipe:
             return pipe.get_done_list()
-        return [WAITING]    
-
+        return [WAITING]
 
     def cancel_pipeline_exec(self, token):
         p = self.get_pipeline_obj(token)

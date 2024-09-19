@@ -55,6 +55,7 @@ class GenericPipeLine(ABC):
         try:
             self.update_state(WAITING)
             exe_factory = ExecutableFactory()
+            exe_factory.set_hidden_query(query)
             app = exe_factory.create_exe(self.connectionHelper)
             """
             try:
