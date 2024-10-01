@@ -1,5 +1,6 @@
 import os
 from mysite.unmasque.src.core.executables.executable import Executable
+from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -213,11 +214,12 @@ class MyTestCase(BaseTestCase):
             file.write(eq)
         self.assertTrue(self.pipeline.correct)
 
-    def test_UQ8_sql(self):
-        test_key = "e_UQ8.sql"
+    def test_UQ9_eqtn_sql(self):
+        test_key = "e_UQ9_eqtn.sql"
         self.conn.connectUsingParams()
-        query = "(SELECT     c_custkey as order_id,     COUNT(*) AS total FROM     customer, orders where c_custkey = o_custkey and     o_orderdate >= '1995-01-01' GROUP BY     c_custkey ORDER BY     total ASC LIMIT 10) UNION ALL (SELECT     l_orderkey as order_id,     AVG(l_quantity) AS total FROM     orders, lineitem where l_orderkey = o_orderkey     AND o_orderdate < DATE '1996-07-01' GROUP BY     l_orderkey ORDER BY     total DESC LIMIT 10);"
-        self.pipeline = UnionPipeLine(self.conn)
+        query = f"SELECT c_name as name, c_acctbal as account_balance FROM orders, customer, nation WHERE c_custkey = o_custkey and c_nationkey = n_nationkey and c_mktsegment = 'FURNITURE' and n_name = 'INDIA' " \
+                f"and o_orderdate between '1998-01-01' and '1998-01-05' and o_totalprice <= 5 * c_acctbal + 20; "
+        self.pipeline = ExtractionPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
@@ -226,3 +228,18 @@ class MyTestCase(BaseTestCase):
             file.write(eq)
         self.assertTrue(self.pipeline.correct)
 
+    def test_UQ8_sql(self):
+        test_key = "e_UQ8.sql"
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.connectUsingParams()
+        query = ("(SELECT     c_custkey as order_id,     COUNT(*) AS total FROM     customer, orders where c_custkey = o_custkey and     o_orderdate >= '1995-01-01' GROUP BY     c_custkey ORDER BY     total ASC LIMIT 10) UNION ALL (SELECT     l_orderkey as order_id,     AVG(l_quantity) AS total FROM     orders, lineitem where l_orderkey = o_orderkey     AND o_orderdate < DATE '1996-07-01' GROUP BY     l_orderkey ORDER BY     total DESC LIMIT 10);")
+        self.pipeline = ExtractionPipeLine(self.conn)
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.assertTrue(eq is not None)
+        self.conn.closeConnection()
+        with open(os.path.join("extracted_union_queries", test_key), 'w') as file:
+            file.write(eq)
+        self.assertTrue(self.pipeline.correct)
