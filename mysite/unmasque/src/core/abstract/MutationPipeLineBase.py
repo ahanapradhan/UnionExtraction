@@ -23,10 +23,13 @@ class MutationPipeLineBase(AppExtractorBase, ABC):
     def see_d_min(self):
         self.logger.debug("======================")
         for tab in self.core_relations:
-            res, des = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(tab))
-            self.logger.debug(f"-----  {tab} ------")
-            self.logger.debug(res)
+            self.see_d_min_tab(tab)
         self.logger.debug("======================")
+
+    def see_d_min_tab(self, tab):
+        res, des = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(tab))
+        self.logger.debug(f"-----  {tab} ------")
+        self.logger.debug(res)
 
     def restore_d_min(self):
         for tab in self.core_relations:

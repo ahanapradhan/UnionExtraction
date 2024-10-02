@@ -1,5 +1,6 @@
 import os
 from mysite.unmasque.src.core.executables.executable import Executable
+from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.src.pipeline.OuterJoinPipeLine import OuterJoinPipeLine
 from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
@@ -226,6 +227,28 @@ class MyTestCase(BaseTestCase):
         with open(os.path.join("extracted_union_queries", test_key), 'w') as file:
             file.write(eq)
         self.assertTrue(self.pipeline.correct)
+
+    def test_nep_paper(self):
+        self.conn.connectUsingParams()
+
+        query = """
+            SELECT s_name as entity_name, n_name as country,
+    avg(l_extendedprice*(1 - l_discount)) as price
+    FROM supplier, lineitem, orders, nation, region
+    WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
+    and s_nationkey = n_nationkey and n_regionkey = r_regionkey
+    and r_name <> 'EUROPE'
+    and o_totalprice >= s_acctbal and 15000 >= o_totalprice
+    group by n_name, s_name
+    order by price desc, country desc, entity_name limit 20
+            """
+        self.conn.config.detect_nep = True
+        self.pipeline = ExtractionPipeLine(self.conn)
+        eq = self.pipeline.doJob(query)
+        print(eq)
+        self.conn.closeConnection()
+        self.assertTrue(eq is not None)
+
 
     def test_OJ1_sql(self):
         test_key = "e_OJ1.sql"
