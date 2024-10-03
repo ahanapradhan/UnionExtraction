@@ -178,7 +178,21 @@ total DESC LIMIT 10);
 
  -- T5
 -- QH
+(select c_name, n_name from customer, nation where
+c_mktsegment='BUILDING' and c_acctbal > 100 and c_nationkey
+= n_nationkey) UNION ALL (select s_name, n_name from supplier,
+nation where s_acctbal > 4000 and s_nationkey = n_nationkey)
 -- QE
+(Select c_name, n_name
+ From customer, nation
+ Where customer.c_nationkey = nation.n_nationkey
+ and customer.c_mktsegment = 'BUILDING'
+ and customer.c_acctbal >= 100.01)
+ UNION ALL
+ (Select s_name as c_name, n_name
+ From nation, supplier
+ Where nation.n_nationkey = supplier.s_nationkey
+ and supplier.s_acctbal >= 4000.01);
  -- End of One Extraction
 
 
