@@ -1,6 +1,7 @@
 import os
 from mysite.unmasque.src.core.executables.executable import Executable
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
+from mysite.unmasque.src.pipeline.OuterJoinPipeLine import OuterJoinPipeLine
 from mysite.unmasque.src.pipeline.UnionPipeLine import UnionPipeLine
 from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
 
@@ -236,6 +237,16 @@ class MyTestCase(BaseTestCase):
         self.conn.connectUsingParams()
         query = ("(SELECT     c_custkey as order_id,     COUNT(*) AS total FROM     customer, orders where c_custkey = o_custkey and     o_orderdate >= '1995-01-01' GROUP BY     c_custkey ORDER BY     total ASC LIMIT 10) UNION ALL (SELECT     l_orderkey as order_id,     AVG(l_quantity) AS total FROM     orders, lineitem where l_orderkey = o_orderkey     AND o_orderdate < DATE '1996-07-01' GROUP BY     l_orderkey ORDER BY     total DESC LIMIT 10);")
         self.pipeline = ExtractionPipeLine(self.conn)
+    def test_OJ1_sql(self):
+        test_key = "e_OJ1.sql"
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = False
+        self.conn.config.use_cs2 = True
+        self.conn.connectUsingParams()
+        query = f"select c_name, n_name, count(*) as total from nation RIGHT OUTER"\
+                f" JOIN customer ON c_nationkey = n_nationkey GROUP BY c_name,"\
+                f" n_name;"
+        self.pipeline = OuterJoinPipeLine(self.conn)
         eq = self.pipeline.doJob(query)
         print(eq)
         self.assertTrue(eq is not None)
@@ -243,3 +254,4 @@ class MyTestCase(BaseTestCase):
         with open(os.path.join("extracted_union_queries", test_key), 'w') as file:
             file.write(eq)
         self.assertTrue(self.pipeline.correct)
+
