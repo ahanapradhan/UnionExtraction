@@ -19,44 +19,17 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    """   
-        ()
-    UNION ALL (SELECT s_name as entity_name, n_name as country,
-    avg(l_extendedprice*(1 - l_discount)) as price
-    FROM supplier, lineitem, orders, nation, region
-    WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
-    and s_nationkey = n_nationkey and n_regionkey = r_regionkey
-    and o_totalprice > s_acctbal and o_totalprice <= 15000
-    and r_name <> 'EUROPE'
-    group by n_name, s_name
-    order by price desc, country desc, entity_name asc limit 10);
-    """
 
-    hq = """ 
-    SELECT c_name as entity_name, n_name as country, o_totalprice as price
-from orders LEFT OUTER JOIN customer on c_custkey = o_custkey
-and c_acctbal >= o_totalprice and c_acctbal >= 9000
-LEFT OUTER JOIN nation ON c_nationkey = n_nationkey  
-	where o_totalprice <= 15000
-group by n_name, c_name, o_totalprice
-order by price, country asc, entity_name desc limit 20;
-"""
-    hq = """
-    SELECT s_name as entity_name, n_name as country,
-    avg(l_extendedprice*(1 - l_discount)) as price
-    FROM supplier, lineitem, orders, nation, region
-    WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
-    and s_nationkey = n_nationkey and n_regionkey = r_regionkey
-    and o_totalprice > s_acctbal and o_totalprice <= 15000
-    and r_name <> 'EUROPE'
-    group by n_name, s_name
-    order by price desc, country desc, entity_name asc limit 10;"""
+    hq = "(SELECT     c_custkey as order_id,     COUNT(*) AS total FROM     customer, orders where c_custkey = " \
+         "o_custkey and     o_orderdate >= '1995-01-01' GROUP BY     c_custkey ORDER BY     total ASC LIMIT 10) UNION " \
+         "ALL (SELECT     l_orderkey as order_id,     AVG(l_quantity) AS total FROM     orders, lineitem where " \
+         "l_orderkey = o_orderkey     AND o_orderdate < DATE '1996-07-01' GROUP BY     l_orderkey ORDER BY     total " \
+         "DESC LIMIT 10);"
 
     conn = ConnectionHelperFactory().createConnectionHelper()
-    conn.config.detect_union = False
-    conn.config.detect_oj = True
-    conn.config.detect_nep = True
-    conn.config.detect_or = False
+    conn.config.detect_union = True
+    conn.config.detect_oj = False
+    conn.config.detect_nep = False
     conn.config.use_cs2 = False
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
