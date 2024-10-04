@@ -71,7 +71,7 @@ ps_availqty > 200 Order By s_suppkey Limit 7);
 (SELECT c_custkey, c_name FROM customer,  nation where c_nationkey = n_nationkey and n_name = 'UNITED STATES' Order By c_custkey desc Limit 5) 
  UNION ALL (SELECT s_suppkey, s_name FROM supplier ,  nation where s_nationkey = n_nationkey and n_name = 'CANADA' Order By s_suppkey Limit 6) 
  UNION ALL (SELECT p_partkey, p_name FROM part ,  lineitem where p_partkey = l_partkey and l_quantity > 20 Order By p_partkey desc Limit 7) 
- UNION ALL (SELECT ps_partkey, p_name FROM part ,  partsupp where p_partkey = ps_partkey and ps_supplycost >= 2000 Order By ps_partkey Limit 8)
+ UNION ALL (SELECT ps_partkey, p_name FROM part ,  partsupp where p_partkey = ps_partkey and ps_supplycost >= 1000 Order By ps_partkey Limit 8)
 -- QE
  (Select s_suppkey as c_custkey, s_name as c_name
  From nation, supplier
@@ -92,7 +92,14 @@ ps_availqty > 200 Order By s_suppkey Limit 7);
  Where customer.c_nationkey = nation.n_nationkey
  and nation.n_name = 'UNITED STATES'
  Order By c_custkey desc
- Limit 5);
+ Limit 5)
+ UNION ALL 
+ (Select ps_partkey, p_name 
+ From part, partsupp 
+ Where part.p_partkey = partsupp.ps_partkey 
+ and partsupp.ps_supplycost >= 1000.01 
+ Order By ps_partkey asc 
+ Limit 8);
  -- End of One Extraction
 
  -- UQ5
