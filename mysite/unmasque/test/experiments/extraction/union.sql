@@ -98,7 +98,8 @@ ps_availqty > 200 Order By s_suppkey Limit 7);
  From part, partsupp 
  Where part.p_partkey = partsupp.ps_partkey 
  and partsupp.ps_supplycost >= 1000.01 
- Order By ps_partkey asc);
+ Order By ps_partkey asc
+ Limit 8);
  -- End of One Extraction
 
  -- UQ5
