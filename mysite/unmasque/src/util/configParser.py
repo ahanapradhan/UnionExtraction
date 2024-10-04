@@ -31,7 +31,7 @@ class Config:
         self.log_level = 'INFO'
         self.base_path = Path(__file__).parent.parent.parent.parent
         self.config_loaded = False
-        self.detect_union = False
+        self.detect_union = True
         self.detect_nep = False
         self.detect_or = False
         self.detect_oj = False

@@ -20,17 +20,25 @@ def signal_handler(signum, frame):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    hq = "(SELECT     c_custkey as order_id,     COUNT(*) AS total FROM     customer, orders where c_custkey = " \
-         "o_custkey and     o_orderdate >= '1995-01-01' GROUP BY     c_custkey ORDER BY     total ASC LIMIT 10) UNION " \
-         "ALL (SELECT     l_orderkey as order_id,     AVG(l_quantity) AS total FROM     orders, lineitem where " \
-         "l_orderkey = o_orderkey     AND o_orderdate < DATE '1996-07-01' GROUP BY     l_orderkey ORDER BY     total " \
-         "DESC LIMIT 10);"
+    hq = """
+      (SELECT c_name as name, c_acctbal as account_balance FROM orders,
+customer, nation WHERE c_custkey = o_custkey and c_nationkey
+= n_nationkey and c_mktsegment = 'FURNITURE' and n_name =
+'INDIA' and o_orderdate between '1998-01-01' and '1998-12-05' and
+o_totalprice <= c_acctbal) UNION ALL (SELECT s_name as name,
+s_acctbal as account_balance FROM supplier, lineitem, orders, nation
+WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
+and s_nationkey = n_nationkey and n_name = 'ARGENTINA' and
+o_orderdate between '1998-01-01' and '1998-01-05' and o_totalprice >
+s_acctbal and o_totalprice >= 30000 and 50000 >= s_acctbal Order by account_balance desc limit 20);
+"""
 
     conn = ConnectionHelperFactory().createConnectionHelper()
-    conn.config.detect_union = True
-    conn.config.detect_oj = False
+    conn.config.detect_union = False
+    conn.config.detect_oj = True
     conn.config.detect_nep = False
-    conn.config.use_cs2 = False
+    conn.config.use_cs2 = True
+    conn.config.detect_or = False
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     factory = PipeLineFactory()
