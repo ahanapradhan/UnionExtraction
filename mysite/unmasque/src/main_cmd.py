@@ -19,17 +19,45 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    #Q1a
+    hq = """SELECT MIN(n.name) AS of_person,
+       MIN(t.title) AS biography_movie
+FROM aka_name AS an,
+     cast_info AS ci,
+     info_type AS it,
+     link_type AS lt,
+     movie_link AS ml,
+     name AS n,
+     person_info AS pi,
+     title AS t
+WHERE an.name LIKE '%a%'
+  AND it.info ='mini biography'
+  AND lt.link ='features'
+  AND pi.note ='Volker Boehm'
+  AND t.production_year BETWEEN 1980 AND 1995
+  AND n.id = an.person_id
+  AND n.id = pi.person_id
+  AND ci.person_id = n.id
+  AND t.id = ci.movie_id
+  AND ml.linked_movie_id = t.id
+  AND lt.id = ml.link_type_id
+  AND it.id = pi.info_type_id
+AND pi.person_id = an.person_id
+  AND pi.person_id = ci.person_id
+  AND an.person_id = ci.person_id
+  AND ci.movie_id = ml.linked_movie_id;
+"""
 
-    hq = """(SELECT c_custkey, c_name FROM customer,  nation where c_nationkey = n_nationkey and n_name = 'UNITED STATES' Order By c_custkey desc Limit 5) 
- UNION ALL (SELECT s_suppkey, s_name FROM supplier ,  nation where s_nationkey = n_nationkey and n_name = 'CANADA' Order By s_suppkey Limit 6) 
- UNION ALL (SELECT p_partkey, p_name FROM part ,  lineitem where p_partkey = l_partkey and l_quantity > 20 Order By p_partkey desc Limit 7) 
- UNION ALL (SELECT ps_partkey, p_name FROM part ,  partsupp where p_partkey = ps_partkey and ps_supplycost >= 1000 Order By ps_partkey Limit 8);"""
+    #       OR mc.note LIKE '%(presents)%')
+    # AND mc.note NOT LIKE '%(as Metro-Goldwyn-Mayer Pictures)%'
 
     conn = ConnectionHelperFactory().createConnectionHelper()
-    conn.config.detect_union = True
+    conn.config.detect_union = False
     conn.config.detect_oj = False
     conn.config.detect_nep = False
     conn.config.use_cs2 = False
+    #conn.config.detect_or = True
+
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     factory = PipeLineFactory()
