@@ -20,15 +20,16 @@ def signal_handler(signum, frame):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    hq = """SELECT o_custkey as key, sum(c_acctbal), o_clerk, c_name from orders FULL OUTER JOIN customer on c_custkey = o_custkey and
-o_orderstatus = 'F' group by o_custkey, o_clerk, c_name order by key
-limit 35;"""
+    hq = """(SELECT c_custkey, c_name FROM customer,  nation where c_nationkey = n_nationkey and n_name = 'UNITED STATES' Order By c_custkey desc Limit 5) 
+ UNION ALL (SELECT s_suppkey, s_name FROM supplier ,  nation where s_nationkey = n_nationkey and n_name = 'CANADA' Order By s_suppkey Limit 6) 
+ UNION ALL (SELECT p_partkey, p_name FROM part ,  lineitem where p_partkey = l_partkey and l_quantity > 20 Order By p_partkey desc Limit 7) 
+ UNION ALL (SELECT ps_partkey, p_name FROM part ,  partsupp where p_partkey = ps_partkey and ps_supplycost >= 1000 Order By ps_partkey Limit 8);"""
 
     conn = ConnectionHelperFactory().createConnectionHelper()
-    conn.config.detect_union = False
-    conn.config.detect_oj = True
+    conn.config.detect_union = True
+    conn.config.detect_oj = False
     conn.config.detect_nep = False
-    conn.config.use_cs2 = True
+    conn.config.use_cs2 = False
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     factory = PipeLineFactory()
