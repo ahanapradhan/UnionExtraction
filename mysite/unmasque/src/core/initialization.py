@@ -46,7 +46,7 @@ class Initiator(Base):
         self.make_pkfk_complete_graph(all_pkfk)
         self.do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
-        self.take_backup()
+        # self.take_backup()
         self.get_all_sizes()
         return True
 
