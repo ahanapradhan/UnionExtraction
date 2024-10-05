@@ -20,25 +20,16 @@ def signal_handler(signum, frame):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    hq = """
-      (SELECT c_name as name, c_acctbal as account_balance FROM orders,
-customer, nation WHERE c_custkey = o_custkey and c_nationkey
-= n_nationkey and c_mktsegment = 'FURNITURE' and n_name =
-'INDIA' and o_orderdate between '1998-01-01' and '1998-12-05' and
-o_totalprice <= c_acctbal) UNION ALL (SELECT s_name as name,
-s_acctbal as account_balance FROM supplier, lineitem, orders, nation
-WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
-and s_nationkey = n_nationkey and n_name = 'ARGENTINA' and
-o_orderdate between '1998-01-01' and '1998-01-05' and o_totalprice >
-s_acctbal and o_totalprice >= 30000 and 50000 >= s_acctbal Order by account_balance desc limit 20);
-"""
+    hq = """(SELECT c_custkey, c_name FROM customer,  nation where c_nationkey = n_nationkey and n_name = 'UNITED STATES' Order By c_custkey desc Limit 5) 
+ UNION ALL (SELECT s_suppkey, s_name FROM supplier ,  nation where s_nationkey = n_nationkey and n_name = 'CANADA' Order By s_suppkey Limit 6) 
+ UNION ALL (SELECT p_partkey, p_name FROM part ,  lineitem where p_partkey = l_partkey and l_quantity > 20 Order By p_partkey desc Limit 7) 
+ UNION ALL (SELECT ps_partkey, p_name FROM part ,  partsupp where p_partkey = ps_partkey and ps_supplycost >= 1000 Order By ps_partkey Limit 8);"""
 
     conn = ConnectionHelperFactory().createConnectionHelper()
-    conn.config.detect_union = False
-    conn.config.detect_oj = True
+    conn.config.detect_union = True
+    conn.config.detect_oj = False
     conn.config.detect_nep = False
-    conn.config.use_cs2 = True
-    conn.config.detect_or = False
+    conn.config.use_cs2 = False
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     factory = PipeLineFactory()
