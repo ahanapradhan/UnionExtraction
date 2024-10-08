@@ -49,7 +49,7 @@ class Initiator(Base):
             self.logger.error(str(e))
         self.do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
-        self.take_backup()
+        # self.take_backup()
         self.get_all_sizes()
         return True
 

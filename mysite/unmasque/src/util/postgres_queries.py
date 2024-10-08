@@ -91,6 +91,14 @@ class PostgresQueries(CommonQueries):
             esc_string = f"({esc_string})"
         return f"INSERT INTO {tab} {att_order}  VALUES {esc_string};"
 
+    def update_sql_query_tab_date_attrib_value(self, tab, attrib, value):
+        if value in ['None', None]:
+            query = f"UPDATE {tab} SET {attrib} = NULL;"
+        else:
+            query = f"UPDATE {tab} SET {attrib} = DATE {value};"
+        print(query)
+        return query
+
     def update_key_attrib_with_val(self, tab, attrib, value, prev, qoted):
         if qoted:
             value = f"'{value}'"
@@ -99,9 +107,8 @@ class PostgresQueries(CommonQueries):
         return query
 
     def update_tab_attrib_with_value(self, tab, attrib, value):
-        str_value = str(value)
-        query = f"UPDATE {tab}  SET {attrib}={str_value};"
-        # print(query)
+        query = f"UPDATE {tab}  SET {attrib}={str(value)};"
+        print(query)
         return query
 
     def update_tab_attrib_with_quoted_value(self, tab, attrib, value):

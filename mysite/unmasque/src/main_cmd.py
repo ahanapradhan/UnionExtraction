@@ -20,32 +20,32 @@ def signal_handler(signum, frame):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    hq = """SELECT MIN(n.name) AS of_person,
-       MIN(t.title) AS biography_movie
-FROM aka_name AS an,
-     cast_info AS ci,
-     info_type AS it,
-     link_type AS lt,
-     movie_link AS ml,
-     name AS n,
-     person_info AS pi,
-     title AS t
-WHERE an.name LIKE '%a%'
-  AND it.info ='mini biography'
-  AND lt.link ='features'
-  AND pi.note ='Volker Boehm'
-  AND t.production_year BETWEEN 1980 AND 1995
-  AND n.id = an.person_id
-  AND n.id = pi.person_id
-  AND ci.person_id = n.id
-  AND t.id = ci.movie_id
-  AND ml.linked_movie_id = t.id
-  AND lt.id = ml.link_type_id
-  AND it.id = pi.info_type_id
-AND pi.person_id = an.person_id
-  AND pi.person_id = ci.person_id
-  AND an.person_id = ci.person_id
-  AND ci.movie_id = ml.linked_movie_id;
+    hq = """SELECT MIN(n_name) AS of_person,
+       MIN(t_title) AS biography_movie
+FROM aka_name,
+     cast_info,
+     info_type,
+     link_type,
+     movie_link,
+     name,
+     person_info,
+     title
+WHERE an_name LIKE '%a%'
+  AND it_info ='mini biography'
+  AND lt_link ='features'
+  AND pi_note ='Volker Boehm'
+  AND t_production_year BETWEEN 1980 AND 1995
+  AND n_id = an_person_id
+  AND n_id = pi_person_id
+  AND ci_person_id = n_id
+  AND t_id = ci_movie_id
+  AND ml_linked_movie_id = t_id
+  AND lt_id = ml_link_type_id
+  AND it_id = pi_info_type_id
+AND pi_person_id = an_person_id
+  AND pi_person_id = ci_person_id
+  AND an_person_id = ci_person_id
+  AND ci_movie_id = ml_linked_movie_id;
     """
     conn = ConnectionHelperFactory().createConnectionHelper()
     conn.config.detect_union = False
