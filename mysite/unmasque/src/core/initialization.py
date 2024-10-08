@@ -43,10 +43,13 @@ class Initiator(Base):
         if not check:
             return False
         all_pkfk = self.get_all_pkfk()
-        self.make_pkfk_complete_graph(all_pkfk)
+        try:
+            self.make_pkfk_complete_graph(all_pkfk)
+        except Exception as e:
+            self.logger.error(str(e))
         self.do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
-        # self.take_backup()
+        self.take_backup()
         self.get_all_sizes()
         return True
 

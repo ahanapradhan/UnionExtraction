@@ -19,7 +19,7 @@ def signal_handler(signum, frame):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    #Q1a
+
     hq = """SELECT MIN(n.name) AS of_person,
        MIN(t.title) AS biography_movie
 FROM aka_name AS an,
@@ -46,17 +46,13 @@ AND pi.person_id = an.person_id
   AND pi.person_id = ci.person_id
   AND an.person_id = ci.person_id
   AND ci.movie_id = ml.linked_movie_id;
-"""
-
-    #       OR mc.note LIKE '%(presents)%')
-    # AND mc.note NOT LIKE '%(as Metro-Goldwyn-Mayer Pictures)%'
-
+    """
     conn = ConnectionHelperFactory().createConnectionHelper()
     conn.config.detect_union = False
     conn.config.detect_oj = False
     conn.config.detect_nep = False
     conn.config.use_cs2 = False
-    #conn.config.detect_or = True
+    # conn.config.detect_or = True
 
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)

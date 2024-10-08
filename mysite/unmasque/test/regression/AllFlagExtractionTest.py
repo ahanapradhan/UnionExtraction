@@ -25,12 +25,49 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
-        self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
         self.conn.config.use_cs2 = False
         self.pipeline = None
+
+    def test_cubes(self):
+        query = """SELECT sum(total_pounds)
+  FROM purchase, branch Where p_branch_id = b_branch_id
+  AND city = 'London'
+    AND year = '2018';"""
+        self.do_test(query)
+
+    def test_JOB(self):
+        query = """SELECT MIN(n.name) AS of_person,
+       MIN(t.title) AS biography_movie
+FROM aka_name AS an,
+     cast_info AS ci,
+     info_type AS it,
+     link_type AS lt,
+     movie_link AS ml,
+     name AS n,
+     person_info AS pi,
+     title AS t
+WHERE an.name LIKE '%a%'
+  AND it.info ='mini biography'
+  AND lt.link ='features'
+  AND pi.note ='Volker Boehm'
+  AND t.production_year BETWEEN 1980 AND 1995
+  AND n.id = an.person_id
+  AND n.id = pi.person_id
+  AND ci.person_id = n.id
+  AND t.id = ci.movie_id
+  AND ml.linked_movie_id = t.id
+  AND lt.id = ml.link_type_id
+  AND it.id = pi.info_type_id
+AND pi.person_id = an.person_id
+  AND pi.person_id = ci.person_id
+  AND an.person_id = ci.person_id
+  AND ci.movie_id = ml.linked_movie_id;
+"""
+        self.do_test(query)
 
     def test_ij_aoa_scalar(self):
         query = """

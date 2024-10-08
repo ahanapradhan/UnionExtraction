@@ -1,0 +1,8 @@
+TABLE_NAME,ATTRIBUTE_NAME,IS_PK,IS_FK,REFERENCING_TABLE,REFERENCING_ATTRIBUTE
+branch,b_branch_id,y,n,,
+members,m_member_id,y,n,,
+membership_register_branch,mr_member_id,y,y,members,m_member_id
+membership_register_branch,mr_branch_id,y,y,branch,b_branch_id
+purchase,p_member_id,y,y,members,m_member_id
+purchase,p_branch_id,y,y,branch,b_branch_id
+purchase,year,y,n,,

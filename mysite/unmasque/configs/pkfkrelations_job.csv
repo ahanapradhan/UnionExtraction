@@ -28,7 +28,7 @@ name,id,y,y,cast_info,person_id
 name,id,y,y,person_info,person_id
 person_info,id,y,n,,
 person_info,person_id,n,y,name,id
-person_info,info_type_id,n,y,info_type_id
+person_info,info_type_id,n,y,info_type,id
 movie_companies,id,y,n,,
 movie_companies,movie_id,n,y,title,id
 movie_companies,company_id,n,y,company_name,id
@@ -44,9 +44,3 @@ movie_info_idx,id,y,n,,
 movie_info_idx,movie_id,n,y,title,id
 movie_info_idx,info_type_id,n,y,info_type,id
 keyword,id,y,y,movie_keyword,keyword_id
-
-
-
-
-
-
