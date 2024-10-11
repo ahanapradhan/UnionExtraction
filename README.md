@@ -1,24 +1,4 @@
-# UNMASQUE THEORY
 
-UNMASQUE is a tool for hidden query extraction (HQE).
-
-This code corresponds to UNMASQUE Project: https://dsl.cds.iisc.ac.in/projects/HIDDEN/index.html 
-
-UNMASQUE code for https://dsl.cds.iisc.ac.in/publications/report/TR/TR-2021-02_updated.pdf    
-
-This repository contains code developed by various students who worked on the project.  
-
-New features on top of the above theory correspond to the following theses:  
-
-Disjunction: https://dsl.cds.iisc.ac.in/publications/thesis/sumang.pdf  
-
-Algebraic Predicates: https://dsl.cds.iisc.ac.in/publications/thesis/aman.pdf  
-
-Negation Predicates, Result Comparator, View based DB minimizer: https://dsl.cds.iisc.ac.in/publications/thesis/mukul.pdf  
-
-Outer Join: https://dsl.cds.iisc.ac.in/publications/thesis/sneha.pdf  
-
-Based on the above ideas, the code has been freshly designed.  
 
 
 # Setting Up the Database
@@ -57,7 +37,7 @@ A developement environment for python project is required next. Here is the link
 * `psycopg2==2.9.3`
 * `numpy==1.22.4`
 
-# Setting Up the UNMASQUE Code
+# Setting Up the Code
 
 The code is organized into the following directories:  
 
