@@ -1,4 +1,4 @@
-from . import algorithm1
+from . import partition_partials_algo
 from .union_from_clause import UnionFromClause
 from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 
@@ -17,7 +17,7 @@ class Union(AppExtractorBase):
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         db = UnionFromClause(self.connectionHelper)
-        p, pstr, union_profile = algorithm1.algo(db, query)
+        p, pstr, union_profile = partition_partials_algo.algo(db, query)
         self.all_relations = db.get_relations()
         self.all_sizes = db.get_all_sizes()
         self.key_lists = db.fromClause.init.global_key_lists

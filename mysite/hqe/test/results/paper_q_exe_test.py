@@ -1,9 +1,8 @@
 import os
-import time
 
-from mysite.unmasque.src.core.executables.executable import Executable
-from mysite.unmasque.src.util.ConnectionFactory import ConnectionHelperFactory
-from mysite.unmasque.test.util.BaseTestCase import BaseTestCase
+from mysite.hqe.src.core.executables.executable import Executable
+from mysite.hqe.src.util.ConnectionFactory import ConnectionHelperFactory
+from mysite.hqe.test.util.BaseTestCase import BaseTestCase
 
 
 class MyTestCase(BaseTestCase):
