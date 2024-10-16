@@ -1,6 +1,8 @@
+import copy
 import signal
 import sys
 
+from ..src.core.executables.executable import Executable
 from ..src.util.ConnectionFactory import ConnectionHelperFactory
 from ..src.core.factory.PipeLineFactory import PipeLineFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
@@ -95,6 +97,13 @@ nation where s_acctbal > 4000 and s_nationkey = n_nationkey);""", False, True, F
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     factory = PipeLineFactory()
+
+    conn.connectUsingParams()
+    app = Executable(conn)
+    res = app.doJob(query)
+    conn.closeConnection()
+    exe_time = copy.deepcopy(app.local_elapsed_time)
+
     token = factory.init_job(conn, query)
     factory.doJob(query, token)
     result = factory.result
@@ -102,6 +111,7 @@ nation where s_acctbal > 4000 and s_nationkey = n_nationkey);""", False, True, F
     if result is not None:
         print("Union P = " + str(conn.config.detect_union) + "   " + "Outer Join P = " + str(conn.config.detect_oj))
         print("NEP P = " + str(conn.config.detect_nep) + "   " + "Or P = " + str(conn.config.detect_or))
+        print(f"========= HQ Execution Time: {round(exe_time, 2)}(s) =============")
         print("============= Given Query ===============")
         print(query)
         print("=========== Extracted Query =============")
