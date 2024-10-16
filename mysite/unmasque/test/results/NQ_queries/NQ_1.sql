@@ -1,1 +1,0 @@
-select l_orderkey from lineitem where s_acctbal <= (select min(l_discount) from lineitem);
