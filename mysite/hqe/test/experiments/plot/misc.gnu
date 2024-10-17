@@ -4,7 +4,8 @@ set ylabel font "Helvetica,28"
 set output "figs/misc.eps"
 set boxwidth 0.5
 set style fill solid
-set ytics 10
+set ytics 2
 set grid
 show grid
-plot "data/misc.dat" using 1:($3/($4+$5)/2):xtic(2) with boxes notitle
+set ylabel "Extraction Time (m)"
+plot "data/misc.dat" using 1:($3/60):xtic(2) with boxes notitle
