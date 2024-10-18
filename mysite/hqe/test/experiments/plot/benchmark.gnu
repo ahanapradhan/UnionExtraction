@@ -14,4 +14,4 @@ set grid
 show grid
 set ylabel "Extraction Time (m)"
 set key horizontal
-plot 'data/languages.dat' using ($4/60):xtic(1) ti col fc rgb "#FF0000", '' u ($2/60) ti col fc rgb "#00FF00", '' u ($3/60) ti col fc rgb "#0000FF"
+plot 'data/unmasque.dat' using ($4/60):xtic(1) ti col fc rgb "#FF0000", '' u ($2/60) ti col fc rgb "#00FF00", '' u ($3/60) ti col fc rgb "#0000FF"

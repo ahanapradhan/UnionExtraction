@@ -1,7 +1,7 @@
 import copy
 
 from ...util.Log import Log
-from ...util.constants import UNMASQUE
+from ...util.constants import XPOSE
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 from typing import List
 
@@ -72,10 +72,10 @@ class TpchSanitizer:
     def drop_derived_relations(self, table):
         derived_tables = self.connectionHelper.execute_sql_fetchall(f"select tablename from pg_tables "
                                                                     f"where schemaname = '{self.connectionHelper.config.schema}' "
-                                                                    f"and tablename LIKE '{table}%{UNMASQUE}';")[0]
+                                                                    f"and tablename LIKE '{table}%{XPOSE}';")[0]
         derived_views = self.connectionHelper.execute_sql_fetchall(f"select viewname from pg_views "
                                                                    f"where schemaname = '{self.connectionHelper.config.schema}' "
-                                                                   f"and viewname LIKE '{table}%{UNMASQUE}';")[0]
+                                                                   f"and viewname LIKE '{table}%{XPOSE}';")[0]
         derived_objects = derived_tables + derived_views
         for obj in derived_objects:
             drop_fn = self.get_drop_fn(obj)

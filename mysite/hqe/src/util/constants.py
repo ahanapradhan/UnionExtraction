@@ -102,4 +102,4 @@ RELATION = "Relation"
 NUMBER_TYPES = ['int', 'integer', 'number', 'numeric', 'float', 'decimal', 'Decimal']
 NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
 
-UNMASQUE = "_unmasque_"
+XPOSE = "_xpose_"

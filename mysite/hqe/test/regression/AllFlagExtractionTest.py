@@ -101,18 +101,6 @@ order by price desc, country desc, entity_name asc limit 10);
         limit 10;"""
         self.do_test(query)
 
-    def test_himangshu(self):
-        query = "SELECT l_shipmode, COUNT(*) FROM ORDERS, LINEITEM WHERE " \
-                "O_ORDERKEY = L_ORDERKEY AND O_ORDERSTATUS = 'O' AND L_SHIPDATE >= '1998-04-03' group by l_shipmode;"
-        self.do_test(query)
-
-    def test_gopi_4june_acctbal(self):
-        query = "select c_name, avg(c_acctbal) as avg_balance, o_clerk from customer, orders " \
-                "where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' and " \
-                "o_orderdate <= DATE '1995-10-23' and c_acctbal = 121.65 group by c_name," \
-                " o_clerk order by c_name, o_clerk;"
-        self.do_test(query)
-
     def test_gnp_Q10(self):
         query = '''SELECT c_name, avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
                 FROM customer, orders 
@@ -294,26 +282,6 @@ order by price desc, country desc, entity_name asc limit 10);
                 "Order by o_orderdate, o_totalprice desc Limit 100;"
         self.do_test(query)
 
-    def test_sumang_thesis_Q3_Q4(self):
-        query = "select sum(l_extendedprice) as revenue " \
-                "from lineitem " \
-                "where l_shipdate >= date '1994-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and (l_quantity =42 or l_quantity =50 or l_quantity=24) UNION ALL " \
-                "(select avg(ps_supplycost) as cost from part, partsupp where p_partkey = ps_partkey " \
-                "and (p_brand = 'Brand#52' or p_brand = 'Brand#12') and " \
-                "(p_container = 'LG CAN' or p_container = 'LG CASE'));"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q4_Q3(self):
-        query = "(select avg(ps_supplycost) as cost from part, partsupp where p_partkey = ps_partkey " \
-                "and (p_brand = 'Brand#52' or p_brand = 'Brand#12') and " \
-                "(p_container = 'LG CAN' or p_container = 'LG CASE')) UNION ALL " \
-                "select sum(l_extendedprice) as revenue " \
-                "from lineitem " \
-                "where l_shipdate >= date '1994-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and (l_quantity =42 or l_quantity =50 or l_quantity=24);"
-        self.do_test(query)
-
     def test_outer_join_w_disjunction(self):
         query = "(SELECT l_linenumber, o_shippriority , " \
                 "count(*) as low_line_count  " \
@@ -395,12 +363,6 @@ order by price desc, country desc, entity_name asc limit 10);
                 f"r_regionkey and r_name = 'AFRICA';"
         self.do_test(query)
 
-    def test_sneha_outer_join_basic(self):
-        query = "Select ps_suppkey, p_name, p_type " \
-                "from part RIGHT outer join partsupp on p_partkey=ps_partkey and p_size>4 " \
-                "and ps_availqty>3350;"
-        self.do_test(query)
-
     def test_outer_join_on_where_filters(self):
         query = "SELECT l_shipmode, " \
                 "o_shippriority ," \
@@ -419,20 +381,6 @@ order by price desc, country desc, entity_name asc limit 10);
                 "FROM lineitem INNER JOIN orders ON l_orderkey = o_orderkey AND o_totalprice > 50000 " \
                 "AND l_shipmode IN ('MAIL', 'AIR', 'TRUCK') AND l_quantity < 30  " \
                 "GROUP BY l_linenumber, o_shippriority Order By l_linenumber, o_shippriority desc  Limit 5;"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q6_outer(self):
-        query = "select n_name, s_acctbal, ps_availqty  from supplier RIGHT OUTER JOIN partsupp " \
-                "ON ps_suppkey=s_suppkey AND ps_supplycost < 50 RIGHT OUTER JOIN " \
-                "nation on s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) ORDER " \
-                "BY n_name;"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q6_1(self):
-        query = "select n_name,SUM(s_acctbal) from supplier, nation, partsupp where ps_suppkey=s_suppkey AND" \
-                " ps_supplycost < 50 and s_nationkey=n_nationkey and (n_regionkey = 1 or n_regionkey =3) " \
-                "group by n_name ORDER " \
-                "BY n_name;"
         self.do_test(query)
 
     def test_copyMinimizer(self):
@@ -493,34 +441,7 @@ order by price desc, country desc, entity_name asc limit 10);
                 "and n_name not LIKE 'B%' and o_orderdate >= DATE '1994-01-01';"
         self.do_test(query)
 
-    def test_NEP_mukul_thesis_Q1(self):
-        query = "Select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as " \
-                "sum_base_price, " \
-                "sum(l_discount) as sum_disc_price, sum(l_tax) as sum_charge, avg(l_quantity) as avg_qty, " \
-                "avg(l_extendedprice) as avg_price, avg(l_discount) as avg_disc, count(*) as count_order " \
-                "From lineitem Where l_shipdate <= date '1998-12-01' and l_extendedprice <> 44506.02 " \
-                "Group by l_returnflag, l_linestatus " \
-                "Order by l_returnflag, l_linestatus;"
-        self.do_test(query)
-
     # @pytest.mark.skip
-    def test_Q21_mukul_thesis(self):
-        query = "Select s_name, count(*) as numwait From supplier, lineitem, orders, nation " \
-                "Where s_suppkey = l_suppkey and o_orderkey = l_orderkey and o_orderstatus = 'F' " \
-                "and s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name " \
-                "Order By numwait desc, s_name Limit 100;"
-        self.do_test(query)
-
-    @pytest.mark.skip
-    def test_Q21_mukul_thesis_oj(self):
-        self.conn.config.limit_limit = 1500
-        query = "Select s_name, n_name, l_returnflag, o_clerk, count(*) as numwait " \
-                "From supplier LEFT OUTER JOIN lineitem on s_suppkey = l_suppkey " \
-                "and s_acctbal < 5000 RIGHT OUTER JOIN orders" \
-                " on o_orderkey = l_orderkey and  o_orderstatus = 'F'  LEFT OUTER JOIN nation " \
-                "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
-                "Order By numwait desc, s_name Limit 1200;"  # it needs config limit to be set to higher value
-        self.do_test(query)
 
     def test_Q16_sql(self):
         query = "Select p_brand, p_type, p_size, count(*) as supplier_cnt From partsupp, part               " \
@@ -689,70 +610,9 @@ order by price desc, country desc, entity_name asc limit 10);
                 "desc, o_orderdate limit 10;"
         self.do_test(query)
 
-    def test_gopinath_bugfix(self):
-        query = "select avg(l_tax), l_linenumber from lineitem " \
-                "where l_extendedprice >= 3520.02 group by l_linenumber;"
-        self.do_test(query)
-
-    def test_gopinath_bugfix_1(self):
-        query = "SELECT l_orderkey, l_shipdate FROM lineitem, orders " \
-                "where l_orderkey = o_orderkey and o_orderdate < '1994-01-01' " \
-                "AND l_quantity > 20 AND l_extendedprice > 1000;"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q2(self):
-        query = "select c_mktsegment,MAX(c_acctbal) from customer where c_nationkey IN (1, 3, 9, 15, 22) group by " \
-                "c_mktsegment;"
-        self.do_test(query)
-
     def test_one_table_duplicate_value_columns(self):
         self.conn.config.detect_or = True
         query = "select max(l_extendedprice) from lineitem where l_linenumber IN (1, 4);"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q2_1(self):
-        query = "select c_mktsegment,MAX(c_acctbal) from customer where c_nationkey IN (1, 2, 5, 10) group by " \
-                "c_mktsegment;"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q3(self):
-        query = "select l_shipmode,sum(l_extendedprice) as revenue " \
-                "from lineitem " \
-                "where l_shipdate >= date '1994-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and (l_quantity =42 or l_quantity =50 or l_quantity=24) group by l_shipmode order by l_shipmode " \
-                "limit 100;"
-        self.do_test(query)
-
-    # @pytest.mark.skip
-    def test_sumang_thesis_Q3_nep(self):
-        query = "select l_shipmode,sum(l_extendedprice) as revenue " \
-                "from lineitem " \
-                "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and ((l_orderkey > 124 and l_orderkey < 135) or " \
-                "(l_orderkey > 235 and l_orderkey < 370)) group by l_shipmode order by l_shipmode " \
-                "limit 100;"
-        self.do_test(query)
-
-    @pytest.mark.skip
-    def test_sumang_thesis_Q3_nep1(self):
-        query = "select l_shipmode,sum(l_extendedprice) as revenue " \
-                "from lineitem " \
-                "where l_shipdate >= date '1993-01-01' and l_shipdate < date '1994-01-01' + interval '1' year " \
-                "and ((l_orderkey > 124 and l_orderkey < 370) and " \
-                "l_orderkey NOT IN (133, 134, 135)) group by l_shipmode order by l_shipmode " \
-                "limit 100;"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q4(self):
-        query = "select AVG(l_extendedprice) as avgTOTAL from lineitem,part " \
-                "where p_partkey = l_partkey and (p_brand = 'Brand#52' or p_brand = 'Brand#12') and " \
-                "(p_container = 'LG CAN' or p_container = 'LG CASE');"
-        self.do_test(query)
-
-    def test_sumang_thesis_Q4_prelim(self):
-        query = "select AVG(l_extendedprice) as avgTOTAL from lineitem, part " \
-                "where p_partkey = l_partkey and p_brand = 'Brand#52' and " \
-                "(p_container = 'LG CAN' or p_container = 'LG CASE');"
         self.do_test(query)
 
     def test_for_disjunction(self):
@@ -771,12 +631,6 @@ order by price desc, country desc, entity_name asc limit 10);
         self.do_test(query)
 
     # @pytest.mark.skip
-    def test_sumang_thesis_Q6(self):
-        query = f"select n_name,SUM(s_acctbal) from supplier,partsupp,nation where ps_suppkey=s_suppkey and " \
-                f"s_nationkey=n_nationkey " \
-                f"and (s_acctbal > 2000 or ps_supplycost < 500) group by n_name ORDER BY n_name LIMIT 10;"
-        # and (n_name ='ARGENTINA' or n_regionkey =3)
-        self.do_test(query)
 
     def test_two_neps_one_table(self):
         query = "Select l_shipmode, sum(l_extendedprice) as revenue " \
@@ -787,21 +641,7 @@ order by price desc, country desc, entity_name asc limit 10);
                 "Group By l_shipmode Limit 100; "
         self.do_test(query)
 
-    def test_mukul_thesis_Q18(self):
-        query = "Select c_name, o_orderdate, o_totalprice, sum(l_quantity) From customer, orders, lineitem " \
-                "Where c_phone Like '27-_%' and c_custkey = o_custkey and o_orderkey = l_orderkey and " \
-                "c_name <> 'Customer#000060217'" \
-                "Group By c_name, o_orderdate, o_totalprice Order by o_orderdate, o_totalprice desc Limit 100;"
-        self.do_test(query)
-
     # @pytest.mark.skip
-    def test_mukul_thesis_Q11(self):
-        query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, supplier, nation " \
-                "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'ARGENTINA' " \
-                "and ps_COMMENT not like '%regular%dependencies%' and s_acctbal <> 2177.90 " \
-                "Group By ps_COMMENT " \
-                "Order by value desc Limit 100;"
-        self.do_test(query)
 
     def test_for_numeric_filter_NEP(self):
         query = "select c_mktsegment as segment from customer,nation,orders where " \

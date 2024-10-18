@@ -444,6 +444,7 @@ def find_concrete_bound_from_filter_bounds(attrib, edge_set, prev_bound, is_uppe
         prev_bound = prev_list[0]  # only one concrete bound possible
     return prev_bound
 
+
 def conseq(nums):
     for i in range(len(nums) - 1):
         if nums[i] == nums[i + 1]:

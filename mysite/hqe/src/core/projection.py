@@ -77,7 +77,7 @@ class Projection(GenerationPipeLineBase):
     def find_projection_dependencies(self, query, s_values):
         new_result = self.app.doJob(query)
         if self.app.isQ_result_empty(new_result):
-            self.logger.error("Unmasque: \n some error in generating new database. "
+            self.logger.error("Xpose: \n some error in generating new database. "
                               "Result is empty. Can not identify "
                               "projections completely.")
             return [], [], [], False

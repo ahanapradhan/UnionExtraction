@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ...src.util.constants import UNMASQUE
+from ...src.util.constants import XPOSE
 
 
 class CommonQueries(ABC):
@@ -75,10 +75,10 @@ class CommonQueries(ABC):
         pass
 
     def get_dmin_tabname(self, tab):
-        return f"{tab}_{UNMASQUE}_dmin"
+        return f"{tab}_{XPOSE}_dmin"
 
     def get_union_tabname(self, tab):
-        return f"{tab}_{UNMASQUE}_union"
+        return f"{tab}_{XPOSE}_union"
 
     @abstractmethod
     def create_view_as(self, view, q):

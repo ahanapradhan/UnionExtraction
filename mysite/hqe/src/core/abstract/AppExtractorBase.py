@@ -2,7 +2,7 @@ from abc import ABC
 
 from .ExtractorBase import Base
 from ..factory.ExecutableFactory import ExecutableFactory
-from ...util.constants import UNMASQUE
+from ...util.constants import XPOSE
 
 
 class AppExtractorBase(Base, ABC):
@@ -13,7 +13,7 @@ class AppExtractorBase(Base, ABC):
         self.app = exe_factory.create_exe(self.connectionHelper)
         self.app_calls = 0
         self.enabled = True
-        self.dirty_name = UNMASQUE + self.extractor_name
+        self.dirty_name = XPOSE + self.extractor_name
 
     def _get_dirty_name(self, tab):
         return tab + self.dirty_name

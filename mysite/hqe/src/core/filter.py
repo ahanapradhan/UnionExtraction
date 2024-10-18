@@ -145,7 +145,7 @@ class Filter(UN2WhereClause):
         elif datatype in ['numeric', 'float']:
             self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         else:
-            raise ValueError("Datatype is Not Handled by Current UNMASQUE...sorry! ")
+            raise ValueError("Datatype is Not Handled by Current XPOSE...sorry! ")
 
     def checkAttribValueEffect(self, query, val, attrib_list):
         prev_values = self.get_dmin_val_of_attrib_list(attrib_list)

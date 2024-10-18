@@ -1,12 +1,10 @@
 import copy
-from datetime import date
-from typing import Tuple, Union
 
 from .abstract.GenerationPipeLineBase import GenerationPipeLineBase
 from .dataclass.genPipeline_context import GenPipelineContext
 from .dataclass.pgao_context import PGAOcontext
 from ..util.QueryStringGenerator import QueryStringGenerator
-from ..util.aoa_utils import get_tab, get_attrib, get_one_tab_attrib_from_aoa_pred
+from ..util.aoa_utils import get_tab, get_attrib
 
 
 class OuterJoin(GenerationPipeLineBase):
@@ -222,7 +220,6 @@ class OuterJoin(GenerationPipeLineBase):
 
     def __remove_semantically_nonEq_queries(self, new_join_graph, query, set_possible_queries, on_predicates):
         # eliminate semanticamy non-equivalent querie from set_possible_queries
-        # this code needs to be finished (27 feb)
         sem_eq_queries = []
 
         for num in range(0, len(set_possible_queries)):
@@ -251,11 +248,8 @@ class OuterJoin(GenerationPipeLineBase):
         self.sem_eq_queries = sem_eq_queries
 
     def __are_the_results_same(self, poss_q, query, same):
-        # result of hidden query
         res_HQ = self.app.doJob(query)
-        # result of extracted query
         res_poss_q = self.app.doJob(poss_q)
-        #  maybe needs  work
         if len(res_HQ) != len(res_poss_q):
             same = False
         else:
@@ -365,6 +359,7 @@ class OuterJoin(GenerationPipeLineBase):
         self.update_with_val(attrib, tab, prev)
 
     def __determine_join_edge_type(self, edge, table1, table2):
+        imp_t1, imp_t2 = None, None
         # steps to determine type of join for edge
         if tuple(edge) in self.importance_dict.keys():
             imp_t1 = self.importance_dict[tuple(edge)][table1]
@@ -373,6 +368,6 @@ class OuterJoin(GenerationPipeLineBase):
             imp_t1 = self.importance_dict[tuple(list(reversed(edge)))][table1]
             imp_t2 = self.importance_dict[tuple(list(reversed(edge)))][table2]
         else:
-            self.logger.debug("error sneha!!!")
+            self.logger.debug("Now you are in  trobule!!!")
         self.logger.debug(imp_t1, imp_t2)
         return imp_t1, imp_t2

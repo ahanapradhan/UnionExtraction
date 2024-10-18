@@ -33,7 +33,7 @@ class Initiator(Base):
     def verify_support_files(self):
         check_pkfk = os.path.isfile(self.pkfk_file_path)
         if not check_pkfk:
-            self.logger.error("Unmasque Error: \n Support File Not Accessible. ")
+            self.logger.error("Xpose Error: \n Support File Not Accessible. ")
         return check_pkfk
 
     def doActualJob(self, args=None):

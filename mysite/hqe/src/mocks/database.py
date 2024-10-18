@@ -1,6 +1,3 @@
-from .db_actions import DbMock, DbParser
-
-
 class Schema:
     comtabs = set()
     fromtabs = set()
@@ -24,31 +21,4 @@ class Schema:
         if not Res:
             return True
         return False
-
-
-class TPCH(Schema):
-    ddot = []
-    db = DbMock()
-    parser = DbParser()
-    relations = ["orders", "lineitem", "customer", "supplier", "part", "partsupp", "nation", "region"]
-    app_calls = 0
-
-    def get_relations(self):
-        return self.relations
-
-    def nullify_except(self, s_set):
-        self.ddot = self.db.nullify_except(set(self.relations), s_set)
-        return self.ddot
-
-    def run_query(self, QH):
-        self.app_calls += 1
-        self.parser.parse(QH)
-        for form in self.parser.fromtabs_qi:
-            if form.issubset(self.ddot):
-                return True
-        return False
-
-    def get_partial_QH(self, QH):
-        self.parser.parse(QH)
-        return self.parser.parttab_QH
 
