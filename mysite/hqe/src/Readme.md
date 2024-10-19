@@ -58,8 +58,8 @@ The `test` directory houses some test cases.
 
 ## Configuration
 inside `mysite` directory, there are two files as follows:    
-`pkfkrelations.csv`: contains key details for the TPCH schema. If any other schema is to be used, change this file accordingly.  
-`config.ini`: This contains database login credentials and flags for optional features. Change the fields accordingly.    
+* `pkfkrelations.csv`: contains key details for the TPCH schema. If any other schema is to be used, change this file accordingly.  
+* `config.ini`: This contains database login credentials and flags for optional features. Change the fields accordingly.    
 
 ### Config File Details:
 `database` section: set your database credentials.  
@@ -80,21 +80,24 @@ inside `mysite` directory, there are two files as follows:
 3. Use the following command:  
 `python3 -m hqe.src.main_cmd F4 Extract`  --> to extract for hidden Query F4  
 
-The usage is:  
-python3 -m hqe.src.main_cmd <QID> --> Will just execute the query in db and show the timing  
+#### Usage:  
 
-python3 -m hqe.src.main_cmd <QID> Extract --> Will execute the query in db and then extract it using XPOSE, then show the timing profile  
+* python3 -m hqe.src.main_cmd <QID> --> Will just execute the query in db and show the timing  
 
+* python3 -m hqe.src.main_cmd <QID> Extract --> Will execute the query in db and then extract it using XPOSE, then show the timing profile  
+
+
+#### Workload:
 
 The following query keys are available for running the extraction experiments:  
 
-Pure Union Queries: U1, U2, U3, U4, U5, U6, U7, U8, U9  
+* Pure Union Queries: U1, U2, U3, U4, U5, U6, U7, U8, U9  
 
-Algebraic Predicate Queries: A1, A2, A3, A4, A5  
+* Algebraic Predicate Queries: A1, A2, A3, A4, A5  
 
-NEP query: N1  
+* NEP query: N1  
 
-OJ Queries: O1, O2, O3, O4, O5, O6  
+* OJ Queries: O1, O2, O3, O4, O5, O6  
 
-Fusion Queries: F1, F2, F3, F4  
+* Fusion Queries: F1, F2, F3, F4  
 
