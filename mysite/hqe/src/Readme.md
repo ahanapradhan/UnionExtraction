@@ -49,41 +49,43 @@ Before each new extraction, reloading fresh data from this schema eliminates the
 
 For TPCH 1 GB, it takes up to 1 minute for this operation on vanilla hardware.
 
-### Requirements
+# Setting Up XPOSE
+
+## Requirements
 * Python 3.8.0 or above
 * `django==4.2.4`
 * `sympy==1.4`
 * `psycopg2==2.9.3`
 * `numpy==1.22.4`
 
-# Code Structure:
+## Code Structure:
 
 The code is organized into the following directories:  
 
-## mysite
+### mysite
 
 The `mysite` directory contains the main project code.
 
-### hqe
+#### hqe
 
 Inside `hqe`, you'll find the following subdirectories:
 
-#### src
+##### src
 
 The `src` directory contains code that has been refactored from the original codebase developed in various theses, as well as newly written logic, often designed to simplify existing code. This may include enhancements or entirely new functionality.
 
-#### test
+##### test
 
 The `test` directory houses some test cases.
 
-# Usage
+## Usage
 
-## Configuration
+### Configuration
 inside `mysite` directory, there are two files as follows:    
 * `pkfkrelations.csv`: contains key details for the TPCH schema. If any other schema is to be used, change this file accordingly.  
 * `config.ini`: This contains database login credentials and flags for optional features. Change the fields accordingly.    
 
-### Config File Details:
+#### Config File Details:
 `database` section: set your database credentials.  
 
 `support` section: give support file name. The support file should be present in the same directory of this config file.
@@ -121,5 +123,10 @@ The following query keys are available for running the extraction experiments:
 
 * OJ Queries: O1, O2, O3, O4, O5, O6  
 
-* Fusion Queries: F1, F2, F3, F4  
+* Fusion Queries: F1, F2, F3, F4 
+
+### Log
+
+Log file `xpose.log` gets generated (if not present already) inside `hqe` folder.
+Logs from XPOSE are appened to this log file.
 
