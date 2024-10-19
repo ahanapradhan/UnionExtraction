@@ -84,7 +84,7 @@ Use the following command:
 
 The usage is:
 python3 -m hqe.src.main_cmd <QID> --> Will just execute the query in db and show the timing
-python3 -m hqe.src.main_cmd <QID> Extract --> Will execute the query in db and then extract it using XPOSE, then show the timing profile
+python3 -m hqe.src.main_cmd <QID> Extract --> Will execute the query in db and then extract it using XPOSE, then show the timing profile:x
 
 
 The following query keys are available for running the extraction experiments:

@@ -25,8 +25,8 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
-        self.conn.config.detect_nep = True
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
         self.conn.config.detect_oj = True
         self.conn.config.detect_or = False
         self.conn.config.use_cs2 = False
@@ -695,6 +695,13 @@ order by price desc, country desc, entity_name asc limit 10);
                 "and n_name = 'INDIA' " \
                 "and o_orderdate between '1998-01-01' and '1998-01-05' " \
                 "and o_totalprice <= c_acctbal;"
+        self.do_test(query)
+
+    def test_O1(self):
+        query = """select c_name, n_name, count(*) as total from nation RIGHT OUTER
+JOIN customer ON c_nationkey = n_nationkey and c_acctbal < 1000
+        GROUP BY c_name,
+n_name Order by c_name, n_name desc Limit 10;"""
         self.do_test(query)
 
     def test_paper_big1(self):

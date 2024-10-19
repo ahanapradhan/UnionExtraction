@@ -2,10 +2,10 @@ import copy
 import signal
 import sys
 
-from ..src.core.executables.executable import Executable
-from ..src.util.ConnectionFactory import ConnectionHelperFactory
-from ..src.core.factory.PipeLineFactory import PipeLineFactory
+from ..src.core.factory.ExecutableFactory import ExecutableFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
+from ..src.core.factory.PipeLineFactory import PipeLineFactory
+from ..src.util.ConnectionFactory import ConnectionHelperFactory
 
 
 def signal_handler(signum, frame):
@@ -29,8 +29,18 @@ class TestQuery:
         self.query = query
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
+def query_exe_test(conn, query):
+    conn.connectUsingParams()
+    exe_factory = ExecutableFactory()
+    exe_factory.set_hidden_query(query)
+    app = exe_factory.create_exe(conn)
+    res = app.doJob(query)
+    conn.closeConnection()
+    exe_time = copy.deepcopy(app.local_elapsed_time)
+    print(f"========= HQ Execution Time: {round(exe_time, 2)}(s) =============")
+
+
+def create_workload():
     workload = [TestQuery("U1", """(SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100
 Order By p_partkey Limit 5)
 UNION ALL (SELECT s_suppkey, s_name FROM supplier, partsupp where s_suppkey = ps_suppkey and
@@ -69,7 +79,7 @@ nation where s_acctbal > 4000 and s_nationkey = n_nationkey);""", False, True, F
                 TestQuery("O1", """select c_name, n_name, count(*) as total from nation RIGHT OUTER
 JOIN customer ON c_nationkey = n_nationkey and c_acctbal < 1000
         GROUP BY c_name,
-n_name Order by c_name, n_name desc Limit 10;""", True, False, True, False),
+n_name Order by c_name, n_name desc Limit 10;""", False, False, True, False),
                 TestQuery("O2", """SELECT l_shipmode, o_shippriority ,count(*) as low_line_count FROM
 lineitem LEFT OUTER JOIN orders ON ( l_orderkey = o_orderkey AND
 o_totalprice > 50000 ) WHERE l_linenumber = 4 AND l_quantity < 30
@@ -152,6 +162,12 @@ from customer LEFT OUTER JOIN orders on c_custkey = o_custkey
 """, True, True, True, False),
                 TestQuery("F4", """select n_name, c_acctbal from nation LEFT OUTER JOIN customer ON n_nationkey = c_nationkey and c_nationkey > 3 and n_nationkey < 20 and c_nationkey != 10 LIMIT 200;
 """, True, True, True, True)]
+    return workload
+
+
+# Press the green button in the gutter to run the script.
+if __name__ == '__main__':
+    workload = create_workload()
 
     workload_dict = {}
     for elem in workload:
@@ -165,15 +181,14 @@ from customer LEFT OUTER JOIN orders on c_custkey = o_custkey
     conn.config.detect_union = hq.union
     conn.config.detect_oj = hq.oj
     conn.config.detect_nep = hq.nep
-    conn.config.use_cs2 = hq.nep
+    conn.config.use_cs2 = hq.cs2
+
+    print(f"Flags: Union {conn.config.detect_union}, OJ {conn.config.detect_oj}, "
+          f"NEP {conn.config.detect_nep}, CS2 {conn.config.use_cs2}")
+
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
-    conn.connectUsingParams()
-    app = Executable(conn)
-    res = app.doJob(query)
-    conn.closeConnection()
-    exe_time = copy.deepcopy(app.local_elapsed_time)
-    print(f"========= HQ Execution Time: {round(exe_time, 2)}(s) =============")
+    query_exe_test(conn, query)
 
     if job_type is not None and job_type.lower() == "extract":
         factory = PipeLineFactory()
