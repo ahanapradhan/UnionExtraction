@@ -29,13 +29,13 @@ class TestQuery:
         self.query = query
 
 
-def query_exe_test(conn, query):
-    conn.connectUsingParams()
+def query_exe_test(connhelper, hquery):
+    connhelper.connectUsingParams()
     exe_factory = ExecutableFactory()
-    exe_factory.set_hidden_query(query)
-    app = exe_factory.create_exe(conn)
-    res = app.doJob(query)
-    conn.closeConnection()
+    exe_factory.set_hidden_query(hquery)
+    app = exe_factory.create_exe(connhelper)
+    res = app.doJob(hquery)
+    connhelper.closeConnection()
     exe_time = copy.deepcopy(app.local_elapsed_time)
     print(f"========= HQ Execution Time: {round(exe_time, 2)}(s) =============")
 
@@ -79,7 +79,7 @@ nation where s_acctbal > 4000 and s_nationkey = n_nationkey);""", False, True, F
                 TestQuery("O1", """select c_name, n_name, count(*) as total from nation RIGHT OUTER
 JOIN customer ON c_nationkey = n_nationkey and c_acctbal < 1000
         GROUP BY c_name,
-n_name Order by c_name, n_name desc Limit 10;""", False, False, True, False),
+n_name Order by c_name, n_name desc Limit 10;""", True, False, True, False),
                 TestQuery("O2", """SELECT l_shipmode, o_shippriority ,count(*) as low_line_count FROM
 lineitem LEFT OUTER JOIN orders ON ( l_orderkey = o_orderkey AND
 o_totalprice > 50000 ) WHERE l_linenumber = 4 AND l_quantity < 30
@@ -204,5 +204,7 @@ if __name__ == '__main__':
             print("================ Profile ================")
             pipe = factory.get_pipeline_obj(token)
             pipe.time_profile.print()
+    else:
+        print("Invalid Option. Please Try Again..")
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

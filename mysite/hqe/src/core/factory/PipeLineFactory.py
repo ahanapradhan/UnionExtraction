@@ -36,19 +36,15 @@ class PipeLineFactory:
         return cls._instance
 
     def doJob(self, query, token=0):
-        # print("lock: ", query)
-        print("waiting for queue")
+        print("Please Wait While I do the Hidden Query Extraction...")
         self.q.put(token, True)
-        print("got in")
         pipe = self.get_pipeline_obj(token)
         _stopper = self.get_pipeline_stopper(token)
         qe = [None]
         pipe.doJob(query, qe)
         self.result = qe[0]
-        print("Result", qe)
         self.results.append((token, query, qe[0]))
         self.q.get_nowait()
-        # print("unlocked: ", query)
 
     def doJobAsync(self, query, connectionHelper):
         token = self.init_job(connectionHelper, query)
