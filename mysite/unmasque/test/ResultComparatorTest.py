@@ -300,13 +300,15 @@ class MyTestCase(BaseTestCase):
         self.conn.closeConnection()
 
         self.assertTrue(matched_hash)
+        print(matched_hash)
 
         self.conn.connectUsingParams()
         rc_comp = ResultComparator(self.conn, False)
         matched_rc = rc_comp.doJob(flatq, nestedq)
         self.conn.closeConnection()
-        
+
         self.assertTrue(matched_rc)
+        print(matched_rc)
 
 
 if __name__ == '__main__':
