@@ -4,7 +4,7 @@ from pathlib import Path
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
-    DETECT_OJ, LIMIT, OPTIONS_SECTION
+    DETECT_OJ, LIMIT, OPTIONS_SECTION, WORK_MEM, WORKING_SCHEMA
 
 
 class Config:
@@ -17,11 +17,13 @@ class Config:
 
     def __init__(self):
         # default values
+        self.workmem = None
         self.limit_limit = 1000
         self.database = "postgres"
         # self.index_maker = "create_indexes.sql"
         self.pkfk = "pkfkrelations.csv"
-        self.schema = "public"
+        self.schema = WORKING_SCHEMA
+        self.user_schema = "public"
         self.dbname = "tpch"
         self.port = "5432"
         self.password = "postgres"
@@ -53,7 +55,7 @@ class Config:
                 self.user = config_object.get(DATABASE_SECTION, USER)
                 self.password = config_object.get(DATABASE_SECTION, PASSWORD)
                 self.dbname = config_object.get(DATABASE_SECTION, DBNAME)
-                self.schema = config_object.get(DATABASE_SECTION, SCHEMA)
+                self.user_schema = config_object.get(DATABASE_SECTION, SCHEMA)
 
                 self.pkfk = config_object.get(SUPPORT_SECTION, "pkfk")
                 # self.index_maker = config_object.get(SUPPORT_SECTION, "index_maker")
@@ -88,11 +90,11 @@ class Config:
         elif use_cs2.lower() == "yes":
             self.use_cs2 = True
 
-        detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
-        if detect_or.lower() == "no":
-            self.detect_or = False
-        elif detect_or.lower() == "yes":
-            self.detect_or = True
+        #detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
+        #if detect_or.lower() == "no":
+        #    self.detect_or = False
+        #elif detect_or.lower() == "yes":
+        #    self.detect_or = True
 
         detect_oj = config_object.get(FEATURE_SECTION, DETECT_OJ)
         if detect_oj.lower() == "no":
@@ -100,11 +102,16 @@ class Config:
         elif detect_oj.lower() == "yes":
             self.detect_oj = True
 
-        self.load_limit(config_object)
+        self.load_optionals(config_object)
 
-    def load_limit(self, config_object):
+    def load_optionals(self, config_object):
         try:
             limit_config = config_object.get(OPTIONS_SECTION, LIMIT.lower())
             self.limit_limit = int(limit_config)
         except:
             pass
+        #try:
+        #    workmem_config = config_object.get(OPTIONS_SECTION, WORK_MEM.lower())
+        #    self.workmem = int(workmem_config)
+        #except:
+        #    pass

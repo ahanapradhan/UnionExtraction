@@ -8,9 +8,10 @@ class ResultComparator(Comparator):
         self.isHash = isHash
 
     def is_match(self, len1, len2):
+        self._remove_footprint()
         self.logger.debug(f"{len1} len1, {len2} len2")
         if self.isHash:
-            if len1 == len2:
+            if len1 is not None and len1 == len2:
                 return True
             else:
                 return False
@@ -23,8 +24,10 @@ class ResultComparator(Comparator):
         return super().run_diff_queries()
 
     def run_hash_diff_queries(self):
-        len1 = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.hashtext_query(self.r_e))
-        len2 = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.hashtext_query(self.r_h))
+        len1 = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.hashtext_query(self.r_e, self.get_fully_qualified_table_name(self.r_e)))
+        len2 = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.hashtext_query(self.r_h, self.get_fully_qualified_table_name(self.r_h)))
         return len1, len2
 
     def insert_data_into_Qh_table(self, res_Qh, table):

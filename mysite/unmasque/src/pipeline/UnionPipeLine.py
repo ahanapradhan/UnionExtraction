@@ -83,17 +83,24 @@ class UnionPipeLine(OuterJoinPipeLine):
 
     def __nullify_relations(self, relations):
         for tab in relations:
-            backup_name = self.connectionHelper.queries.get_union_tabname(tab)
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, backup_name),
-                                               self.connectionHelper.queries.create_table_like(tab, backup_name)],
+            f_tab, f_union_tab, union_tab = self.__get_void_names(tab)
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(f_tab, union_tab),
+                                               self.connectionHelper.queries.create_table_like(f_tab, f_union_tab)],
                                               self.logger)
             self.all_sizes[tab] = 0
 
+    def __get_void_names(self, tab):
+        union_tab = self.connectionHelper.queries.get_union_tabname(tab)
+        f_tab = f"{self.connectionHelper.config.schema}.{tab}"
+        f_union_tab = f"{self.connectionHelper.config.schema}.{union_tab}"
+        return f_tab, f_union_tab, union_tab
+
     def __revert_nullifications(self, relations):
         for tab in relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(tab),
+            f_tab, f_union_tab, union_tab = self.__get_void_names(tab)
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(f_tab),
                                                self.connectionHelper.queries.alter_table_rename_to(
-                                                   self.connectionHelper.queries.get_union_tabname(tab), tab)],
+                                                   f_union_tab, tab)],
                                               self.logger)
             self.all_sizes[tab] = self.connectionHelper.execute_sql_fetchone_0(
-                self.connectionHelper.queries.get_row_count(tab))
+                self.connectionHelper.queries.get_row_count(f_tab))

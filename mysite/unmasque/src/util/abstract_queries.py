@@ -4,6 +4,10 @@ from ...src.util.constants import UNMASQUE
 
 
 class CommonQueries(ABC):
+    schema = None
+
+    def set_schema(self, schema):
+        self.schema = schema
 
     def select_row_count_from_query(self, query):
         return f"select count(*) from ({query});"
@@ -34,10 +38,6 @@ class CommonQueries(ABC):
 
     @abstractmethod
     def create_table_as_select_star_from(self, tab, fromtab):
-        pass
-
-    @abstractmethod
-    def analyze_table(self, tab):
         pass
 
     @abstractmethod
@@ -168,7 +168,7 @@ class CommonQueries(ABC):
         return '(0,1)'
 
     @abstractmethod
-    def hashtext_query(self, tab):
+    def hashtext_query(self, tab, qualified_name):
         pass
 
     @abstractmethod

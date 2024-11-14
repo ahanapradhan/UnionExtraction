@@ -23,17 +23,22 @@ class MutationPipeLineBase(AppExtractorBase, ABC):
     def see_d_min(self):
         self.logger.debug("======================")
         for tab in self.core_relations:
-            res, des = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(tab))
-            self.logger.debug(f"-----  {tab} ------")
-            self.logger.debug(res)
+            self.see_d_min_tab(tab)
         self.logger.debug("======================")
+
+    def see_d_min_tab(self, tab):
+        res, des = self.connectionHelper.execute_sql_fetchall(self.connectionHelper.queries.get_star(
+                                                self.get_fully_qualified_table_name(tab)))
+        self.logger.debug(f"-----  {tab} ------")
+        self.logger.debug(res)
 
     def restore_d_min(self):
         for tab in self.core_relations:
             self.connectionHelper.execute_sql([
-                self.connectionHelper.queries.truncate_table(tab),
+                self.connectionHelper.queries.truncate_table(self.get_fully_qualified_table_name(tab)),
                 self.connectionHelper.queries.insert_into_tab_select_star_fromtab(
-                    tab, self.connectionHelper.queries.get_dmin_tabname(tab))])
+                    self.get_fully_qualified_table_name(tab), self.get_fully_qualified_table_name(
+                                                    self.connectionHelper.queries.get_dmin_tabname(tab)))])
 
     def extract_params_from_args(self, args):
         return args[0]
@@ -43,7 +48,8 @@ class MutationPipeLineBase(AppExtractorBase, ABC):
         data_problem = False
         try:
             res, des = self.connectionHelper.execute_sql_fetchall(
-                self.connectionHelper.queries.select_attribs_from_relation([attrib], tab))
+                self.connectionHelper.queries.select_attribs_from_relation([attrib],
+                                                            self.get_fully_qualified_table_name(tab)))
             val = res[0][0]
         except ValueError as e:
             data_problem = True
@@ -64,4 +70,5 @@ class MutationPipeLineBase(AppExtractorBase, ABC):
 
     def truncate_core_relations(self):
         for table in self.core_relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(table)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(
+                                                    self.get_fully_qualified_table_name(table))])
