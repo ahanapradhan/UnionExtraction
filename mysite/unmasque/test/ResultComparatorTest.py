@@ -2,10 +2,9 @@ import unittest
 
 import pytest
 
+from mysite.unmasque.src.core.result_comparator import ResultComparator
 from mysite.unmasque.src.pipeline.ExtractionPipeLine import ExtractionPipeLine
 from mysite.unmasque.src.util.constants import DONE
-from mysite.unmasque.test.util import tpchSettings
-from mysite.unmasque.src.core.result_comparator import ResultComparator
 from ..test.util import queries
 from ..test.util.BaseTestCase import BaseTestCase
 
@@ -272,6 +271,42 @@ class MyTestCase(BaseTestCase):
 
         self.assertTrue(matched_hash)
         self.conn.closeConnection()
+
+    def test_himanshu_nested_vs_flat(self):
+        flatq = """Select l_shipdate as key, Sum(l_extendedprice) as postrating, Sum(o_totalprice) as blograting From 
+        lineitem, orders Where lineitem.l_orderkey = orders.o_orderkey and orders.o_totalprice >5 Group By l_shipdate 
+        Order By key desc;"""
+        nestedq = """SELECT t.Key,sum(t.l_extendedprice) AS PostRating, 
+(SELECT sum(b0.o_totalprice) 
+ FROM 
+ (SELECT p0.l_partkey, p0.l_orderkey, p0.l_suppkey, p0.l_extendedprice, p0.l_linestatus, 
+  b1.o_orderkey AS BlogId0, b1.o_totalprice AS Rating0, b1.o_orderstatus, p0.l_shipdate AS Key 
+  FROM lineitem AS p0 
+  INNER JOIN orders AS b1 
+  ON p0.l_orderkey = b1.o_orderkey 
+  WHERE b1.o_totalprice > 5 ) AS t0 
+ INNER JOIN orders AS b0 
+ ON t0.l_orderkey = b0.o_orderkey 
+ WHERE t.Key = t0.Key ) AS BlogRating 
+ FROM ( SELECT p.l_extendedprice, p.l_shipdate AS Key 
+	   FROM lineitem AS p INNER JOIN orders AS b 
+	   ON p.l_orderkey = b.o_orderkey 
+	   WHERE b.o_totalprice > 5 ) AS t 
+	   GROUP BY t.Key;"""
+
+        self.conn.connectUsingParams()
+        rc_hash = ResultComparator(self.conn, True)
+        matched_hash = rc_hash.doJob(flatq, nestedq)
+        self.conn.closeConnection()
+
+        self.assertTrue(matched_hash)
+
+        self.conn.connectUsingParams()
+        rc_comp = ResultComparator(self.conn, False)
+        matched_rc = rc_comp.doJob(flatq, nestedq)
+        self.conn.closeConnection()
+        
+        self.assertTrue(matched_rc)
 
 
 if __name__ == '__main__':
