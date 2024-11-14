@@ -10,9 +10,9 @@ def log_result(Res, logger):
 
 def is_result_nonempty_nullfree(res, logger=None):
     if logger is not None:
-        # logger.debug("is_result_nonempty_nullfree")
         log_result(res, logger)
-        # logger.debug(res[1:])
+        #if len(res) < 15:
+        #    logger.debug(res[1:])
     if res[1:] is None:
         return False
     if res[1:] == [None]:

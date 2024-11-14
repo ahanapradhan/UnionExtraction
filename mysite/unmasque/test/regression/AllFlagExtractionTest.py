@@ -54,6 +54,10 @@ order by price desc, country desc, entity_name asc limit 10);
 """
         self.do_test(query)
 
+    def test_backupschema(self):
+        query = """select * from nation;"""
+        self.do_test(query)
+
     def test_paper_big(self):
         query = """
                 (SELECT c_name as entity_name, n_name as country, o_totalprice as price
@@ -202,6 +206,11 @@ order by price desc, country desc, entity_name asc limit 10);
                 "n_name = 'UNITED STATES') UNION ALL " \
                 "(SELECT p_partkey as key, p_name as name FROM part , lineitem where p_partkey = l_partkey " \
                 "and l_quantity > 35);"
+        self.do_test(query)
+
+    def test_u_new(self):
+        self.conn.config.detect_nep = True
+        query = """select r_name from nation, region where n_regionkey = r_regionkey and n_name <> 'BRAZIL';"""
         self.do_test(query)
 
     def test_random_nonUnion(self):

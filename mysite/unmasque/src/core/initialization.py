@@ -46,7 +46,9 @@ class Initiator(Base):
         self.make_pkfk_complete_graph(all_pkfk)
         self.do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
+        self._create_working_schema()
         self.take_backup()
+        self.logger.info(f"Working schema set to {self.connectionHelper.config.schema}")
         self.get_all_sizes()
         return True
 

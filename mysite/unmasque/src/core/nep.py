@@ -13,37 +13,46 @@ class NepComparator(ResultComparator):
         self.earlyExit = False
         self.re_tab = "re_E"
         self.use_re = self.connectionHelper.config.detect_oj
+        self.app.data_schema = self.connectionHelper.config.schema
 
     def create_view_from_Q_E(self, Q_E):
         try:
             self.logger.debug(Q_E)
             # Run the extracted query Q_E .
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
-                                               self.connectionHelper.queries.create_view_as(self.r_e, Q_E)],
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(
+                self.get_fully_qualified_table_name(self.r_e)),
+                self.connectionHelper.queries.create_view_as(
+                    self.get_fully_qualified_table_name(self.r_e), Q_E)],
                                               self.logger)
 
             if self.use_re:
-                self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(self.re_tab),
-                                                   f"Create unlogged table {self.re_tab} (like {self.r_e});"],
+                self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(
+                    self.get_fully_qualified_table_name(self.re_tab)),
+                    f"Create unlogged table {self.get_fully_qualified_table_name(self.re_tab)} "
+                    f"(like {self.get_fully_qualified_table_name(self.r_e)});"],
                                                   self.logger)
                 r_E = self.app.doJob(Q_E)
                 self.insert_data_into_Qh_table(r_E, self.re_tab)
-                self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
-                                                   self.connectionHelper.queries.create_view_as(self.r_e,
-                                                                                                f"select * from {self.re_tab};")],
+                self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(
+                    self.get_fully_qualified_table_name(self.r_e)),
+                    self.connectionHelper.queries.create_view_as(
+                        self.get_fully_qualified_table_name(self.r_e),
+                        f"select * from {self.get_fully_qualified_table_name(self.re_tab)};")],
                                                   self.logger)
         except ValueError as e:
             self.logger.error(e)
             return False
 
         # Size of the table
-        res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(self.r_e))
+        res = self.connectionHelper.execute_sql_fetchone_0(
+            self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(self.r_e)))
         return res
 
     def run_diff_query_match_and_dropViews(self):
         check = super().run_diff_query_match_and_dropViews()
         if self.use_re:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(self.re_tab)],
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(
+                self.get_fully_qualified_table_name(self.re_tab))],
                                               self.logger)
         return check
 
@@ -67,6 +76,7 @@ class NepMinimizer(Minimizer):
         super().__init__(connectionHelper, core_relations, all_sizes, "NEP_Minimizer")
         self.Q_E = None
         self.nep_comparator = NepComparator(self.connectionHelper, core_relations)
+        self.app.data_schema = self.connectionHelper.config.schema
 
     def sanity_check(self, query):
         result_e = self.app.doJob(self.Q_E)
@@ -86,7 +96,7 @@ class NepMinimizer(Minimizer):
         query, self.Q_E, table = self.extract_params_from_args(args)
         try:
             self.app.doJob(self.Q_E)
-        except:
+        except Exception as e:
             self.logger.error("Q_E is not semantically correct.")
             return False
         return self.reduce_Database_Instance(query, table)
@@ -96,13 +106,15 @@ class NepMinimizer(Minimizer):
         self.logger.debug("Inside get nep")
         while core_sizes[table] > 1:
             self.logger.debug("Inside minimization loop")
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(table, self._get_dirty_name(table))],
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(
+                self.get_fully_qualified_table_name(table), self._get_dirty_name(table))],
                                               self.logger)
             end_ctid, start_ctid = self.get_start_and_end_ctids(core_sizes, query, table, self._get_dirty_name(table))
             self.logger.debug(end_ctid, start_ctid)
             if end_ctid is None:
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(self._get_dirty_name(table), table)], self.logger)
+                    [self.connectionHelper.queries.alter_table_rename_to(self.get_fully_qualified_table_name(
+                        self._get_dirty_name(table)), table)], self.logger)
                 return False  # no role on NEP
             core_sizes = self.update_with_remaining_size(core_sizes, end_ctid, start_ctid, table, self._get_dirty_name(table))
         return True
@@ -142,16 +154,17 @@ class NepMinimizer(Minimizer):
         end_ctid, start_ctid = self.check_sanity_when_nullfree_exe(end_ctid, mid_ctid1, mid_ctid2, query,
                                                                    start_ctid,
                                                                    tabname, dirty_tab)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(tabname)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(
+            self.get_fully_qualified_table_name(tabname))])
         return end_ctid, start_ctid
 
     def check_result_for_half(self, start_ctid, end_ctid, tab, view, query):
         self.logger.debug("view: ", view, " from table ", tab)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(view),
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.get_fully_qualified_table_name(view)),
                                            self.connectionHelper.queries.create_view_as_select_star_where_ctid(end_ctid,
                                                                                                                start_ctid,
-                                                                                                               view,
-                                                                                                               tab)])
+                                                                                                               self.get_fully_qualified_table_name(view),
+                                                                                                               self.get_fully_qualified_table_name(tab))])
 
         self.logger.debug(start_ctid, end_ctid)
         found = self.nep_comparator.match(query, self.Q_E)
@@ -213,7 +226,8 @@ class NEP(GenerationPipeLineBase):
         for tup in list(zip(tabs, attribs)):
             datatype = self.get_datatype(tup)
             qoted = False if datatype in NUMBER_TYPES else True
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.update_key_attrib_with_val(tup[0], tup[1], value, prev, qoted)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.update_key_attrib_with_val(
+                self.get_fully_qualified_table_name(tup[0]), tup[1], value, prev, qoted)])
 
     def __check_per_joined_attrib(self, attrib_list, filterAttribs, query, tabname):
         if self.joined_attribs is None:
@@ -243,7 +257,7 @@ class NEP(GenerationPipeLineBase):
         for attrib in single_attribs:
             self.logger.debug(tabname, attrib)
             prev = self.connectionHelper.execute_sql_fetchone_0(
-                self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
+                self.connectionHelper.queries.select_attribs_from_relation([attrib], self.get_fully_qualified_table_name(tabname)))
             val = self.get_different_s_val(attrib, tabname, prev)
             self.logger.debug("update ", tabname, attrib, "with value ", val, " prev", prev)
             self.update_with_val(attrib, tabname, val)
