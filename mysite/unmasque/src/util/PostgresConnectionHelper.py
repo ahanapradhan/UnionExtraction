@@ -21,18 +21,17 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
     def reset_timeout(self):
         return "set statement_timeout to DEFAULT;"
 
-    def get_all_tables_for_restore(self):
-        res, desc = self.execute_sql_fetchall(
-            self.get_sanitization_select_query(["SPLIT_PART(table_name, '_', 1) as original_name"],
-                                               ["table_name like '%_backup'"]))
-        tables = [row[0] for row in res]
-        print(tables)
-        return tables
+    #def get_all_tables_for_restore(self):
+    #    res, desc = self.execute_sql_fetchall(
+    #        self.get_sanitization_select_query(["SPLIT_PART(table_name, '_', 1) as original_name"],
+    #                                           ["table_name like '%_backup'"]))
+    #    tables = [row[0] for row in res]
+    #    print(tables)
+    #    return tables
 
-    def is_view_or_table(self, tab):
+    def is_view_or_table(self, tab, schema):
         # Reference: https://www.postgresql.org/docs/current/infoschema-tables.html
-        check_query = self.get_sanitization_select_query(["table_type"],
-                                                         [f" table_name = '{tab}'"])
+        check_query = self.get_sanitization_select_query(["table_type"], [f" table_name = '{tab}'"], schema)
         res, _ = self.execute_sql_fetchall(check_query)
 
         if len(res) > 0:
@@ -48,9 +47,9 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
         self.queries = PostgresQueries()
         self.config.config_loaded = True
 
-    def form_query(self, selections, wheres):
+    def form_query(self, selections, wheres, schema):
         query = f"Select {selections}  From information_schema.tables " + \
-                f"WHERE table_schema = '{self.config.schema}' and " \
+                f"WHERE table_schema = '{schema}' and " \
                 f"TABLE_CATALOG= '{self.config.dbname}' {wheres} ;"
         query = re.sub(' +', ' ', query)
         return query
@@ -113,12 +112,12 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
     def cus_execute_sqls(self, cur, sqls, logger=None):
         # print(cur)
         for sql in sqls:
-            # if logger is not None:
-            #    logger.debug("..cur execute.." + sql)
+            if logger is not None:
+               logger.debug("..cur execute.." + sql)
             try:
                 cur.execute(sql)
             except psycopg2.ProgrammingError as e:
-                print(e)
+                #print(e)
                 if logger is not None:
                     logger.error(e)
                     logger.error(e.diag.message_detail)

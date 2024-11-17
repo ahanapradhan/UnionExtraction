@@ -23,7 +23,7 @@ class AbstractConnectionHelper:
             elif key == PASSWORD:
                 self.config.password = value
             elif key == SCHEMA:
-                self.config.schema = value
+                self.config.user_schema = value
 
         self.conn = None
         self.queries = None
@@ -48,12 +48,12 @@ class AbstractConnectionHelper:
     def rollback_transaction(self):
         pass
 
-    def get_sanitization_select_query(self, projectns, predicates):
+    def get_sanitization_select_query(self, projectns, predicates, schema):
         selections = " and ".join(projectns)
         wheres = " and ".join(predicates)
         if len(predicates) == 1:
             wheres = " and " + wheres
-        return self.form_query(selections, wheres)
+        return self.form_query(selections, wheres, schema)
 
     @abstractmethod
     def test_connection(self):
@@ -136,11 +136,11 @@ class AbstractConnectionHelper:
         pass
 
     @abstractmethod
-    def form_query(self, selections, wheres):
+    def form_query(self, selections, wheres, schema):
         pass
 
     @abstractmethod
-    def is_view_or_table(self, tab):
+    def is_view_or_table(self, tab, schema):
         pass
 
     @abstractmethod

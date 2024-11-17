@@ -64,9 +64,11 @@ class UN2WhereClause(MutationPipeLineBase):
         values = self.global_min_instance_dict[tabname]
         attribs, vals = values[0], values[1]
         attrib_list = ", ".join(attribs)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(tabname)])
+        self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(
+                                                    self.get_fully_qualified_table_name(tabname))])
         self.connectionHelper.execute_sql_with_params(
-            self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "", tabname), [vals])
+            self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "",
+                                                    self.get_fully_qualified_table_name(tabname)),[vals])
 
     def get_datatype(self, tab_attrib: Tuple[str, str]) -> str:
         if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
@@ -91,19 +93,14 @@ class UN2WhereClause(MutationPipeLineBase):
     def mutate_dmin_with_val(self, datatype, t_a, val):
         if datatype == 'date':
             self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(get_tab(t_a),
-                                                                                      get_attrib(
-                                                                                          t_a),
-                                                                                      get_format(
-                                                                                          datatype,
-                                                                                          val))], self.logger)
+                [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(
+                                                    self.get_fully_qualified_table_name(get_tab(t_a)),
+                                                            get_attrib(t_a), get_format(datatype,
+                                                                                        val))], self.logger)
         else:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.update_tab_attrib_with_value(get_tab(t_a),
-                                                                                                          get_attrib(
-                                                                                                              t_a),
-                                                                                                          get_format(
-                                                                                                              datatype,
-                                                                                                              val))],
-                                              self.logger)
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.update_tab_attrib_with_value(
+                                                    self.get_fully_qualified_table_name(get_tab(t_a)),
+                                                            get_attrib(t_a),get_format(datatype,
+                                                                                       val))],self.logger)
         self.mutate_global_min_instance_dict(get_tab(t_a), get_attrib(t_a), val)
         self.global_d_plus_value[get_attrib(t_a)] = val

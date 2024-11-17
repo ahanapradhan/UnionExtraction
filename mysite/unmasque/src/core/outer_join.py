@@ -279,7 +279,8 @@ class OuterJoin(GenerationPipeLineBase):
 
     def update_attrib_to_see_impact(self, attrib: str, tabname: str):
         prev = self.connectionHelper.execute_sql_fetchone_0(
-            self.connectionHelper.queries.select_attribs_from_relation([attrib], tabname))
+            self.connectionHelper.queries.select_attribs_from_relation([attrib],
+                                                                       self.get_fully_qualified_table_name(tabname)))
         val = 'NULL'
         self.logger.debug(f"update {tabname}.{attrib} with value {val} that had previous value {prev}")
         self.update_with_val(attrib, tabname, val)
@@ -315,9 +316,13 @@ class OuterJoin(GenerationPipeLineBase):
         for aoa in all_aoa:
             one, op, other = aoa[0], aoa[1], aoa[2]
             prev_one = self.connectionHelper.execute_sql_fetchone_0(
-                self.connectionHelper.queries.select_attribs_from_relation([get_attrib(one)], get_tab(one)))
+                self.connectionHelper.queries.select_attribs_from_relation([get_attrib(one)],
+                                                                           self.get_fully_qualified_table_name(
+                                                                               get_tab(one))))
             prev_other = self.connectionHelper.execute_sql_fetchone_0(
-                self.connectionHelper.queries.select_attribs_from_relation([get_attrib(other)], get_tab(other)))
+                self.connectionHelper.queries.select_attribs_from_relation([get_attrib(other)],
+                                                                           self.get_fully_qualified_table_name(
+                                                                               get_tab(other))))
 
             if op == '<':
                 self.update_with_val(get_attrib(one), get_tab(one), prev_other)

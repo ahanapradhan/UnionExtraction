@@ -65,11 +65,11 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def do_init(self) -> None:
         for tab in self.core_relations:
             self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.create_table_as_select_star_from_limit_1(f"{tab}__temp",
-                                                                                        self.connectionHelper.queries.get_backup(
-                                                                                            tab)),
-                 self.connectionHelper.queries.drop_table(tab),
-                 self.connectionHelper.queries.alter_table_rename_to(f"{tab}__temp", tab)])
+                [self.connectionHelper.queries.create_table_as_select_star_from_limit_1(
+                    self.get_fully_qualified_table_name(f"{tab}__temp"), self.get_original_table_name(tab)),
+                    self.connectionHelper.queries.drop_table(self.get_fully_qualified_table_name(tab)),
+                    self.connectionHelper.queries.alter_table_rename_to(
+                        self.get_fully_qualified_table_name(f"{tab}__temp"), tab)])
         self.restore_d_min_from_dict()
         self.see_d_min()
 
@@ -83,14 +83,15 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                                       insert_rows, tabname_inner, insert_logger=True) -> None:
         esc_string = get_escape_string(attrib_list_inner)
         insert_query = self.connectionHelper.queries.insert_into_tab_attribs_format(att_order, esc_string,
-                                                                                    tabname_inner)
+                                                    self.get_fully_qualified_table_name(tabname_inner))
         if insert_logger:
             self.connectionHelper.execute_sql_with_params(insert_query, insert_rows, self.logger)
         else:
             self.connectionHelper.execute_sql_with_params(insert_query, insert_rows)
 
     def update_attrib_in_table(self, attrib, value, tabname) -> None:
-        update_query = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, value)
+        update_query = self.connectionHelper.queries.update_tab_attrib_with_value(
+                                                    self.get_fully_qualified_table_name(tabname), attrib, value)
         self.connectionHelper.execute_sql([update_query])
 
     def doExtractJob(self, query: str) -> bool:
@@ -122,14 +123,16 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def update_with_val(self, attrib: str, tabname: str, val) -> None:
         if val == 'NULL':
-            update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)
+            update_q = self.connectionHelper.queries.update_tab_attrib_with_value(
+                                                self.get_fully_qualified_table_name(tabname), attrib, val)
         else:
             datatype = self.get_datatype((tabname, attrib))
             if datatype in NON_TEXT_TYPES:
-                update_q = self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib,
-                                                                                      get_format(datatype, val))
+                update_q = self.connectionHelper.queries.update_tab_attrib_with_value(
+                    self.get_fully_qualified_table_name(tabname), attrib, get_format(datatype, val))
             else:
-                update_q = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, val)
+                update_q = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(
+                                                self.get_fully_qualified_table_name(tabname), attrib, val)
         self.connectionHelper.execute_sql([update_q])
 
     def get_s_val(self, attrib: str, tabname: str) -> Union[int, float, date, str]:

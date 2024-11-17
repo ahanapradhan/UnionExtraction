@@ -36,16 +36,21 @@ class Executable(Base):
 
     def __init__(self, connectionHelper, name="Executable"):
         super().__init__(connectionHelper, name)
+        self.data_schema = None
 
     def extract_params_from_args(self, args):
         return args[0]
 
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
+        if self.data_schema is None:
+            f_query = f"set search_path='{self.connectionHelper.config.schema}'; {query}"
+        else:
+            f_query = f"set search_path='{self.data_schema}'; {query}"
         result = []
         try:
             start_t = time.time()
-            res, description = self.connectionHelper.execute_sql_fetchall(query, self.logger)
+            res, description = self.connectionHelper.execute_sql_fetchall(f_query, self.logger)
             end_t = time.time()
             self.logger.debug(f"Exe time: {str(end_t - start_t)}")
             add_header(description, result)

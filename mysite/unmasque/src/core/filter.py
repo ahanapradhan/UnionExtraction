@@ -71,7 +71,8 @@ class Filter(UN2WhereClause):
                 self.insert_into_dmin_dict_values(tabname)
 
             res, desc = self.connectionHelper.execute_sql_fetchall(
-                self.connectionHelper.queries.select_attribs_from_relation(tab_attribs, tabname))
+                self.connectionHelper.queries.select_attribs_from_relation(tab_attribs,
+                                                                    self.get_fully_qualified_table_name(tabname)))
             for row in res:
                 for attrib, value in zip(tab_attribs, row):
                     self.global_d_plus_value[attrib] = value
@@ -154,11 +155,13 @@ class Filter(UN2WhereClause):
             datatype = self.get_datatype((tabname, attrib))
             if datatype == 'date':
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(tabname, attrib, val)],
+                    [self.connectionHelper.queries.update_sql_query_tab_date_attrib_value(
+                        self.get_fully_qualified_table_name(tabname), attrib, val)],
                     self.logger)
             else:
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.update_tab_attrib_with_value(tabname, attrib, val)], self.logger)
+                    [self.connectionHelper.queries.update_tab_attrib_with_value(
+                        self.get_fully_qualified_table_name(tabname), attrib, val)], self.logger)
         new_result = self.app.doJob(query)
         self.revert_filter_changes_in_tabset(attrib_list, prev_values)
         return self.app.isQ_result_nonEmpty_nullfree(new_result)
@@ -401,7 +404,8 @@ class Filter(UN2WhereClause):
 
     def run_updateQ_with_temp_str(self, attrib, query, tabname, temp):
         prev_values = self.get_dmin_val_of_attrib_list([(tabname, attrib)])
-        up_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
+        up_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(
+            self.get_fully_qualified_table_name(tabname), attrib, temp)
         self.connectionHelper.execute_sql([up_query])
         new_result = self.app.doJob(query)
         self.revert_filter_changes_in_tabset([(tabname, attrib)], prev_values)

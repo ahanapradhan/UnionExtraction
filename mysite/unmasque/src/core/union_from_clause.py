@@ -22,17 +22,23 @@ class UnionFromClause(Schema, AppExtractorBase):
         self.to_nullify = s_set.difference(self.comtabs)
         self.logger.debug("to nullify " + str(self.to_nullify))
         for tab in self.to_nullify:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tab, self._get_dirty_name(tab)),
-                                               self.connectionHelper.queries.create_table_like(tab, self._get_dirty_name(tab))])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(
+                self.get_fully_qualified_table_name(tab), self._get_dirty_name(tab)),
+                self.connectionHelper.queries.create_table_like(
+                    self.get_fully_qualified_table_name(tab),
+                    self.get_fully_qualified_table_name(self._get_dirty_name(tab)))])
 
     def run_query(self, QH):
         return self.app.doJob(QH)
 
     def revert_nullify(self):
         for tab in self.to_nullify:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(tab),
-                                               self.connectionHelper.queries.alter_table_rename_to(self._get_dirty_name(tab), tab),
-                                               self.connectionHelper.queries.drop_table(self._get_dirty_name(tab))])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(
+                self.get_fully_qualified_table_name(tab)),
+                self.connectionHelper.queries.alter_table_rename_to(
+                    self.get_fully_qualified_table_name(self._get_dirty_name(tab)), tab),
+                self.connectionHelper.queries.drop_table(
+                    self.get_fully_qualified_table_name(self._get_dirty_name(tab)))])
 
     def get_partial_QH(self, QH):
         return self.doJob(QH)
@@ -47,7 +53,9 @@ class UnionFromClause(Schema, AppExtractorBase):
         QH = self.extract_params_from_args(args)
         fromTabQ = set(self.get_fromTabs(QH))
         comTabQ = set(self.get_comTabs(QH))
+        self.logger.debug(f"from tab: {fromTabQ}, com tab: {comTabQ}")
         partTabQ = fromTabQ.difference(comTabQ)
+        self.logger.debug(f"part tab: {partTabQ}")
         return partTabQ
 
     def get_fromTabs(self, QH):

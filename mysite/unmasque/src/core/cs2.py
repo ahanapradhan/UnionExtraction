@@ -37,7 +37,7 @@ class Cs2(AppExtractorBase):
         if not self.sizes:
             for table in self.all_relations:
                 self.sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(
-                    self.connectionHelper.queries.get_row_count(table))
+                    self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(table)))
         return self.sizes
 
     def extract_params_from_args(self, args):
@@ -69,19 +69,21 @@ class Cs2(AppExtractorBase):
 
     def _restore(self):
         for table in self.core_relations:
-            backup_tab = self.connectionHelper.queries.get_backup(table)
+            backup_tab = self.get_original_table_name(table)
             self.connectionHelper.execute_sqls_with_DictCursor([
-                self.connectionHelper.queries.create_table_like(table,backup_tab),
-                self.connectionHelper.queries.insert_into_tab_select_star_fromtab(table, backup_tab)])
+                self.connectionHelper.queries.create_table_like(
+                                            self.get_fully_qualified_table_name(table), self.get_original_table_name(table)),
+                self.connectionHelper.queries.insert_into_tab_select_star_fromtab(
+                                            self.get_fully_qualified_table_name(table), self.get_original_table_name(table))])
 
     def __correlated_sampling(self, query, sizes):
         self.logger.debug("Starting correlated sampling ")
 
         # choose base table from each key list> sample it> sample remaining tables based on base table
         for table in self.core_relations:
-            self.connectionHelper.execute_sqls_with_DictCursor([self.connectionHelper.queries.create_table_like(table,
-                                                                                                                self.connectionHelper.queries.get_backup(
-                                                                                                                    table))])
+            self.connectionHelper.execute_sqls_with_DictCursor(
+                [self.connectionHelper.queries.create_table_like(self.get_fully_qualified_table_name(table),
+                                                                 self.get_original_table_name(table))])
 
         self.__do_for_key_lists(sizes)
 
@@ -89,7 +91,8 @@ class Cs2(AppExtractorBase):
         self.__do_for_empty_key_lists(not_sampled_tables)
 
         for table in self.core_relations:
-            res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(table))
+            res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
+                                                                        self.get_fully_qualified_table_name(table)))
             self.logger.debug(table, res)
             self.sample[table] = res
 
@@ -97,7 +100,8 @@ class Cs2(AppExtractorBase):
         new_result = self.app.doJob(query)
         if not self.app.isQ_result_nonEmpty_nullfree(new_result):
             for table in self.core_relations:
-                self.connectionHelper.execute_sqls_with_DictCursor([self.connectionHelper.queries.drop_table(table)])
+                self.connectionHelper.execute_sqls_with_DictCursor([self.connectionHelper.queries.drop_table(
+                                                                        self.get_fully_qualified_table_name(table))])
                 self.sample[table] = sizes[table]
             return False
         return True
@@ -105,10 +109,11 @@ class Cs2(AppExtractorBase):
     def __do_for_empty_key_lists(self, not_sampled_tables):
         if not len(self.global_key_lists):
             for table in not_sampled_tables:
-                self.connectionHelper.execute_sqls_with_DictCursor([f"insert into {table} select * from "
-                                                                    f"{self.connectionHelper.queries.get_backup(table)} "
+                self.connectionHelper.execute_sqls_with_DictCursor(
+                    [f"insert into {self.get_fully_qualified_table_name(table)} select * from "f"{self.get_original_table_name(table)} "
                                                                     f"tablesample system({self.seed_sample_size_per});"])
-                res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(table))
+                res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
+                                                                        self.get_fully_qualified_table_name(table)))
                 self.logger.debug(table, res)
 
     def __do_for_key_lists(self, sizes):
@@ -120,25 +125,25 @@ class Cs2(AppExtractorBase):
             if base_table in self.core_relations:
                 limit_row = sizes[base_table]
                 self.connectionHelper.execute_sqls_with_DictCursor([
-                    f"insert into {base_table} select * from {self.connectionHelper.queries.get_backup(base_table)} "
+                    f"insert into {self.get_fully_qualified_table_name(base_table)} select * from {self.get_original_table_name(base_table)} "
                     f"tablesample system({self.seed_sample_size_per}) where ({base_key}) "
-                    f"not in (select distinct({base_key}) from {base_table}) Limit {limit_row} ;"])
+                    f"not in (select distinct({base_key}) from {self.get_original_table_name(base_table)}) Limit {limit_row} ;"])
                 res = self.connectionHelper.execute_sql_fetchone_0(
-                    self.connectionHelper.queries.get_row_count(base_table))
+                    self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(base_table)))
                 self.logger.debug(base_table, res)
 
             # sample remaining tables from key_list using the sampled base table
             for key_item in key_list:
-                sampled_table,  key = key_item[0], key_item[1]
+                sampled_table, key = key_item[0], key_item[1]
 
                 # if sampled_table in not_sampled_tables:
                 if sampled_table != base_table and sampled_table in self.core_relations:
                     limit_row = sizes[sampled_table]
                     self.connectionHelper.execute_sqls_with_DictCursor([
-                        f"insert into {sampled_table} select * from "
-                        f"{self.connectionHelper.queries.get_backup(sampled_table)} "
-                        f"where {key} in (select distinct({base_key}) from {base_table}) and {key} "
-                        f"not in (select distinct({key}) from {sampled_table}) Limit {limit_row} ;"])
+                        f"insert into {self.get_fully_qualified_table_name(sampled_table)} select * from "
+                        f"{self.get_fully_qualified_table_name(sampled_table)} "
+                        f"where {key} in (select distinct({base_key}) from {self.get_original_table_name(base_table)}) and {key} "
+                        f"not in (select distinct({key}) from {self.get_fully_qualified_table_name(sampled_table)}) Limit {limit_row} ;"])
                     res = self.connectionHelper.execute_sql_fetchone_0(
-                        self.connectionHelper.queries.get_row_count(sampled_table))
+                        self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(sampled_table)))
                     self.logger.debug(sampled_table, res)

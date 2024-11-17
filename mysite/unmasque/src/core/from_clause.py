@@ -30,13 +30,16 @@ class FromClause(AppExtractorBase):
         elif app_type == ApplicationType.IMPERATIVE_NO_ERR_FWD:
             self.method = self.TYPE_RENAME
 
-    def get_core_relations_by_rename(self, query):
+    def get_core_relations_by_void(self, query):
         for tabname in self.all_relations:
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(tabname, self._get_dirty_name(tabname)),
-                     self.connectionHelper.queries.create_table_like(tabname, self._get_dirty_name(tabname))], self.logger)
+                    [self.connectionHelper.queries.alter_table_rename_to(self.get_fully_qualified_table_name(tabname),
+                                                                         self._get_dirty_name(tabname)),
+                     self.connectionHelper.queries.create_table_like(
+                         self.get_fully_qualified_table_name(tabname),
+                         self.get_fully_qualified_table_name(self._get_dirty_name(tabname)))], self.logger)
                 new_result = self.app.doJob(query)
                 if self.app.isQ_result_no_full_nullfree_row(new_result):
                     self.core_relations.append(tabname)
@@ -51,7 +54,8 @@ class FromClause(AppExtractorBase):
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(tabname, self._get_dirty_name(tabname))], self.logger)
+                    [self.connectionHelper.queries.alter_table_rename_to(self.get_fully_qualified_table_name(tabname),
+                                                                         self._get_dirty_name(tabname))], self.logger)
 
                 if self.timeout:
                     self.connectionHelper.execute_sql([self.connectionHelper.set_timeout_to_2s()])
@@ -89,7 +93,7 @@ class FromClause(AppExtractorBase):
             method = self.method
         self.core_relations = []
         if method == self.TYPE_RENAME:
-            self.get_core_relations_by_rename(query)
+            self.get_core_relations_by_void(query)
         else:
             self.get_core_relations_by_error(query)
         return self.core_relations

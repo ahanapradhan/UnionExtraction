@@ -45,11 +45,14 @@ class ViewMinimizer(Minimizer):
             mid_ctid1 = "(" + str(mid_page) + ",1)"
             mid_ctid2 = "(" + str(mid_page) + ",2)"
 
-            end_ctid, start_ctid = self.create_view_execute_app_drop_view(end_ctid,
-                                                                          mid_ctid1, mid_ctid2, query,
-                                                                          start_ctid, tabname, dirty_tab)
-            if end_ctid is None:
-                return core_sizes
+            nend_ctid, nstart_ctid = self.create_view_execute_app_drop_view(end_ctid,
+                                                                            mid_ctid1, mid_ctid2, query,
+                                                                            start_ctid, tabname, dirty_tab)
+            if nend_ctid is None:
+                break
+            else:
+                start_ctid = nstart_ctid
+                end_ctid = nend_ctid
             start_ctid2 = start_ctid.split(",")
             start_page = int(start_ctid2[0][1:])
             end_ctid2 = end_ctid.split(",")
@@ -64,9 +67,10 @@ class ViewMinimizer(Minimizer):
         for tabname in self.core_relations:
             view_name = self._get_dirty_name(tabname) if cs_pass \
                 else self.connectionHelper.queries.get_restore_name(tabname)
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(tabname, view_name)])
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(
+                self.get_fully_qualified_table_name(tabname), view_name)])
             rctid = self.connectionHelper.execute_sql_fetchone(
-                self.connectionHelper.queries.get_min_max_ctid(view_name))
+                self.connectionHelper.queries.get_min_max_ctid(self.get_fully_qualified_table_name(view_name)))
             core_sizes = self.do_interPage_viewBased_binary_halving(core_sizes, query, tabname, rctid, view_name)
             core_sizes = self.do_intraPage_copyBased_binary_halving(core_sizes, query, tabname,
                                                                     self._get_dirty_name(tabname))
@@ -76,7 +80,8 @@ class ViewMinimizer(Minimizer):
 
         for tabname in self.core_relations:
             self.connectionHelper.execute_sql(
-                [self.connectionHelper.queries.drop_table_cascade(self.connectionHelper.queries.get_dmin_tabname(tabname)),
+                [self.connectionHelper.queries.drop_table_cascade(
+                    self.connectionHelper.queries.get_dmin_tabname(tabname)),
                  self.connectionHelper.queries.create_table_as_select_star_from(
                      self.connectionHelper.queries.get_dmin_tabname(tabname), tabname)])
 
