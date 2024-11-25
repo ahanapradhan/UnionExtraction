@@ -274,8 +274,8 @@ class Projection(GenerationPipeLineBase):
                 maxi = constants.pr_max
                 if key in self.filter_attrib_dict.keys():
                     datatype = self.get_datatype(key)
-                    mini = get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False)
-                    maxi = get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True)
+                    mini = max(mini, get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False))
+                    maxi = min(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True))
                     if datatype == 'int':
                         coeff[outer_idx][j] = random.randrange(mini, maxi)
                     elif datatype == 'numeric':
