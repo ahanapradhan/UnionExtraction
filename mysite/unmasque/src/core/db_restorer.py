@@ -25,20 +25,21 @@ class DbRestorer(AppExtractorBase):
     def extract_params_from_args(self, args):
         return args[0]
 
-    def restore_one_table_where(self, table, where):
-        self.drop_derived_relations(table)
-        drop_fn = self.get_drop_fn(table)
-        backup_name = self.connectionHelper.queries.get_backup(table)
-        self.connectionHelper.execute_sql([drop_fn(table),
-                                           self.connectionHelper.queries.create_table_as_select_star_from_where(table,
-                                                                                                                backup_name,
-                                                                                                                where)],
-                                          self.logger)
+    def restore_one_table_where(self, tab, where):
+        #table = self.get_fully_qualified_table_name(tab)
+        #backup_name = self.get_original_table_name(tab)
+        self.drop_derived_relations(tab)
+        drop_fn = self.get_drop_fn(tab)
+        self.connectionHelper.execute_sql([drop_fn(self.get_fully_qualified_table_name(tab)),
+                                           self.connectionHelper.queries.create_table_as_select_star_from_where(
+                                               self.get_fully_qualified_table_name(tab),
+                                               self.get_original_table_name(tab),
+                                               where)],
+                                           self.logger)
 
     def sanitize_one_table_where(self, table, where):
         self.restore_one_table_where(table, where)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view("r_e"),
-                                           self.connectionHelper.queries.drop_table("r_h")])
+        self.drop_r_tables()
 
     def doActualJob(self, args=None):
         self.logger.debug("core relations: ", self.core_relations, " all sizes: ", self.all_sizes)
@@ -86,7 +87,7 @@ class DbRestorer(AppExtractorBase):
 
     def __update_current_sizes(self, tab):
         row_count = self.connectionHelper.execute_sql_fetchone_0(
-            self.connectionHelper.queries.get_row_count(tab))
+            self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(tab)))
         self.last_restored_size[tab] = row_count
         self.logger.debug(f"Updating {tab} size: ", self.last_restored_size[tab])
         return row_count

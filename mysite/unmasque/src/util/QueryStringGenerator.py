@@ -592,7 +592,8 @@ class QueryStringGenerator:
             output = self.__try_with_temp(attrib, output, query, tabname, temp)
         return output
 
-    def __try_with_temp(self, attrib, output, query, tabname, temp):
+    def __try_with_temp(self, attrib, output, query, tab, temp):
+        tabname = f"{self.connectionHelper.config.schema}.{tab}"
         u_query = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(tabname, attrib, temp)
         try:
             self.connectionHelper.execute_sql([u_query], self.logger)
@@ -604,7 +605,8 @@ class QueryStringGenerator:
             self.connectionHelper.rollback_transaction()
         return output
 
-    def __handle_for_wildcard_char_underscore(self, attrib, query, representative, tabname):
+    def __handle_for_wildcard_char_underscore(self, attrib, query, representative, tab):
+        tabname = f"{self.connectionHelper.config.schema}.{tab}"
         index = 0
         output = ""
         # currently inverted exclaimaination is being used assuming it will not be in the string
@@ -652,8 +654,8 @@ class QueryStringGenerator:
             index = index + 1
         return output
 
-    def __get_minimal_representative_str(self, attrib, query, representative, tabname):
-        index = 0
+    def __get_minimal_representative_str(self, attrib, query, representative, tab):
+        tabname = f"{self.connectionHelper.config.schema}.{tab}"
         output = ""
         temp = list(representative)
         while index < len(representative):

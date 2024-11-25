@@ -4,7 +4,7 @@ from pathlib import Path
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
-    DETECT_OJ, LIMIT, OPTIONS_SECTION, WORK_MEM
+    DETECT_OJ, LIMIT, OPTIONS_SECTION, WORK_MEM, WORKING_SCHEMA
 
 
 class Config:
@@ -22,7 +22,8 @@ class Config:
         self.database = "postgres"
         # self.index_maker = "create_indexes.sql"
         self.pkfk = "pkfkrelations.csv"
-        self.schema = "public"
+        self.schema = WORKING_SCHEMA
+        self.user_schema = "public"
         self.dbname = "tpch"
         self.port = "5432"
         self.password = "postgres"
@@ -31,7 +32,7 @@ class Config:
         self.log_level = 'INFO'
         self.base_path = Path(__file__).parent.parent.parent.parent
         self.config_loaded = False
-        self.detect_union = True
+        self.detect_union = False
         self.detect_nep = False
         self.detect_or = False
         self.detect_oj = False
@@ -54,7 +55,7 @@ class Config:
                 self.user = config_object.get(DATABASE_SECTION, USER)
                 self.password = config_object.get(DATABASE_SECTION, PASSWORD)
                 self.dbname = config_object.get(DATABASE_SECTION, DBNAME)
-                self.schema = config_object.get(DATABASE_SECTION, SCHEMA)
+                self.user_schema = config_object.get(DATABASE_SECTION, SCHEMA)
 
                 self.pkfk = config_object.get(SUPPORT_SECTION, "pkfk")
                 # self.index_maker = config_object.get(SUPPORT_SECTION, "index_maker")
@@ -89,11 +90,11 @@ class Config:
         elif use_cs2.lower() == "yes":
             self.use_cs2 = True
 
-        detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
-        if detect_or.lower() == "no":
-            self.detect_or = False
-        elif detect_or.lower() == "yes":
-            self.detect_or = True
+        #detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
+        #if detect_or.lower() == "no":
+        #    self.detect_or = False
+        #elif detect_or.lower() == "yes":
+        #    self.detect_or = True
 
         detect_oj = config_object.get(FEATURE_SECTION, DETECT_OJ)
         if detect_oj.lower() == "no":
@@ -109,8 +110,8 @@ class Config:
             self.limit_limit = int(limit_config)
         except:
             pass
-        try:
-            workmem_config = config_object.get(OPTIONS_SECTION, WORK_MEM.lower())
-            self.workmem = int(workmem_config)
-        except:
-            pass
+        #try:
+        #    workmem_config = config_object.get(OPTIONS_SECTION, WORK_MEM.lower())
+        #    self.workmem = int(workmem_config)
+        #except:
+        #    pass

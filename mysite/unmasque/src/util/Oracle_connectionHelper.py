@@ -22,7 +22,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
     def get_all_tables_for_restore(self):
         pass
 
-    def is_view_or_table(self, tab):
+    def is_view_or_table(self, tab, schema):
         pass
 
     def __init__(self, config, **kwargs):
@@ -32,7 +32,7 @@ class OracleConnectionHelper(AbstractConnectionHelper):
         self.config.config_loaded = True
         self.queries.set_schema(self.config.schema)
 
-    def form_query(self, selections, wheres):
+    def form_query(self, selections, wheres, schema):
         pass
 
     def begin_transaction(self):

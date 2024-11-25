@@ -9,16 +9,16 @@ class OracleQueries(CommonQueries):
     def update_key_attrib_with_val(self, tab, attrib, value, prev, qoted):
         pass
 
-    def analyze_table(self, tab):
-        pass
+    #def analyze_table(self, tab):
+    #    pass
 
-    schema = None
+    #schema = None
 
     def create_table_as_select_star_from_where(self, tab, fromtab, where):
         return f"Create table {self.schema}.{tab} as (Select * from {self.schema}.{fromtab} where {where})"
 
-    def set_schema(self, schema):
-        self.schema = schema
+    #def set_schema(self, schema):
+    #    self.schema = schema
 
     def create_table_as_select_star_from_limit_1(self, tab, fromtab):
         return f"Create table {self.schema}.{tab} as (select * from {self.schema}.{fromtab} where ROWNUM = 1)"
@@ -137,7 +137,7 @@ class OracleQueries(CommonQueries):
         # You might need a different approach based on your specific use case.
         return 'ROWID of the first row'
 
-    def hashtext_query(self, tab):
+    def hashtext_query(self, tab, qualified_name):
         # Oracle does not have a direct equivalent of PostgreSQL's hashtext function. You might need to use
         # DBMS_CRYPTO.HASH or a custom implementation. Example using DBMS_CRYPTO (assuming you want to hash the
         # entire row concatenated as text, which needs careful consideration):

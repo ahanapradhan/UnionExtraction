@@ -103,3 +103,4 @@ NUMBER_TYPES = ['int', 'integer', 'number', 'numeric', 'float', 'decimal', 'Deci
 NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
 
 UNMASQUE = "_unmasque_"
+WORKING_SCHEMA = "unmasque"

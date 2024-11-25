@@ -16,6 +16,7 @@ class Comparator(AppExtractorBase):
         self.row_count_r_h = 0
         self.db_restorer = DbRestorer(self.connectionHelper, self.relations)
         self.full_db_restore = False
+        self.app.data_schema = self.connectionHelper.config.user_schema
 
     def extract_params_from_args(self, args):
         return args[0], args[1]
@@ -29,19 +30,21 @@ class Comparator(AppExtractorBase):
                 tab_size = self.db_restorer.restore_table_and_confirm(tab)
                 if not tab_size:
                     self.logger.error(f"Could not restore {tab}, cannot run result comparator!")
-                    return None
+                    return None, 0
         end_t = time.time()
         restore_time = end_t - start_t
 
         Q_h, Q_E = self.extract_params_from_args(args)
         if Q_E is None:
             self.logger.info("Got None to compare. Cannot do anything...sorry!")
-            return None
+            return None, restore_time
+        """
         try:
             self.app.doJob(Q_E)
         except:
             self.logger.error("Q_E is not semantically correct.")
             return None
+        """
 
         matched = self.match(Q_h, Q_E)
         return matched, restore_time
@@ -50,21 +53,26 @@ class Comparator(AppExtractorBase):
         try:
             self.logger.debug(Q_E)
             # Run the extracted query Q_E .
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
-                                               self.connectionHelper.queries.create_view_as(self.r_e, Q_E)])
-        except ValueError as e:
+            self.connectionHelper.execute_sql([f"set search_path='{self.app.data_schema}';",
+                                               self.connectionHelper.queries.drop_view(
+                                                   self.get_fully_qualified_table_name(self.r_e)),
+                                               self.connectionHelper.queries.create_view_as(
+                                                   self.get_fully_qualified_table_name(self.r_e), Q_E)], self.logger)
+        except Exception as e:
             self.logger.error(e)
-            return False
+            return None
 
         # Size of the table
-        res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(self.r_e))
+        res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
+            self.get_fully_qualified_table_name(self.r_e)))
         return res
 
     def run_diff_query_match_and_dropViews(self):
         len1, len2 = self.run_diff_queries()
         self.logger.debug(len1, len2)
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_view(self.r_e),
-                                           self.connectionHelper.queries.drop_table(self.r_h)])
+        self.connectionHelper.execute_sql(
+            [self.connectionHelper.queries.drop_view(self.get_fully_qualified_table_name(self.r_e)),
+             self.connectionHelper.queries.drop_table(self.get_fully_qualified_table_name(self.r_h))])
         return self.is_match(len1, len2)
 
     def is_match(self, len1, len2):
@@ -75,16 +83,21 @@ class Comparator(AppExtractorBase):
 
     def run_diff_queries(self):
         len1 = self.connectionHelper.execute_sql_fetchone_0(
-            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_e,
-                                                                                                           self.r_h) + " as T;", self.logger)
+            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(
+                self.get_fully_qualified_table_name(self.r_e),
+                self.get_fully_qualified_table_name(self.r_h)) + " as T;", self.logger)
         len2 = self.connectionHelper.execute_sql_fetchone_0(
-            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(self.r_h,
-                                                                                                           self.r_e) + " as T;", self.logger)
+            "select count(*) from " + self.connectionHelper.queries.get_star_from_except_all_get_star_from(
+                self.get_fully_qualified_table_name(self.r_h),
+                self.get_fully_qualified_table_name(self.r_e)) + " as T;", self.logger)
         return len1, len2
 
     def create_table_from_Qh(self, Q_h):
-        self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(self.r_h),
-                                           f"Create unlogged table {self.r_h} (like {self.r_e});"])
+        #self.app.data_schema = self.connectionHelper.config.user_schema
+        self.connectionHelper.execute_sql(
+            [self.connectionHelper.queries.drop_table(self.get_fully_qualified_table_name(self.r_h)),
+             f"Create unlogged table {self.get_fully_qualified_table_name(self.r_h)} "
+             f"(like {self.get_fully_qualified_table_name(self.r_e)});"])
         result = self.app.doJob(Q_h)
         self.insert_data_into_Qh_table(result, self.r_h)
 
@@ -105,7 +118,7 @@ class Comparator(AppExtractorBase):
 
         # Size of the table
         self.row_count_r_h = self.connectionHelper.execute_sql_fetchone_0(
-            self.connectionHelper.queries.get_row_count(self.r_h))
+            self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(self.r_h)))
         self.logger.debug(self.r_h, self.row_count_r_h)
 
         if self.row_count_r_e != self.row_count_r_h:
@@ -122,7 +135,8 @@ class Comparator(AppExtractorBase):
         str_values = str_values.replace("\'NULL\'", "NULL")
         if not str_values.startswith('('):
             str_values = f"('{str_values}')"
-        self.connectionHelper.execute_sql([f"INSERT INTO {table}{header_} VALUES {str_values};"])
+        self.connectionHelper.execute_sql(
+            [f"INSERT INTO {self.get_fully_qualified_table_name(table)}{header_} VALUES {str_values};"])
 
     def insert_data_into_Qh_table(self, res_Qh, table):
         header = res_Qh[0]
