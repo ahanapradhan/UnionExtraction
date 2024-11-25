@@ -263,7 +263,16 @@ WHERE s_suppkey = l1.l_suppkey
   AND n_name = 'GERMANY'
 GROUP BY s_name
 ORDER BY numwait DESC, s_name
-LIMIT 100;""", True, False, False, False)
+LIMIT 100;""", True, False, False, False),
+                     TestQuery("Alaap", """select c_mktsegment, 
+                         sum(l_extendedprice*(1-l_discount)) as revenue,
+                         o_orderdate, o_shippriority 
+                         from customer, orders, lineitem 
+                         where c_custkey = o_custkey and l_orderkey = o_orderkey and 
+                         o_orderdate <= date '1995-10-13' and l_extendedprice between 212 and 30000000 
+                         and l_quantity <= 123 group by o_orderdate, o_shippriority, c_mktsegment 
+                         order by revenue desc, o_orderdate asc, o_shippriority asc;""", False, False, False, False)
+
                      ]
     return test_workload
 
@@ -280,8 +289,7 @@ if __name__ == '__main__':
 
     qid = sys.argv[1]
     hq = workload[workload_dict[qid]]
-    #query = hq.query
-    query = '''select * from customer;'''
+    query = hq.query
     conn = ConnectionHelperFactory().createConnectionHelper()
     conn.config.detect_union = hq.union
     conn.config.detect_oj = hq.oj

@@ -25,9 +25,9 @@ def generate_random_dates():
 class ExtractionTestCase(BaseTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conn.config.detect_union = True
-        self.conn.config.detect_nep = True
-        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
         self.conn.config.use_cs2 = False
         self.pipeline = None
@@ -56,6 +56,17 @@ order by price desc, country desc, entity_name asc limit 10);
 
     def test_backupschema(self):
         query = """select * from nation;"""
+        self.do_test(query)
+
+    def test_alaap(self):
+        query = """select c_mktsegment, 
+                         sum(l_extendedprice*(1-l_discount) + l_quantity) as revenue,
+                         o_orderdate, o_shippriority 
+                         from customer, orders, lineitem 
+                         where c_custkey = o_custkey and l_orderkey = o_orderkey and 
+                         o_orderdate <= date '1995-10-13' and l_extendedprice between 212 and 30000000 
+                         and l_quantity <= 123 group by o_orderdate, o_shippriority, c_mktsegment 
+                         order by revenue desc, o_orderdate asc, o_shippriority asc;"""
         self.do_test(query)
 
     def test_paper_big(self):
