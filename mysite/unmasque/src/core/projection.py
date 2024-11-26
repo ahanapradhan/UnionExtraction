@@ -192,7 +192,7 @@ class Projection(GenerationPipeLineBase):
 
     def get_solution(self, projected_attrib, projection_dep, idx, value_used, query):
         self.logger.debug("filters: ", self.filter_attrib_dict)
-        dep = projection_dep[idx]
+        dep = sorted(projection_dep[idx], key=lambda x: x[1])
         n = len(dep)
         sym_string = ''
         for i in dep:
@@ -218,6 +218,8 @@ class Projection(GenerationPipeLineBase):
             return [[1]]
 
         coeff = np.zeros((2 ** n, 2 ** n))
+        np.set_printoptions(formatter={'float': '{:0.2f}'.format})
+
         for i in range(n):
             coeff[0][i] = value_used[value_used.index(dep[i][1]) + 1]
         temp_array = get_param_values_external(coeff[0][:n])
@@ -231,22 +233,29 @@ class Projection(GenerationPipeLineBase):
         self.param_list.append(local_param_list)
 
         self.__infinite_loop(coeff, dep)
-        # print("N", n)
         b = np.zeros((2 ** n, 1))
         for i in range(2 ** n):
-            for j in range(n):
-                col = self.param_list[idx][j]
+            for j, tab_attrib in enumerate(dep):
+                col = tab_attrib[1]  # self.param_list[idx][j]
                 value = coeff[i][j]
                 joined_cols = self.get_other_attribs_in_eqJoin_grp(col)
                 joined_cols.append(col)
                 for j_c in joined_cols:
                     self.update_attrib_in_table(j_c, value, self.find_tabname_for_given_attrib(j_c))
+                    self.logger.debug(f" update {j_c} with {value}")
 
             exe_result = self.app.doJob(query)
+            self.logger.debug(f"Exe result: {exe_result}")
             if not self.app.isQ_result_no_full_nullfree_row(exe_result):
                 null_free_row = self.app.get_nullfree_row(exe_result)
                 b[i][0] = null_free_row[idx]
-        self.logger.debug("Coeff", coeff)
+                self.logger.debug(f"b[{i}][0] = {b[i][0]}")
+            else:
+                self.logger.error("Why null result? Trouble!!! ")
+                raise Exception
+        self.logger.debug(dep)
+        self.logger.debug("Coeff: ", coeff, "b: ", b)
+        # self.logger.debug(f"condition number: {str(np.linalg.cond(coeff))}")
         solution = np.linalg.solve(coeff, b)
         solution = np.around(solution, decimals=2)
         final_res = 0
@@ -270,18 +279,7 @@ class Projection(GenerationPipeLineBase):
             # Additionally checking if rank of the matrix has become 2^n
             for j, ele in enumerate(dep):
                 key = (ele[0], ele[1])
-                mini = constants.pr_min
-                maxi = constants.pr_max
-                if key in self.filter_attrib_dict.keys():
-                    datatype = self.get_datatype(key)
-                    mini = max(mini, get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False))
-                    maxi = min(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True))
-                    if datatype == 'int':
-                        coeff[outer_idx][j] = random.randrange(mini, maxi)
-                    elif datatype == 'numeric':
-                        coeff[outer_idx][j] = round(random.uniform(mini, maxi), 2)
-                else:
-                    coeff[outer_idx][j] = random.randrange(math.floor(mini), math.ceil(maxi))
+                self.__assign_s_val_in_coeffMatrix(coeff, j, key, outer_idx)
 
             temp_array = get_param_values_external(coeff[outer_idx][:n])
             for j in range(2 ** n - 1):
@@ -295,6 +293,25 @@ class Projection(GenerationPipeLineBase):
             if prev_idx == outer_idx and curr_rank == prev_rank:
                 self.logger.debug("It will go to infinite loop!! so breaking...")
                 break
+
+    def __assign_s_val_in_coeffMatrix(self, coeff, j, key, outer_idx):
+        mini = constants.pr_min
+        maxi = constants.pr_max
+        s_val = None
+        if key in self.filter_attrib_dict.keys():
+            datatype = self.get_datatype(key)
+            mini = max(mini, get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False))
+            maxi = min(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True))
+            self.logger.debug(f"mini: {mini}, maxi: {maxi}")
+            if datatype == 'int':
+                s_val = random.randrange(mini, maxi)
+            elif datatype == 'numeric':
+                s_val = round(random.uniform(mini, maxi), 2)
+        else:
+            self.logger.debug(f"mini: {mini}, maxi: {maxi}")
+            s_val = random.randrange(math.floor(mini), math.ceil(maxi))
+        self.logger.debug(f"s-value for {key} is {s_val}, assigned to coeff[{outer_idx}][{j}]")
+        coeff[outer_idx][j] = s_val
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
         # print("Full list", self.param_list)
