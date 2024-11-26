@@ -64,8 +64,9 @@ order by price desc, country desc, entity_name asc limit 10);
                          o_orderdate, o_shippriority 
                          from customer, orders, lineitem 
                          where c_custkey = o_custkey and l_orderkey = o_orderkey and 
-                         o_orderdate <= date '1995-10-13' and l_extendedprice between 212 and 30000000 
-                         and l_quantity <= 123 group by o_orderdate, o_shippriority, c_mktsegment 
+                         o_orderdate <= date '1995-10-13' and 
+                         l_extendedprice between 212 and 3000 and l_quantity <= 123 
+                         group by o_orderdate, o_shippriority, c_mktsegment 
                          order by revenue desc, o_orderdate asc, o_shippriority asc;"""
         self.do_test(query)
 

@@ -35,7 +35,7 @@ def get_k_value_for_number(a, b):
     return k_value, agg_array
 
 
-def get_k_value(attrib, filter_attrib_dict, groupby_key_flag, tabname, datatype):
+def get_k_value(attrib, filter_attrib_dict, groupby_key_flag, tabname, datatype, c):
     if groupby_key_flag and datatype in NUMBER_TYPES:
         a = b = 3
         k_value = 1
@@ -43,9 +43,10 @@ def get_k_value(attrib, filter_attrib_dict, groupby_key_flag, tabname, datatype)
     elif (tabname, attrib) in filter_attrib_dict.keys():
         if datatype in NUMBER_TYPES:
             # PRECISION TO BE TAKEN CARE FOR NUMERIC
-            a, b = filter_attrib_dict[(tabname, attrib)][0], filter_attrib_dict[(tabname, attrib)][1]
-            a = get_boundary_value(a, is_ub=False)
-            b = get_boundary_value(b, is_ub=True)
+            lb, ub = filter_attrib_dict[(tabname, attrib)][0], filter_attrib_dict[(tabname, attrib)][1]
+            lb = get_boundary_value(lb, is_ub=False)
+            ub = get_boundary_value(ub, is_ub=True)
+            a, b = min(max(get_dummy_val_for('int') + c, lb), ub), max(max(get_dummy_val_for('int') + c, lb), ub)
             b = min(a + 1, b)
             if a == 0:  # swap a and b
                 a = b
@@ -135,7 +136,7 @@ class Aggregation(GenerationPipeLineBase):
             return False
         for tabname in self.core_relations:
             attrib_list = copy.deepcopy(self.global_all_attribs[tabname])
-            for attrib in attrib_list:
+            for c, attrib in enumerate(attrib_list):
                 # check if it is a key attribute
                 key_list = next((elt for elt in self.global_join_graph if attrib in elt), [])
 
@@ -166,7 +167,7 @@ class Aggregation(GenerationPipeLineBase):
                 for result_index in result_index_list:
                     datatype = self.get_datatype((tabname, attrib))
                     a, agg_array, b, k_value = get_k_value(attrib, self.filter_attrib_dict,
-                                                           groupby_key_flag, tabname, datatype)
+                                                           groupby_key_flag, tabname, datatype, c)
 
                     self.truncate_core_relations()
                     temp_vals = []
@@ -221,7 +222,7 @@ class Aggregation(GenerationPipeLineBase):
                         self.logger.debug("no_of_rows ", max_no_of_rows)
                         av = (s / max_no_of_rows)
                         self.logger.debug("Temp Array", temp_ar)
-                        self.logger.debug("SUM, AV, MIN, MAX", s, av, mi, ma)
+                        self.logger.debug("SUM, AVG, MIN, MAX", s, av, mi, ma)
                         agg_array = [SUM, s, AVG, av, MIN, mi, MAX, ma, COUNT, max_no_of_rows]
                     new_result = self.app.doJob(query)
                     self.logger.debug("New Result", new_result)  # FOR DEBUG
@@ -279,7 +280,9 @@ class Aggregation(GenerationPipeLineBase):
                         # check for filter
                         if (tabname_inner, attrib_inner) in self.filter_attrib_dict.keys():
                             number_val = self.filter_attrib_dict[(tabname_inner, attrib_inner)][0]
-                            number_val = get_boundary_value(number_val, is_ub=False)
+                            mini, maxi = get_boundary_value(number_val, is_ub=False), get_boundary_value(number_val, is_ub=True)
+                            dummy_val = get_dummy_val_for('int')
+                            number_val = min(max(mini, dummy_val), maxi)
                         else:
                             number_val = get_dummy_val_for('int')
                         insert_values.append(number_val)

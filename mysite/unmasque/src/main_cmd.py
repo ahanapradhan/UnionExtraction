@@ -265,13 +265,67 @@ GROUP BY s_name
 ORDER BY numwait DESC, s_name
 LIMIT 100;""", True, False, False, False),
                      TestQuery("Alaap", """select c_mktsegment, 
-                         sum(l_extendedprice*(1-l_discount)) as revenue,
+                         sum(l_extendedprice*(1-l_discount) + l_quantity) as revenue,
                          o_orderdate, o_shippriority 
                          from customer, orders, lineitem 
                          where c_custkey = o_custkey and l_orderkey = o_orderkey and 
-                         o_orderdate <= date '1995-10-13' and l_extendedprice between 212 and 30000000 
-                         and l_quantity <= 123 group by o_orderdate, o_shippriority, c_mktsegment 
-                         order by revenue desc, o_orderdate asc, o_shippriority asc;""", False, False, False, False)
+                         o_orderdate <= date '1995-10-13' and l_extendedprice between 212 and 3000 
+                        and l_quantity <= 123  group by o_orderdate, o_shippriority, c_mktsegment 
+                         order by revenue desc, o_orderdate asc, o_shippriority asc;""", False, False, False, False),
+                     TestQuery("TPCH_Q9", """select
+	nation,
+	o_year,
+	sum(amount) as sum_profit
+from
+	(
+		select
+			n_name as nation,
+			extract(year from o_orderdate) as o_year,
+			l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount
+		from
+			part,
+			supplier,
+			lineitem,
+			partsupp,
+			orders,
+			nation
+		where
+			s_suppkey = l_suppkey
+			and ps_suppkey = l_suppkey
+			and ps_partkey = l_partkey
+			and p_partkey = l_partkey
+			and o_orderkey = l_orderkey
+			and s_nationkey = n_nationkey
+			and p_name like 'co%'
+	) as profit
+group by
+	nation,
+	o_year
+order by
+	nation,
+	o_year desc;""", False, False, False, False),
+                     TestQuery("TPCH_Q11", """SELECT
+    ps_partkey, n_name,
+    SUM(ps_supplycost * ps_availqty) AS total_value
+FROM
+    partsupp, supplier, nation 
+where
+    ps_suppkey = s_suppkey
+	and s_nationkey = n_nationkey
+	and n_name = 'INDIA'
+GROUP BY
+    ps_partkey, n_name
+HAVING
+    SUM(ps_supplycost * ps_availqty) > (
+        SELECT SUM(ps_supplycost * ps_availqty) * 0.00001
+        FROM partsupp, supplier, nation WHERE 
+        ps_suppkey = s_suppkey
+	and s_nationkey = n_nationkey
+	and n_name = 'INDIA'
+    )
+ORDER BY
+    total_value DESC;
+""", False, False, False, False)
 
                      ]
     return test_workload
