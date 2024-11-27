@@ -19,9 +19,10 @@ class TpchSanitizer:
     def _remove_footprint(self):
         self.connectionHelper.execute_sql([f"Drop Schema if exists {self.connectionHelper.config.schema} cascade;"],
                                           self.logger)
+
     def _create_working_schema(self):
         self._remove_footprint()
-        self.connectionHelper.execute_sql([f"Create Schema {self.connectionHelper.config.schema};"])
+        self.connectionHelper.execute_sql([f"Create Schema {self.connectionHelper.config.schema};"], self.logger)
 
     def get_fully_qualified_table_name(self, table):
         return f"{self.connectionHelper.config.schema}.{table}"
@@ -45,7 +46,7 @@ class TpchSanitizer:
         self.connectionHelper.commit_transaction()
 
     def restore_db_finally(self):
-        #for table in self.all_relations:
+        # for table in self.all_relations:
         #    self.drop_derived_relations(table)
         #   drop_fn = self.get_drop_fn(table)
         #   self.connectionHelper.execute_sql([drop_fn(table),

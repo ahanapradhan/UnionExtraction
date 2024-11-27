@@ -8,7 +8,7 @@ class ResultComparator(Comparator):
         self.isHash = isHash
 
     def is_match(self, len1, len2):
-        self._remove_footprint()
+        self._create_working_schema()
         self.logger.debug(f"{len1} len1, {len2} len2")
         if self.isHash:
             if len1 is not None and len1 == len2:

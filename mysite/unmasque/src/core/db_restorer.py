@@ -26,8 +26,8 @@ class DbRestorer(AppExtractorBase):
         return args[0]
 
     def restore_one_table_where(self, tab, where):
-        #table = self.get_fully_qualified_table_name(tab)
-        #backup_name = self.get_original_table_name(tab)
+        # table = self.get_fully_qualified_table_name(tab)
+        # backup_name = self.get_original_table_name(tab)
         self.drop_derived_relations(tab)
         drop_fn = self.get_drop_fn(tab)
         self.connectionHelper.execute_sql([drop_fn(self.get_fully_qualified_table_name(tab)),
@@ -35,7 +35,7 @@ class DbRestorer(AppExtractorBase):
                                                self.get_fully_qualified_table_name(tab),
                                                self.get_original_table_name(tab),
                                                where)],
-                                           self.logger)
+                                          self.logger)
 
     def sanitize_one_table_where(self, table, where):
         self.restore_one_table_where(table, where)

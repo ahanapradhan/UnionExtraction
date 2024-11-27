@@ -167,10 +167,17 @@ c_acctbal > 30.04;"""
         self.do_test(query)
 
     def test_in(self):
-        query = "select n_name, c_acctbal from nation, customer " \
-                "WHERE n_nationkey = c_nationkey and " \
-                "n_nationkey IN (1, 2, 3, 5, 4, 10) and c_acctbal < 7000 " \
-                "and c_acctbal > 1000 ORDER BY c_acctbal;"
+        query = "select p_brand, p_type from part, partsupp " \
+                "WHERE ps_partkey = p_partkey and " \
+                "p_size in (1,4) and ps_supplycost < 1000;"
+        self.conn.config.detect_or = True
+        self.do_test(query)
+
+    def test_in_nep(self):
+        query = "select p_brand, p_type from part, partsupp " \
+                "WHERE ps_partkey = p_partkey  " \
+                "AND p_brand <> 'Brand#23' and ps_supplycost < 1000;"
+        self.conn.config.detect_nep = True
         self.do_test(query)
 
     def test_key_range(self):
