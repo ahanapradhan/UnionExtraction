@@ -83,7 +83,8 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                                       insert_rows, tabname_inner, insert_logger=True) -> None:
         esc_string = get_escape_string(attrib_list_inner)
         insert_query = self.connectionHelper.queries.insert_into_tab_attribs_format(att_order, esc_string,
-                                                    self.get_fully_qualified_table_name(tabname_inner))
+                                                                                    self.get_fully_qualified_table_name(
+                                                                                        tabname_inner))
         if insert_logger:
             self.connectionHelper.execute_sql_with_params(insert_query, insert_rows, self.logger)
         else:
@@ -91,7 +92,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
 
     def update_attrib_in_table(self, attrib, value, tabname) -> None:
         update_query = self.connectionHelper.queries.update_tab_attrib_with_value(
-                                                    self.get_fully_qualified_table_name(tabname), attrib, value)
+            self.get_fully_qualified_table_name(tabname), attrib, value)
         self.connectionHelper.execute_sql([update_query])
 
     def doExtractJob(self, query: str) -> bool:
@@ -124,7 +125,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
     def update_with_val(self, attrib: str, tabname: str, val) -> None:
         if val == 'NULL':
             update_q = self.connectionHelper.queries.update_tab_attrib_with_value(
-                                                self.get_fully_qualified_table_name(tabname), attrib, val)
+                self.get_fully_qualified_table_name(tabname), attrib, val)
         else:
             datatype = self.get_datatype((tabname, attrib))
             if datatype in NON_TEXT_TYPES:
@@ -132,7 +133,7 @@ class GenerationPipeLineBase(MutationPipeLineBase):
                     self.get_fully_qualified_table_name(tabname), attrib, get_format(datatype, val))
             else:
                 update_q = self.connectionHelper.queries.update_tab_attrib_with_quoted_value(
-                                                self.get_fully_qualified_table_name(tabname), attrib, val)
+                    self.get_fully_qualified_table_name(tabname), attrib, val)
         self.connectionHelper.execute_sql([update_q])
 
     def get_s_val(self, attrib: str, tabname: str) -> Union[int, float, date, str]:

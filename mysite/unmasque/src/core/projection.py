@@ -279,7 +279,6 @@ class Projection(GenerationPipeLineBase):
         final_res += 1 * solution[-1]
         self.logger.debug("Equation", coeff, b)
         self.logger.debug("Solution", solution)
-        # res_expr = nsimplify(collect(final_res, local_symbol_list))
         res_expr = beautify_scalar_func(final_res, local_symbol_list, dep)
         projected_attrib[idx] = str(round_expr(res_expr, 2))
         return solution
@@ -316,8 +315,11 @@ class Projection(GenerationPipeLineBase):
         if key in self.filter_attrib_dict.keys():
             datatype = self.get_datatype(key)
             mini = max(mini, get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False))
-            maxi = min(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True))
+            maxi, ub = min(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True)), \
+                max(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True))
             self.logger.debug(f"mini: {mini}, maxi: {maxi}")
+            if mini >= maxi:
+                maxi = ub
             if datatype == 'int':
                 s_val = random.randrange(mini, maxi)
             elif datatype == 'numeric':

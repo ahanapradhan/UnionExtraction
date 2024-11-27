@@ -426,9 +426,9 @@ from
 	part
 where
 	p_partkey = ps_partkey
-	and p_brand <> 'Brand#45'
-	and p_type not like 'LARGE%'
-	and p_size IN (40, 13)
+	and p_brand <> 'Brand#23'
+    AND p_type NOT LIKE 'MEDIUM POLISHED%' 
+	and p_size IN (1, 4, 7)
 	and ps_suppkey not in (
 		select
 			s_suppkey
