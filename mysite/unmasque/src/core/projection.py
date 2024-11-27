@@ -2,7 +2,7 @@ import math
 import random
 
 import numpy as np
-from sympy import symbols, expand, collect, nsimplify, Rational, Integer
+from sympy import symbols, expand, collect, nsimplify, Rational, Integer, simplify
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from ..util.constants import CONST_1_VALUE, NUMBER_TYPES
@@ -32,6 +32,20 @@ def get_index_of_difference(attrib, new_result, new_result1, projection_dep, tab
             if (tabname, attrib) not in projection_dep[d]:
                 projection_dep[d].append((tabname, attrib))
     return projection_dep
+
+
+def beautify_scalar_func(final_res, local_symbol_list, deps):
+    res_expr = nsimplify(collect(final_res, local_symbol_list))
+    attribs = [dep[1] for dep in deps]
+    counter_dict = {}
+    for attrib in attribs:
+        attrib_count = res_expr.count(attrib)
+        counter_dict[attrib] = attrib_count
+    # Assuming counter_dict is already defined
+    filtered_attribs = [attrib for attrib, count in counter_dict.items() if count > 1]
+    res_num_expr = simplify(res_expr)
+    res_expr = nsimplify(collect(res_num_expr, filtered_attribs))
+    return res_expr
 
 
 class Projection(GenerationPipeLineBase):
@@ -265,7 +279,8 @@ class Projection(GenerationPipeLineBase):
         final_res += 1 * solution[-1]
         self.logger.debug("Equation", coeff, b)
         self.logger.debug("Solution", solution)
-        res_expr = nsimplify(collect(final_res, local_symbol_list))
+        # res_expr = nsimplify(collect(final_res, local_symbol_list))
+        res_expr = beautify_scalar_func(final_res, local_symbol_list, dep)
         projected_attrib[idx] = str(round_expr(res_expr, 2))
         return solution
 

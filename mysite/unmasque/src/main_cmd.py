@@ -1,8 +1,6 @@
-import copy
 import signal
 import sys
 
-from ..src.core.factory.ExecutableFactory import ExecutableFactory
 from .pipeline.abstract.TpchSanitizer import TpchSanitizer
 from ..src.core.factory.PipeLineFactory import PipeLineFactory
 from ..src.util.ConnectionFactory import ConnectionHelperFactory

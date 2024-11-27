@@ -753,3 +753,20 @@ c_acctbal > 30.04;
  Order By revenue desc, o_orderdate asc, l_orderkey asc, o_shippriority asc 
  Limit 10;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, o_shippriority  from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate <= '1995-03-15' and l_shipdate >= '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate limit 10;
+ --- extracted query:
+  
+ Select l_orderkey, Sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, o_shippriority 
+ From customer, lineitem, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and lineitem.l_orderkey = orders.o_orderkey
+ and customer.c_mktsegment = 'BUILDING'
+ and lineitem.l_shipdate >= '1995-03-15'
+ and orders.o_orderdate <= '1995-03-15' 
+ Group By l_orderkey, o_orderdate, o_shippriority 
+ Order By revenue desc, o_orderdate asc, l_orderkey asc, o_shippriority asc 
+ Limit 10;
+ --- END OF ONE EXTRACTION EXPERIMENT
