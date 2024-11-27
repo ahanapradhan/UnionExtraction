@@ -1051,3 +1051,95 @@ FROM(q1) = { date_dim, catalog_page, catalog_sales }, FROM(q2) = { web_sales, da
  Group By c_mktsegment, o_orderdate, o_shippriority 
  Order By revenue desc, o_orderdate asc, o_shippriority asc, c_mktsegment asc;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select c_mktsegment, 
+                         sum(l_extendedprice*(1-l_discount) + l_quantity) as revenue,
+                         o_orderdate, o_shippriority 
+                         from customer, orders, lineitem 
+                         where c_custkey = o_custkey and l_orderkey = o_orderkey and 
+                         o_orderdate <= date '1995-10-13' and 
+                         l_extendedprice between 212 and 3000 and l_quantity <= 123 
+                         group by o_orderdate, o_shippriority, c_mktsegment 
+                         order by revenue desc, o_orderdate asc, o_shippriority asc;
+ --- extracted query:
+  
+ Select c_mktsegment, Sum(-l_discount*l_extendedprice + l_extendedprice + l_quantity) as revenue, o_orderdate, o_shippriority 
+ From customer, lineitem, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and lineitem.l_orderkey = orders.o_orderkey
+ and orders.o_orderdate <= '1995-10-13'
+ and lineitem.l_quantity <= 123.0
+ and lineitem.l_extendedprice between 212.00 and 3000.00 
+ Group By c_mktsegment, o_orderdate, o_shippriority 
+ Order By revenue desc, o_orderdate asc, o_shippriority asc, c_mktsegment asc;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select c_mktsegment, 
+                         sum(l_extendedprice*(1-l_discount) + l_quantity) as revenue,
+                         o_orderdate, o_shippriority 
+                         from customer, orders, lineitem 
+                         where c_custkey = o_custkey and l_orderkey = o_orderkey and 
+                         o_orderdate <= date '1995-10-13' and 
+                         l_extendedprice between 212 and 3000000 and l_quantity <= 123 
+                         group by o_orderdate, o_shippriority, c_mktsegment 
+                         order by revenue desc, o_orderdate asc, o_shippriority asc;
+ --- extracted query:
+  
+ Select c_mktsegment, Sum(-l_discount*l_extendedprice + l_extendedprice + l_quantity) as revenue, o_orderdate, o_shippriority 
+ From customer, lineitem, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and lineitem.l_orderkey = orders.o_orderkey
+ and orders.o_orderdate <= '1995-10-13'
+ and lineitem.l_quantity <= 123.0
+ and lineitem.l_extendedprice between 212.00 and 3000000.00 
+ Group By c_mktsegment, o_orderdate, o_shippriority 
+ Order By revenue desc, o_orderdate asc, o_shippriority asc, c_mktsegment asc;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name, (2.24c_acctbal + 5.48o_totalprice + 2.5*o_shippriority + 325) as max_balance, o_clerk
+FROM customer, orders
+where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14'
+and o_orderdate <= DATE '1995-10-23' and
+c_acctbal > 30.04;
+ --- extracted query:
+ --- Extraction Failed! Nothing to show! 
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name, (2.24*c_acctbal + 5.48*o_totalprice + 2.5*o_shippriority + 325) as max_balance, o_clerk
+FROM customer, orders
+where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14'
+and o_orderdate <= DATE '1995-10-23' and
+c_acctbal > 30.04;
+ --- extracted query:
+  
+ Select c_name, 2.24*c_acctbal + 2.5*o_shippriority + 5.48*o_totalprice + 325 as max_balance, o_clerk 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_acctbal >= 30.05
+ and orders.o_orderdate between '1993-10-15' and '1995-10-23';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select l_orderkey, sum(l_extendedprice*(1 - l_discount) + l_quantity) as revenue, o_orderdate, o_shippriority  from customer, orders, lineitem where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate <= '1995-03-15' and l_shipdate >= '1995-03-15' group by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate limit 10;
+ --- extracted query:
+  
+ Select l_orderkey, Sum(-l_discount*l_extendedprice + l_extendedprice + l_quantity) as revenue, o_orderdate, o_shippriority 
+ From customer, lineitem, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and lineitem.l_orderkey = orders.o_orderkey
+ and customer.c_mktsegment = 'BUILDING'
+ and lineitem.l_shipdate >= '1995-03-15'
+ and orders.o_orderdate <= '1995-03-15' 
+ Group By l_orderkey, o_orderdate, o_shippriority 
+ Order By revenue desc, o_orderdate asc, l_orderkey asc, o_shippriority asc 
+ Limit 10;
+ --- END OF ONE EXTRACTION EXPERIMENT

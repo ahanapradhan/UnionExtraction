@@ -58,6 +58,14 @@ order by price desc, country desc, entity_name asc limit 10);
         query = """select * from nation;"""
         self.do_test(query)
 
+    def test_gopi_constant_issue(self):
+        query = """SELECT c_name, (2.24*c_acctbal + 5.48*o_totalprice + 2.5*o_shippriority + 325) as max_balance, o_clerk
+FROM customer, orders
+where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14'
+and o_orderdate <= DATE '1995-10-23' and
+c_acctbal > 30.04;"""
+        self.do_test(query)
+
     def test_alaap(self):
         query = """select c_mktsegment, 
                          sum(l_extendedprice*(1-l_discount) + l_quantity) as revenue,
@@ -65,7 +73,7 @@ order by price desc, country desc, entity_name asc limit 10);
                          from customer, orders, lineitem 
                          where c_custkey = o_custkey and l_orderkey = o_orderkey and 
                          o_orderdate <= date '1995-10-13' and 
-                         l_extendedprice between 212 and 3000 and l_quantity <= 123 
+                         l_extendedprice between 212 and 3000000 and l_quantity <= 123 
                          group by o_orderdate, o_shippriority, c_mktsegment 
                          order by revenue desc, o_orderdate asc, o_shippriority asc;"""
         self.do_test(query)

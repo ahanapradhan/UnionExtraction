@@ -20,13 +20,14 @@ def signal_handler(signum, frame):
 
 
 class TestQuery:
-    def __init__(self, name: str, hidden_query: str, cs2: bool, union: bool, oj: bool, nep: bool):
+    def __init__(self, name: str, hidden_query: str, cs2: bool, union: bool, oj: bool, nep: bool, orf=None):
         self.qid = name
         self.cs2 = cs2
         self.union = union
         self.oj = oj
         self.nep = nep
         self.query = hidden_query
+        self.orf = orf if orf is not None else False
 
 
 def create_workload():
@@ -325,7 +326,128 @@ HAVING
     )
 ORDER BY
     total_value DESC;
-""", False, False, False, False)
+""", False, False, False, False),
+                     TestQuery("TPCH_Q12", """select
+	l_shipmode,
+	sum(case
+		when o_orderpriority = '1-URGENT'
+			or o_orderpriority = '2-HIGH'
+			then 1
+		else 0
+	end) as high_line_count,
+	sum(case
+		when o_orderpriority <> '1-URGENT'
+			and o_orderpriority <> '2-HIGH'
+			then 1
+		else 0
+	end) as low_line_count
+from
+	orders,
+	lineitem
+where
+	o_orderkey = l_orderkey
+	and l_shipmode = 'SHIP'
+	and l_commitdate < l_receiptdate
+	and l_shipdate < l_commitdate
+	and l_receiptdate >= date '1995-01-01'
+	and l_receiptdate < date '1995-01-01' + interval '1' year
+group by
+	l_shipmode
+order by
+	l_shipmode;""", False, False, False, False),
+                     TestQuery("TPCH_Q13", """select
+	c_count, c_orderdate,
+	count(*) as custdist
+from
+	(
+		select
+			c_custkey, o_orderdate,
+			count(o_orderkey)
+		from
+			customer left outer join orders on
+				c_custkey = o_custkey
+				and o_comment not like '%among%regular%'
+		group by
+			c_custkey, o_orderdate
+	) as c_orders (c_custkey, c_count, c_orderdate)
+group by
+	c_count, c_orderdate
+order by
+	custdist desc,
+	c_count desc;""", False, False, True, True),
+                     TestQuery("TPCH_Q14", """select
+	100.00 * sum(case
+		when p_type like 'PROMO%'
+			then l_extendedprice * (1 - l_discount)
+		else 0
+	end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue
+from
+	lineitem,
+	part
+where
+	l_partkey = p_partkey
+	and l_shipdate >= date '1995-01-01'
+	and l_shipdate < date '1995-01-01' + interval '1' month;""", False, False, False, False),
+                     TestQuery("TPCH_Q15", """with revenue(supplier_no, total_revenue) as
+	(select
+		l_suppkey,
+		sum(l_extendedprice * (1 - l_discount))
+	from
+		lineitem
+	where
+		l_shipdate >= date '1995-01-01'
+		and l_shipdate < date '1995-01-01' + interval '3' month
+	group by
+		l_suppkey)
+select
+	s_suppkey,
+	s_name,
+	s_address,
+	s_phone,
+	total_revenue
+from
+	supplier,
+	revenue
+where
+	s_suppkey = supplier_no
+	and total_revenue = (
+		select
+			max(total_revenue)
+		from
+			revenue
+	)
+order by
+	s_suppkey;""", False, False, False, False),
+                     TestQuery("TPCH_Q16", """select
+	p_brand,
+	p_type,
+	p_size,
+	count(distinct ps_suppkey) as supplier_cnt
+from
+	partsupp,
+	part
+where
+	p_partkey = ps_partkey
+	and p_brand <> 'Brand#45'
+	and p_type not like 'LARGE%'
+	and p_size IN (40, 13)
+	and ps_suppkey not in (
+		select
+			s_suppkey
+		from
+			supplier
+		where
+			s_comment like '%Customer%Complaints%'
+	)
+group by
+	p_brand,
+	p_type,
+	p_size
+order by
+	supplier_cnt desc,
+	p_brand,
+	p_type,
+	p_size;""", False, False, False, True, True)
 
                      ]
     return test_workload
@@ -349,6 +471,7 @@ if __name__ == '__main__':
     conn.config.detect_oj = hq.oj
     conn.config.detect_nep = hq.nep
     conn.config.use_cs2 = hq.cs2
+    conn.config.detect_or = hq.orf
 
     print(f"Flags: Union {conn.config.detect_union}, OJ {conn.config.detect_oj}, "
           f"NEP {conn.config.detect_nep}, CS2 {conn.config.use_cs2}")
