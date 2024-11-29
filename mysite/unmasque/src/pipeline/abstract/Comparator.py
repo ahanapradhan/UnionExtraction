@@ -38,13 +38,6 @@ class Comparator(AppExtractorBase):
         if Q_E is None:
             self.logger.info("Got None to compare. Cannot do anything...sorry!")
             return None, restore_time
-        """
-        try:
-            self.app.doJob(Q_E)
-        except:
-            self.logger.error("Q_E is not semantically correct.")
-            return None
-        """
 
         matched = self.match(Q_h, Q_E)
         return matched, restore_time
