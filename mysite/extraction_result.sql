@@ -985,3 +985,13 @@ c_acctbal > 30.04;
  Where nation.n_regionkey = region.r_regionkey
  and nation.n_name <> 'BRAZIL';
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select p_size from part where p_size in (1, 4, 7);
+ --- extracted query:
+  
+ Select p_size 
+ From part 
+ Where part.p_size IN (1, 4, 7);
+ --- END OF ONE EXTRACTION EXPERIMENT
