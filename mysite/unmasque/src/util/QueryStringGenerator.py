@@ -656,6 +656,7 @@ class QueryStringGenerator:
 
     def __get_minimal_representative_str(self, attrib, query, representative, tab):
         tabname = f"{self.connectionHelper.config.schema}.{tab}"
+        index = 0
         output = ""
         temp = list(representative)
         while index < len(representative):

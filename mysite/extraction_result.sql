@@ -1327,3 +1327,51 @@ c_acctbal > 30.04;
  Where part.p_partkey = partsupp.ps_partkey
  and partsupp.ps_supplycost <= 999.99;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select n_name, r_name from nation, region WHERE n_regionkey = r_regionkey  AND n_name <> 'BRAZIL';
+ --- extracted query:
+  
+ Select n_name, r_name 
+ From nation, region 
+ Where nation.n_regionkey = region.r_regionkey;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select n_name, r_name from nation, region WHERE n_regionkey = r_regionkey  AND n_name <> 'BRAZIL';
+ --- extracted query:
+  
+ Select n_name, r_name 
+ From nation, region 
+ Where nation.n_regionkey = region.r_regionkey;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select n_name, r_name from nation, region WHERE n_regionkey = r_regionkey  AND n_name <> 'BRAZIL';
+ --- extracted query:
+  
+ Select n_name, r_name 
+ From nation, region 
+ Where nation.n_regionkey = region.r_regionkey;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select n_name, r_name from nation, region WHERE n_regionkey = r_regionkey  AND n_name <> 'BRAZIL';
+ --- extracted query:
+ local variable 'index' referenced before assignment
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select n_name, r_name from nation, region WHERE n_regionkey = r_regionkey  AND n_name <> 'BRAZIL';
+ --- extracted query:
+  
+ Select n_name, r_name 
+ From nation, region 
+ Where nation.n_regionkey = region.r_regionkey
+ and nation.n_name <> 'BRAZIL';
+ --- END OF ONE EXTRACTION EXPERIMENT

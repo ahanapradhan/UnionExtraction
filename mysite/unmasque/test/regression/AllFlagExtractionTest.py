@@ -174,9 +174,9 @@ c_acctbal > 30.04;"""
         self.do_test(query)
 
     def test_in_nep(self):
-        query = "select p_brand, p_type from part, partsupp " \
-                "WHERE ps_partkey = p_partkey  " \
-                "AND p_brand <> 'Brand#23' and ps_supplycost < 1000;"
+        query = "select n_name, r_name from nation, region " \
+                "WHERE n_regionkey = r_regionkey  " \
+                "AND n_name <> 'BRAZIL';"
         self.conn.config.detect_nep = True
         self.do_test(query)
 
