@@ -180,6 +180,11 @@ c_acctbal > 30.04;"""
         self.conn.config.detect_nep = True
         self.do_test(query)
 
+    def test_in_projection(self):
+        query = """select p_size from part where p_size in (1, 4, 7);"""
+        self.conn.config.detect_or = True
+        self.do_test(query)
+
     def test_key_range(self):
         query = "select n_name, c_acctbal from nation LEFT OUTER JOIN customer " \
                 "ON n_nationkey = c_nationkey and c_nationkey > 3 and " \

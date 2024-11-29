@@ -62,6 +62,13 @@ class Projection(GenerationPipeLineBase):
         """
         self.param_list = []
         self.rmin_card = 0
+        self.or_predicates_dict = {}
+
+    def do_init(self) -> None:
+        super().do_init()
+        for in_pred in self.filter_in_predicates:
+            self.or_predicates_dict[(in_pred[0], in_pred[1])] = in_pred[3]
+
 
     def doExtractJob(self, query):
         s_values = []
@@ -308,11 +315,22 @@ class Projection(GenerationPipeLineBase):
                 self.logger.debug("It will go to infinite loop!! so breaking...")
                 break
 
+    def __assign_next_s_value_for_or_attrib(self, used_vals, tab_attrib):
+        in_vals = self.or_predicates_dict[tab_attrib]
+        for val in in_vals:
+            if in_vals not in used_vals:
+                used_vals.append(val)
+                return val
+        self.logger.error("Insufficient s-value options!")
+        return None
+
     def __assign_s_val_in_coeffMatrix(self, coeff, j, key, outer_idx):
         mini = constants.pr_min
         maxi = constants.pr_max
         s_val = None
-        if key in self.filter_attrib_dict.keys():
+        if key in self.or_predicates_dict.keys():
+            s_val = self.__assign_next_s_value_for_or_attrib([self.get_dmin_val(key[1], key[0])], key)
+        elif key in self.filter_attrib_dict.keys():
             datatype = self.get_datatype(key)
             mini = max(mini, get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False))
             maxi, ub = min(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True)), \
