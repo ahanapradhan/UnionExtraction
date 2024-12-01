@@ -167,10 +167,20 @@ c_acctbal > 30.04;"""
         self.do_test(query)
 
     def test_in(self):
-        query = "select p_brand, p_type from part, partsupp " \
-                "WHERE ps_partkey = p_partkey and " \
-                "p_size in (1,4) and ps_supplycost < 1000;"
+        query = "select p_brand, p_type from part, partsupp, supplier " \
+                "WHERE ps_partkey = p_partkey and ps_suppkey = s_suppkey and " \
+                "p_size in (1,4, 7) and p_brand <> 'Brand#45' and p_type NOT LIKE 'MEDIUM BRUSHED %' and s_comment NOT LIKE 'Customer%Complaint%';"
+        query = """ Select p_brand, p_type , p_size
+ From part, partsupp 
+ Where part.p_partkey = partsupp.ps_partkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_type NOT LIKE 'MEDIUM BRUSHED %'
+ and part.p_brand <> 'Brand#45'
+	  and partsupp.ps_suppkey IN (select s_suppkey from supplier 
+ where s_comment NOT LIKE 'slyly%');"""
         self.conn.config.detect_or = True
+        self.conn.config.detect_nep = True
+
         self.do_test(query)
 
     def test_in_nep(self):

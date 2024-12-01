@@ -445,7 +445,23 @@ order by
 	supplier_cnt desc,
 	p_brand,
 	p_type,
-	p_size;""", False, False, False, True, True)
+	p_size;""", False, False, False, True, True),
+                     TestQuery("TPCH_Q17", """select sum(l_extendedprice) / 7.0 as avg_yearly
+from
+	lineitem,
+	part
+where
+	p_partkey = l_partkey
+	and p_brand = 'Brand#53'
+	and p_container = 'MED BAG'
+	and l_quantity < (
+		select
+			1.5 * avg(l_quantity)
+		from
+			lineitem
+		where
+			l_partkey = p_partkey
+	);""", False, False, False, False)
 
                      ]
     return test_workload
