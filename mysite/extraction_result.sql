@@ -995,3 +995,132 @@ c_acctbal > 30.04;
  From part 
  Where part.p_size IN (1, 4, 7);
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select p_brand, p_type from part, partsupp WHERE ps_partkey = p_partkey and p_size in (1,4, 7) and p_brand <> 'Brand#45' and p_type <> 'LARGE%';
+ --- extracted query:
+  
+ Select p_brand, p_type 
+ From part, partsupp 
+ Where part.p_partkey = partsupp.ps_partkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_brand <> 'Brand#45';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select p_brand, p_type from part, partsupp WHERE ps_partkey = p_partkey and p_size in (1,4, 7) and p_brand <> 'Brand#45' and p_type <> 'MEDIUM BRUSHED %';
+ --- extracted query:
+  
+ Select p_brand, p_type 
+ From part, partsupp 
+ Where part.p_partkey = partsupp.ps_partkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_brand <> 'Brand#45';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select p_brand, p_type from part, partsupp WHERE ps_partkey = p_partkey and p_size in (1,4, 7) and p_brand <> 'Brand#45' and p_type NOT LIKE 'MEDIUM BRUSHED %';
+ --- extracted query:
+  
+ Select p_brand, p_type 
+ From part, partsupp 
+ Where part.p_partkey = partsupp.ps_partkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_type NOT LIKE 'MEDIUM BRUSHED %'
+ and part.p_brand <> 'Brand#45';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select p_brand, p_type from part, partsupp, supplier WHERE ps_partkey = p_partkey and ps_suppkey = s_suppkey and p_size in (1,4, 7) and p_brand <> 'Brand#45' and p_type NOT LIKE 'MEDIUM BRUSHED %' and s_comment NOT LIKE 'Customer%Complaint%';
+ --- extracted query:
+  
+ Select p_brand, p_type 
+ From part, partsupp, supplier 
+ Where part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_type NOT LIKE 'MEDIUM BRUSHED %'
+ and part.p_brand <> 'Brand#45'
+ and supplier.s_comment NOT LIKE 'Customer%Complaint%';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+  Select p_brand, p_type , p_size
+ From part, partsupp 
+ Where part.p_partkey = partsupp.ps_partkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_type NOT LIKE 'MEDIUM BRUSHED %'
+ and part.p_brand <> 'Brand#45'
+	  and partsupp.ps_suppkey NOT IN (select s_suppkey from supplier 
+ where s_comment LIKE '%regular%packages%');
+ --- extracted query:
+ Singular matrix
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+  Select p_brand, p_type , p_size
+ From part, partsupp 
+ Where part.p_partkey = partsupp.ps_partkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_type NOT LIKE 'MEDIUM BRUSHED %'
+ and part.p_brand <> 'Brand#45'
+	  and partsupp.ps_suppkey NOT IN (select s_suppkey from supplier 
+ where s_comment LIKE '%regular%packages%');
+ --- extracted query:
+ Singular matrix
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+  Select p_brand, p_type , p_size
+ From part, partsupp 
+ Where part.p_partkey = partsupp.ps_partkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_type NOT LIKE 'MEDIUM BRUSHED %'
+ and part.p_brand <> 'Brand#45'
+ --- extracted query:
+ Singular matrix
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select p_brand, p_type from part, partsupp, supplier WHERE ps_partkey = p_partkey and ps_suppkey = s_suppkey and p_size in (1,4, 7) and p_brand <> 'Brand#45' and p_type NOT LIKE 'MEDIUM BRUSHED %' and s_comment NOT LIKE 'Customer%Complaint%';
+ --- extracted query:
+  
+ Select p_brand, p_type 
+ From part, partsupp, supplier 
+ Where part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_type NOT LIKE 'MEDIUM BRUSHED %'
+ and part.p_brand <> 'Brand#45'
+ and supplier.s_comment NOT LIKE 'Customer%Complaint%';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+  Select p_brand, p_type , p_size
+ From part, partsupp 
+ Where part.p_partkey = partsupp.ps_partkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_type NOT LIKE 'MEDIUM BRUSHED %'
+ and part.p_brand <> 'Brand#45'
+	  and partsupp.ps_suppkey IN (select s_suppkey from supplier 
+ where s_comment NOT LIKE 'slyly%');
+ --- extracted query:
+  
+ Select p_brand, p_type, p_size 
+ From part, partsupp, supplier 
+ Where part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and part.p_size IN (1, 4, 7)
+ and part.p_type NOT LIKE 'MEDIUM BRUSHED %'
+ and part.p_brand <> 'Brand#45'
+ and supplier.s_comment NOT LIKE 'slyly%';
+ --- END OF ONE EXTRACTION EXPERIMENT
