@@ -995,3 +995,24 @@ c_acctbal > 30.04;
  From part 
  Where part.p_size IN (1, 4, 7);
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select p_partkey,  from part where p_size in (1, 4, 7) and p_brand <> 'Brand#23' and 
+        p_type NOT LIKE 'MEDIUM POLISHED%';
+ --- extracted query:
+ --- Extraction Failed! Nothing to show! 
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select p_partkey  from part where p_size in (1, 4, 7) and p_brand <> 'Brand#23' and 
+        p_type NOT LIKE 'MEDIUM POLISHED%';
+ --- extracted query:
+  
+ Select p_partkey 
+ From part 
+ Where part.p_size IN (1, 4, 7)
+ and part.p_brand <> 'Brand#23'
+ and part.p_type NOT LIKE 'MEDIUM POLISHED%';
+ --- END OF ONE EXTRACTION EXPERIMENT

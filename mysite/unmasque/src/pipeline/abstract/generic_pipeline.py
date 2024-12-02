@@ -132,6 +132,7 @@ class GenericPipeLine(ABC):
             self.update_state(RESULT_COMPARE + RUNNING)
             matched = rc.match(query, result)
         self.info[RESULT_COMPARE] = matched
+        rc.remove_footprint()
         self.connectionHelper.closeConnection()
 
         if matched:
