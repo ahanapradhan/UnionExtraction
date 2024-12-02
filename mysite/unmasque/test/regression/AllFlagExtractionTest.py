@@ -191,8 +191,10 @@ c_acctbal > 30.04;"""
         self.do_test(query)
 
     def test_in_projection(self):
-        query = """select p_size from part where p_size in (1, 4, 7);"""
+        query = """select p_partkey  from part where p_size in (1, 4, 7) and p_brand <> 'Brand#23' and 
+        p_type NOT LIKE 'MEDIUM POLISHED%';"""
         self.conn.config.detect_or = True
+        self.conn.config.detect_nep = True
         self.do_test(query)
 
     def test_key_range(self):

@@ -16,12 +16,12 @@ class TpchSanitizer:
         self.connectionHelper = connectionHelper
         self.logger = Log("TpchSanitizer", connectionHelper.config.log_level)
 
-    def _remove_footprint(self):
+    def remove_footprint(self):
         self.connectionHelper.execute_sql([f"Drop Schema if exists {self.connectionHelper.config.schema} cascade;"],
                                           self.logger)
 
     def _create_working_schema(self):
-        self._remove_footprint()
+        self.remove_footprint()
         self.connectionHelper.execute_sql([f"Create Schema {self.connectionHelper.config.schema};"], self.logger)
 
     def get_fully_qualified_table_name(self, table):
