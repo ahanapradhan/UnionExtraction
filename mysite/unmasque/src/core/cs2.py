@@ -72,6 +72,7 @@ class Cs2(AppExtractorBase):
         while self._dont_stop_trying():
             done = self.__correlated_sampling(query, self.sizes, to_truncate)
             to_truncate = False  # first time truncation is sufficient, each for each union flow
+
             if not done:
                 self.logger.info(f"sampling failed on attempt no: {self.iteration_count}")
                 self.seed_sample_size_per *= self.sample_per_multiplier
@@ -153,12 +154,14 @@ class Cs2(AppExtractorBase):
             if base_table in self.core_relations:
                 # limit_row = int(math.ceil(min(sizes[base_table], sizes[base_table] * self.seed_sample_size_per)))
                 limit_row = sizes[base_table]
+
                 self.connectionHelper.execute_sqls_with_DictCursor([
                     f"insert into {self.get_fully_qualified_table_name(base_table)} "
                     f"(select * from {self.get_original_table_name(base_table)} "
                     f"tablesample system({self.seed_sample_size_per}) where ({base_key}) "
                     f"not in (select distinct({base_key}) from {self.get_fully_qualified_table_name(base_table)}) Limit {limit_row} );"],
                     self.logger)
+
 
                 res = self.connectionHelper.execute_sql_fetchone_0(
                     self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(base_table)))
@@ -176,6 +179,7 @@ class Cs2(AppExtractorBase):
                         f"{self.get_original_table_name(sampled_table)} "
                         f"where {key} in (select distinct({base_key}) from {self.get_fully_qualified_table_name(base_table)}) and {key} "
                         f"not in (select distinct({key}) from {self.get_fully_qualified_table_name(sampled_table)}) Limit {limit_row}) ;"],
+
                         self.logger)
                     res = self.connectionHelper.execute_sql_fetchone_0(
                         self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(sampled_table)))
