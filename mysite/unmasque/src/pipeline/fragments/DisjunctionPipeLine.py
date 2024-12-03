@@ -33,6 +33,8 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.update_state(RESTORE_DB + START)
         self.db_restorer = DbRestorer(self.connectionHelper, core_relations)
         self.db_restorer.set_all_sizes(self.all_sizes)
+        for tab in core_relations:
+            self.db_restorer.last_restored_size[tab] = self.all_sizes[tab]
         self.update_state(RESTORE_DB + RUNNING)
         check = self.db_restorer.doJob(restore_details)
         self.update_state(RESTORE_DB + DONE)

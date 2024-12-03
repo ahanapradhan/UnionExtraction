@@ -215,10 +215,11 @@ c_acctbal > 30.04;"""
 
     def test_main_cmd_query(self):
         query = "Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, " \
-                "supplier, nation         "\
-                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
-                 "'ARGENTINA' Group By "\
-                 "ps_COMMENT         Order by value desc Limit 100;"
+                "supplier, nation         " \
+                "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
+                "'ARGENTINA' Group By " \
+                "ps_COMMENT         Order by value desc Limit 100;"
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_unionQ(self):
@@ -633,6 +634,22 @@ c_acctbal > 30.04;"""
                     f"from lineitem where l_shipdate >= date {lower} and l_shipdate < date {upper} group " \
                     f"by l_returnflag, l_linestatus order by l_returnflag, l_linestatus LIMIT 10;"
             self.do_test(query)
+
+    def test_for_date_filter_2_union(self):
+        self.conn.config.use_cs2 = False
+        self.conn.config.detect_union = True
+
+        lower, upper = generate_random_dates()
+        query = f"(select l_returnflag, l_linestatus, " \
+                f"count(*) as count_order " \
+                f"from lineitem where l_shipdate >= date {lower} and l_shipdate < date {upper} group " \
+                f"by l_returnflag, l_linestatus order by l_returnflag, l_linestatus LIMIT 10)" \
+                f"UNION ALL" \
+                f"( select c_mktsegment, n_name, count(*) " \
+                f"from customer , nation where c_acctbal >= 8500 " \
+                f"group by c_mktsegment, n_name " \
+                f"order by c_mktsegment, n_name LIMIT 5));"
+        self.do_test(query)
 
     def test_extraction_Q1(self):
         key = 'Q1'
