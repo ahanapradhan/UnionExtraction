@@ -16,6 +16,7 @@ class FromClause(AppExtractorBase):
         self.core_relations = []
         self.method = self.TYPE_ERROR
         self.timeout = True
+        self.app.data_schema = self.connectionHelper.config.user_schema
 
     def set_app_type(self):
         app_type = self.connectionHelper.config.app_type
@@ -35,11 +36,11 @@ class FromClause(AppExtractorBase):
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(self.get_fully_qualified_table_name(tabname),
+                    [self.connectionHelper.queries.alter_table_rename_to(self.get_original_table_name(tabname),
                                                                          self._get_dirty_name(tabname)),
                      self.connectionHelper.queries.create_table_like(
-                         self.get_fully_qualified_table_name(tabname),
-                         self.get_fully_qualified_table_name(self._get_dirty_name(tabname)))], self.logger)
+                         self.get_original_table_name(tabname),
+                         self.get_original_table_name(self._get_dirty_name(tabname)))], self.logger)
                 new_result = self.app.doJob(query)
                 if self.app.isQ_result_no_full_nullfree_row(new_result):
                     self.core_relations.append(tabname)
@@ -54,7 +55,7 @@ class FromClause(AppExtractorBase):
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(self.get_fully_qualified_table_name(tabname),
+                    [self.connectionHelper.queries.alter_table_rename_to(self.get_original_table_name(tabname),
                                                                          self._get_dirty_name(tabname))], self.logger)
 
                 if self.timeout:
@@ -83,9 +84,13 @@ class FromClause(AppExtractorBase):
         self.all_relations = self.init.all_relations
         return True
 
+    def _exit(self):
+        self.app.data_schema = self.connectionHelper.config.schema
+
     def doActualJob(self, args=None):
         setup_done = self.setup()
         if not setup_done:
+            self._exit()
             return False
 
         query, method = self.extract_params_from_args(args)
@@ -96,6 +101,7 @@ class FromClause(AppExtractorBase):
             self.get_core_relations_by_void(query)
         else:
             self.get_core_relations_by_error(query)
+        self._exit()
         return self.core_relations
 
     def get_key_lists(self):

@@ -219,6 +219,7 @@ c_acctbal > 30.04;"""
                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
                 "'ARGENTINA' Group By " \
                 "ps_COMMENT         Order by value desc Limit 100;"
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_unionQ(self):
