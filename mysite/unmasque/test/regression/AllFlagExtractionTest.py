@@ -76,6 +76,7 @@ c_acctbal > 30.04;"""
                          l_extendedprice between 212 and 3000000 and l_quantity <= 123 
                          group by o_orderdate, o_shippriority, c_mktsegment 
                          order by revenue desc, o_orderdate asc, o_shippriority asc;"""
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_paper_big(self):
@@ -124,6 +125,7 @@ c_acctbal > 30.04;"""
         order by price
         limit 10;"""
         self.conn.config.detect_oj = True
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_himangshu(self):
@@ -234,6 +236,8 @@ c_acctbal > 30.04;"""
                 "union all " \
                 "(select o_orderkey as key from customer, orders " \
                 "where c_custkey = o_custkey and o_totalprice <= 890);"
+        self.conn.config.detect_union = True
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_unionQ_outerJoin(self):

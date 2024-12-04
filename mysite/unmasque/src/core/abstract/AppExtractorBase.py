@@ -18,6 +18,12 @@ class AppExtractorBase(Base, ABC):
     def _get_dirty_name(self, tab):
         return tab + self.dirty_name
 
+    def reset_data_schema(self):
+        self.app.data_schema = self.connectionHelper.config.user_schema
+
+    def set_data_schema(self):
+        self.app.data_schema = self.connectionHelper.config.schema
+
     def doAppCountJob(self, args):
         if self.enabled:
             self.app_calls = self.app.method_call_count

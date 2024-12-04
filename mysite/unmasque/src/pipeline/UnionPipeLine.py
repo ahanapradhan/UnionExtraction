@@ -30,7 +30,6 @@ class UnionPipeLine(OuterJoinPipeLine):
         u_eq = []
 
         for rels in p:
-            # self.info = {}
             self.info[UNION] = [list(ele) for ele in p]
             core_relations = [r for r in rels]
             self.logger.debug(core_relations)
@@ -83,21 +82,22 @@ class UnionPipeLine(OuterJoinPipeLine):
 
     def __nullify_relations(self, relations):
         for tab in relations:
-            f_tab, f_union_tab, union_tab = self.__get_void_names(tab)
+            f_tab, f_union_tab, union_tab, original_tab = self.__get_void_names(tab)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(f_tab, union_tab),
-                                               self.connectionHelper.queries.create_table_like(f_tab, f_union_tab)],
+                                               self.connectionHelper.queries.create_table_like(f_tab, original_tab)],
                                               self.logger)
             self.all_sizes[tab] = 0
 
     def __get_void_names(self, tab):
         union_tab = self.connectionHelper.queries.get_union_tabname(tab)
-        f_tab = f"{self.connectionHelper.config.schema}.{tab}"
         f_union_tab = f"{self.connectionHelper.config.schema}.{union_tab}"
-        return f_tab, f_union_tab, union_tab
+        f_tab = f"{self.connectionHelper.config.schema}.{tab}"
+        original_tab = f"{self.connectionHelper.config.user_schema}.{tab}"
+        return f_tab, f_union_tab, union_tab, original_tab
 
     def __revert_nullifications(self, relations):
         for tab in relations:
-            f_tab, f_union_tab, union_tab = self.__get_void_names(tab)
+            f_tab, f_union_tab, union_tab, original_tab = self.__get_void_names(tab)
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table_cascade(f_tab),
                                                self.connectionHelper.queries.alter_table_rename_to(
                                                    f_union_tab, tab)],

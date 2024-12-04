@@ -10,6 +10,7 @@ class Union(AppExtractorBase):
         self.key_lists = None
         self.all_relations = None
         self.enabled = self.connectionHelper.config.detect_union
+        self.app.data_schema = self.connectionHelper.config.user_schema
 
     def extract_params_from_args(self, args):
         return args[0]
@@ -17,6 +18,7 @@ class Union(AppExtractorBase):
     def doActualJob(self, args=None):
         query = self.extract_params_from_args(args)
         db = UnionFromClause(self.connectionHelper)
+        db.reset_data_schema()
         p, pstr, union_profile = algorithm1.algo(db, query)
         self.all_relations = db.get_relations()
         self.all_sizes = db.get_all_sizes()
