@@ -739,3 +739,106 @@ c_acctbal > 30.04;
  Where customer.c_custkey = orders.o_custkey
  and orders.o_totalprice <= 890.0);
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name, avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+                FROM customer, orders 
+                where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' 
+                and o_orderdate <= DATE '1995-10-23' and 
+                c_acctbal > 0 and c_acctbal < 30.04
+                group by c_name, o_clerk 
+                order by c_name, o_clerk desc;
+ --- extracted query:
+  
+ Select c_name, Avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_acctbal between 0.01 and 30.03
+ and orders.o_orderdate between '1993-10-15' and '1995-10-23' 
+ Group By c_name, o_clerk 
+ Order By c_name asc, o_clerk desc;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name, avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+                FROM customer, orders 
+                where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' 
+                and o_orderdate <= DATE '1995-10-23' and 
+                c_acctbal > 0 and c_acctbal < 30.04
+                group by c_name, o_clerk 
+                order by c_name, o_clerk desc;
+ --- extracted query:
+  
+ Select c_name, Avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_acctbal between 0.01 and 30.03
+ and orders.o_orderdate between '1993-10-15' and '1995-10-23' 
+ Group By c_name, o_clerk 
+ Order By c_name asc, o_clerk desc;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+  
+ (Select l_partkey as key 
+ From lineitem, part 
+ Where lineitem.l_partkey = part.p_partkey
+ and lineitem.l_extendedprice <= 905.0)
+ UNION ALL  
+ (Select o_orderkey as key 
+ From lineitem, orders 
+ Where lineitem.l_orderkey = orders.o_orderkey
+ and orders.o_totalprice <= 905.0)
+ UNION ALL  
+ (Select o_orderkey as key 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and orders.o_totalprice <= 890.0);
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+  
+ (Select o_orderkey as key 
+ From lineitem, orders 
+ Where lineitem.l_orderkey = orders.o_orderkey
+ and orders.o_totalprice <= 905.0)
+ UNION ALL  
+ (Select o_orderkey as key 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and orders.o_totalprice <= 890.0)
+ UNION ALL  
+ (Select p_partkey as key 
+ From lineitem, part 
+ Where lineitem.l_partkey = part.p_partkey
+ and lineitem.l_extendedprice <= 905.0);
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+  
+ (Select l_orderkey as key 
+ From lineitem, orders 
+ Where lineitem.l_orderkey = orders.o_orderkey
+ and orders.o_totalprice <= 905.0)
+ UNION ALL  
+ (Select p_partkey as key 
+ From lineitem, part 
+ Where lineitem.l_partkey = part.p_partkey
+ and lineitem.l_extendedprice <= 905.0)
+ UNION ALL  
+ (Select o_orderkey as key 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and orders.o_totalprice <= 890.0);
+ --- END OF ONE EXTRACTION EXPERIMENT
