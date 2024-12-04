@@ -1,14 +1,16 @@
+import copy
 import csv
 import os.path
 import pathlib
 
+from .ScaleDown import ScaleDown
 from ...src.core.abstract.ExtractorBase import Base
 
 
 class Initiator(Base):
 
     def extract_params_from_args(self, args):
-        pass
+        return args
 
     def __init__(self, connectionHelper):
         super().__init__(connectionHelper, "Initiator")
@@ -23,6 +25,7 @@ class Initiator(Base):
         self.global_key_lists = [[]]
         self.global_pk_dict = {}
         self.error = None
+        self.downer = None
 
     def reset(self):
         self.global_key_lists = [[]]
@@ -36,6 +39,14 @@ class Initiator(Base):
             self.logger.error("Unmasque Error: \n Support File Not Accessible. ")
         return check_pkfk
 
+    def __scale_down(self, args=None):
+        self.downer = ScaleDown(self.connectionHelper, self.all_sizes, self.all_relations, self.global_key_lists)
+        try:
+            self.downer.doJob(args)
+            self.all_sizes = copy.deepcopy(self.downer.sizes)
+        except Exception as e:
+            self.logger.error("Some error while Cs2 to scale down!!")
+
     def doActualJob(self, args=None):
         self.reset()
         check = self.verify_support_files()
@@ -47,10 +58,11 @@ class Initiator(Base):
         self.do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
         self._create_working_schema()
+        self.logger.info(f"Working schema set to {self.connectionHelper.config.schema}")
         if not self.connectionHelper.config.use_cs2:
             self.take_backup()
-        self.logger.info(f"Working schema set to {self.connectionHelper.config.schema}")
         self.get_all_sizes()
+        self.__scale_down(args)
         return True
 
     def do_refinement(self):

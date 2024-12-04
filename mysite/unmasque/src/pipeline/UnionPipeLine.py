@@ -95,4 +95,4 @@ class UnionPipeLine(OuterJoinPipeLine):
                                                    f_union_tab, tab)],
                                               self.logger)
             self.all_sizes[tab] = self.connectionHelper.execute_sql_fetchone_0(
-                self.connectionHelper.queries.get_row_count(f_tab))
+                self.connectionHelper.queries.get_row_count(f_tab), self.logger)

@@ -4,7 +4,7 @@ from pathlib import Path
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
-    DETECT_OJ, LIMIT, OPTIONS_SECTION, WORK_MEM, WORKING_SCHEMA
+    DETECT_OJ, LIMIT, OPTIONS_SECTION, DOWN_SCALE, WORKING_SCHEMA
 
 
 class Config:
@@ -37,6 +37,7 @@ class Config:
         self.detect_or = False
         self.detect_oj = False
         self.use_cs2 = False
+        self.scale_down = False
         self.app_type = ApplicationType.SQL_ERR_FWD
         self.database = "postgres"
 
@@ -90,11 +91,11 @@ class Config:
         elif use_cs2.lower() == "yes":
             self.use_cs2 = True
 
-        #detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
-        #if detect_or.lower() == "no":
-        #    self.detect_or = False
-        #elif detect_or.lower() == "yes":
-        #    self.detect_or = True
+        detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
+        if detect_or.lower() == "no":
+            self.detect_or = False
+        elif detect_or.lower() == "yes":
+            self.detect_or = True
 
         detect_oj = config_object.get(FEATURE_SECTION, DETECT_OJ)
         if detect_oj.lower() == "no":
@@ -110,8 +111,8 @@ class Config:
             self.limit_limit = int(limit_config)
         except:
             pass
-        #try:
-        #    workmem_config = config_object.get(OPTIONS_SECTION, WORK_MEM.lower())
-        #    self.workmem = int(workmem_config)
-        #except:
-        #    pass
+        try:
+            downscale = config_object.get(OPTIONS_SECTION, DOWN_SCALE.lower())
+            self.scale_down = downscale.lower() == 'yes'
+        except:
+            pass

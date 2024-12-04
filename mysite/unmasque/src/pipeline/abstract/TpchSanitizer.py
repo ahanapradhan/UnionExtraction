@@ -95,10 +95,19 @@ class TpchSanitizer:
     def drop_derived_relations(self, table):
         derived_tables = self.connectionHelper.execute_sql_fetchall(f"select tablename from pg_tables "
                                                                     f"where schemaname = '{self.connectionHelper.config.schema}' "
-                                                                    f"and tablename LIKE '{table}%{UNMASQUE}';")[0]
+                                                                    f"and tablename LIKE '{table}%{UNMASQUE}';", self.logger)
+        if derived_tables is not None and len(derived_tables):
+            derived_tables = derived_tables[0]
+        else:
+            derived_tables = []
         derived_views = self.connectionHelper.execute_sql_fetchall(f"select viewname from pg_views "
                                                                    f"where schemaname = '{self.connectionHelper.config.schema}' "
-                                                                   f"and viewname LIKE '{table}%{UNMASQUE}';")[0]
+                                                                   f"and viewname LIKE '{table}%{UNMASQUE}';", self.logger)
+        if derived_views is not None and len(derived_views):
+            derived_views = derived_views[0]
+        else:
+            derived_views = []
+
         derived_objects = derived_tables + derived_views
         for obj in derived_objects:
             drop_fn = self.get_drop_fn(obj)

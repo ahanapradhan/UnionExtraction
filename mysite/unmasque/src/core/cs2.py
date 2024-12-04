@@ -25,8 +25,8 @@ class Cs2(AppExtractorBase):
     def __init__(self, connectionHelper,
                  all_sizes,
                  core_relations,
-                 global_key_lists, perc_based_cutoff=False):
-        super().__init__(connectionHelper, "cs2")
+                 global_key_lists, perc_based_cutoff=False, name="cs2"):
+        super().__init__(connectionHelper, name)
         self.passed = False
         self.iteration_count = 0
         self.core_relations = core_relations
@@ -51,6 +51,7 @@ class Cs2(AppExtractorBase):
         return self.sizes
 
     def extract_params_from_args(self, args):
+        self.iteration_count = 0
         return args[0]
 
     def _truncate_tables(self):
@@ -59,15 +60,8 @@ class Cs2(AppExtractorBase):
                 [self.connectionHelper.queries.truncate_table(self.get_fully_qualified_table_name(table))], self.logger)
 
     def doActualJob(self, args=None):
-        self.iteration_count = 0
-        if not self.connectionHelper.config.use_cs2:
-            self.logger.info("Sampling is disabled from config.")
-            self._restore()
-            return False
-
         query = self.extract_params_from_args(args)
         to_truncate = True
-
         while self._dont_stop_trying():
             done = self.__correlated_sampling(query, self.sizes, to_truncate)
             to_truncate = False  # first time truncation is sufficient, each for each union flow
@@ -84,7 +78,6 @@ class Cs2(AppExtractorBase):
                 return True
 
         self._restore()
-        self.logger.info("Starting with halving based minimization..")
         return False
 
     def _restore(self):

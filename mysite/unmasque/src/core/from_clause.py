@@ -48,6 +48,12 @@ class FromClause(AppExtractorBase):
                 self.logger.error("Error Occurred in table extraction. Error: " + str(error))
             finally:
                 self.connectionHelper.rollback_transaction()
+                """
+                self.connectionHelper.execute_sql(
+                    [self.connectionHelper.queries.drop_table(self.get_original_table_name(tabname)),
+                     self.connectionHelper.queries.alter_table_rename_to(
+                         self.get_original_table_name(self._get_dirty_name(tabname)), tabname)], self.logger)
+                """
 
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
@@ -67,17 +73,26 @@ class FromClause(AppExtractorBase):
                 self.logger.info(str(error))
             finally:
                 self.connectionHelper.rollback_transaction()
+                """
+                self.connectionHelper.execute_sql(
+                    [self.connectionHelper.queries.alter_table_rename_to(self.get_original_table_name(
+                        self._get_dirty_name(tabname)), tabname)], self.logger)
+                res = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(
+                        self.connectionHelper.queries.get_row_count(self.get_original_table_name(tabname)),
+                        self.logger)
+                self.logger.debug(res)
+                """
 
     def extract_params_from_args(self, args):
         if len(args) == 1:
             return args[0], ""
         return args[0], args[1]
 
-    def setup(self):
+    def setup(self, query):
         self.set_app_type()
         check = self.init.result
         if not self.init.done:
-            check = self.init.doJob()
+            check = self.init.doJob(query)
         if not check:
             return False
         self.all_relations = self.init.all_relations
@@ -86,11 +101,12 @@ class FromClause(AppExtractorBase):
         return True
 
     def doActualJob(self, args=None):
-        setup_done = self.setup()
+        query, method = self.extract_params_from_args(args)
+
+        setup_done = self.setup(query)
         if not setup_done:
             return False
 
-        query, method = self.extract_params_from_args(args)
         if not method:
             method = self.method
         self.core_relations = []
