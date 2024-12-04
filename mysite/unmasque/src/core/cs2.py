@@ -16,30 +16,39 @@ def get_base_t(key_list, sizes):
 
 class Cs2(AppExtractorBase):
     sf = 1
-    iteration_count = 3
     seed_sample_size_per = 0.16 / sf
     sample_per_multiplier = 2
     sample = {}
+    TOTAL_perc = 100
+    MAX_iter = 3
 
     def __init__(self, connectionHelper,
                  all_sizes,
                  core_relations,
-                 global_key_lists):
+                 global_key_lists, perc_based_cutoff=False):
         super().__init__(connectionHelper, "cs2")
         self.passed = False
+        self.iteration_count = 0
         self.core_relations = core_relations
         self.global_key_lists = global_key_lists
         self.sizes = all_sizes
         self.enabled = self.connectionHelper.config.use_cs2
         self.all_relations = list(self.sizes.keys())
         self.all_relations.sort()
+        self.perc_based_cutoff = perc_based_cutoff
+
+    def _dont_stop_trying(self):
+        if self.perc_based_cutoff:
+            return self.seed_sample_size_per < self.TOTAL_perc
+        else:
+            return self.iteration_count < self.MAX_iter
 
     def __getSizes_cs(self):
-        #if not self.sizes:
+        # if not self.sizes:
         for table in self.all_relations:
             self.sizes[table] = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(
-                    self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(table)),
-                    self.logger)
+                self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(table)),
+                self.logger)
         return self.sizes
 
     def extract_params_from_args(self, args):
@@ -51,6 +60,7 @@ class Cs2(AppExtractorBase):
                 [self.connectionHelper.queries.truncate_table(self.get_fully_qualified_table_name(table))], self.logger)
 
     def doActualJob(self, args=None):
+        self.iteration_count = 0
         if not self.connectionHelper.config.use_cs2:
             self.logger.info("Sampling is disabled from config.")
             self._restore()
@@ -59,9 +69,9 @@ class Cs2(AppExtractorBase):
         query = self.extract_params_from_args(args)
         to_truncate = True
 
-        while self.seed_sample_size_per < 100:
+        while self._dont_stop_trying():
             done = self.__correlated_sampling(query, self.sizes, to_truncate)
-            to_truncate = False # first time truncation is sufficient, each for each union flow
+            to_truncate = False  # first time truncation is sufficient, each for each union flow
             if not done:
                 self.logger.info(f"sampling failed on attempt no: {self.iteration_count}")
                 self.seed_sample_size_per *= self.sample_per_multiplier
@@ -127,7 +137,8 @@ class Cs2(AppExtractorBase):
                     self.get_fully_qualified_table_name(table)))
                 self.logger.debug("before sample insertion: ", table, res)
                 self.connectionHelper.execute_sqls_with_DictCursor(
-                    [f"insert into {self.get_fully_qualified_table_name(table)} (select * from "f"{self.get_original_table_name(table)} "
+                    [
+                        f"insert into {self.get_fully_qualified_table_name(table)} (select * from "f"{self.get_original_table_name(table)} "
                         f"tablesample system({self.seed_sample_size_per}));"])
                 res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
                     self.get_fully_qualified_table_name(table)))
