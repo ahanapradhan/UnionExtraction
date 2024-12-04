@@ -45,19 +45,23 @@ class Cs2(AppExtractorBase):
     def extract_params_from_args(self, args):
         return args[0]
 
+    def _truncate_tables(self):
+        for table in self.core_relations:
+            self.connectionHelper.execute_sql(
+                [self.connectionHelper.queries.truncate_table(self.get_fully_qualified_table_name(table))], self.logger)
+
     def doActualJob(self, args=None):
         if not self.connectionHelper.config.use_cs2:
             self.logger.info("Sampling is disabled from config.")
             self._restore()
             return False
 
-        for table in self.core_relations:
-            self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(self.get_fully_qualified_table_name(table))], self.logger)
-
         query = self.extract_params_from_args(args)
+        to_truncate = True
 
         while self.seed_sample_size_per < 100:
-            done = self.__correlated_sampling(query, self.sizes)
+            done = self.__correlated_sampling(query, self.sizes, to_truncate)
+            to_truncate = False # first time truncation is sufficient, each for each union flow
             if not done:
                 self.logger.info(f"sampling failed on attempt no: {self.iteration_count}")
                 self.seed_sample_size_per *= self.sample_per_multiplier
@@ -83,7 +87,7 @@ class Cs2(AppExtractorBase):
                 self.connectionHelper.queries.insert_into_tab_select_star_fromtab(
                     self.get_fully_qualified_table_name(table), self.get_original_table_name(table))], self.logger)
 
-    def __correlated_sampling(self, query, sizes):
+    def __correlated_sampling(self, query, sizes, to_truncate=False):
         self.logger.debug("Starting correlated sampling ")
 
         # choose base table from each key list> sample it> sample remaining tables based on base table
@@ -91,6 +95,8 @@ class Cs2(AppExtractorBase):
             self.connectionHelper.execute_sqls_with_DictCursor(
                 [self.connectionHelper.queries.create_table_like(self.get_fully_qualified_table_name(table),
                                                                  self.get_original_table_name(table))], self.logger)
+        if to_truncate:
+            self._truncate_tables()
 
         self.__do_for_key_lists(sizes)
 

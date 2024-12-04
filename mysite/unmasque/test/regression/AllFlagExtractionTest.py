@@ -27,7 +27,7 @@ class ExtractionTestCase(BaseTestCase):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = False
         self.conn.config.detect_nep = False
-        self.conn.config.detect_oj = False\
+        self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
 
         self.conn.config.use_cs2 = True
@@ -143,6 +143,7 @@ c_acctbal > 30.04;"""
                 c_acctbal > 0 and c_acctbal < 30.04
                 group by c_name, o_clerk 
                 order by c_name, o_clerk desc;'''
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_aoa_dev_2(self):

@@ -558,6 +558,7 @@ FROM(q1) = { customer }, FROM(q2) = { lineitem }, FROM(q3) = { part }, FROM(q4) 
 
  --- START OF ONE EXTRACTION EXPERIMENT
  --- input query:
+<<<<<<< HEAD
  SELECT c_name, (2.24*c_acctbal + 5.48*o_totalprice + 2.5*o_shippriority + 325) as max_balance, o_clerk
 FROM customer, orders
 where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14'
@@ -570,10 +571,69 @@ c_acctbal > 30.04;
  Where customer.c_custkey = orders.o_custkey
  and customer.c_acctbal >= 30.05
  and orders.o_orderdate between '1993-10-15' and '1995-10-23';
+=======
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
  --- END OF ONE EXTRACTION EXPERIMENT
 
  --- START OF ONE EXTRACTION EXPERIMENT
  --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name, avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+                FROM customer, orders 
+                where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' 
+                and o_orderdate <= DATE '1995-10-23' and 
+                c_acctbal > 0 and c_acctbal < 30.04
+                group by c_name, o_clerk 
+                order by c_name, o_clerk desc;
+ --- extracted query:
+  
+ Select c_name, Avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_acctbal between 0.01 and 30.03
+ and orders.o_orderdate between '1993-10-15' and '1995-10-23' 
+ Group By c_name, o_clerk 
+ Order By c_name asc, o_clerk desc;
+>>>>>>> 28286b1ffbb2842d1950b77af20b7b0f0964e7e0
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+<<<<<<< HEAD
  select c_mktsegment, 
                          sum(l_extendedprice*(1-l_discount) + l_quantity) as revenue,
                          o_orderdate, o_shippriority 
@@ -594,10 +654,29 @@ c_acctbal > 30.04;
  and lineitem.l_extendedprice between 212.00 and 3000000.00 
  Group By c_mktsegment, o_orderdate, o_shippriority 
  Order By revenue desc, o_orderdate asc, o_shippriority asc, c_mktsegment asc;
+=======
+ SELECT c_name, avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+                FROM customer, orders 
+                where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' 
+                and o_orderdate <= DATE '1995-10-23' and 
+                c_acctbal > 0 and c_acctbal < 30.04
+                group by c_name, o_clerk 
+                order by c_name, o_clerk desc;
+ --- extracted query:
+  
+ Select c_name, Avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_acctbal between 0.01 and 30.03
+ and orders.o_orderdate between '1993-10-15' and '1995-10-23' 
+ Group By c_name, o_clerk 
+ Order By c_name asc, o_clerk desc;
+>>>>>>> 28286b1ffbb2842d1950b77af20b7b0f0964e7e0
  --- END OF ONE EXTRACTION EXPERIMENT
 
  --- START OF ONE EXTRACTION EXPERIMENT
  --- input query:
+<<<<<<< HEAD
  SELECT c_name as entity_name, n_name as country, o_totalprice as price
         from orders LEFT OUTER JOIN 
         customer on c_custkey = o_custkey and c_acctbal >= o_totalprice and
@@ -620,4 +699,22 @@ c_acctbal > 30.04;
  Group By c_name, n_name, o_totalprice 
  Order By price asc, country asc, entity_name asc 
  Limit 10;
+=======
+ SELECT c_name, avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+                FROM customer, orders 
+                where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' 
+                and o_orderdate <= DATE '1995-10-23' and 
+                c_acctbal > 0 and c_acctbal < 30.04
+                group by c_name, o_clerk 
+                order by c_name, o_clerk desc;
+ --- extracted query:
+  
+ Select c_name, Avg(2.24*c_acctbal + o_totalprice + 325.64) as max_balance, o_clerk 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_acctbal between 0.01 and 30.03
+ and orders.o_orderdate between '1993-10-15' and '1995-10-23' 
+ Group By c_name, o_clerk 
+ Order By c_name asc, o_clerk desc;
+>>>>>>> 28286b1ffbb2842d1950b77af20b7b0f0964e7e0
  --- END OF ONE EXTRACTION EXPERIMENT
