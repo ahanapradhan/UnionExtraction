@@ -151,11 +151,8 @@ class Cs2(AppExtractorBase):
             # Sample base table
             base_table, base_key = key_list[base_t][0], key_list[base_t][1]
             if base_table in self.core_relations:
-                res = self.connectionHelper.execute_sql_fetchone_0(
-                    self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(base_table)))
-                self.logger.debug("before sample insertion: ", base_table, res)
-
-                limit_row = int(math.ceil(min(sizes[base_table], sizes[base_table] * self.seed_sample_size_per)))
+                # limit_row = int(math.ceil(min(sizes[base_table], sizes[base_table] * self.seed_sample_size_per)))
+                limit_row = sizes[base_table]
                 self.connectionHelper.execute_sqls_with_DictCursor([
                     f"insert into {self.get_fully_qualified_table_name(base_table)} "
                     f"(select * from {self.get_original_table_name(base_table)} "
@@ -173,10 +170,6 @@ class Cs2(AppExtractorBase):
 
                 # if sampled_table in not_sampled_tables:
                 if sampled_table != base_table and sampled_table in self.core_relations:
-                    res = self.connectionHelper.execute_sql_fetchone_0(
-                        self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(sampled_table)))
-                    self.logger.debug("before sample insertion: ", sampled_table, res)
-
                     limit_row = sizes[sampled_table]
                     self.connectionHelper.execute_sqls_with_DictCursor([
                         f"insert into {self.get_fully_qualified_table_name(sampled_table)} (select * from "
