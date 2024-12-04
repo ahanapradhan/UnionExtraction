@@ -12,6 +12,9 @@ from ...src.util.postgres_queries import PostgresQueries
 
 class PostgresConnectionHelper(AbstractConnectionHelper):
 
+    def get_all_tables_for_restore(self):
+        pass
+
     def rollback_transaction(self):
         self.execute_sql(["ROLLBACK;"])
 

@@ -69,7 +69,6 @@ class Projection(GenerationPipeLineBase):
         for in_pred in self.filter_in_predicates:
             self.or_predicates_dict[(in_pred[0], in_pred[1])] = in_pred[3]
 
-
     def doExtractJob(self, query):
         s_values = []
         projected_attrib, projection_names, projection_dep, check = self.find_projection_dependencies(query, s_values)

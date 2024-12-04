@@ -29,20 +29,14 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
-        self.conn.config.use_cs2 = False
+
+        self.conn.config.use_cs2 = True
         self.pipeline = None
 
     def test_ij_aoa_scalar(self):
         query = """
     (SELECT c_name as entity_name, n_name as country, o_totalprice as price
-from orders LEFT OUTER JOIN customer on c_custkey = o_custkey
-and c_acctbal >= o_totalprice and c_acctbal >= 9000
-LEFT OUTER JOIN nation ON c_nationkey = n_nationkey  
-	where o_totalprice < 15000
-group by n_name, c_name, o_totalprice
-order by price, country asc, entity_name desc limit 20)
-UNION ALL (SELECT s_name as entity_name, n_name as country,
-avg(l_extendedprice*(1 - l_discount)) as price
+from orders LEFT OUTER JOIN customer on c_custkey = o_custkeybvx
 FROM supplier, lineitem, orders, nation, region
 WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
 and s_nationkey = n_nationkey and n_regionkey = r_regionkey
@@ -76,6 +70,7 @@ c_acctbal > 30.04;"""
                          l_extendedprice between 212 and 3000000 and l_quantity <= 123 
                          group by o_orderdate, o_shippriority, c_mktsegment 
                          order by revenue desc, o_orderdate asc, o_shippriority asc;"""
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_paper_big(self):
@@ -123,6 +118,8 @@ c_acctbal > 30.04;"""
         group by n_name, c_name, o_totalprice
         order by price
         limit 10;"""
+        self.conn.config.detect_oj = True
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_himangshu(self):
@@ -135,6 +132,7 @@ c_acctbal > 30.04;"""
                 "where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' and " \
                 "o_orderdate <= DATE '1995-10-23' and c_acctbal = 121.65 group by c_name," \
                 " o_clerk order by c_name, o_clerk;"
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_gnp_Q10(self):
@@ -145,6 +143,7 @@ c_acctbal > 30.04;"""
                 c_acctbal > 0 and c_acctbal < 30.04
                 group by c_name, o_clerk 
                 order by c_name, o_clerk desc;'''
+        self.conn.config.use_cs2 = False
         self.do_test(query)
 
     def test_aoa_dev_2(self):
@@ -219,6 +218,7 @@ c_acctbal > 30.04;"""
                 "Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = " \
                 "'ARGENTINA' Group By " \
                 "ps_COMMENT         Order by value desc Limit 100;"
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_unionQ(self):
@@ -231,6 +231,8 @@ c_acctbal > 30.04;"""
                 "union all " \
                 "(select o_orderkey as key from customer, orders " \
                 "where c_custkey = o_custkey and o_totalprice <= 890);"
+        self.conn.config.detect_union = True
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_unionQ_outerJoin(self):
@@ -262,6 +264,7 @@ c_acctbal > 30.04;"""
                 "FROM orders, lineitem where o_orderkey = l_orderkey " \
                 "and o_orderdate <= '1995-01-01' GROUP BY o_orderdate " \
                 "ORDER BY total_price DESC LIMIT 10;"
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_another(self):
@@ -323,6 +326,7 @@ c_acctbal > 30.04;"""
                 "and o_orderdate < '1993-10-01' and l_commitdate < l_receiptdate " \
                 "Group By o_orderpriority " \
                 "Order By o_orderpriority;"
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_UQ10(self):

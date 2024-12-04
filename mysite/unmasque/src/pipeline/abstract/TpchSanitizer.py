@@ -107,6 +107,6 @@ class TpchSanitizer:
     def get_all_sizes(self):
         for tab in self.all_relations:
             row_count = self.connectionHelper.execute_sql_fetchone_0(
-                self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(tab)))
+                self.connectionHelper.queries.get_row_count(self.get_original_table_name(tab)))
             self.all_sizes[tab] = row_count
         return self.all_sizes

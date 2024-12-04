@@ -35,11 +35,11 @@ class FromClause(AppExtractorBase):
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(self.get_fully_qualified_table_name(tabname),
+                    [self.connectionHelper.queries.alter_table_rename_to(self.get_original_table_name(tabname),
                                                                          self._get_dirty_name(tabname)),
                      self.connectionHelper.queries.create_table_like(
-                         self.get_fully_qualified_table_name(tabname),
-                         self.get_fully_qualified_table_name(self._get_dirty_name(tabname)))], self.logger)
+                         self.get_original_table_name(tabname),
+                         self.get_original_table_name(self._get_dirty_name(tabname)))], self.logger)
                 new_result = self.app.doJob(query)
                 if self.app.isQ_result_no_full_nullfree_row(new_result):
                     self.core_relations.append(tabname)
@@ -54,7 +54,7 @@ class FromClause(AppExtractorBase):
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(self.get_fully_qualified_table_name(tabname),
+                    [self.connectionHelper.queries.alter_table_rename_to(self.get_original_table_name(tabname),
                                                                          self._get_dirty_name(tabname))], self.logger)
 
                 if self.timeout:
