@@ -23,10 +23,10 @@ class UnionFromClause(Schema, AppExtractorBase):
         self.logger.debug("to nullify " + str(self.to_nullify))
         for tab in self.to_nullify:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(
-                self.get_fully_qualified_table_name(tab), self._get_dirty_name(tab)),
+                self.get_original_table_name(tab), self._get_dirty_name(tab)),
                 self.connectionHelper.queries.create_table_like(
-                    self.get_fully_qualified_table_name(tab),
-                    self.get_fully_qualified_table_name(self._get_dirty_name(tab)))])
+                    self.get_original_table_name(tab),
+                    self.get_original_table_name(self._get_dirty_name(tab)))])
 
     def run_query(self, QH):
         return self.app.doJob(QH)
@@ -34,11 +34,11 @@ class UnionFromClause(Schema, AppExtractorBase):
     def revert_nullify(self):
         for tab in self.to_nullify:
             self.connectionHelper.execute_sql([self.connectionHelper.queries.drop_table(
-                self.get_fully_qualified_table_name(tab)),
+                self.get_original_table_name(tab)),
                 self.connectionHelper.queries.alter_table_rename_to(
-                    self.get_fully_qualified_table_name(self._get_dirty_name(tab)), tab),
+                    self.get_original_table_name(self._get_dirty_name(tab)), tab),
                 self.connectionHelper.queries.drop_table(
-                    self.get_fully_qualified_table_name(self._get_dirty_name(tab)))])
+                    self.get_original_table_name(self._get_dirty_name(tab)))])
 
     def get_partial_QH(self, QH):
         return self.doJob(QH)

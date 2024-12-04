@@ -16,7 +16,6 @@ class FromClause(AppExtractorBase):
         self.core_relations = []
         self.method = self.TYPE_ERROR
         self.timeout = True
-        self.app.data_schema = self.connectionHelper.config.user_schema
 
     def set_app_type(self):
         app_type = self.connectionHelper.config.app_type
@@ -84,13 +83,9 @@ class FromClause(AppExtractorBase):
         self.all_relations = self.init.all_relations
         return True
 
-    def _exit(self):
-        self.app.data_schema = self.connectionHelper.config.schema
-
     def doActualJob(self, args=None):
         setup_done = self.setup()
         if not setup_done:
-            self._exit()
             return False
 
         query, method = self.extract_params_from_args(args)
@@ -101,7 +96,6 @@ class FromClause(AppExtractorBase):
             self.get_core_relations_by_void(query)
         else:
             self.get_core_relations_by_error(query)
-        self._exit()
         return self.core_relations
 
     def get_key_lists(self):

@@ -57,6 +57,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         '''
         self.update_state(FROM_CLAUSE + START)
         fc = FromClause(self.connectionHelper)
+        fc.reset_data_schema()
         self.update_state(FROM_CLAUSE + RUNNING)
         check = fc.doJob(query)
         self.update_state(FROM_CLAUSE + DONE)

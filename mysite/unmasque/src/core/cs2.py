@@ -46,12 +46,13 @@ class Cs2(AppExtractorBase):
         return args[0]
 
     def doActualJob(self, args=None):
-        #sizes = self.__getSizes_cs()
-        self._create_working_schema()
         if not self.connectionHelper.config.use_cs2:
             self.logger.info("Sampling is disabled from config.")
             self._restore()
             return False
+
+        for table in self.core_relations:
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(self.get_fully_qualified_table_name(table))], self.logger)
 
         query = self.extract_params_from_args(args)
 
@@ -86,7 +87,7 @@ class Cs2(AppExtractorBase):
         self.logger.debug("Starting correlated sampling ")
 
         # choose base table from each key list> sample it> sample remaining tables based on base table
-        for table in self.core_relations:
+        for table in self.all_relations:
             self.connectionHelper.execute_sqls_with_DictCursor(
                 [self.connectionHelper.queries.create_table_like(self.get_fully_qualified_table_name(table),
                                                                  self.get_original_table_name(table))], self.logger)
