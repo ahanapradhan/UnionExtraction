@@ -27,22 +27,16 @@ class ExtractionTestCase(BaseTestCase):
         super().__init__(*args, **kwargs)
         self.conn.config.detect_union = False
         self.conn.config.detect_nep = False
-        self.conn.config.detect_oj = False
+        self.conn.config.detect_oj = False\
         self.conn.config.detect_or = False
-        self.conn.config.use_cs2 = False
+
+        self.conn.config.use_cs2 = True
         self.pipeline = None
 
     def test_ij_aoa_scalar(self):
         query = """
     (SELECT c_name as entity_name, n_name as country, o_totalprice as price
-from orders LEFT OUTER JOIN customer on c_custkey = o_custkey
-and c_acctbal >= o_totalprice and c_acctbal >= 9000
-LEFT OUTER JOIN nation ON c_nationkey = n_nationkey  
-	where o_totalprice < 15000
-group by n_name, c_name, o_totalprice
-order by price, country asc, entity_name desc limit 20)
-UNION ALL (SELECT s_name as entity_name, n_name as country,
-avg(l_extendedprice*(1 - l_discount)) as price
+from orders LEFT OUTER JOIN customer on c_custkey = o_custkeybvx
 FROM supplier, lineitem, orders, nation, region
 WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
 and s_nationkey = n_nationkey and n_regionkey = r_regionkey
