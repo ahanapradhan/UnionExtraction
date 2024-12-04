@@ -149,6 +149,7 @@ c_acctbal > 30.04;"""
                 c_acctbal > 0 and c_acctbal < 30.04
                 group by c_name, o_clerk 
                 order by c_name, o_clerk desc;'''
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_aoa_dev_2(self):
