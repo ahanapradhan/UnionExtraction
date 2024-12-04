@@ -232,7 +232,7 @@ c_acctbal > 30.04;"""
                 "(select o_orderkey as key from customer, orders " \
                 "where c_custkey = o_custkey and o_totalprice <= 890);"
         self.conn.config.detect_union = True
-        self.conn.config.use_cs2 = True
+        self.conn.config.use_cs2 = False
         self.do_test(query)
 
     def test_unionQ_outerJoin(self):

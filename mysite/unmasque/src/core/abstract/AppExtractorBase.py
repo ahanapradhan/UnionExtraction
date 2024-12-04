@@ -21,8 +21,11 @@ class AppExtractorBase(Base, ABC):
     def reset_data_schema(self):
         self.app.data_schema = self.connectionHelper.config.user_schema
 
-    def set_data_schema(self):
-        self.app.data_schema = self.connectionHelper.config.schema
+    def set_data_schema(self, schema_name=None):
+        if schema_name is None:
+            self.app.data_schema = self.connectionHelper.config.schema
+        else:
+            self.app.data_schema = schema_name
 
     def doAppCountJob(self, args):
         if self.enabled:

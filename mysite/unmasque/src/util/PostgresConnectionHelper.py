@@ -144,8 +144,6 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
             if logger is not None:
                 logger.error(e)
                 logger.error(e.diag.message_detail)
-        # finally:
-        #    cur.close()
         return prev
 
     def cur_execute_sql_fetch_one(self, cur, sql, logger=None):
