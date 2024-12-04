@@ -50,6 +50,7 @@ class Cs2(AppExtractorBase):
         self._create_working_schema()
         if not self.connectionHelper.config.use_cs2:
             self.logger.info("Sampling is disabled from config.")
+            self._restore()
             return False
 
         query = self.extract_params_from_args(args)
@@ -141,10 +142,9 @@ class Cs2(AppExtractorBase):
                     f"insert into {self.get_fully_qualified_table_name(base_table)} "
                     f"(select * from {self.get_original_table_name(base_table)} "
                     f"tablesample system({self.seed_sample_size_per}) where ({base_key}) "
-                    f"not in (select distinct({base_key}) from {self.get_original_table_name(base_table)}) Limit {limit_row} );"],
+                    f"not in (select distinct({base_key}) from {self.get_fully_qualified_table_name(base_table)}) Limit {limit_row} );"],
                     self.logger)
 
-                # f"not in (select distinct({base_key}) from {self.get_original_table_name(base_table)}) Limit {limit_row} ;"], self.logger)
                 res = self.connectionHelper.execute_sql_fetchone_0(
                     self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(base_table)))
                 self.logger.debug(base_table, res)
@@ -159,11 +159,11 @@ class Cs2(AppExtractorBase):
                         self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(sampled_table)))
                     self.logger.debug("before sample insertion: ", sampled_table, res)
 
-                    limit_row = int(math.ceil(sizes[sampled_table] * self.seed_sample_size_per))
+                    limit_row = sizes[sampled_table]
                     self.connectionHelper.execute_sqls_with_DictCursor([
                         f"insert into {self.get_fully_qualified_table_name(sampled_table)} (select * from "
                         f"{self.get_original_table_name(sampled_table)} "
-                        f"where {key} in (select distinct({base_key}) from {self.get_original_table_name(base_table)}) and {key} "
+                        f"where {key} in (select distinct({base_key}) from {self.get_fully_qualified_table_name(base_table)}) and {key} "
                         f"not in (select distinct({key}) from {self.get_fully_qualified_table_name(sampled_table)}) Limit {limit_row}) ;"],
                         self.logger)
                     res = self.connectionHelper.execute_sql_fetchone_0(

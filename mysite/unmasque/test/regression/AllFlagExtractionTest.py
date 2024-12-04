@@ -123,6 +123,7 @@ c_acctbal > 30.04;"""
         group by n_name, c_name, o_totalprice
         order by price
         limit 10;"""
+        self.conn.config.detect_oj = True
         self.do_test(query)
 
     def test_himangshu(self):
@@ -135,6 +136,7 @@ c_acctbal > 30.04;"""
                 "where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' and " \
                 "o_orderdate <= DATE '1995-10-23' and c_acctbal = 121.65 group by c_name," \
                 " o_clerk order by c_name, o_clerk;"
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_gnp_Q10(self):
@@ -263,6 +265,7 @@ c_acctbal > 30.04;"""
                 "FROM orders, lineitem where o_orderkey = l_orderkey " \
                 "and o_orderdate <= '1995-01-01' GROUP BY o_orderdate " \
                 "ORDER BY total_price DESC LIMIT 10;"
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_another(self):
@@ -324,6 +327,7 @@ c_acctbal > 30.04;"""
                 "and o_orderdate < '1993-10-01' and l_commitdate < l_receiptdate " \
                 "Group By o_orderpriority " \
                 "Order By o_orderpriority;"
+        self.conn.config.use_cs2 = True
         self.do_test(query)
 
     def test_UQ10(self):
