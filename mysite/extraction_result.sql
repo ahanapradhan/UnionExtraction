@@ -718,3 +718,19 @@ Here's what I have as a half-baked answer:
 FROM(q1) = { orders, lineitem }, FROM(q2) = { lineitem, part }
 
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+  
+ (Select l_orderkey as key 
+ From lineitem, orders 
+ Where lineitem.l_orderkey = orders.o_orderkey
+ and orders.o_totalprice <= 905.0)
+ UNION ALL  
+ (Select l_partkey as key 
+ From lineitem, part 
+ Where lineitem.l_partkey = part.p_partkey
+ and lineitem.l_extendedprice <= 905.0);
+ --- END OF ONE EXTRACTION EXPERIMENT
