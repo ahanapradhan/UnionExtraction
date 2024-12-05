@@ -1,5 +1,5 @@
-from mysite.unmasque.src.core.cs2 import Cs2
-from mysite.unmasque.src.util.constants import SCALE_DOWN, WORKING_SCHEMA
+from ...src.core.cs2 import Cs2
+from ...src.util.constants import SCALE_DOWN, WORKING_SCHEMA
 
 
 class ScaleDown(Cs2):
