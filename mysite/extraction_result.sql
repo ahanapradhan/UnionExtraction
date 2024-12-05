@@ -609,3 +609,82 @@ FROM(q1) = {  }
   
  (Select 1591073 as key);
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ too many values to unpack (expected 2)
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ (select l_partkey as key from lineitem, part where l_partkey = p_partkey and l_extendedprice <= 905) union all (select l_orderkey as key from lineitem, orders where l_orderkey = o_orderkey and o_totalprice <= 905) union all (select o_orderkey as key from customer, orders where c_custkey = o_custkey and o_totalprice <= 890);
+ --- extracted query:
+  
+ (Select o_orderkey as key 
+ From customer, lineitem, orders 
+ Where lineitem.l_orderkey = orders.o_orderkey
+ and orders.o_totalprice <= 905.0)
+ UNION ALL  
+ (Select o_orderkey as key 
+ From lineitem, orders, part 
+ Where lineitem.l_orderkey = orders.o_orderkey
+ and orders.o_totalprice <= 905.0);
+ --- END OF ONE EXTRACTION EXPERIMENT

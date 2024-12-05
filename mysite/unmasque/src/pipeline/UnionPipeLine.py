@@ -78,6 +78,7 @@ class UnionPipeLine(OuterJoinPipeLine):
             self.connectionHelper.execute_sql([self.connectionHelper.queries.alter_table_rename_to(f_tab, union_tab),
                                                self.connectionHelper.queries.create_table_like(f_tab, original_tab)],
                                               self.logger)
+            self.connectionHelper.commit_transaction()
             self.all_sizes[tab] = 0
 
     def __get_void_names(self, tab):
@@ -94,5 +95,6 @@ class UnionPipeLine(OuterJoinPipeLine):
                                                self.connectionHelper.queries.alter_table_rename_to(
                                                    f_union_tab, tab)],
                                               self.logger)
+            self.connectionHelper.commit_transaction()
             self.all_sizes[tab] = self.connectionHelper.execute_sql_fetchone_0(
                 self.connectionHelper.queries.get_row_count(f_tab), self.logger)

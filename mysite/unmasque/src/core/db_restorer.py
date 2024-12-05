@@ -88,6 +88,17 @@ class DbRestorer(AppExtractorBase):
     def __update_current_sizes(self, tab):
         row_count = self.connectionHelper.execute_sql_fetchone_0(
             self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(tab)), self.logger)
+        if row_count is None:  # table does not exists
+            self.connectionHelper.rollback_transaction()
+            self.connectionHelper.execute_sql([self.connectionHelper.queries.create_table_like(
+                self.get_fully_qualified_table_name(tab), self.get_original_table_name(tab)),
+                                               self.connectionHelper.queries.insert_into_tab_select_star_fromtab(
+                                                   self.get_fully_qualified_table_name(tab),
+                                                   self.get_original_table_name(tab))],
+                                              self.logger)
+            self.connectionHelper.commit_transaction()
+            row_count = self.connectionHelper.execute_sql_fetchone_0(
+                self.connectionHelper.queries.get_row_count(self.get_fully_qualified_table_name(tab)), self.logger)
         self.last_restored_size[tab] = row_count
         self.logger.debug(f"Updating {tab} size: ", self.last_restored_size[tab])
         return row_count

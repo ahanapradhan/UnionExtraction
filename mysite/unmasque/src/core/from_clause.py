@@ -73,15 +73,15 @@ class FromClause(AppExtractorBase):
                 self.logger.info(str(error))
             finally:
                 self.connectionHelper.rollback_transaction()
-                """
-                self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.alter_table_rename_to(self.get_original_table_name(
-                        self._get_dirty_name(tabname)), tabname)], self.logger)
-                res = self.connectionHelper.execute_sql_with_DictCursor_fetchone_0(
-                        self.connectionHelper.queries.get_row_count(self.get_original_table_name(tabname)),
-                        self.logger)
-                self.logger.debug(res)
-                """
+                check_c = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
+                    self.get_original_table_name(tabname)), self.logger)
+                self.logger.debug(check_c)
+
+    def __check_base_tables(self):
+        for tab in self.all_relations:
+            check_c = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
+                self.get_original_table_name(tab)), self.logger)
+            self.logger.debug(check_c)
 
     def extract_params_from_args(self, args):
         if len(args) == 1:
