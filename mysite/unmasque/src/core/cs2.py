@@ -15,8 +15,6 @@ def get_base_t(key_list, sizes):
 
 
 class Cs2(AppExtractorBase):
-    sf = 1
-    seed_sample_size_per = 0.16 / sf
     sample_per_multiplier = 2
     sample = {}
     TOTAL_perc = 100
@@ -25,8 +23,10 @@ class Cs2(AppExtractorBase):
     def __init__(self, connectionHelper,
                  all_sizes,
                  core_relations,
-                 global_key_lists, perc_based_cutoff=False, name="cs2"):
+                 global_key_lists, perc_based_cutoff=False, name="cs2", sf=1):
         super().__init__(connectionHelper, name)
+        self.sf = sf
+        self.seed_sample_size_per = 0.16 / self.sf
         self.passed = False
         self.iteration_count = 0
         self.core_relations = core_relations
