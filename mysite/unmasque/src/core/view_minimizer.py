@@ -63,7 +63,6 @@ class ViewMinimizer(Minimizer):
 
     def reduce_Database_Instance(self, query, cs_pass):
         core_sizes = self.getCoreSizes()
-
         for tabname in self.core_relations:
             view_name = self._get_dirty_name(tabname) if cs_pass \
                 else self.connectionHelper.queries.get_restore_name(tabname)

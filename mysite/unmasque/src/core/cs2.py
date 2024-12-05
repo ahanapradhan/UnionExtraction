@@ -76,6 +76,7 @@ class Cs2(AppExtractorBase):
                 self.logger.info(f"Sampling Percentage: {self.seed_sample_size_per}")
                 sizes = self.__getSizes_cs()
                 self.logger.info(sizes)
+                self.connectionHelper.commit_transaction()
                 return True
 
         self._restore()

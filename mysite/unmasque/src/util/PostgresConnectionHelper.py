@@ -127,6 +127,10 @@ class PostgresConnectionHelper(AbstractConnectionHelper):
             # print("..done")
             except ValueError as e:
                 raise e
+            except Exception as e:
+                if logger is not None:
+                    logger.error(e)
+                raise e
             # finally:
             #    cur.close()
 

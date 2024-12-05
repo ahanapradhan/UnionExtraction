@@ -117,5 +117,8 @@ class TpchSanitizer:
         for tab in self.all_relations:
             row_count = self.connectionHelper.execute_sql_fetchone_0(
                 self.connectionHelper.queries.get_row_count(self.get_original_table_name(tab)))
+            if row_count is None:
+                self.logger.debug(f"{tab} does not exists!")
+                row_count = 0
             self.all_sizes[tab] = row_count
         return self.all_sizes

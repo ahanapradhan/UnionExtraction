@@ -59,7 +59,7 @@ class Initiator(Base):
         self.logger.info("loaded pk-fk..", all_pkfk)
         self._create_working_schema()
         self.logger.info(f"Working schema set to {self.connectionHelper.config.schema}")
-        if not self.connectionHelper.config.use_cs2:
+        if not self.connectionHelper.config.use_cs2 and not self.connectionHelper.config.scale_down:
             self.take_backup()
         self.get_all_sizes()
         self.__scale_down(args)
