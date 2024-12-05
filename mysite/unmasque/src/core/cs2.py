@@ -89,6 +89,7 @@ class Cs2(AppExtractorBase):
                     self.get_fully_qualified_table_name(table), self.get_original_table_name(table)),
                 self.connectionHelper.queries.insert_into_tab_select_star_fromtab(
                     self.get_fully_qualified_table_name(table), self.get_original_table_name(table))], self.logger)
+            self.connectionHelper.commit_transaction()
 
     def __correlated_sampling(self, query, sizes, to_truncate=False):
         self.logger.debug("Starting correlated sampling ")
