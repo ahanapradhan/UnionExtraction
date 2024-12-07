@@ -62,7 +62,6 @@ class Initiator(Base):
         if not self.connectionHelper.config.use_cs2 and not self.connectionHelper.config.scale_down:
             self.take_backup()
         self.__get_rows_in_tables()
-        #self.get_all_sizes()
         self.__scale_down(args)
         return True
 
