@@ -1,5 +1,5 @@
-Q_2_2_X_2	= '''SELECT pickup_community_area,  trip_start_timestamp,  trip_end_timestamp,  RANK()  
-OVER (  PARTITION BY pickup_community_area  ORDER BY trip_start_timestamp  ) AS trip_number 
+Q_2_2_X_2	= '''SELECT tax_pickup_community_area_5,  tax_trip_start_timestamp_5,  tax_trip_end_timestamp_5,  RANK()  
+OVER (  PARTITION BY tax_pickup_community_area_5  ORDER BY tax_trip_start_timestamp_5  ) AS trip_number 
 FROM taxi_trips_5 
-WHERE DATE(trip_start_timestamp) = '2017-05-01';'''
+WHERE DATE(tax_trip_start_timestamp_5) = '2017-05-01';'''
 
