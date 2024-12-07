@@ -6,7 +6,7 @@ from frozenlist._frozenlist import FrozenList
 
 from .dataclass.genPipeline_context import GenPipelineContext
 from .projection import get_param_values_external
-from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char
+from ..util.utils import is_number, get_dummy_val_for, get_val_plus_delta, get_format, get_char, get_format_for_agg
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value
 from ..util.constants import NUMBER_TYPES
 from ...src.util.constants import SUM, AVG, MIN, MAX, COUNT, COUNT_STAR
@@ -56,13 +56,13 @@ def get_k_value(attrib, filter_attrib_dict, groupby_key_flag, tabname, datatype,
             date_lb, date_ub = filter_attrib_dict[(tabname, attrib)][0], filter_attrib_dict[(tabname, attrib)][1]
             date_lb = get_boundary_value(date_lb, is_ub=False)
             date_ub = get_boundary_value(date_ub, is_ub=True)
-            a = get_format('date', date_lb)
+            a = get_format_for_agg('date', date_lb)
             date_val_plus_1 = get_val_plus_delta('date', date_lb, 1)
-            b = get_format('date', min(date_val_plus_1, date_ub))
+            b = get_format_for_agg('date', min(date_val_plus_1, date_ub))
             k_value = 1
             agg_array = [MIN, min(a, b), MAX, max(a, b)]
-            a = ast.literal_eval(a)
-            b = ast.literal_eval(b)
+            #a = ast.literal_eval(a)
+            #b = ast.literal_eval(b)
         else:
             # string filter attribute
             if '_' in filter_attrib_dict[(tabname, attrib)]:

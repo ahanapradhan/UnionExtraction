@@ -239,6 +239,15 @@ def get_format(datatype, val):
         return str(round(val, 3))
     return str(val)
 
+def get_format_for_agg(datatype, val):
+    if datatype in ['char', 'character', 'character varying', 'str', 'text', 'varchar']:
+        return f'\'{str(val)}\''
+    elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
+        val = float(val)
+        return str(round(val, 3))
+    return str(val)
+
+
 
 def add_two(one, two, datatype):
     if datatype == 'date':
