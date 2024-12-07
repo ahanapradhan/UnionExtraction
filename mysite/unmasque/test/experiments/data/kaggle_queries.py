@@ -27,5 +27,35 @@ Q_1_5_T_1 = '''WITH time AS
   GROUP BY trans_date
   ORDER BY trans_date;'''
 
+Q_2_1_X_2 = '''SELECT q.pq_owner_user_id_3 AS owner_user_id,
+  MIN(q.pq_creation_date_3) AS q_creation_date,
+  MIN(a.pos_creation_date_4) AS a_creation_date
+  FROM posts_questions_3 AS q
+  JOIN posts_answers_4 AS a
+  ON q.pq_owner_user_id_3 = a.pos_owner_user_id_4
+  WHERE q.pq_creation_date_3 >= '2019-01-01'
+  AND q.pq_creation_date_3 < '2019-02-01'
+  AND a.pos_creation_date_4 >= '2019-01-01'
+  AND a.pos_creation_date_4 < '2019-02-01'
+  GROUP BY q.pq_owner_user_id_3;'''
 
+Q_2_1_X_3 = '''SELECT u.use_id AS id,
+  MIN(q.pq_creation_date_4) AS q_creation_date,
+  MIN(a.pos_creation_date_5) AS a_creation_date
+  FROM posts_questions_4 AS q
+  JOIN posts_answers_5 AS a
+  ON q.pq_owner_user_id_4 = a.pos_owner_user_id_5
+  RIGHT JOIN users AS u
+  ON q.pq_owner_user_id_4 = u.use_id
+  WHERE u.use_creation_date >= '2019-01-01'
+  and u.use_creation_date < '2019-02-01'
+  GROUP BY u.use_id;'''
+
+Q_2_1_X_4 = '''SELECT q.pq_owner_user_id_5
+  FROM posts_questions_5 AS q
+  WHERE DATE(q.pq_creation_date_5) = '2019-01-01'
+  UNION
+  SELECT a.pos_owner_user_id_6
+  FROM posts_answers_6 AS a
+  WHERE DATE(a.pos_creation_date_6) = '2019-01-01';'''
 

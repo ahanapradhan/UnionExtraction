@@ -80,3 +80,163 @@ CREATE TABLE IF NOT EXISTS public.comments_5
     com_ranking_5 integer
 )
 
+CREATE TABLE IF NOT EXISTS public.posts_answers_4
+(
+    pos_id_4 integer,
+    pos_title_4 text COLLATE pg_catalog."default",
+    pos_body_4 text COLLATE pg_catalog."default",
+    pos_accepted_answer_id_4 integer,
+    pos_answer_count_4 integer,
+    pos_comment_count_4 integer,
+    pos_community_owned_date_4 date,
+    pos_creation_date_4 date,
+    pos_favorite_count_4 integer,
+    pos_last_activity_date_4 date,
+    pos_last_edit_date_4 date,
+    pos_last_editor_display_name_4 text COLLATE pg_catalog."default",
+    pos_last_editor_user_id_4 integer,
+    pos_owner_display_name_4 text COLLATE pg_catalog."default",
+    pos_owner_user_id_4 integer,
+    pos_parent_id_4 integer,
+    pos_post_type_id_4 integer,
+    pos_score_4 integer,
+    pos_tags_4 text COLLATE pg_catalog."default",
+    pos_view_count_4 integer
+)
+
+CREATE TABLE IF NOT EXISTS public.posts_questions_3
+(
+    pq_id_3 integer,
+    pq_title_3 text COLLATE pg_catalog."default",
+    pq_body_3 text COLLATE pg_catalog."default",
+    pq_accepted_answer_id_3 integer,
+    pq_answer_count_3 integer,
+    pq_comment_count_3 integer,
+    pq_community_owned_date_3 date,
+    pq_creation_date_3 date,
+    pq_favorite_count_3 integer,
+    pq_last_activity_date_3 date,
+    pq_last_edit_date_3 date,
+    pq_last_editor_display_name_3 text COLLATE pg_catalog."default",
+    pq_last_editor_user_id_3 integer,
+    pq_owner_display_name_3 text COLLATE pg_catalog."default",
+    pq_owner_user_id_3 integer,
+    pq_parent_id_3 integer,
+    pq_post_type_id_3 integer,
+    pq_score_3 integer,
+    pq_tags_3 text COLLATE pg_catalog."default",
+    pq_view_count_3 integer
+)
+
+CREATE TABLE IF NOT EXISTS public.posts_questions_4
+(
+    pq_id_4 integer,
+    pq_title_4 text COLLATE pg_catalog."default",
+    pq_body_4 text COLLATE pg_catalog."default",
+    pq_accepted_answer_id_4 integer,
+    pq_answer_count_4 integer,
+    pq_comment_count_4 integer,
+    pq_community_owned_date_4 date,
+    pq_creation_date_4 date,
+    pq_favorite_count_4 double precision,
+    pq_last_activity_date_4 date,
+    pq_last_edit_date_4 date,
+    pq_last_editor_display_name_4 text COLLATE pg_catalog."default",
+    pq_last_editor_user_id_4 integer,
+    pq_owner_display_name_4 text COLLATE pg_catalog."default",
+    pq_owner_user_id_4 integer,
+    pq_parent_id_4 integer,
+    pq_post_type_id_4 integer,
+    pq_score_4 integer,
+    pq_tags_4 text COLLATE pg_catalog."default",
+    pq_view_count_4 integer
+)
+
+CREATE TABLE IF NOT EXISTS public.posts_answers_5
+(
+    pos_id_5 integer,
+    pos_title_5 text COLLATE pg_catalog."default",
+    pos_body_5 text COLLATE pg_catalog."default",
+    pos_accepted_answer_id_5 integer,
+    pos_answer_count_5 integer,
+    pos_comment_count_5 integer,
+    pos_community_owned_date_5 date,
+    pos_creation_date_5 date,
+    pos_favorite_count_5 integer,
+    pos_last_activity_date_5 date,
+    pos_last_edit_date_5 date,
+    pos_last_editor_display_name_5 text COLLATE pg_catalog."default",
+    pos_last_editor_user_id_5 integer,
+    pos_owner_display_name_5 text COLLATE pg_catalog."default",
+    pos_owner_user_id_5 integer,
+    pos_parent_id_5 integer,
+    pos_post_type_id_5 integer,
+    pos_score_5 integer,
+    pos_tags_5 text COLLATE pg_catalog."default",
+    pos_view_count_5 integer
+)
+
+CREATE TABLE IF NOT EXISTS public.users
+(
+    use_id integer,
+    use_display_name text COLLATE pg_catalog."default",
+    use_about_me text COLLATE pg_catalog."default",
+    use_age integer,
+    use_creation_date date,
+    use_last_access_date date,
+    use_location text COLLATE pg_catalog."default",
+    use_reputation integer,
+    use_up_votes integer,
+    use_down_votes integer,
+    use_views integer,
+    use_profile_image_url text COLLATE pg_catalog."default",
+    use_website_url text COLLATE pg_catalog."default"
+)
+
+CREATE TABLE IF NOT EXISTS public.posts_answers_6
+(
+    pos_id_6 integer,
+    pos_title_6 text COLLATE pg_catalog."default",
+    pos_body_6 text COLLATE pg_catalog."default",
+    pos_accepted_answer_id_6 integer,
+    pos_answer_count_6 integer,
+    pos_comment_count_6 integer,
+    pos_community_owned_date_6 date,
+    pos_creation_date_6 date,
+    pos_favorite_count_6 integer,
+    pos_last_activity_date_6 date,
+    pos_last_edit_date_6 date,
+    pos_last_editor_display_name_6 text COLLATE pg_catalog."default",
+    pos_last_editor_user_id_6 integer,
+    pos_owner_display_name_6 text COLLATE pg_catalog."default",
+    pos_owner_user_id_6 integer,
+    pos_parent_id_6 integer,
+    pos_post_type_id_6 integer,
+    pos_score_6 integer,
+    pos_tags_6 text COLLATE pg_catalog."default",
+    pos_view_count_6 integer
+)
+
+CREATE TABLE IF NOT EXISTS public.posts_questions_5
+(
+    pq_id_5 integer,
+    pq_title_5 text COLLATE pg_catalog."default",
+    pq_body_5 text COLLATE pg_catalog."default",
+    pq_accepted_answer_id_5 integer,
+    pq_answer_count_5 integer,
+    pq_comment_count_5 integer,
+    pq_community_owned_date_5 date,
+    pq_creation_date_5 date,
+    pq_favorite_count_5 integer,
+    pq_last_activity_date_5 date,
+    pq_last_edit_date_5 date,
+    pq_last_editor_display_name_5 text COLLATE pg_catalog."default",
+    pq_last_editor_user_id_5 integer,
+    pq_owner_display_name_5 text COLLATE pg_catalog."default",
+    pq_owner_user_id_5 integer,
+    pq_parent_id_5 integer,
+    pq_post_type_id_5 integer,
+    pq_score_5 integer,
+    pq_tags_5 text COLLATE pg_catalog."default",
+    pq_view_count_5 integer
+)
