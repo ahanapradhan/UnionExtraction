@@ -41,6 +41,8 @@ class U2EquiJoin(FilterHolder):
             check_again_dict = {}
             for key in partition_eq_dict.keys():
                 equi_join_group = partition_eq_dict[key]
+                if not len(equi_join_group):
+                    continue
                 if len(equi_join_group) <= 3:
                     self.handle_unit_eq_group(equi_join_group, query)
                 else:
@@ -78,8 +80,10 @@ class U2EquiJoin(FilterHolder):
             attrib_list = [equi_join_group[i] for i in check_part]
             check = self.handle_unit_eq_group(attrib_list, query)
             if check:
+                self.algebraic_eq_predicates.append(attrib_list)
                 return attrib_list
-        return None
+        self.algebraic_eq_predicates.append(equi_join_group)
+        return equi_join_group
 
     def algo2_preprocessing(self) -> Tuple[dict, list]:
         eq_groups_dict = {}
