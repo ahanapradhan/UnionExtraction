@@ -32,7 +32,10 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
     def _mutation_pipeline(self, core_relations, query, time_profile, restore_details=None):
         self.update_state(RESTORE_DB + START)
         self.db_restorer = DbRestorer(self.connectionHelper, core_relations)
+        self.db_restorer.set_data_schema()
         self.db_restorer.set_all_sizes(self.all_sizes)
+        # for tab in core_relations:
+        #    self.db_restorer.last_restored_size[tab] = self.all_sizes[tab]
         self.update_state(RESTORE_DB + RUNNING)
         check = self.db_restorer.doJob(restore_details)
         self.update_state(RESTORE_DB + DONE)
@@ -47,7 +50,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         Correlated Sampling
         """
         self.update_state(SAMPLING + START)
-        cs2 = Cs2(self.connectionHelper, self.all_sizes, core_relations, self.key_lists)
+        cs2 = Cs2(self.connectionHelper, self.all_sizes, core_relations, self.key_lists, perc_based_cutoff=True)
         self.update_state(SAMPLING + RUNNING)
         check = cs2.doJob(query)
         self.update_state(SAMPLING + DONE)
