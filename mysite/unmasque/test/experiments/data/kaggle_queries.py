@@ -16,5 +16,16 @@ Q_2_1_T_1 = '''WITH c AS
   WHERE s.sto_time_ts = '2012-01-01'
   ORDER BY c.num_comments DESC;'''
 
+Q_1_5_T_1 = '''WITH time AS
+  (
+  SELECT DATE(tra_block_timestamp) AS trans_date
+  FROM transactions
+  )
+  SELECT COUNT(1) AS transactions,
+  trans_date
+  FROM time
+  GROUP BY trans_date
+  ORDER BY trans_date;'''
+
 
 
