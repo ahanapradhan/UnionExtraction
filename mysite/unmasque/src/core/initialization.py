@@ -54,22 +54,31 @@ class Initiator(Base):
         if not check:
             return False
         all_pkfk = self.get_all_pkfk()
-        self.make_pkfk_complete_graph(all_pkfk)
-        self.do_refinement()
+        self.__make_pkfk_complete_graph(all_pkfk)
+        self.__do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
         self._create_working_schema()
         self.logger.info(f"Working schema set to {self.connectionHelper.config.schema}")
         if not self.connectionHelper.config.use_cs2 and not self.connectionHelper.config.scale_down:
             self.take_backup()
-        self.get_all_sizes()
+        self.__get_rows_in_tables()
         self.__scale_down(args)
         return True
 
-    def do_refinement(self):
+    def __get_rows_in_tables(self):
+        if not self.connectionHelper.config.table_sizes_dict.keys():
+            self.get_all_sizes()
+        else :
+            self.all_sizes = self.connectionHelper.config.table_sizes_dict.copy()
+            # for key, value in self.connectionHelper.config.table_sizes_dict:
+            #     self.all_sizes[key] = value
+        self.logger.debug(self.all_sizes)
+
+    def __do_refinement(self):
         self.global_key_lists = [list(filter(lambda val: val[0] in self.all_relations, elt)) for elt in
                                  self.global_key_lists if elt and len(elt) > 1]
 
-    def make_pkfk_complete_graph(self, all_pkfk):
+    def __make_pkfk_complete_graph(self, all_pkfk):
         all_relations = []
         temp = []
         for row in all_pkfk:

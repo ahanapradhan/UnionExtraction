@@ -11,6 +11,7 @@ class ScaleDown(Cs2):
         self.downscale_schema = f"{WORKING_SCHEMA}{SCALE_DOWN}"
         self.full_schema = self.connectionHelper.config.user_schema
         self.enabled = self.connectionHelper.config.scale_down
+        # self.seed_sample_size_per = self.seed_sample_size_per * self.sample_per_multiplier
 
     def extract_params_from_args(self, args):
         return args[0]
