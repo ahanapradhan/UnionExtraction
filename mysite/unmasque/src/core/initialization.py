@@ -30,7 +30,7 @@ class Initiator(Base):
         self.all_relations = []
         self.error = None
 
-    def verify_support_files(self):
+    def __verify_support_files(self):
         check_pkfk = os.path.isfile(self.pkfk_file_path)
         if not check_pkfk:
             self.logger.error("Unmasque Error: \n Support File Not Accessible. ")
@@ -38,13 +38,13 @@ class Initiator(Base):
 
     def doActualJob(self, args=None):
         self.reset()
-        check = self.verify_support_files()
+        check = self.__verify_support_files()
         self.logger.info("support files verified..")
         if not check:
             return False
-        all_pkfk = self.get_all_pkfk()
-        self.make_pkfk_complete_graph(all_pkfk)
-        self.do_refinement()
+        all_pkfk = self.__get_all_pkfk()
+        self.__make_pkfk_complete_graph(all_pkfk)
+        self.__do_refinement()
         self.logger.info("loaded pk-fk..", all_pkfk)
         self._create_working_schema()
         if not self.connectionHelper.config.use_cs2:
@@ -53,11 +53,11 @@ class Initiator(Base):
         self.get_all_sizes()
         return True
 
-    def do_refinement(self):
+    def __do_refinement(self):
         self.global_key_lists = [list(filter(lambda val: val[0] in self.all_relations, elt)) for elt in
                                  self.global_key_lists if elt and len(elt) > 1]
 
-    def make_pkfk_complete_graph(self, all_pkfk):
+    def __make_pkfk_complete_graph(self, all_pkfk):
         all_relations = []
         temp = []
         for row in all_pkfk:
@@ -85,7 +85,7 @@ class Initiator(Base):
         self.all_relations.sort()
         self.logger.debug("all relations: ", self.all_relations)
 
-    def get_all_pkfk(self):
+    def __get_all_pkfk(self):
         with open(self.pkfk_file_path, 'rt') as f:
             data = csv.reader(f)
             all_pkfk = list(data)[1:]

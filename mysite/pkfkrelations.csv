@@ -1,4 +1,12 @@
 TABLE_NAME,ATTRIBUTE_NAME,IS_PK,IS_FK,REFERENCING_TABLE,REFERENCING_ATTRIBUTE
-alpha,pos_id_3,y,n,,
-bravo,pos_id_4,y,n,,
-alpha,pos_owner_user_id_3,n,y,posts_answers_4,pos_owner_user_id_4
+stories,sto_id,y,n,,
+comments_5,com_id_5,y,n,,
+posts_answers_4,pos_id_4,y,n,,
+posts_answers_5,pos_id_5,y,n,,
+posts_answers_6,pos_id_6,y,n,,
+posts_questions_3,pq_id_3,y,n,,
+posts_questions_4,pq_id_4,y,n,,
+posts_questions_5,pq_id_5,y,n,,
+taxi_trips_5,tax_taxi_id_5,y,n,,
+transactions,tra_hash,n,n,,
+users,user_id,y,n,,
