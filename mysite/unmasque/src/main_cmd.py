@@ -47,6 +47,14 @@ WHERE DATE(tax_trip_start_timestamp_5) = '2017-05-01';''', False, False, False, 
   WHERE s.sto_time_ts = '2012-01-01'
   ORDER BY c.num_comments DESC;''', False, False, True, False),
 
+                     TestQuery("Q_2_1_T_2", """SELECT c.by
+  FROM comments_5 AS c
+  WHERE EXTRACT(DATE FROM c.time_ts) = '2014-01-01'
+  UNION
+  SELECT s.by
+  FROM stories AS s
+  WHERE EXTRACT(DATE FROM s.time_ts) = '2014-01-01'""", False, True, False, False),
+
                      TestQuery("Q_1_5_T_1", '''WITH time AS
   (
   SELECT DATE(tra_block_timestamp) AS trans_date
@@ -70,17 +78,17 @@ WHERE DATE(tax_trip_start_timestamp_5) = '2017-05-01';''', False, False, False, 
   AND a.pos_creation_date_4 < '2019-02-01'
   GROUP BY q.pq_owner_user_id_3;''', False, False, False, False),
 
-                     TestQuery("Q_2_1_X_3", '''SELECT u.use_id AS id,
+                     TestQuery("Q_2_1_X_3", '''SELECT u.use_id AS id, q.pq_title_4 as qtn_title, a.pos_body_5 as answer,
   MIN(q.pq_creation_date_4) AS q_creation_date,
   MIN(a.pos_creation_date_5) AS a_creation_date
   FROM posts_questions_4 AS q
-  JOIN posts_answers_5 AS a
+  INNER JOIN posts_answers_5 AS a
   ON q.pq_owner_user_id_4 = a.pos_owner_user_id_5
   RIGHT JOIN users AS u
   ON q.pq_owner_user_id_4 = u.use_id
   WHERE u.use_creation_date >= '2019-01-01'
   and u.use_creation_date < '2019-02-01'
-  GROUP BY u.use_id;''', False, False, True, False),
+  GROUP BY u.use_id, q.pq_title_4, a.pos_body_5;''', False, False, True, False),
 
                      TestQuery("Q_2_1_X_4", '''SELECT q.pq_owner_user_id_5
   FROM posts_questions_5 AS q

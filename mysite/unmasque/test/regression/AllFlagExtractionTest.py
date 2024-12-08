@@ -46,6 +46,37 @@ class ExtractionTestCase(BaseTestCase):
   ORDER BY trans_date;"""
         self.do_test(query)
 
+    def test_kaggle_Q21T1(self):
+        query = '''WITH c AS
+  (
+  SELECT com_parent_5, COUNT(*) as num_comments
+  FROM comments_5
+  GROUP BY com_parent_5
+  )
+  SELECT s.sto_id as story_id, s.sto_by, s.sto_title, c.num_comments
+  FROM stories AS s
+  LEFT JOIN c
+  ON s.sto_id = c.com_parent_5
+  WHERE s.sto_time_ts = '2012-01-01'
+  ORDER BY c.num_comments DESC;'''
+        self.conn.config.detect_oj = True
+        self.do_test(query)
+
+    def test_kaggle_Q21X3(self):
+        query = '''SELECT u.use_id AS id, q.pq_title_4 as qtn_title, a.pos_body_5 as answer,
+  MIN(q.pq_creation_date_4) AS q_creation_date,
+  MIN(a.pos_creation_date_5) AS a_creation_date
+  FROM posts_questions_4 AS q
+  INNER JOIN posts_answers_5 AS a
+  ON q.pq_owner_user_id_4 = a.pos_owner_user_id_5
+  RIGHT JOIN users AS u
+  ON q.pq_owner_user_id_4 = u.use_id
+  WHERE u.use_creation_date >= '2019-01-01'
+  and u.use_creation_date < '2019-02-01'
+  GROUP BY u.use_id, q.pq_title_4, a.pos_body_5;'''
+        self.conn.config.detect_oj = True
+        self.do_test(query)
+
     def setUp(self):
         super().setUp()
         del self.pipeline
@@ -68,7 +99,6 @@ class ExtractionTestCase(BaseTestCase):
         self.pipeline.time_profile.print()
         self.assertTrue(self.pipeline.correct)
         del factory
-
 
 
 if __name__ == '__main__':

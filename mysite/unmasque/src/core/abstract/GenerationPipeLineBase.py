@@ -8,6 +8,7 @@ from frozenlist._frozenlist import FrozenList
 
 from .MutationPipeLineBase import MutationPipeLineBase
 from ..dataclass.genPipeline_context import GenPipelineContext
+from ...util.aoa_utils import remove_item_from_list
 from ...util.constants import NON_TEXT_TYPES
 from ...util.utils import get_unused_dummy_val, get_dummy_val_for, get_format, get_char, get_escape_string
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
@@ -102,9 +103,16 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         other_attribs = []
         for join_edge in self.global_join_graph:
             if attrib in join_edge:
-                other_attribs = copy.deepcopy(join_edge)
-                other_attribs.remove(attrib)
-                break
+                other_attribs.extend(copy.deepcopy(join_edge))
+                remove_item_from_list(attrib, other_attribs)
+                #break
+            for atb in other_attribs:
+                for je in self.global_join_graph:
+                    if atb in je:
+                        other_attribs.extend(copy.deepcopy(je))
+                        other_attribs = list(set(other_attribs))
+        other_attribs = list(set(other_attribs))
+        remove_item_from_list(attrib, other_attribs)
         return other_attribs
 
     def update_attribs_bulk(self, join_tabnames, other_attribs, val) -> None:
