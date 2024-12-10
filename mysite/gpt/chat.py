@@ -1,0 +1,25 @@
+
+from openai import OpenAI
+
+# gets API Key from environment variable OPENAI_API_KEY
+client = OpenAI()
+
+
+# Streaming:
+print("----- streaming request -----")
+stream = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {
+            "role": "user",
+            "content": "From where did you formulate the previous response?",
+        },
+    ],
+    stream=True,
+)
+for chunk in stream:
+    if not chunk.choices:
+        continue
+
+    print(chunk.choices[0].delta.content, end="")
+
