@@ -61,6 +61,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         self.update_state(FROM_CLAUSE + RUNNING)
         check = fc.doJob(query)
         self.update_state(FROM_CLAUSE + DONE)
+        fc.local_elapsed_time = fc.local_elapsed_time - fc.init.local_elapsed_time
         self.time_profile.update_for_from_clause(fc.local_elapsed_time, fc.app_calls)
         io = IOState(query, fc.core_relations)
         if not check or not fc.done:
