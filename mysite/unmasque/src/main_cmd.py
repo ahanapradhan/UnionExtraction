@@ -29,7 +29,153 @@ class TestQuery:
 
 
 def create_workload():
-    test_workload = [TestQuery("U1", """(SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100
+    test_workload = [TestQuery("TPCH_Q18", """select
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice,
+        sum(l_quantity)
+from
+        customer,
+        orders,
+        lineitem
+where
+        o_orderkey in (
+                select
+                        l_orderkey
+                from
+                        lineitem
+                group by
+                        l_orderkey having
+                                sum(l_quantity) > 300
+        )
+        and c_custkey = o_custkey
+        and o_orderkey = l_orderkey
+group by
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice
+order by
+        o_totalprice desc,
+        o_orderdate;""", False, False, False, False), TestQuery("TPCH_Q8","""select
+	o_year,
+	sum(case
+		when nation = 'INDIA' then volume
+		else 0
+	end) / sum(volume) as mkt_share
+from
+	(
+		select
+			extract(year from o_orderdate) as o_year,
+			l_extendedprice * (1 - l_discount) as volume,
+			n2.n_name as nation
+		from
+			part,
+			supplier,
+			lineitem,
+			orders,
+			customer,
+			nation n1,
+			nation n2,
+			region
+		where
+			p_partkey = l_partkey
+			and s_suppkey = l_suppkey
+			and l_orderkey = o_orderkey
+			and o_custkey = c_custkey
+			and c_nationkey = n1.n_nationkey
+			and n1.n_regionkey = r_regionkey
+			and r_name = 'ASIA'
+			and s_nationkey = n2.n_nationkey
+			and o_orderdate between date '1995-01-01' and date '1996-12-31'
+			and p_type LIKE 'SMALL%'
+	) as all_nations
+group by
+	o_year
+order by
+	o_year;""",False,False,False,False),
+        TestQuery("TPCH_Q7","""select
+	supp_nation,
+	cust_nation,
+	l_year,
+	sum(volume) as revenue
+from
+	(
+		select
+			n1.n_name as supp_nation,
+			n2.n_name as cust_nation,
+			extract(year from l_shipdate) as l_year,
+			l_extendedprice * (1 - l_discount) as volume
+		from
+			supplier,
+			lineitem,
+			orders,
+			customer,
+			nation n1,
+			nation n2
+		where
+			s_suppkey = l_suppkey
+			and o_orderkey = l_orderkey
+			and c_custkey = o_custkey
+			and s_nationkey = n1.n_nationkey
+			and c_nationkey = n2.n_nationkey
+			and (
+				(n1.n_name = 'GERMANY' and n2.n_name = 'FRANCE')
+				or (n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY')
+			)
+			and l_shipdate between date '1995-01-01' and date '1996-12-31'
+	) as shipping
+group by
+	supp_nation,
+	cust_nation,
+	l_year
+order by
+	supp_nation,
+	cust_nation,
+	l_year;""",False,False,False,False,True),
+        TestQuery("TPCH_Q21", """select
+	s_name,
+	count(*) as numwait
+from
+	supplier,
+	lineitem l1,
+	orders,
+	nation
+where
+	s_suppkey = l1.l_suppkey
+	and o_orderkey = l1.l_orderkey
+	and o_orderstatus = 'F'
+	and l1.l_receiptdate > l1.l_commitdate
+	and exists (
+		select
+			*
+		from
+			lineitem l2
+		where
+			l2.l_orderkey = l1.l_orderkey
+			and l2.l_suppkey <> l1.l_suppkey
+	)
+	and not exists (
+		select
+			*
+		from
+			lineitem l3
+		where
+			l3.l_orderkey = l1.l_orderkey
+			and l3.l_suppkey <> l1.l_suppkey
+			and l3.l_receiptdate > l3.l_commitdate
+	)
+	and s_nationkey = n_nationkey
+	and n_name = 'ARGENTINA'
+group by
+	s_name
+order by
+	numwait desc,
+	s_name;""", False, False, False, True),
+        TestQuery("U1", """(SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100
 Order By p_partkey Limit 5)
 UNION ALL (SELECT s_suppkey, s_name FROM supplier, partsupp where s_suppkey = ps_suppkey and
 ps_availqty > 200 Order By s_suppkey Limit 7);""", False, True, False, False),
