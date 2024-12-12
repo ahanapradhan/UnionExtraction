@@ -29,12 +29,102 @@ class TestQuery:
 
 
 def create_workload():
-    test_workload = [TestQuery("U1", """(SELECT p_partkey, p_name FROM part, partsupp where p_partkey = ps_partkey and ps_availqty > 100
-Order By p_partkey Limit 5)
-UNION ALL (SELECT s_suppkey, s_name FROM supplier, partsupp where s_suppkey = ps_suppkey and
-ps_availqty > 200 Order By s_suppkey Limit 7);""", True, True, False, False),
-                     TestQuery("U2", """(SELECT s_suppkey, s_name FROM supplier, nation where s_nationkey = n_nationkey and  n_name = 'GERMANY' order by s_suppkey desc, s_name limit 12)UNION ALL (SELECT c_custkey, c_name FROM customer,  orders where c_custkey = o_custkey and o_orderpriority = '1-URGENT' order by c_custkey, c_name desc limit 10);
-""", False, True, False, False),
+    test_workload = [TestQuery("Test1", """select * from store_sales;""", False, False, False, False),
+                     TestQuery("Q4_CTE", """(SELECT c_customer_id                       customer_id, 
+                c_first_name                        customer_first_name, 
+                c_last_name                         customer_last_name, 
+                c_preferred_cust_flag               customer_preferred_cust_flag 
+                , 
+                c_birth_country 
+                customer_birth_country, 
+                c_login                             customer_login, 
+                c_email_address                     customer_email_address, 
+                d_year                              dyear, 
+                Sum(( ( ss_ext_list_price - ss_ext_wholesale_cost 
+                        - ss_ext_discount_amt 
+                      ) 
+                      + 
+                          ss_ext_sales_price ) / 2) year_total, 
+                's'                                 sale_type 
+         FROM   customer, 
+                store_sales, 
+                date_dim 
+         WHERE  c_customer_sk = ss_customer_sk 
+                AND ss_sold_date_sk = d_date_sk 
+         GROUP  BY c_customer_id, 
+                   c_first_name, 
+                   c_last_name, 
+                   c_preferred_cust_flag, 
+                   c_birth_country, 
+                   c_login, 
+                   c_email_address, 
+                   d_year 
+         UNION ALL 
+         SELECT c_customer_id                             customer_id, 
+                c_first_name                              customer_first_name, 
+                c_last_name                               customer_last_name, 
+                c_preferred_cust_flag 
+                customer_preferred_cust_flag, 
+                c_birth_country                           customer_birth_country 
+                , 
+                c_login 
+                customer_login, 
+                c_email_address                           customer_email_address 
+                , 
+                d_year                                    dyear 
+                , 
+                Sum(( ( ( cs_ext_list_price 
+                          - cs_ext_wholesale_cost 
+                          - cs_ext_discount_amt 
+                        ) + 
+                              cs_ext_sales_price ) / 2 )) year_total, 
+                'c'                                       sale_type 
+         FROM   customer, 
+                catalog_sales, 
+                date_dim 
+         WHERE  c_customer_sk = cs_bill_customer_sk 
+                AND cs_sold_date_sk = d_date_sk 
+         GROUP  BY c_customer_id, 
+                   c_first_name, 
+                   c_last_name, 
+                   c_preferred_cust_flag, 
+                   c_birth_country, 
+                   c_login, 
+                   c_email_address, 
+                   d_year 
+         UNION ALL 
+         SELECT c_customer_id                             customer_id, 
+                c_first_name                              customer_first_name, 
+                c_last_name                               customer_last_name, 
+                c_preferred_cust_flag 
+                customer_preferred_cust_flag, 
+                c_birth_country                           customer_birth_country 
+                , 
+                c_login 
+                customer_login, 
+                c_email_address                           customer_email_address 
+                , 
+                d_year                                    dyear 
+                , 
+                Sum(( ( ( ws_ext_list_price 
+                          - ws_ext_wholesale_cost 
+                          - ws_ext_discount_amt 
+                        ) + 
+                              ws_ext_sales_price ) / 2 )) year_total, 
+                'w'                                       sale_type 
+         FROM   customer, 
+                web_sales, 
+                date_dim 
+         WHERE  c_customer_sk = ws_bill_customer_sk 
+                AND ws_sold_date_sk = d_date_sk 
+         GROUP  BY c_customer_id, 
+                   c_first_name, 
+                   c_last_name, 
+                   c_preferred_cust_flag, 
+                   c_birth_country, 
+                   c_login, 
+                   c_email_address, 
+                   d_year)""", False, True, False, False),
                      TestQuery("U3", """(SELECT c_custkey as key, c_name as name FROM customer, nation where c_nationkey = n_nationkey and  n_name = 'UNITED STATES' Order by key Limit 10)
  UNION ALL (SELECT p_partkey as key, p_name as name FROM part , lineitem where p_partkey = l_partkey and l_quantity > 35 Order By key Limit 10) 
  UNION ALL (select n_nationkey as key, r_name as name from nation, region where n_name LIKE 'B%' Order By key Limit 5)
