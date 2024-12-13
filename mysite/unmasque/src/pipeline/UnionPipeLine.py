@@ -63,7 +63,7 @@ class UnionPipeLine(OuterJoinPipeLine):
         return result
 
     def __post_process(self, pstr, u_eq):
-        u_Q = "\n UNION ALL \n".join(u_eq) + ";"
+        u_Q = "\n UNION ALL ".join(u_eq) + ";"
         if "UNION ALL" not in u_Q and u_Q.startswith('(') and u_Q.endswith(');'):
             u_Q = u_Q[1:-2] + ';'
         result = ""

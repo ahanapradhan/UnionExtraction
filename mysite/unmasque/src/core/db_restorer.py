@@ -7,8 +7,11 @@ class DbRestorer(AppExtractorBase):
         super().__init__(connectionHelper, name)
         self.relations = []
         self.last_restored_size = {}
-        self.core_relations = core_relations
-        self.core_relations = list(set(self.core_relations))
+        if core_relations is not None:
+            self.core_relations = core_relations
+            self.core_relations = list(set(self.core_relations))
+        else:
+            self.core_relations = None
 
     def set_all_sizes(self, sizes):
         self.all_sizes = sizes
@@ -42,7 +45,8 @@ class DbRestorer(AppExtractorBase):
         self.logger.debug("core relations: ", self.core_relations, " all sizes: ", self.all_sizes)
         tabs_wheres = self.extract_params_from_args(args)
         if tabs_wheres is None:
-            to_restore = self.core_relations if len(self.core_relations) else self.relations
+            to_restore = self.core_relations if (self.core_relations is not None and len(self.core_relations)) \
+                else self.relations
             for tab in to_restore:
                 if tab not in self.last_restored_size.keys():
                     self.__update_current_sizes(tab)

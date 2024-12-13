@@ -67,11 +67,10 @@ class UN2WhereClause(MutationPipeLineBase):
         attribs, vals = values[0], values[1]
         attrib_list = ", ".join(attribs)
         self.connectionHelper.execute_sql([self.connectionHelper.queries.truncate_table(
-            self.get_fully_qualified_table_name(tabname))])
+                                                    self.get_fully_qualified_table_name(tabname))])
         self.connectionHelper.execute_sql_with_params(
             self.connectionHelper.queries.insert_into_tab_attribs_format(f"({attrib_list})", "",
-                                                                         self.get_fully_qualified_table_name(tabname)),
-            [vals])
+                                                    self.get_fully_qualified_table_name(tabname)),[vals])
 
     def get_datatype(self, tab_attrib: Tuple[str, str]) -> str:
         if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):

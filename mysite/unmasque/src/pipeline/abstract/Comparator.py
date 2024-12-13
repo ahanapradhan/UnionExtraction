@@ -10,7 +10,7 @@ class Comparator(AppExtractorBase):
 
     def __init__(self, connectionHelper, name, earlyExit, core_relations=None):
         super().__init__(connectionHelper, name)
-        self.relations = core_relations
+        self.relations = core_relations if core_relations is not None else []
         self.earlyExit = earlyExit
         self.row_count_r_e = 0
         self.row_count_r_h = 0

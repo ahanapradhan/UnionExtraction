@@ -4,7 +4,7 @@ from pathlib import Path
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
-    DETECT_OJ, LIMIT, OPTIONS_SECTION, WORKING_SCHEMA
+    DETECT_OJ, LIMIT, OPTIONS_SECTION, WORK_MEM, WORKING_SCHEMA
 
 
 class Config:
@@ -90,10 +90,10 @@ class Config:
         elif use_cs2.lower() == "yes":
             self.use_cs2 = True
 
-        #detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
-        #if detect_or.lower() == "no":
+        # detect_or = config_object.get(FEATURE_SECTION, DETECT_OR)
+        # if detect_or.lower() == "no":
         #    self.detect_or = False
-        #elif detect_or.lower() == "yes":
+        # elif detect_or.lower() == "yes":
         #    self.detect_or = True
 
         detect_oj = config_object.get(FEATURE_SECTION, DETECT_OJ)
@@ -110,8 +110,8 @@ class Config:
             self.limit_limit = int(limit_config)
         except:
             pass
-        #try:
+        # try:
         #    workmem_config = config_object.get(OPTIONS_SECTION, WORK_MEM.lower())
         #    self.workmem = int(workmem_config)
-        #except:
+        # except:
         #    pass

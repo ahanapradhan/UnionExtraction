@@ -189,7 +189,7 @@ class NepMinimizer(Minimizer):
         return True
 
     def match(self, query, Q_E):
-        return self.nep_comparator.doJob(query, Q_E)
+        return self.nep_comparator.doJob(query, Q_E)[0]
 
 
 class NEP(GenerationPipeLineBase):
@@ -205,6 +205,7 @@ class NEP(GenerationPipeLineBase):
 
     def extract_NEP_for_table(self, tabname, query, is_for_joined):
         self.logger.debug("Inside get nep")
+        self.see_d_min_tab(tabname)
         res = self.app.doJob(query)
         filterAttribs = []
         if self.app.isQ_result_empty(res):
