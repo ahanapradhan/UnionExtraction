@@ -29,7 +29,7 @@ class TestQuery:
 
 
 def create_workload():
-    test_workload = [TestQuery("Test1", """select * from store_sales;""", False, False, False, False),
+    test_workload = [TestQuery("Test1", """select * from store_sales;""", False, False, True, False),
                      TestQuery("Q4_CTE", """(SELECT c_customer_id                       customer_id, 
                 c_first_name                        customer_first_name, 
                 c_last_name                         customer_last_name, 
