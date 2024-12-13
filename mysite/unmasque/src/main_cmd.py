@@ -125,10 +125,25 @@ def create_workload():
                    c_login, 
                    c_email_address, 
                    d_year)""", False, True, False, False),
-                     TestQuery("U3", """(SELECT c_custkey as key, c_name as name FROM customer, nation where c_nationkey = n_nationkey and  n_name = 'UNITED STATES' Order by key Limit 10)
- UNION ALL (SELECT p_partkey as key, p_name as name FROM part , lineitem where p_partkey = l_partkey and l_quantity > 35 Order By key Limit 10) 
- UNION ALL (select n_nationkey as key, r_name as name from nation, region where n_name LIKE 'B%' Order By key Limit 5)
-""", False, True, False, False),
+                     TestQuery("Q5_CTE", """SELECT ws_web_site_sk          AS wsr_web_site_sk, 
+                                ws_sold_date_sk         AS date_sk, 
+                                ws_ext_sales_price      AS sales_price, 
+                                ws_net_profit           AS profit, 
+                                cast(0 AS decimal(7,2)) AS return_amt, 
+                                cast(0 AS decimal(7,2)) AS net_loss 
+                         FROM   web_sales 
+                         UNION ALL 
+                         SELECT          ws_web_site_sk          AS wsr_web_site_sk, 
+                                         wr_returned_date_sk     AS date_sk, 
+                                         cast(0 AS decimal(7,2)) AS sales_price, 
+                                         cast(0 AS decimal(7,2)) AS profit, 
+                                         wr_return_amt           AS return_amt, 
+                                         wr_net_loss             AS net_loss 
+                         FROM            web_returns 
+                         LEFT OUTER JOIN web_sales 
+                         ON              ( 
+                                                         wr_item_sk = ws_item_sk 
+                                         AND             wr_order_number = ws_order_number)""", False, True, True, False),
                      TestQuery("U4", """(SELECT c_custkey, c_name FROM customer,  nation where c_nationkey = n_nationkey and n_name = 'UNITED STATES' Order By c_custkey desc Limit 5) 
  UNION ALL (SELECT s_suppkey, s_name FROM supplier ,  nation where s_nationkey = n_nationkey and n_name = 'CANADA' Order By s_suppkey Limit 6) 
  UNION ALL (SELECT p_partkey, p_name FROM part ,  lineitem where p_partkey = l_partkey and l_quantity > 20 Order By p_partkey desc Limit 7) 
