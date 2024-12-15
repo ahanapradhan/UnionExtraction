@@ -59,6 +59,71 @@ class ExtractionTestCase(BaseTestCase):
         query = """select * from store_sales;"""
         self.do_test(query)
 
+    def test_Q4_CTE_q1(self):
+        query = """SELECT c_customer_id                       customer_id, 
+                c_first_name                        customer_first_name, 
+                c_last_name                         customer_last_name, 
+                c_preferred_cust_flag               customer_preferred_cust_flag 
+                , 
+                c_birth_country 
+                customer_birth_country, 
+                c_login                             customer_login, 
+                c_email_address                     customer_email_address, 
+                d_year                              dyear, 
+                Sum(( ( ss_ext_list_price - ss_ext_wholesale_cost 
+                        - ss_ext_discount_amt 
+                      ) 
+                      + 
+                          ss_ext_sales_price ) / 2) year_total, 
+                's'                                 sale_type 
+         FROM   customer, 
+                store_sales, 
+                date_dim 
+         WHERE  c_customer_sk = ss_customer_sk 
+                AND ss_sold_date_sk = d_date_sk 
+         GROUP  BY c_customer_id, 
+                   c_first_name, 
+                   c_last_name, 
+                   c_preferred_cust_flag, 
+                   c_birth_country, 
+                   c_login, 
+                   c_email_address, 
+                   d_year 
+         UNION ALL 
+         SELECT c_customer_id                             customer_id, 
+                c_first_name                              customer_first_name, 
+                c_last_name                               customer_last_name, 
+                c_preferred_cust_flag 
+                customer_preferred_cust_flag, 
+                c_birth_country                           customer_birth_country 
+                , 
+                c_login 
+                customer_login, 
+                c_email_address                           customer_email_address 
+                , 
+                d_year                                    dyear 
+                , 
+                Sum(( ( ( cs_ext_list_price 
+                          - cs_ext_wholesale_cost 
+                          - cs_ext_discount_amt 
+                        ) + 
+                              cs_ext_sales_price ) / 2 )) year_total, 
+                'c'                                       sale_type 
+         FROM   customer, 
+                catalog_sales, 
+                date_dim 
+         WHERE  c_customer_sk = cs_bill_customer_sk 
+                AND cs_sold_date_sk = d_date_sk 
+         GROUP  BY c_customer_id, 
+                   c_first_name, 
+                   c_last_name, 
+                   c_preferred_cust_flag, 
+                   c_birth_country, 
+                   c_login, 
+                   c_email_address, 
+                   d_year ;"""
+        self.do_test(query)
+
 
 if __name__ == '__main__':
     unittest.main()

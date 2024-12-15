@@ -7,18 +7,11 @@ from _decimal import Decimal
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
 from ...src.util.utils import get_unused_dummy_val, get_format, get_char
-from ...test.util.TPCH_backup_restore import TPCHRestore
 from ...src.util.ConnectionFactory import ConnectionHelperFactory
-from ...src.util.PostgresConnectionHelper import PostgresConnectionHelper
-from ...src.util.configParser import Config
 
 
 def signal_handler(signum, frame):
     print('You pressed Ctrl+C!')
-    sigconn = PostgresConnectionHelper(Config())
-    sanitizer = TPCHRestore(sigconn)
-    sanitizer.doJob()
-    print("database restored!")
     sys.exit(0)
 
 
@@ -125,7 +118,6 @@ def create_dmin_for_test(from_rels, global_filter_predicates, attrib_types_dict,
 class BaseTestCase(unittest.TestCase):
     conn = ConnectionHelperFactory().createConnectionHelper()
     sigconn = ConnectionHelperFactory().createConnectionHelper()
-    sanitizer = TPCHRestore(sigconn)
     global_attrib_types = []
     global_attrib_types_dict = {}
     global_min_instance_dict = {}
