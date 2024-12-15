@@ -101,7 +101,7 @@ class UN2WhereClause(MutationPipeLineBase):
                                                 val))], self.logger)
         else:
             if val in [None, 'None', 'NULL']:
-                val = 0
+                val = 0 if datatype != str else ''
             self.connectionHelper.execute_sql([self.connectionHelper.queries.update_tab_attrib_with_value(
                 self.get_fully_qualified_table_name(get_tab(t_a)),
                 get_attrib(t_a), get_format(datatype,
