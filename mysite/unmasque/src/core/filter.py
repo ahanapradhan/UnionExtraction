@@ -330,8 +330,13 @@ class Filter(UN2WhereClause):
     def checkStringPredicate(self, query, tabname, attrib):
         prev_values = self.get_dmin_val_of_attrib_list([(tabname, attrib)])
         # update query
-        val = 'b' if (self.global_d_plus_value[attrib] is not None and self.global_d_plus_value[attrib][
-            0] == 'a') else 'a'
+        d_plus_val = self.global_d_plus_value[attrib]
+        val = 'a' if d_plus_val is not None and d_plus_val.startswith('a') else 'b'
+        #    val = 'a'
+        #else:
+        #    val = 'b'
+        #val = 'b' if (self.global_d_plus_value[attrib] is not None and self.global_d_plus_value[attrib][
+        #    0] == 'a') else 'a'
         val_result = self.run_updateQ_with_temp_str(attrib, query, tabname, val)
         empty_result = self.run_updateQ_with_temp_str(attrib, query, tabname, "" "")
         effect = self.app.isQ_result_empty(val_result) \
