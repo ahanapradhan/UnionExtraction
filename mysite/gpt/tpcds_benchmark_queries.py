@@ -222,3 +222,37 @@ Q54_subquery = """SELECT cs_sold_date_sk     sold_date_sk,
                         ws_bill_customer_sk customer_sk, 
                         ws_item_sk          item_sk 
                  FROM   web_sales"""
+
+Q74_subquery = """SELECT c_customer_id    customer_id, 
+                c_first_name     customer_first_name, 
+                c_last_name      customer_last_name, 
+                d_year           AS year1, 
+                Sum(ss_net_paid) year_total, 
+                's'              sale_type 
+         FROM   customer, 
+                store_sales, 
+                date_dim 
+         WHERE  c_customer_sk = ss_customer_sk 
+                AND ss_sold_date_sk = d_date_sk 
+                AND d_year IN ( 1999, 1999 + 1 ) 
+         GROUP  BY c_customer_id, 
+                   c_first_name, 
+                   c_last_name, 
+                   d_year 
+         UNION ALL 
+         SELECT c_customer_id    customer_id, 
+                c_first_name     customer_first_name, 
+                c_last_name      customer_last_name, 
+                d_year           AS year1, 
+                Sum(ws_net_paid) year_total, 
+                'w'              sale_type 
+         FROM   customer, 
+                web_sales, 
+                date_dim 
+         WHERE  c_customer_sk = ws_bill_customer_sk 
+                AND ws_sold_date_sk = d_date_sk 
+                AND d_year IN ( 1999, 1999 + 1 ) 
+         GROUP  BY c_customer_id, 
+                   c_first_name, 
+                   c_last_name, 
+                   d_year"""
