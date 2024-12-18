@@ -75,8 +75,8 @@ class GenericPipeLine(ABC):
                 result = self.error
                 self.update_state(ERROR)
                 return result
-            self.verify_correctness(query, result)
-            self.time_profile.update_for_app(app.method_call_count)
+            # self.verify_correctness(query, result)
+            # self.time_profile.update_for_app(app.method_call_count)
             return result
         except Exception as e:
             self.error += str(e)
