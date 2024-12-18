@@ -2,13 +2,10 @@ import sys
 
 from openai import OpenAI
 
-from ..gpt.tpch_benchmark_queries import Q4_CTE
+from .tpcds_benchmark_queries import Q5_CTE, Q11_CTE, Q71_subquery, Q2_subquery, Q54_subquery
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
-
-text_2_sql_prompt = "Considering TPCDS schema, give me SQL query (only the SQL, " \
-                    "without any further explaination) which fits best with the following business question: "
 
 sql_2_text_prompt = "Considering TPCDS schema, give me the business question in text (enclosed within \"\")" \
                     "(only the text description in a paragraph, not any explaination) " \
@@ -46,9 +43,9 @@ def one_round(query):
 
 
 orig_out = sys.stdout
-f = open('tpcds_chatgpt_text.py', 'w')
+f = open('tpcds_chatgpt_text.py', 'a')
 sys.stdout = f
-for query in [Q4_CTE]:
+for query in [Q54_subquery]:
     one_round(query)
 sys.stdout = orig_out
 f.close()
