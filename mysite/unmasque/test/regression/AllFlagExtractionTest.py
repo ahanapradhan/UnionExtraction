@@ -57,10 +57,6 @@ class ExtractionTestCase(BaseTestCase):
         #self.assertTrue(self.pipeline.correct)
         del factory
 
-    def test_test1(self):
-        query = """select * from store_sales;"""
-        self.do_test(query)
-
     def test_Q4(self):
         query = Q4_CTE
         self.do_test(query)
@@ -79,6 +75,7 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_Q5(self):
         query = Q5_CTE
+        self.conn.config.detect_oj = True
         self.do_test(query)
 
     def test_Q11(self):
