@@ -21,7 +21,7 @@ class Config:
         self.limit_limit = 1000
         self.database = "postgres"
         # self.index_maker = "create_indexes.sql"
-        self.pkfk = "pkfkrelations.csv"
+        self.pkfk = "pkfkrelations_tpcds.csv"
         self.schema = WORKING_SCHEMA
         self.user_schema = "public"
         self.dbname = "tpch"
