@@ -147,7 +147,9 @@ class ExtractionTestCase(BaseTestCase):
     name AS n,
     person_info AS pi,
     title AS t
-    WHERE it_info = 'mini biography'
+    WHERE an_name LIKE '%a%' 
+    AND n_name_pcode_cf LIKE 'U4%'
+    AND it_info = 'mini biography'
     AND lt_link = 'features'
     AND pi_note = 'Volker Boehm'
     AND t_production_year BETWEEN 1980 AND 1984
