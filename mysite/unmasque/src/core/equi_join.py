@@ -80,7 +80,9 @@ class U2EquiJoin(FilterHolder):
             attrib_list = [equi_join_group[i] for i in check_part]
             check = self.handle_unit_eq_group(attrib_list, query)
             if check:
+                self.algebraic_eq_predicates.append(attrib_list)
                 return attrib_list
+        self.algebraic_eq_predicates.append(equi_join_group)
         return equi_join_group
 
     def algo2_preprocessing(self) -> Tuple[dict, list]:
