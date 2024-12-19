@@ -54,7 +54,7 @@ class ExtractionTestCase(BaseTestCase):
         record_file.write(u_Q)
         record_file.write("\n --- END OF ONE EXTRACTION EXPERIMENT\n")
         self.pipeline.time_profile.print()
-        #self.assertTrue(self.pipeline.correct)
+        self.assertTrue(self.pipeline.correct)
         del factory
 
     def test_Q4(self):
@@ -135,6 +135,36 @@ class ExtractionTestCase(BaseTestCase):
                 AND ws_bill_addr_sk = ca_address_sk 
                 AND ca_gmt_offset = -5 
          GROUP  BY i_manufact_id); """
+        self.do_test(query)
+
+    def test_JOB_query(self):
+        query = """SELECT MIN(n_name) AS of_person, MIN(t_title) AS biography_movie
+    FROM aka_name AS an,
+    cast_info AS ci,
+    info_type AS it,
+    link_type AS lt,
+    movie_link AS ml,
+    name AS n,
+    person_info AS pi,
+    title AS t
+    WHERE it_info = 'mini biography'
+    AND lt_link = 'features'
+    AND pi_note = 'Volker Boehm'
+    AND t_production_year BETWEEN 1980 AND 1984
+    AND n_id = an_person_id
+    AND n_id = pi_person_id
+    AND ci_person_id = n_id
+    AND t_id = ci_movie_id
+    AND ml_linked_movie_id = t_id
+    AND lt_id = ml_link_type_id
+    AND it_id = pi_info_type_id
+    AND pi_person_id = an_person_id
+    AND pi_person_id = ci_person_id
+    AND an_person_id = ci_person_id
+    AND ci_movie_id = ml_linked_movie_id;
+        """
+        self.conn.config.detect_union = False
+        self.conn.config.use_cs2 = False
         self.do_test(query)
 
 

@@ -2,7 +2,8 @@ import sys
 
 from openai import OpenAI
 
-from .tpcds_benchmark_queries import Q5_CTE, Q11_CTE, Q71_subquery, Q2_subquery, Q54_subquery, Q33_subquery
+from .tpcds_benchmark_queries import Q5_CTE, Q11_CTE, Q71_subquery, Q2_subquery, Q54_subquery, Q33_subquery, \
+    Q60_subquery
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -45,7 +46,7 @@ def one_round(query):
 orig_out = sys.stdout
 f = open('tpcds_chatgpt_text.py', 'a')
 sys.stdout = f
-for query in [Q33_subquery]:
+for query in [Q60_subquery]:
     one_round(query)
 sys.stdout = orig_out
 f.close()

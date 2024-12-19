@@ -202,3 +202,40 @@ ORDER BY
    i.item_id;
 """
 
+gpt_Q60_subquery = """SELECT
+   SUM(ss_ext_sales_price) AS store_sales_revenue,
+   SUM(cs_ext_sales_price) AS catalog_sales_revenue,
+   SUM(ws_ext_sales_price) AS web_sales_revenue
+FROM
+   store_sales
+JOIN
+   item ON store_sales.ss_item_sk = item.i_item_sk
+JOIN
+   store ON store_sales.ss_store_sk = store.s_store_sk
+JOIN
+   customer ON store_sales.ss_customer_sk = customer.c_customer_sk
+JOIN
+   date_dim ON store_sales.ss_sold_date_sk = date_dim.d_date_sk
+LEFT JOIN
+   catalog_sales ON catalog_sales.cs_item_sk = item.i_item_sk
+   AND catalog_sales.cs_sold_date_sk = date_dim.d_date_sk
+   AND catalog_sales.cs_customer_sk = customer.c_customer_sk
+LEFT JOIN
+   web_sales ON web_sales.ws_item_sk = item.i_item_sk
+   AND web_sales.ws_sold_date_sk = date_dim.d_date_sk
+   AND web_sales.ws_customer_sk = customer.c_customer_sk
+WHERE
+   item.i_category = 'Jewelry'
+   AND date_dim.d_year = 1999
+   AND date_dim.d_moy = 8
+   AND customer.c_current_hdemo_sk IN (
+       SELECT hd_demo_sk
+       FROM household_demographics
+       WHERE hd_dep_count = 0
+   )
+   AND customer.c_current_addr_sk IN (
+       SELECT ca_address_sk
+       FROM customer_address
+       WHERE ca_gmt_offset = -6
+   );
+"""
