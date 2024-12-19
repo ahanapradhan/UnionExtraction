@@ -568,6 +568,8 @@ class InequalityPredicate(FilterHolder):
                 datatype_dict[datatype] = [pred]
         filtered_dict = {key: value for key, value in datatype_dict.items() if key != 'str' and len(value) > 1}
         for key in datatype_dict:
+            if key == 'str':
+                continue
             if len(datatype_dict[key]) > 1:
                 for pred in datatype_dict[key]:
                     self.arithmetic_ineq_predicates.remove(pred)
