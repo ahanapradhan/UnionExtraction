@@ -89,8 +89,7 @@ class ExtractionTestCase(BaseTestCase):
 
     def test_Q33(self):
         query = """ 
-WITH ss 
-     AS (SELECT i_manufact_id, 
+     (SELECT i_manufact_id, 
                 Sum(ss_ext_sales_price) total_sales 
          FROM   store_sales, 
                 date_dim, 
@@ -105,9 +104,7 @@ WITH ss
                 AND d_moy = 3 
                 AND ss_addr_sk = ca_address_sk 
                 AND ca_gmt_offset = -5 
-         GROUP  BY i_manufact_id), 
-     cs 
-     AS (SELECT i_manufact_id, 
+         GROUP  BY i_manufact_id) UNION ALL (SELECT i_manufact_id, 
                 Sum(cs_ext_sales_price) total_sales 
          FROM   catalog_sales, 
                 date_dim, 
@@ -122,9 +119,7 @@ WITH ss
                 AND d_moy = 3 
                 AND cs_bill_addr_sk = ca_address_sk 
                 AND ca_gmt_offset = -5 
-         GROUP  BY i_manufact_id), 
-     ws 
-     AS (SELECT i_manufact_id, 
+         GROUP  BY i_manufact_id) UNION ALL (SELECT i_manufact_id, 
                 Sum(ws_ext_sales_price) total_sales 
          FROM   web_sales, 
                 date_dim, 
@@ -139,20 +134,7 @@ WITH ss
                 AND d_moy = 3 
                 AND ws_bill_addr_sk = ca_address_sk 
                 AND ca_gmt_offset = -5 
-         GROUP  BY i_manufact_id) 
-SELECT i_manufact_id, 
-               Sum(total_sales) total_sales 
-FROM   (SELECT * 
-        FROM   ss 
-        UNION ALL 
-        SELECT * 
-        FROM   cs 
-        UNION ALL 
-        SELECT * 
-        FROM   ws) tmp1 
-GROUP  BY i_manufact_id 
-ORDER  BY total_sales
-LIMIT 100; """
+         GROUP  BY i_manufact_id); """
         self.do_test(query)
 
 

@@ -1,3 +1,18 @@
+gpt_Q2_subquery = """SELECT
+   ws_sold_date_sk AS sold_date_sk,
+   'web' AS sales_channel,
+   ws_ext_sales_price AS sales_price
+FROM
+   web_sales
+UNION ALL
+SELECT
+   cs_sold_date_sk AS sold_date_sk,
+   'catalog' AS sales_channel,
+   cs_ext_sales_price AS sales_price
+FROM
+   catalog_sales;
+"""
+
 gpt_Q4_CTE = """SELECT
     c_customer_id,
     c_first_name,
@@ -120,22 +135,47 @@ GROUP BY
    c.email_address;
 """
 
-Q2_subquery = """SELECT
-   ws_sold_date_sk AS sold_date_sk,
-   'web' AS sales_channel,
-   ws_ext_sales_price AS sales_price
+gpt_Q33_subquery = """SELECT
+   i_manufact_id,
+   SUM(CASE WHEN d_month = 3 AND d_year = 1999 THEN ss_sales_price ELSE 0 END) AS store_sales_revenue,
+   SUM(CASE WHEN d_month = 3 AND d_year = 1999 THEN cs_sales_price ELSE 0 END) AS catalog_sales_revenue,
+   SUM(CASE WHEN d_month = 3 AND d_year = 1999 THEN ws_sales_price ELSE 0 END) AS web_sales_revenue
 FROM
-   web_sales
-UNION ALL
-SELECT
-   cs_sold_date_sk AS sold_date_sk,
-   'catalog' AS sales_channel,
-   cs_ext_sales_price AS sales_price
-FROM
-   catalog_sales;
+   store_sales
+JOIN
+   item ON store_sales.ss_item_sk = item.i_item_sk
+JOIN
+   date_dim ON store_sales.ss_sold_date_sk = date_dim.d_date_sk
+JOIN
+   customer ON store_sales.ss_customer_sk = customer.c_customer_sk
+JOIN
+   catalog_sales ON catalog_sales.cs_item_sk = item.i_item_sk
+JOIN
+   date_dim AS catalog_date ON catalog_sales.cs_sold_date_sk = catalog_date.d_date_sk
+JOIN
+   customer AS catalog_customer ON catalog_sales.cs_bill_customer_sk = catalog_customer.c_customer_sk
+JOIN
+   web_sales ON web_sales.ws_item_sk = item.i_item_sk
+JOIN
+   date_dim AS web_date ON web_sales.ws_sold_date_sk = web_date.d_date_sk
+JOIN
+   customer AS web_customer ON web_sales.ws_bill_customer_sk = web_customer.c_customer_sk
+WHERE
+   i_category = 'Books'
+   AND customer.c_current_cdemo_sk = catalog_customer.c_current_cdemo_sk
+   AND customer.c_current_cdemo_sk = web_customer.c_current_cdemo_sk
+   AND customer.c_current_addr_sk = catalog_customer.c_current_addr_sk
+   AND customer.c_current_addr_sk = web_customer.c_current_addr_sk
+   AND customer.c_current_addr_sk IN (
+       SELECT ca_address_sk
+       FROM customer_address
+       WHERE ca_gmt_offset = -5
+   )
+GROUP BY
+   i_manufact_id;
 """
 
-Q54_subquery = """SELECT
+gpt_Q54_subquery = """SELECT
    c.customer_id,
    c.customer_first_name,
    c.customer_last_name,
@@ -161,3 +201,4 @@ ORDER BY
    c.customer_id,
    i.item_id;
 """
+
