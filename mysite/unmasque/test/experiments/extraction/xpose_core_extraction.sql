@@ -1110,10 +1110,7 @@ whatever I could form: ;
                 date_dim,
                 customer_address,
                 item
-         WHERE  i_item_id IN (SELECT i_item_id
-                              FROM   item
-                              WHERE  i_color IN ( 'firebrick', 'rosy', 'white' )
-                             )
+         WHERE  i_color IN ( 'firebrick', 'rosy', 'white' )
                 AND ss_item_sk = i_item_sk
                 AND ss_sold_date_sk = d_date_sk
                 AND d_year = 1998
@@ -1128,10 +1125,7 @@ whatever I could form: ;
                 date_dim,
                 customer_address,
                 item
-         WHERE  i_item_id IN (SELECT i_item_id
-                              FROM   item
-                              WHERE  i_color IN ( 'firebrick', 'rosy', 'white' )
-                             )
+         WHERE  i_color IN ( 'firebrick', 'rosy', 'white' )
                 AND cs_item_sk = i_item_sk
                 AND cs_sold_date_sk = d_date_sk
                 AND d_year = 1998
@@ -1146,10 +1140,7 @@ whatever I could form: ;
                 date_dim,
                 customer_address,
                 item
-         WHERE  i_item_id IN (SELECT i_item_id
-                              FROM   item
-                              WHERE  i_color IN ( 'firebrick', 'rosy', 'white' )
-                             )
+         WHERE  i_color IN ( 'firebrick', 'rosy', 'white' )
                 AND ws_item_sk = i_item_sk
                 AND ws_sold_date_sk = d_date_sk
                 AND d_year = 1998
@@ -1158,82 +1149,43 @@ whatever I could form: ;
                 AND ca_gmt_offset = -6
          GROUP  BY i_item_id);
  --- extracted query:
- Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
-
- --- END OF ONE EXTRACTION EXPERIMENT
-
- --- START OF ONE EXTRACTION EXPERIMENT
- --- input query:
- (SELECT i_item_id,
-                Sum(ss_ext_sales_price) total_sales
-         FROM   store_sales,
-                date_dim,
-                customer_address,
-                item
-         WHERE  i_item_id IN (SELECT i_item_id
-                              FROM   item
-                              WHERE  i_color IN ( 'firebrick', 'rosy', 'white' )
-                             )
-                AND ss_item_sk = i_item_sk
-                AND ss_sold_date_sk = d_date_sk
-                AND d_year = 1998
-                AND d_moy = 3
-                AND ss_addr_sk = ca_address_sk
-                AND ca_gmt_offset = -6
-         GROUP  BY i_item_id) UNION ALL
-     (SELECT i_item_id,
-                Sum(cs_ext_sales_price) total_sales
-         FROM   catalog_sales,
-                date_dim,
-                customer_address,
-                item
-         WHERE  i_item_id IN (SELECT i_item_id
-                              FROM   item
-                              WHERE  i_color IN ( 'firebrick', 'rosy', 'white' )
-                             )
-                AND cs_item_sk = i_item_sk
-                AND cs_sold_date_sk = d_date_sk
-                AND d_year = 1998
-                AND d_moy = 3
-                AND cs_bill_addr_sk = ca_address_sk
-                AND ca_gmt_offset = -6
-         GROUP  BY i_item_id) UNION ALL
-     (SELECT i_item_id,
-                Sum(ws_ext_sales_price) total_sales
-         FROM   web_sales,
-                date_dim,
-                customer_address,
-                item
-         WHERE  i_item_id IN (SELECT i_item_id
-                              FROM   item
-                              WHERE  i_color IN ( 'firebrick', 'rosy', 'white' )
-                             )
-                AND ws_item_sk = i_item_sk
-                AND ws_sold_date_sk = d_date_sk
-                AND d_year = 1998
-                AND d_moy = 3
-                AND ws_bill_addr_sk = ca_address_sk
-                AND ca_gmt_offset = -6
-         GROUP  BY i_item_id);
- --- extracted query:
- Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!
-Could not extract the query due to errors in subquery with FROM ['customer_address', 'item', 'date_dim', 'catalog_sales']
-Here's what I have as a half-baked answer:
-FROM(q1) = { customer_address, item, date_dim, web_sales }, FROM(q2) = { customer_address, item, date_dim, catalog_sales }, FROM(q3) = { store_sales, item, date_dim, customer_address }
-whatever I could form:
+ (Select i_item_id, Sum(cs_ext_sales_price) as total_sales
+ From catalog_sales, customer_address, date_dim, item
+ Where catalog_sales.cs_sold_date_sk = date_dim.d_date_sk
+ and catalog_sales.cs_bill_addr_sk = customer_address.ca_address_sk
+ and catalog_sales.cs_item_sk = item.i_item_sk
+ and item.i_color IN ('firebrick', 'rosy', 'white')
+ and customer_address.ca_gmt_offset = -6.0
+ and date_dim.d_year = 1998
+ and date_dim.d_moy = 3
+ Group By i_item_id
+ Order By i_item_id asc)
+ UNION ALL
  (Select i_item_id, Sum(ws_ext_sales_price) as total_sales
  From customer_address, date_dim, item, web_sales
- Where customer_address.ca_address_sk = web_sales.ws_bill_addr_sk
+ Where date_dim.d_date_sk = web_sales.ws_sold_date_sk
  and item.i_item_sk = web_sales.ws_item_sk
- and date_dim.d_date_sk = web_sales.ws_sold_date_sk
+ and customer_address.ca_address_sk = web_sales.ws_bill_addr_sk
+ and item.i_color IN ('firebrick','rosy', 'white')
+ and date_dim.d_year = 1998
+ and date_dim.d_moy = 3
  and customer_address.ca_gmt_offset = -6.0
- and item.i_color = 'rosy'
+ Group By i_item_id
+ Order By i_item_id asc)
+ UNION ALL
+ (Select i_item_id, Sum(ss_ext_sales_price) as total_sales
+ From customer_address, date_dim, item, store_sales
+ Where date_dim.d_date_sk = store_sales.ss_sold_date_sk
+ and item.i_item_sk = store_sales.ss_item_sk
+ and customer_address.ca_address_sk = store_sales.ss_addr_sk
+ and item.i_color IN ('firebrick', 'rosy', 'white')
+ and customer_address.ca_gmt_offset = -6.0
  and date_dim.d_year = 1998
  and date_dim.d_moy = 3
  Group By i_item_id
  Order By i_item_id asc);
-
  --- END OF ONE EXTRACTION EXPERIMENT
+
 
  --- START OF ONE EXTRACTION EXPERIMENT
  --- input query:
