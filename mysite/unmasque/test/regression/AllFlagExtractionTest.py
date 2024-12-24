@@ -221,6 +221,34 @@ c_acctbal > 30.04;"""
         self.conn.config.use_cs2 = True
         self.do_test(query)
 
+    def test_Q13(self):
+        query = """select
+        c_count, c_orderdate,
+        count(*) as custdist
+from
+        (
+                select
+                        c_custkey, o_orderdate,
+                        count(o_orderkey)
+                from
+                        customer left outer join orders on
+                                c_custkey = o_custkey
+                                and o_comment not like '%special%requests%'
+                group by
+                        c_custkey, o_orderdate
+        ) as c_orders (c_custkey, c_count, c_orderdate)
+group by
+        c_count, c_orderdate
+order by
+        custdist desc,
+        c_count desc;"""
+        self.conn.config.detect_or = False
+        self.conn.config.detect_union = False
+        self.conn.config.use_cs2 = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = True
+        self.do_test(query)
+
     def test_unionQ(self):
         query = "(select l_partkey as key from lineitem, part " \
                 "where l_partkey = p_partkey and l_extendedprice <= 905) " \
