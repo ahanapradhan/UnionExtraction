@@ -341,3 +341,54 @@ order by
  Group By o_orderdate 
  Order By c_count desc, custdist asc;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        sum(l_extendedprice* (1 - l_discount)) as revenue
+from
+        lineitem,
+        part
+where
+        (
+                p_partkey = l_partkey
+                and p_brand = 'Brand#12'
+                and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+                and l_quantity >= 1 and l_quantity <= 1 + 10
+                and p_size between 1 and 5
+                and l_shipmode in ('AIR', 'AIR REG')
+                and l_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = l_partkey
+                and p_brand = 'Brand#23'
+                and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+                and l_quantity >= 10 and l_quantity <= 10 + 10
+                and p_size between 1 and 10
+                and l_shipmode in ('AIR', 'AIR REG')
+                and l_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = l_partkey
+                and p_brand = 'Brand#34'
+                and p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+                and l_quantity >= 20 and l_quantity <= 20 + 10
+                and p_size between 1 and 15
+                and l_shipmode in ('AIR', 'AIR REG')
+                and l_shipinstruct = 'DELIVER IN PERSON'
+        );
+ --- extracted query:
+  
+ Select l_extendedprice*(1 - l_discount) as revenue 
+ From lineitem, part 
+ Where lineitem.l_partkey = part.p_partkey
+ and (lineitem.l_quantity between 1.00 and 11.00 OR lineitem.l_quantity between 10.00 and 20.00 OR lineitem.l_quantity between 20.00 and 30.00)
+ and part.p_brand IN ('Brand#12', 'Brand#23', 'Brand#34')
+ and part.p_container IN ('LG BOX', 'LG CASE', 'LG PACK', 'LG PKG', 'MED BAG', 'MED BOX', 'MED PACK', 'MED PKG', 'SM BOX', 'SM CASE', 'SM PACK', 'SM PKG')
+ and (part.p_size between 1 and 10 OR part.p_size between 1 and 15)
+ and lineitem.l_shipinstruct = 'DELIVER IN PERSON'
+ and lineitem.l_shipmode = 'AIR'
+ and part.p_size between 1 and 5;
+ --- END OF ONE EXTRACTION EXPERIMENT
