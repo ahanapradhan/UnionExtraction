@@ -446,22 +446,18 @@ order by
 	p_brand,
 	p_type,
 	p_size;""", False, False, False, True, True),
-                     TestQuery("TPCH_Q17", """select sum(l_extendedprice) / 7.0 as avg_yearly
-from
-	lineitem,
-	part
-where
-	p_partkey = l_partkey
-	and p_brand = 'Brand#53'
-	and p_container = 'MED BAG'
-	and l_quantity < (
-		select
-			1.5 * avg(l_quantity)
-		from
-			lineitem
-		where
-			l_partkey = p_partkey
-	);""", False, False, False, False)
+                     TestQuery("TPCH_Q17", """SELECT SUM(l.l_extendedprice) / 7.0 AS avg_yearly
+FROM lineitem l
+JOIN part p ON p.p_partkey = l.l_partkey
+JOIN (
+    SELECT l_partkey, 0.7 * AVG(l_quantity) AS threshold_quantity
+    FROM lineitem
+    GROUP BY l_partkey
+) AS avg_lineitem ON avg_lineitem.l_partkey = l.l_partkey
+WHERE p.p_brand = 'Brand#53'
+  AND p.p_container = 'MED BAG'
+  AND l.l_quantity < avg_lineitem.threshold_quantity;
+""", False, False, False, False)
 
                      ]
     return test_workload

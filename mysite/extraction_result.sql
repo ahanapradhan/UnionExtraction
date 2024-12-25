@@ -435,3 +435,37 @@ order by
  --- extracted query:
  Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT SUM(l.l_extendedprice) / 7.0 AS avg_yearly
+FROM lineitem l
+JOIN part p ON p.p_partkey = l.l_partkey
+JOIN (
+    SELECT l_partkey, 0.7 * AVG(l_quantity) AS threshold_quantity
+    FROM lineitem
+    GROUP BY l_partkey
+) AS avg_lineitem ON avg_lineitem.l_partkey = l.l_partkey
+WHERE p.p_brand = 'Brand#53'
+  AND p.p_container = 'MED BAG'
+  AND l.l_quantity < avg_lineitem.threshold_quantity;
+ --- extracted query:
+ connection already closed
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT SUM(l.l_extendedprice) / 7.0 AS avg_yearly
+FROM lineitem l
+JOIN part p ON p.p_partkey = l.l_partkey
+JOIN (
+    SELECT l_partkey, 0.7 * AVG(l_quantity) AS threshold_quantity
+    FROM lineitem
+    GROUP BY l_partkey
+) AS avg_lineitem ON avg_lineitem.l_partkey = l.l_partkey
+WHERE p.p_brand = 'Brand#53'
+  AND p.p_container = 'MED BAG'
+  AND l.l_quantity < avg_lineitem.threshold_quantity;
+ --- extracted query:
+ Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT

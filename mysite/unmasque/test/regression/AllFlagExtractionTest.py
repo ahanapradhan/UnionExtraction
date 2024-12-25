@@ -339,6 +339,25 @@ order by
         self.conn.config.detect_or = False
         self.do_test(query)
 
+    def test_Q17(self):
+        query = """SELECT SUM(l.l_extendedprice) / 7.0 AS avg_yearly
+FROM lineitem l
+JOIN part p ON p.p_partkey = l.l_partkey
+JOIN (
+    SELECT l_partkey, 0.7 * AVG(l_quantity) AS threshold_quantity
+    FROM lineitem
+    GROUP BY l_partkey
+) AS avg_lineitem ON avg_lineitem.l_partkey = l.l_partkey
+WHERE p.p_brand = 'Brand#53'
+  AND p.p_container = 'MED BAG'
+  AND l.l_quantity < avg_lineitem.threshold_quantity;"""
+        self.conn.config.detect_or = False
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
     def test_unionQ(self):
         query = "(select l_partkey as key from lineitem, part " \
                 "where l_partkey = p_partkey and l_extendedprice <= 905) " \
