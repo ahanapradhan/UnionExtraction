@@ -27,22 +27,30 @@ orig_out = sys.stdout
 f = open('chatgpt_tpch_sql.py', 'w')
 sys.stdout = f
 q = """
-SELECT s.s_sarabharajudaranama
-FROM Sarabharajudara s
-JOIN Rashtra r ON s.s_rashtrakramank = r.r_rashtrakramank
-JOIN Sarabharajudaravastu sv ON s.s_sarabharajudarakramank = sv.sv_sarabharajudarakramank
-JOIN Vastuvivara v ON sv.sv_vastukramank = v.v_vastukramank
-JOIN Aajnavastu av ON v.v_vastukramank = av.av_vastukramank AND s.s_sarabharajudarakramank = av.av_sarabharajudarakramank
-WHERE r.r_rashtranama = 'FRANCE'
-  AND v.v_vastunama LIKE '%ivory%'
-  AND av.av_vastusankhya > 0.5 * (
-    SELECT SUM(av2.av_vastusankhya)
-    FROM Aajnavastu av2
-    JOIN Aajna a ON av2.av_aajnakramank = a.a_aajnakramank
-    WHERE av2.av_sarabharajudarakramank = s.s_sarabharajudarakramank
-      AND av2.av_vastukramank = v.v_vastukramank
-      AND EXTRACT(YEAR FROM a.a_aajnatharikh) = 1995
-  );
+SELECT s.s_sarabharajudarakhata AS s_acctbal, 
+       s.s_sarabharajudaranama AS s_name, 
+       r.r_rashtranama AS n_name, 
+       v.v_vastukramank AS p_partkey, 
+       v.vastubranda AS p_mfgr, 
+       s.s_sarabharajudarathikana AS s_address, 
+       s.s_sarabharajudaravyavahari AS s_phone, 
+       s.s_sarabharajudaramaahiti AS s_comment
+FROM Rashtra AS r
+JOIN Sarabharajudara AS s ON r.r_rashtrakramank = s.s_rashtrakramank
+JOIN Sarabharajudaravastu AS sv ON sv.sv_sarabharajudarakramank = s.s_sarabharajudarakramank
+JOIN Vastuvivara AS v ON sv.sv_vastukramank = v.v_vastukramank
+JOIN Pradesh AS p ON v.v_pradeshakramank = p.p_pradeshakramank
+WHERE v.v_vastupaddhati = '15'
+  AND v.v_vastunama LIKE '%BRASS'
+  AND sv.sv_vastubelav = (
+    SELECT MIN(sv2.sv_vastubelav)
+    FROM Sarabharajudaravastu AS sv2
+    JOIN Sarabharajudara AS s2 ON sv2.sv_sarabharajudarakramank = s2.s_sarabharajudarakramank
+    WHERE sv2.sv_vastukramank = v.v_vastukramank
+      AND s2.s_rashtrakramank = r.r_rashtrakramank
+  )
+ORDER BY s.s_sarabharajudarakhata DESC
+LIMIT 100;
 """
 
 one_round(q)
