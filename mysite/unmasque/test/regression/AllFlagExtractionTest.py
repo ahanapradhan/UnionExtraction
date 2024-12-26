@@ -358,6 +358,147 @@ WHERE p.p_brand = 'Brand#53'
         self.conn.config.use_cs2 = False
         self.do_test(query)
 
+    def test_Q22(self):
+        query = """select
+        cntrycode,
+        count(*) as numcust,
+        sum(c_acctbal) as totacctbal
+from
+        (
+                select
+                        substring(c_phone from 1 for 2) as cntrycode,
+                        c_acctbal
+                from
+                        customer
+                where
+                        substring(c_phone from 1 for 2) in
+                                ('13', '31', '23', '29', '30', '18', '17')
+                        and c_acctbal > (
+                                select
+                                        avg(ic_acctbal)
+                                from
+                                        inner_customer
+                                where
+                                        ic_acctbal > 0.00
+                                        and substring(ic_phone from 1 for 2) in
+                                                ('13', '31', '23', '29', '30', '18', '17')
+                        )
+                        and not exists (
+                                select
+                                        *
+                                from
+                                        orders
+                                where
+                                        o_custkey = c_custkey
+                        )
+        ) as custsale
+group by
+        cntrycode
+order by
+        cntrycode;"""
+        self.conn.config.detect_or = False
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
+    def test_Q20(self):
+        query = """select
+        s_name,
+        s_address
+from
+        supplier,
+        nation
+where
+        s_suppkey in (
+                select
+                        ps_suppkey
+                from
+                        partsupp
+                where
+                        ps_partkey in (
+                                select
+                                        p_partkey
+                                from
+                                        part
+                                where
+                                        p_name like '%ivory%'
+                        )
+                        and ps_availqty > (
+                                select
+                                        0.5 * sum(l_quantity)
+                                from
+                                        lineitem
+                                where
+                                        l_partkey = ps_partkey
+                                        and l_suppkey = ps_suppkey
+                                        and l_shipdate >= date '1995-01-01'
+                                        and l_shipdate < date '1995-01-01' + interval '1' year
+                        )
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+order by
+        s_name;"""
+        self.conn.config.detect_or = False
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
+    def test_Q2(self):
+        query = """select
+        s_acctbal,
+        s_name,
+        n_name,
+        p_partkey,
+        p_mfgr,
+        s_address,
+        s_phone,
+        s_comment
+from
+        part,
+        supplier,
+        partsupp,
+        nation,
+        region
+where
+        p_partkey = ps_partkey
+        and s_suppkey = ps_suppkey
+        and p_size = 15
+        and p_type like '%BRASS'
+        and s_nationkey = n_nationkey
+        and n_regionkey = r_regionkey
+        and r_name = 'EUROPE'
+        and ps_supplycost = (
+                select
+                        min(ps_supplycost)
+                from
+                        partsupp,
+                        supplier,
+                        nation,
+                        region
+                where
+                        p_partkey = ps_partkey
+                        and s_suppkey = ps_suppkey
+                        and s_nationkey = n_nationkey
+                        and n_regionkey = r_regionkey
+                        and r_name = 'EUROPE'
+        )
+order by
+        s_acctbal desc,
+        n_name,
+        s_name,
+        p_partkey;"""
+        self.conn.config.detect_or = False
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
     def test_Q21(self):
         query = """select
         s_name,
