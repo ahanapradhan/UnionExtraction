@@ -1,6 +1,7 @@
 import copy
 from abc import abstractmethod, ABC
 
+from ...util import constants
 from ....src.core.aoa import InequalityPredicate
 from ....src.core.cs2 import Cs2
 from ....src.core.db_restorer import DbRestorer
@@ -10,7 +11,7 @@ from ....src.core.view_minimizer import ViewMinimizer
 from ....src.pipeline.abstract.generic_pipeline import GenericPipeLine
 from ....src.util.aoa_utils import get_constants_for
 from ....src.util.constants import FILTER, INEQUALITY, DONE, RUNNING, START, EQUALITY, DB_MINIMIZATION, \
-    SAMPLING, RESTORE_DB, ERROR
+    SAMPLING, RESTORE_DB, ERROR, error_table
 from ....src.util.utils import get_format, get_val_plus_delta
 
 
@@ -74,7 +75,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
         if not check or not vm.done:
-            self.error = "Cannot do database minimization. "
+            self.error = self.error = "Cannot do database minimization as problem in {} table.".format(constants.error_table)
             self.logger.error(self.error)
             self.update_state(ERROR)
             self.info[DB_MINIMIZATION] = None
