@@ -1,7 +1,6 @@
 import pandas as pd
 
 from .abstract.MinimizerBase import Minimizer
-from ..util import constants
 
 
 def extract_start_and_end_page(logger, rctid):
@@ -78,7 +77,7 @@ class ViewMinimizer(Minimizer):
                                                                     self._get_dirty_name(tabname))
 
             if not self.sanity_check(query):
-                constants.error_table = tabname
+                self.error_table = tabname
                 return False
 
         for tabname in self.core_relations:
