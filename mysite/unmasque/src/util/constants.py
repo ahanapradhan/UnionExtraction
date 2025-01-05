@@ -104,5 +104,3 @@ NON_TEXT_TYPES = ['date'] + NUMBER_TYPES
 
 UNMASQUE = "_unmasque_"
 WORKING_SCHEMA = "unmasque"
-
-error_table = None
