@@ -11,7 +11,7 @@ from ....src.core.view_minimizer import ViewMinimizer
 from ....src.pipeline.abstract.generic_pipeline import GenericPipeLine
 from ....src.util.aoa_utils import get_constants_for
 from ....src.util.constants import FILTER, INEQUALITY, DONE, RUNNING, START, EQUALITY, DB_MINIMIZATION, \
-    SAMPLING, RESTORE_DB, ERROR, error_table
+    SAMPLING, RESTORE_DB, ERROR
 from ....src.util.utils import get_format, get_val_plus_delta
 
 
