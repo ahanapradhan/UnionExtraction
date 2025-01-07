@@ -2,13 +2,10 @@ import random
 import unittest
 from datetime import date, timedelta
 
-import pytest
-
 from mysite.gpt.tpcds_benchmark_queries import Q4_CTE, Q2_subquery, Q5_CTE, Q71_subquery, Q11_CTE, Q74_subquery, \
     Q54_subquery
-from ...src.core.factory.PipeLineFactory import PipeLineFactory
-from ..util import queries
 from ..util.BaseTestCase import BaseTestCase
+from ...src.core.factory.PipeLineFactory import PipeLineFactory
 
 
 def generate_random_dates():
@@ -578,16 +575,14 @@ class ExtractionTestCase(BaseTestCase):
         self.do_test(query)
 
     def test_Q56(self):
+        self.conn.config.detect_union = True
         query = """(SELECT i_item_id, 
                 Sum(ss_ext_sales_price) total_sales 
          FROM   store_sales, 
                 date_dim, 
                 customer_address, 
                 item 
-         WHERE  i_item_id IN (SELECT i_item_id 
-                              FROM   item 
-                              WHERE  i_color IN ( 'firebrick', 'rosy', 'white' ) 
-                             ) 
+         WHERE  i_color IN ( 'firebrick', 'rosy', 'white' ) 
                 AND ss_item_sk = i_item_sk 
                 AND ss_sold_date_sk = d_date_sk 
                 AND d_year = 1998 
@@ -601,10 +596,8 @@ class ExtractionTestCase(BaseTestCase):
                 date_dim, 
                 customer_address, 
                 item 
-         WHERE  i_item_id IN (SELECT i_item_id 
-                              FROM   item 
-                              WHERE  i_color IN ( 'firebrick', 'rosy', 'white' ) 
-                             ) 
+         WHERE  i_color IN ( 'firebrick', 'rosy', 'white' ) 
+                             
                 AND cs_item_sk = i_item_sk 
                 AND cs_sold_date_sk = d_date_sk 
                 AND d_year = 1998 
@@ -618,10 +611,8 @@ class ExtractionTestCase(BaseTestCase):
                 date_dim, 
                 customer_address, 
                 item 
-         WHERE  i_item_id IN (SELECT i_item_id 
-                              FROM   item 
-                              WHERE  i_color IN ( 'firebrick', 'rosy', 'white' ) 
-                             ) 
+         WHERE  i_color IN ( 'firebrick', 'rosy', 'white' ) 
+                              
                 AND ws_item_sk = i_item_sk 
                 AND ws_sold_date_sk = d_date_sk 
                 AND d_year = 1998 
@@ -662,8 +653,54 @@ class ExtractionTestCase(BaseTestCase):
     AND ci_movie_id = ml_linked_movie_id;
         """
         self.conn.config.detect_union = False
-        self.conn.config.use_cs2 = False
+        self.conn.config.limit = 3
         self.do_test(query)
+
+    def test_Q87(self):
+        self.conn.config.detect_union = False
+        query = """select count(*) 
+from ((select distinct c_last_name, c_first_name, d_date
+       from store_sales, date_dim, customer
+       where store_sales.ss_sold_date_sk = date_dim.d_date_sk
+         and store_sales.ss_customer_sk = customer.c_customer_sk
+         and d_month_seq between 1188 and 1188+11)
+       except
+      (select distinct c_last_name, c_first_name, d_date
+       from catalog_sales, date_dim, customer
+       where catalog_sales.cs_sold_date_sk = date_dim.d_date_sk
+         and catalog_sales.cs_bill_customer_sk = customer.c_customer_sk
+         and d_month_seq between 1188 and 1188+11)
+       except
+      (select distinct c_last_name, c_first_name, d_date
+       from web_sales, date_dim, customer
+       where web_sales.ws_sold_date_sk = date_dim.d_date_sk
+         and web_sales.ws_bill_customer_sk = customer.c_customer_sk
+         and d_month_seq between 1188 and 1188+11)
+) cool_cust
+;
+"""
+        self.do_test(query)
+
+    def test_Q82(self):
+        query = """ Select i_item_id,i_item_desc,i_current_price
+From item, inventory, date_dim, store_sales
+Where i_current_price between 45 and 45 + 30 
+and inv_item_sk = i_item_sk 
+and d_date_sk=inv_date_sk 
+and d_date between date '1999-07-09' and date '1999-09-09' and
+i_manufact_id between 169 and 639 
+and inv_quantity_on_hand between 100 and 500 
+and ss_item_sk = i_item_sk
+Group By i_item_id,i_item_desc,i_current_price
+Order by i_item_id
+Limit 100 ; """
+        self.conn.config.detect_or = False
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.do_test(query)
+
+
 
 
 if __name__ == '__main__':
