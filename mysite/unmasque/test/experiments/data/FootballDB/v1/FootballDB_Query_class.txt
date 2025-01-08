@@ -1,0 +1,108 @@
+UN1
+Q6
+Q11
+Q22
+Q89
+Q120
+Q124
+Q136
+Q142 Remove Distinct
+Q144
+Q147
+Q155
+Q173
+Q181
+Q184
+Q186
+Q124
+Q228
+Q246
+Q268
+Q284
+Q259
+Q297
+Q314
+Q377
+Q388
+Q407
+Q412
+Q426
+Q447
+Q491 Remove Distinct
+Q492 Remove Distinct
+Q506
+Q518
+Q529 Remove Distinct
+Q530 Remove Distinct
+Q534 
+Q551
+Q552 
+Q554 Check Order has aggregate
+Q565
+Q567 
+Q568 Remove Distinct
+Q584 Remove Distinct
+Q585 
+Q591 
+Q621 Remove Distinct
+Q645
+Q667 Check Order has aggregate
+Q645 
+Q667 Check Order has aggregate
+Q668
+Q708 
+Q741 Remove Distinct
+Q749 
+Q761 
+Q779 
+Q861 
+Q866 
+Q867 
+Q888 Remove Distinct
+Q894
+Q928
+Q958
+Q961 Remove Distinct
+Q1005 Remove Distinct
+Q1024
+Q1027
+Q1039
+Q1043
+Q1044
+
+Q889 Nested
+
+Q259 Having
+
+Q51 Multiple instance
+Q94 Multiple instance
+Q158 Multiple instance
+Q204 Multiple instance
+Q221 Multiple instance
+Q231 Multiple instance
+Q319 Multiple instance
+Q327 Multiple instance
+Q351 Multiple instance
+Q773 Multiple instance
+Q803 Multiple instance
+
+Q104 In Operator
+Q219 In Operator
+
+Q2 Union
+Q108 Union
+Q122 Union
+Q123 Union
+Q177 Union
+Q395 Union
+Q435 Union
+Q438 Union
+Q528 Union
+Q569 Union
+Q578 Union
+Q595 Union
+Q605 Union
+Q620 Union
+Q691 Union
+Q924 Union
+Q1075 Union
