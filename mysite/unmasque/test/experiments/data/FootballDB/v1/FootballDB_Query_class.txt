@@ -36,8 +36,7 @@ Q529 Remove Distinct
 Q530 Remove Distinct
 Q534 
 Q551
-Q552 
-Q554 Check Order has aggregate
+Q552
 Q565
 Q567 
 Q568 Remove Distinct
@@ -45,10 +44,7 @@ Q584 Remove Distinct
 Q585 
 Q591 
 Q621 Remove Distinct
-Q645
-Q667 Check Order has aggregate
 Q645 
-Q667 Check Order has aggregate
 Q668
 Q708 
 Q741 Remove Distinct
@@ -72,7 +68,7 @@ Q1044
 
 Q889 Nested
 
-Q259 Having
+Q259 Having (out of scope)
 
 Q51 Multiple instance
 Q94 Multiple instance
@@ -106,3 +102,7 @@ Q620 Union
 Q691 Union
 Q924 Union
 Q1075 Union
+
+
+Q667 Aggregates in Orderby
+Q554 Aggregates in Orderby
