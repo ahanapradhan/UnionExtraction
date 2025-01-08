@@ -5,60 +5,46 @@ Q22
 Q89
 Q120
 Q124
-Q136
 Q142 Remove Distinct
 Q144
 Q147
 Q155
 Q173
 Q181
-Q184
 Q186
 Q124
 Q228
 Q246
 Q268
-Q284
 Q259
 Q297
 Q314
 Q377
 Q388
 Q407
-Q412
 Q426
 Q447
 Q491 Remove Distinct
 Q492 Remove Distinct
 Q506
-Q518
 Q529 Remove Distinct
 Q530 Remove Distinct
-Q534 
-Q551
-Q552
-Q565
-Q567 
+Q534
 Q568 Remove Distinct
 Q584 Remove Distinct
-Q585 
 Q591 
 Q621 Remove Distinct
-Q645 
-Q668
+Q645
 Q708 
 Q741 Remove Distinct
-Q749 
-Q761 
+Q749
 Q779 
-Q861 
-Q866 
+Q861
 Q867 
 Q888 Remove Distinct
 Q894
 Q928
 Q958
-Q961 Remove Distinct
 Q1005 Remove Distinct
 Q1024
 Q1027
@@ -106,3 +92,18 @@ Q1075 Union
 
 Q667 Aggregates in Orderby
 Q554 Aggregates in Orderby
+Q136 Aggregates in Orderby
+Q184 Aggregates in Orderby
+Q284 Aggregates in Orderby
+Q412 Aggregates in Orderby
+Q518 Aggregates in Orderby
+Q551 Aggregates in Orderby
+Q551 Aggregates in Orderby
+Q552 Aggregates in Orderby
+Q565 Aggregates in Orderby
+Q567 Aggregates in Orderby
+Q585 Aggregates in Orderby
+Q668 Aggregates in Orderby
+Q761 Aggregates in Orderby
+Q866 Aggregates in Orderby
+Q961 Aggregates in Orderby
