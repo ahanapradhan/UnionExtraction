@@ -1,0 +1,109 @@
+UN1
+Q6
+Q11
+Q22
+Q89
+Q120
+Q124
+Q142 Remove Distinct
+Q144
+Q147
+Q155
+Q173
+Q181
+Q186
+Q124
+Q228
+Q246
+Q268
+Q259
+Q297
+Q314
+Q377
+Q388
+Q407
+Q426
+Q447
+Q491 Remove Distinct
+Q492 Remove Distinct
+Q506
+Q529 Remove Distinct
+Q530 Remove Distinct
+Q534
+Q568 Remove Distinct
+Q584 Remove Distinct
+Q591 
+Q621 Remove Distinct
+Q645
+Q708 
+Q741 Remove Distinct
+Q749
+Q779 
+Q861
+Q867 
+Q888 Remove Distinct
+Q894
+Q928
+Q958
+Q1005 Remove Distinct
+Q1024
+Q1027
+Q1039
+Q1043
+Q1044
+Q667 Aggregates in Orderby
+Q554 Aggregates in Orderby
+Q136 Aggregates in Orderby
+Q184 Aggregates in Orderby
+Q284 Aggregates in Orderby
+Q412 Aggregates in Orderby
+Q518 Aggregates in Orderby
+Q551 Aggregates in Orderby
+Q551 Aggregates in Orderby
+Q552 Aggregates in Orderby
+Q565 Aggregates in Orderby
+Q567 Aggregates in Orderby
+Q585 Aggregates in Orderby
+Q668 Aggregates in Orderby
+Q761 Aggregates in Orderby
+Q866 Aggregates in Orderby
+Q961 Aggregates in Orderby
+
+Q889 Nested
+
+Q259 Having (out of scope)
+
+Q51 Multiple instance
+Q94 Multiple instance
+Q158 Multiple instance
+Q204 Multiple instance
+Q221 Multiple instance
+Q231 Multiple instance
+Q319 Multiple instance
+Q327 Multiple instance
+Q351 Multiple instance
+Q773 Multiple instance
+Q803 Multiple instance
+
+Q104 In Operator
+Q219 In Operator
+
+Q2 Union
+Q108 Union
+Q122 Union
+Q123 Union
+Q177 Union
+Q395 Union
+Q435 Union
+Q438 Union
+Q528 Union
+Q569 Union
+Q578 Union
+Q595 Union
+Q605 Union
+Q620 Union
+Q691 Union
+Q924 Union
+Q1075 Union
+
+
