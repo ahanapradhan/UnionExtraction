@@ -75,7 +75,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
         if not check or not vm.done:
-            self.error = "Cannot do database minimization as problem in {} table.".format(vm.error_table)
+            self.error = "Cannot do database minimization"
             self.logger.error(self.error)
             self.update_state(ERROR)
             self.info[DB_MINIMIZATION] = None

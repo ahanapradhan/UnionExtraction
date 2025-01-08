@@ -23,7 +23,6 @@ class ViewMinimizer(Minimizer):
                  core_relations, all_sizes,
                  sampling_status):
         super().__init__(connectionHelper, core_relations, all_sizes, "View_Minimizer")
-        self.error_table = None
         self.cs2_passed = sampling_status
         self.global_min_instance_dict = {}
 
@@ -78,6 +77,7 @@ class ViewMinimizer(Minimizer):
 
             if not self.sanity_check(query):
                 self.error_table = tabname
+                print(f"Query is producing empty result with following minimized table\n {tabname}, {core_sizes[tabname]}")
                 return False
 
         for tabname in self.core_relations:
