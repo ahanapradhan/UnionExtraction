@@ -55,3 +55,144 @@ lineitem.l_quantity <= 9687.99	Bogus
 lineitem.l_shipdate between '1995-01-01' and '1995-12-31'	Correct
 part.p_name LIKE '%ivory%'	Correct
 partsupp.ps_availqty >= 12	Bogus
+
+Prompt:
+I have the following query:
+SELECT
+    s_name,
+    s_address,
+    n_name
+FROM  supplier, nation, part, partsupp
+where ps_partkey = p_partkey
+and p_name LIKE '%ivory%'
+and ps_suppkey = s_suppkey
+and s_nationkey = n_nationkey
+and n_name = 'FRANCE'
+AND ps_availqty > 0.5 * (
+    SELECT
+        SUM(l_quantity) AS total_shipped
+    FROM lineitem l
+    WHERE l_shipdate BETWEEN '1995-01-01' AND '1995-12-31'
+	and l_suppkey = ps_suppkey
+	AND l_partkey = ps_partkey
+)
+ORDER BY s_name ASC;
+
+It gives the following result:
+"Supplier#000000070"	"jd4djZv0cc5KdnA0q9oOqvceaPUbNloOW"	"FRANCE"
+"Supplier#000000070"	"jd4djZv0cc5KdnA0q9oOqvceaPUbNloOW"	"FRANCE"
+"Supplier#000000090"	"QbmU6KsZLYFXKv8le D9z0K0XLAXT WGuKBKAzzZ"	"FRANCE"
+"Supplier#000000121"	"p4k I1ygirUKnOn i"	"FRANCE"
+"Supplier#000000121"	"p4k I1ygirUKnOn i"	"FRANCE"
+"Supplier#000000121"	"p4k I1ygirUKnOn i"	"FRANCE"
+"Supplier#000000121"	"p4k I1ygirUKnOn i"	"FRANCE"
+"Supplier#000000121"	"p4k I1ygirUKnOn i"	"FRANCE"
+"Supplier#000000121"	"p4k I1ygirUKnOn i"	"FRANCE"
+"Supplier#000000121"	"p4k I1ygirUKnOn i"	"FRANCE"
+"Supplier#000000145"	"C8z59qcFdg6xw3OIqmguvt,JnTGqrQ2L"	"FRANCE"
+"Supplier#000000145"	"C8z59qcFdg6xw3OIqmguvt,JnTGqrQ2L"	"FRANCE"
+"Supplier#000000145"	"C8z59qcFdg6xw3OIqmguvt,JnTGqrQ2L"	"FRANCE"
+"Supplier#000000145"	"C8z59qcFdg6xw3OIqmguvt,JnTGqrQ2L"	"FRANCE"
+"Supplier#000000145"	"C8z59qcFdg6xw3OIqmguvt,JnTGqrQ2L"	"FRANCE"
+"Supplier#000000149"	"C5t4zIcINBkgBWdMg6WtgMtE"	"FRANCE"
+"Supplier#000000149"	"C5t4zIcINBkgBWdMg6WtgMtE"	"FRANCE"
+"Supplier#000000149"	"C5t4zIcINBkgBWdMg6WtgMtE"	"FRANCE"
+"Supplier#000000198"	"EO4MRE7pAhn7DC"	"FRANCE"
+"Supplier#000000198"	"EO4MRE7pAhn7DC"	"FRANCE"
+"Supplier#000000233"	"cxREA z6HheCAIklWwLf8DXmdiDdb5ApdD3ieVmP"	"FRANCE"
+"Supplier#000000233"	"cxREA z6HheCAIklWwLf8DXmdiDdb5ApdD3ieVmP"	"FRANCE"
+"Supplier#000000243"	"TQaXjlMc3uL2Meq41aMrqVtY9hmlVHOEdXaQ"	"FRANCE"
+"Supplier#000000243"	"TQaXjlMc3uL2Meq41aMrqVtY9hmlVHOEdXaQ"	"FRANCE"
+"Supplier#000000243"	"TQaXjlMc3uL2Meq41aMrqVtY9hmlVHOEdXaQ"	"FRANCE"
+"Supplier#000000243"	"TQaXjlMc3uL2Meq41aMrqVtY9hmlVHOEdXaQ"	"FRANCE"
+"Supplier#000000243"	"TQaXjlMc3uL2Meq41aMrqVtY9hmlVHOEdXaQ"	"FRANCE"
+"Supplier#000000243"	"TQaXjlMc3uL2Meq41aMrqVtY9hmlVHOEdXaQ"	"FRANCE"
+"Supplier#000000243"	"TQaXjlMc3uL2Meq41aMrqVtY9hmlVHOEdXaQ"	"FRANCE"
+"Supplier#000000248"	"xnbpIyWfTJc1uvQnCd4ry0sjK45jwp4lpNLyMG"	"FRANCE"
+"Supplier#000000248"	"xnbpIyWfTJc1uvQnCd4ry0sjK45jwp4lpNLyMG"	"FRANCE"
+"Supplier#000000248"	"xnbpIyWfTJc1uvQnCd4ry0sjK45jwp4lpNLyMG"	"FRANCE"
+"Supplier#000000276"	"hN5nzVmkL46zbNHyoJRINB"	"FRANCE"
+"Supplier#000000276"	"hN5nzVmkL46zbNHyoJRINB"	"FRANCE"
+"Supplier#000000276"	"hN5nzVmkL46zbNHyoJRINB"	"FRANCE"
+"Supplier#000000276"	"hN5nzVmkL46zbNHyoJRINB"	"FRANCE"
+"Supplier#000000276"	"hN5nzVmkL46zbNHyoJRINB"	"FRANCE"
+"Supplier#000000290"	"VpG,Ul5yv1RgAK,,"	"FRANCE"
+"Supplier#000000322"	"GpYAOmo vQtFTaQ"	"FRANCE"
+"Supplier#000000322"	"GpYAOmo vQtFTaQ"	"FRANCE"
+"Supplier#000000322"	"GpYAOmo vQtFTaQ"	"FRANCE"
+"Supplier#000000417"	"QXoPavoe44y02tMb6rVZMOOxwUey"	"FRANCE"
+"Supplier#000000417"	"QXoPavoe44y02tMb6rVZMOOxwUey"	"FRANCE"
+"Supplier#000000417"	"QXoPavoe44y02tMb6rVZMOOxwUey"	"FRANCE"
+"Supplier#000000417"	"QXoPavoe44y02tMb6rVZMOOxwUey"	"FRANCE"
+"Supplier#000000417"	"QXoPavoe44y02tMb6rVZMOOxwUey"	"FRANCE"
+"Supplier#000000417"	"QXoPavoe44y02tMb6rVZMOOxwUey"	"FRANCE"
+"Supplier#000000417"	"QXoPavoe44y02tMb6rVZMOOxwUey"	"FRANCE"
+"Supplier#000000419"	"mB4yAIGPAm4D"	"FRANCE"
+"Supplier#000000419"	"mB4yAIGPAm4D"	"FRANCE"
+"Supplier#000000451"	"PAegaJfHCGxilk"	"FRANCE"
+"Supplier#000000451"	"PAegaJfHCGxilk"	"FRANCE"
+"Supplier#000000468"	"80Bvm1zGP2I VnornYmLFmjdtPJAlgwZFCl"	"FRANCE"
+"Supplier#000000509"	"9lTN9T5VBg"	"FRANCE"
+"Supplier#000000553"	"R0FI5DL3Poi"	"FRANCE"
+"Supplier#000000553"	"R0FI5DL3Poi"	"FRANCE"
+"Supplier#000000553"	"R0FI5DL3Poi"	"FRANCE"
+"Supplier#000000556"	"LXa96RInqi,DaabifhLqRR4"	"FRANCE"
+"Supplier#000000556"	"LXa96RInqi,DaabifhLqRR4"	"FRANCE"
+"Supplier#000000556"	"LXa96RInqi,DaabifhLqRR4"	"FRANCE"
+"Supplier#000000605"	"wNvIdDd7SB6jc7jbSHJ5tQc7G7"	"FRANCE"
+"Supplier#000000605"	"wNvIdDd7SB6jc7jbSHJ5tQc7G7"	"FRANCE"
+"Supplier#000000616"	"hyQCrlqXrVHTCl0wGntJP,xQyaTYNnVVBn"	"FRANCE"
+"Supplier#000000616"	"hyQCrlqXrVHTCl0wGntJP,xQyaTYNnVVBn"	"FRANCE"
+"Supplier#000000621"	"MHlCEfdwOp5jP"	"FRANCE"
+"Supplier#000000646"	"j6szE80YCpLHJ4bZ7F37gUiGhk0WJ0,8h9y"	"FRANCE"
+"Supplier#000000646"	"j6szE80YCpLHJ4bZ7F37gUiGhk0WJ0,8h9y"	"FRANCE"
+"Supplier#000000674"	"Ieuf9ouCbZcLrGstte5iMfp"	"FRANCE"
+"Supplier#000000769"	"RGYXY0M6Gk"	"FRANCE"
+"Supplier#000000769"	"RGYXY0M6Gk"	"FRANCE"
+"Supplier#000000780"	"1kU6j7YUPSOGwvB3Ie0"	"FRANCE"
+"Supplier#000000780"	"1kU6j7YUPSOGwvB3Ie0"	"FRANCE"
+"Supplier#000000780"	"1kU6j7YUPSOGwvB3Ie0"	"FRANCE"
+"Supplier#000000780"	"1kU6j7YUPSOGwvB3Ie0"	"FRANCE"
+"Supplier#000000780"	"1kU6j7YUPSOGwvB3Ie0"	"FRANCE"
+"Supplier#000000812"	"TAJWyNst8OGVPINgqtzwyyp002iYNDVub"	"FRANCE"
+"Supplier#000000812"	"TAJWyNst8OGVPINgqtzwyyp002iYNDVub"	"FRANCE"
+"Supplier#000000822"	"0eh1InZPgDCsA7rI0,"	"FRANCE"
+"Supplier#000000822"	"0eh1InZPgDCsA7rI0,"	"FRANCE"
+"Supplier#000000839"	",L8uR9wUf RAD5bYx"	"FRANCE"
+"Supplier#000000839"	",L8uR9wUf RAD5bYx"	"FRANCE"
+"Supplier#000000954"	"cXcVBs6lsZbzfE14"	"FRANCE"
+"Supplier#000000954"	"cXcVBs6lsZbzfE14"	"FRANCE"
+
+But I want the following result:
+"Supplier#000000070"	"jd4djZv0cc5KdnA0q9oOqvceaPUbNloOW"
+"Supplier#000000090"	"QbmU6KsZLYFXKv8le D9z0K0XLAXT WGuKBKAzzZ"
+"Supplier#000000121"	"p4k I1ygirUKnOn i"
+"Supplier#000000145"	"C8z59qcFdg6xw3OIqmguvt,JnTGqrQ2L"
+"Supplier#000000149"	"C5t4zIcINBkgBWdMg6WtgMtE"
+"Supplier#000000198"	"EO4MRE7pAhn7DC"
+"Supplier#000000233"	"cxREA z6HheCAIklWwLf8DXmdiDdb5ApdD3ieVmP"
+"Supplier#000000243"	"TQaXjlMc3uL2Meq41aMrqVtY9hmlVHOEdXaQ"
+"Supplier#000000248"	"xnbpIyWfTJc1uvQnCd4ry0sjK45jwp4lpNLyMG"
+"Supplier#000000276"	"hN5nzVmkL46zbNHyoJRINB"
+"Supplier#000000290"	"VpG,Ul5yv1RgAK,,"
+"Supplier#000000322"	"GpYAOmo vQtFTaQ"
+"Supplier#000000417"	"QXoPavoe44y02tMb6rVZMOOxwUey"
+"Supplier#000000419"	"mB4yAIGPAm4D"
+"Supplier#000000451"	"PAegaJfHCGxilk"
+"Supplier#000000468"	"80Bvm1zGP2I VnornYmLFmjdtPJAlgwZFCl"
+"Supplier#000000509"	"9lTN9T5VBg"
+"Supplier#000000553"	"R0FI5DL3Poi"
+"Supplier#000000556"	"LXa96RInqi,DaabifhLqRR4"
+"Supplier#000000605"	"wNvIdDd7SB6jc7jbSHJ5tQc7G7"
+"Supplier#000000616"	"hyQCrlqXrVHTCl0wGntJP,xQyaTYNnVVBn"
+"Supplier#000000621"	"MHlCEfdwOp5jP"
+"Supplier#000000646"	"j6szE80YCpLHJ4bZ7F37gUiGhk0WJ0,8h9y"
+"Supplier#000000674"	"Ieuf9ouCbZcLrGstte5iMfp"
+"Supplier#000000769"	"RGYXY0M6Gk"
+"Supplier#000000780"	"1kU6j7YUPSOGwvB3Ie0"
+"Supplier#000000812"	"TAJWyNst8OGVPINgqtzwyyp002iYNDVub"
+"Supplier#000000822"	"0eh1InZPgDCsA7rI0,"
+"Supplier#000000839"	",L8uR9wUf RAD5bYx"
+"Supplier#000000954"	"cXcVBs6lsZbzfE14"
+
+Fix the query.
