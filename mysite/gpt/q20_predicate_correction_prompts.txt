@@ -1,0 +1,57 @@
+Here is a business description D:
+The identifies suppliers who have an excess of ivory parts available; an excess is defined to be more than 50% of the parts like the given part that the supplier shipped in the year of 1995 for France. Only parts whose names share a mention of ivory are considered.
+
+Here is a SQL query Q, potentially matching the description:
+Select s_name, s_address
+ From lineitem, nation, part, partsupp, supplier
+ Where lineitem.l_partkey = part.p_partkey
+ and part.p_partkey = partsupp.ps_partkey
+ and lineitem.l_suppkey = partsupp.ps_suppkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and nation.n_nationkey = supplier.s_nationkey
+ and nation.n_name = 'FRANCE'
+ and lineitem.l_quantity <= 9687.99
+ and lineitem.l_shipdate between '1995-01-01' and '1995-12-31'
+ and part.p_name LIKE '%ivory%'
+ and partsupp.ps_availqty >= 12
+ Order By s_name asc;
+
+Validate each of the Where clause predicate in Q against D.
+That is, if a predicate in Q does not match with any sentence in D, list it as "Bogus".
+If a match found in D, list is as "Correct".
+
+Answer:
+** Did not list the detailed explainations***
+Summary
+Here is the status of each predicate:
+
+Predicate	Status
+lineitem.l_partkey = part.p_partkey	Bogus
+part.p_partkey = partsupp.ps_partkey	Correct
+lineitem.l_suppkey = partsupp.ps_suppkey	Bogus
+partsupp.ps_suppkey = supplier.s_suppkey	Correct
+nation.n_nationkey = supplier.s_nationkey	Correct
+nation.n_name = 'FRANCE'	Correct
+lineitem.l_quantity <= 9687.99	Bogus
+lineitem.l_shipdate between '1995-01-01' and '1995-12-31'	Correct
+part.p_name LIKE '%ivory%'	Correct
+partsupp.ps_availqty >= 12	Bogus
+
+
+Prompt: I know all the join predicates are correct. Revise your list as per that.
+
+** Did not list the detailed explainations***
+Summary
+Here is the status of each predicate:
+
+Predicate	Status
+lineitem.l_partkey = part.p_partkey	Correct
+part.p_partkey = partsupp.ps_partkey	Correct
+lineitem.l_suppkey = partsupp.ps_suppkey	Correct
+partsupp.ps_suppkey = supplier.s_suppkey	Correct
+nation.n_nationkey = supplier.s_nationkey	Correct
+nation.n_name = 'FRANCE'	Correct
+lineitem.l_quantity <= 9687.99	Bogus
+lineitem.l_shipdate between '1995-01-01' and '1995-12-31'	Correct
+part.p_name LIKE '%ivory%'	Correct
+partsupp.ps_availqty >= 12	Bogus
