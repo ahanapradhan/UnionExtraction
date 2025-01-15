@@ -71,16 +71,17 @@ class UN2WhereClause(MutationPipeLineBase):
                                                     self.get_fully_qualified_table_name(tabname)),[vals])
 
     def get_datatype(self, tab_attrib: Tuple[str, str]) -> str:
-        if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
+        #if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'integer', 'number']):
+        if any(x in self.attrib_types_dict[tab_attrib] for x in ['int', 'number']):
             return 'int'
         elif 'date' in self.attrib_types_dict[tab_attrib]:
             return 'date'
         elif any(x in self.attrib_types_dict[tab_attrib] for x in ['text', 'char', 'varbit', 'varchar2','varchar']):
             return 'str'
-        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['numeric', 'float', 'decimal', 'Decimal', 'real']):
+        elif any(x in self.attrib_types_dict[tab_attrib] for x in ['numeric', 'float', 'decimal', 'Decimal']):
             return 'numeric'
         else:
-            raise ValueError
+            raise ValueError(f"Datatype '{self.attrib_types_dict[tab_attrib]}' for attribute '{tab_attrib[1]}' in table '{tab_attrib[0]}' is not supported.")
 
     def get_dmin_val_of_attrib_list(self, attrib_list: list) -> list:
         val_list = []
