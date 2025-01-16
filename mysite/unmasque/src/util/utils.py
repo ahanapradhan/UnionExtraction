@@ -141,7 +141,7 @@ def get_datatype_of_val(val):
     elif is_number(val):
         return 'numeric'
     else:
-        raise ValueError
+        raise ValueError(f"Datatype of '{val}' is not supported.")
 
 
 def get_unused_dummy_val(datatype, value_used):
@@ -154,7 +154,7 @@ def get_unused_dummy_val(datatype, value_used):
             constants.dummy_char = 65
         dint = get_char(constants.dummy_char)
     else:
-        raise ValueError
+        raise ValueError(f"Dummy value of '{datatype}' not found.")
 
     while dint in value_used:
         dint = get_val_plus_delta(datatype, dint, 1)
