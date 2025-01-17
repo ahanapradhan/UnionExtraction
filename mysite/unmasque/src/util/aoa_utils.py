@@ -468,7 +468,7 @@ def need_permanent_mutation(datatype, diffs: list) -> bool:
 
 
 def get_constants_for(datatype):
-    if datatype in ['int', 'date', 'number', 'integer']:
+    if datatype in ['int', 'date', 'number', 'integer', 'real']:
         while_cut_off = 0
         delta = 1
     elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
