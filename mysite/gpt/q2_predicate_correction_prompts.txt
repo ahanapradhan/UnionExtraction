@@ -1,0 +1,35 @@
+Here is a business description D:
+The Query finds, in European region, for each part brass type and size 15, the supplier who can supply it at minimum cost. If several suppliers in that region offer the desired part type and size at the same (minimum) cost, the query lists the parts from suppliers with the 100 highest account balances. For each supplier, the query lists the supplier's account balance, name and nation; the part's number and manufacturer; the supplier's address, phone number and comment information.
+
+Here is a SQL query Q, potentially matching the description:
+Select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment
+ From nation, part, partsupp, region, supplier
+ Where nation.n_nationkey = supplier.s_nationkey
+ and nation.n_regionkey = region.r_regionkey
+ and part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and part.p_size = 15
+ and region.r_name = 'EUROPE'
+ and part.p_type LIKE '%BRASS'
+ Order By s_acctbal desc, n_name asc, s_name asc, p_partkey asc
+Limit 100;
+
+Validate each of the Where clause predicate in Q against D.
+That is, if a predicate in Q does not match with any sentence in D, list it as "Bogus".
+If a match found in D, list is as "Correct".
+
+Answer:
+** Did not list the detailed explainations***
+Summary
+Here is the status of each predicate:
+
+Predicate	Status
+nation.n_nationkey = supplier.s_nationkey	Correct
+nation.n_regionkey = region.r_regionkey	Correct
+part.p_partkey = partsupp.ps_partkey	Correct
+partsupp.ps_suppkey = supplier.s_suppkey	Correct
+part.p_size = 15	Correct
+region.r_name = 'EUROPE'	Correct
+part.p_type LIKE '%BRASS'	Correct
+ORDER BY Clause	Partially Correct (Extra sorting criteria)
+LIMIT Clause	Correct
