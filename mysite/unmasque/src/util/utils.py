@@ -176,7 +176,7 @@ def get_datatype_from_typesList(list_type):
         datatype = 'date'
     elif 'int' in list_type or 'integer' in list_type:
         datatype = 'int'
-    elif 'numeric' in list_type or 'decimal' in list_type or 'Decimal' in list_type:
+    elif 'numeric' in list_type or 'decimal' in list_type or 'Decimal' in list_type or 'real' in list_type:
         datatype = 'numeric'
     else:
         datatype = 'text'
@@ -215,7 +215,7 @@ def get_min_and_max_val(datatype):
         return constants.min_date_val, constants.max_date_val
     elif datatype in ['int', 'integer', 'number']:
         return constants.min_int_val, constants.max_int_val
-    elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
+    elif datatype in ['numeric', 'float', 'decimal', 'Decimal', 'real']:
         return constants.min_numeric_val, constants.max_numeric_val
     else:
         return constants.min_int_val, constants.max_int_val
@@ -232,7 +232,7 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
 def get_format(datatype, val):
     if datatype in ['date', 'char', 'character', 'character varying', 'str', 'text', 'varchar']:
         return f'\'{str(val)}\''
-    elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
+    elif datatype in ['numeric', 'float', 'decimal', 'Decimal', 'real']:
         val = float(val)
         return str(round(val, 3))
     return str(val)
@@ -240,7 +240,7 @@ def get_format(datatype, val):
 def get_format_for_agg(datatype, val):
     if datatype in ['char', 'character', 'character varying', 'str', 'text', 'varchar']:
         return f'\'{str(val)}\''
-    elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
+    elif datatype in ['numeric', 'float', 'decimal', 'Decimal', 'real']:
         val = float(val)
         return str(round(val, 3))
     return str(val)
@@ -286,7 +286,7 @@ def get_mid_val(datatype, high, low, div=2):
 def get_cast_value(datatype, val):
     if datatype == 'int':
         return int(val)
-    elif datatype in ['numeric', 'float', 'decimal', 'Decimal']:
+    elif datatype in ['numeric', 'float', 'decimal', 'Decimal', 'real']:
         return float(val)
     else:  # date
         return val
