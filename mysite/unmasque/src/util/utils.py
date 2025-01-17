@@ -6,6 +6,7 @@ from itertools import combinations
 
 from dateutil.relativedelta import relativedelta
 
+from .constants import NUMERIC_TYPES, INT_TYPES, TEXT_TYPES
 from ...src.util import constants
 from ...src.util.constants import dummy_int, dummy_date, dummy_char, NUMBER_TYPES
 
@@ -149,7 +150,7 @@ def get_unused_dummy_val(datatype, value_used):
         dint = constants.dummy_int
     elif datatype == 'date':
         dint = constants.dummy_date
-    elif datatype in ['char', 'str']:
+    elif datatype in TEXT_TYPES:
         if constants.dummy_char == 91:
             constants.dummy_char = 65
         dint = get_char(constants.dummy_char)
@@ -163,7 +164,7 @@ def get_unused_dummy_val(datatype, value_used):
         constants.dummy_int = dint
     elif datatype == 'date':
         constants.dummy_date = dint
-    elif datatype in ['char', 'str']:
+    elif datatype in TEXT_TYPES:
         dint = get_char(dint)
         constants.dummy_char = get_int(dint)
     else:
@@ -213,9 +214,9 @@ def get_val_plus_delta(datatype, min_val, delta):
 def get_min_and_max_val(datatype):
     if datatype == 'date':
         return constants.min_date_val, constants.max_date_val
-    elif datatype in ['int', 'integer', 'number']:
+    elif datatype in INT_TYPES:
         return constants.min_int_val, constants.max_int_val
-    elif datatype in ['numeric', 'float', 'decimal', 'Decimal', 'real']:
+    elif datatype in NUMERIC_TYPES:
         return constants.min_numeric_val, constants.max_numeric_val
     else:
         return constants.min_int_val, constants.max_int_val
@@ -230,17 +231,17 @@ def is_left_less_than_right_by_cutoff(datatype, left, right, cutoff):
 
 
 def get_format(datatype, val):
-    if datatype in ['date', 'char', 'character', 'character varying', 'str', 'text', 'varchar']:
+    if datatype in ['date'] + TEXT_TYPES:
         return f'\'{str(val)}\''
-    elif datatype in ['numeric', 'float', 'decimal', 'Decimal', 'real']:
+    elif datatype in NUMERIC_TYPES:
         val = float(val)
         return str(round(val, 3))
     return str(val)
 
 def get_format_for_agg(datatype, val):
-    if datatype in ['char', 'character', 'character varying', 'str', 'text', 'varchar']:
+    if datatype in TEXT_TYPES:
         return f'\'{str(val)}\''
-    elif datatype in ['numeric', 'float', 'decimal', 'Decimal', 'real']:
+    elif datatype in NUMERIC_TYPES:
         val = float(val)
         return str(round(val, 3))
     return str(val)
@@ -284,9 +285,9 @@ def get_mid_val(datatype, high, low, div=2):
 
 
 def get_cast_value(datatype, val):
-    if datatype == 'int':
+    if datatype in INT_TYPES:
         return int(val)
-    elif datatype in ['numeric', 'float', 'decimal', 'Decimal', 'real']:
+    elif datatype in NUMERIC_TYPES:
         return float(val)
     else:  # date
         return val
