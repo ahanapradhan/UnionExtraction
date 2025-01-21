@@ -1,0 +1,691 @@
+Q2
+SELECT T1.teamname, T3.teamname, T2.home_team_goals, T2.away_team_goals
+ FROM national_team AS T1
+     JOIN match AS T2 ON T2.home_team_id = T1.team_id
+     JOIN national_team AS T3 ON T2.away_team_id = T3.team_id
+ WHERE T3.teamname = 'Switzerland' and T3.year = 2018 and T2.did_home_win = 'true'
+UNION
+SELECT T1.teamname, T3.teamname, T2.home_team_goals, T2.away_team_goals
+ FROM national_team AS T1
+     JOIN match AS T2 ON T2.away_team_id = T1.team_id
+     JOIN national_team AS T3 ON T2.home_team_id = T3.team_id
+ WHERE T3.teamname = 'Switzerland' and T3.year = 2018 and T2.did_home_win = 'False' and T2.is_draw = 'False'
+
+Q6
+select player.player_name
+ from player join player_fact on player.player_id = player_fact.player_id
+ where player_fact.shirt_number = 13
+ and player.player_name like 'Alex%'
+ group by player.player_name
+
+Q11
+SELECT count(*) FROM national_team AS T1 WHERE T1.teamname = 'Italy'
+
+Q22
+select T3.club_name
+ from player as T1
+ join player_club_team as T2 on T1.player_id = T2.player_id
+ join club as T3 on T2.club_id = T3.club_id
+ where T1.player_name like '%Maradona%'
+
+Q51
+SELECT m.year, nt.teamname, nt2.teamname, m.home_team_goals, m.away_team_goals
+ FROM match AS m
+     JOIN national_team as nt on m.home_team_id = nt.team_id
+     JOIN national_team as nt2 on nt2.team_id = m.away_team_id
+ where m.stage = 'Quarter-finals'
+ order by m.year desc;
+
+Q89
+select t1.year from world_cup as t1 order by t1.year asc limit 1;
+
+Q94
+SELECT count(*)
+FROM national_team AS T1
+    JOIN match AS T2 ON T1.team_id = T2.home_team_id
+    JOIN national_team AS T3 ON T3.team_id = T2.away_team_id
+ WHERE T1.teamname = 'Brazil' AND T2.home_team_goals > T2.away_team_goals
+       OR T3.teamname = 'Brazil' AND T2.home_team_goals < T2.away_team_goals;
+
+Q104
+select nt.teamname, p.player_name, count(*)
+ from player as p
+ join player_fact as pf on p.player_id = pf.player_id
+ join national_team as nt on pf.team_id = nt.team_id
+ where pf.player_id in (
+ select mf.player_id
+ from match as m
+ join match_fact as mf on m.match_id = mf.match_id
+ join national_team as n on n.team_id = m.home_team_id
+ join national_team as ot on m.away_team_id = ot.team_id
+ where mf.goal = 'true' and n.teamname = 'Brazil' and ot.teamname = 'Germany' OR mf.goal = 'true' and n.teamname = 'Germany' and ot.teamname = 'Brazil') and nt.year > 2000
+ GROUP BY nt.teamname, p.player_name
+ ORDER BY count(*) DESC
+
+Q108
+SELECT T3.year, T2.away_team_goals
+ FROM national_team AS T1
+ JOIN match AS T2 on T2.home_team_id = T1.team_id
+ JOIN national_team AS T3 ON T3.team_id = T2.away_team_id
+ WHERE T1.teamname = 'Brazil' and T3.teamname = 'Germany'
+UNION
+SELECT T3.year, T2.home_team_goals
+ FROM national_team AS T1
+ JOIN match AS T2 on T2.home_team_id = T1.team_id
+ JOIN national_team AS T3 ON T3.team_id = T2.away_team_id
+ WHERE T1.teamname = 'Germany' and T3.teamname = 'Brazil'
+
+Q120
+SELECT T2.player_name, count(*) FROM match_fact AS T1 JOIN player AS T2 ON T1.player_id = T2.player_id
+ WHERE T1.goal = 'true' and T2.player_name ilike '%Ronaldo%'
+ group by T2.player_name;
+
+Q122
+select sum(t.g)
+from
+    (select sum(T2.away_team_goals) as g
+ from national_team as T1
+     join match as T2 on T2.away_team_id = T1.team_id
+ where T1.teamname like '%Switzerland%' and T1.year = 2018
+UNION
+select sum(T2.home_team_goals) as g
+ from national_team as T1
+     join match as T2 on T2.home_team_id = T1.team_id
+ where T1.teamname like '%Switzerland%' and T1.year = 2018) as t
+
+Q123
+select sum(t.sum)
+from(
+SELECT SUM(T2.home_team_goals)
+ FROM national_team AS T1
+ JOIN match AS T2 ON T2.home_team_id = T1.team_id
+ JOIN national_team as T3 ON T2.away_team_id = T3.team_id
+ WHERE T2.year = 2022 and T1.teamname ilike '%France'
+UNION
+SELECT SUM(T2.away_team_goals)
+ FROM national_team AS T1
+ JOIN match AS T2 ON T2.home_team_id = T1.team_id
+ JOIN national_team as T3 ON T2.away_team_id = T3.team_id
+ WHERE T2.year = 2022 and T3.teamname ilike '%France') as t
+
+Q124
+SELECT count(*) FROM match_fact AS T1 JOIN player AS T2 ON T1.player_id = T2.player_id WHERE T1.goal = 'true' and T2.player_name ilike '%Giroud%'
+
+Q136
+SELECT stadium_name, count(stadium_name)
+ FROM stadium JOIN match on stadium.stadium_id = match.stadium_id
+ WHERE year = '2014'
+ GROUP BY stadium_name
+ ORDER BY count(stadium_name) DESC;
+
+Q142
+SELECT DISTINCT count(DISTINCT T1.player_name) FROM player AS T1 JOIN player_fact AS T3 ON T1.player_id = T3.player_id JOIN national_team AS T2 ON T3.team_id = T2.team_id WHERE T2.teamname = 'Switzerland' and T2.year = 2022
+
+Q144
+SELECT count(distinct p.player_id) from player as p join player_fact as pf on p.player_id = pf.player_id;
+
+Q147
+SELECT count( T1.red_card) FROM match_fact AS T1 JOIN match AS T2 on T2.match_id = T1.match_id JOIN national_team AS T4 on T2.away_team_id = T4.team_id WHERE T4.teamname = 'England' and T2.year = 1966 and T1.red_card = 'true';
+
+Q155
+SELECT count(*)
+FROM world_cup AS T1
+    JOIN national_team AS T2 ON T1.winner = T2.team_id
+WHERE T2.teamname = 'England'
+
+Q158
+SELECT count(*)
+FROM match AS T1
+    JOIN national_team AS T2 ON T2.team_id = T1.home_team_id
+    JOIN national_team AS T3 ON T3.team_id = T1.away_team_id
+WHERE T2.teamname = 'Switzerland' and T3.teamname = 'Brazil' or T2.teamname = 'Brazil' and T3.teamname = 'Switzerland'
+
+Q173
+SELECT count(*) FROM national_team AS T1 WHERE T1.teamname = 'Italy'
+
+Q177
+SELECT stadium_name from stadium AS T1
+ join match AS T2 on T1.stadium_id = T2.stadium_id
+ join national_team AS T3 on T3.team_id = T2.away_team_id
+ join player_fact AS T4 on T4.team_id = T3.team_id
+ join player AS T5 on T5.player_id = T4.player_id
+ where player_name ilike '%Messi%'
+ group by T1.stadium_name
+UNION
+SELECT stadium_name from stadium AS T1
+ join match AS T2 on T1.stadium_id = T2.stadium_id
+ join national_team AS T3 on T3.team_id = T2.home_team_id
+ join player_fact AS T4 on T4.team_id = T3.team_id
+ join player AS T5 on T5.player_id = T4.player_id
+ where player_name ilike '%Messi%'
+ group by T1.stadium_name
+
+Q181
+SELECT T1.club_team_name 
+ FROM player_club_team AS T1 
+ JOIN player AS T2 ON T1.player_id = T2.player_id 
+ WHERE T2.player_name ilike '%MESSI%'
+
+Q184
+select s.country, count(*)
+ from stadium as s
+ join match as m on s.stadium_id = m.stadium_id
+ group by s.country
+ order by count(*) asc
+ limit 1;
+
+Q186
+select c.country from club as c where c.club_name ilike '%A.C. Milan%';
+
+Q204
+SELECT T1.year
+FROM match AS T1
+    JOIN national_team AS T2 ON T1.home_team_id = T2.team_id
+    JOIN national_team AS T3 ON T1.away_team_id = T3.team_id
+WHERE T2.teamname = 'Switzerland' and T3.teamname = 'Serbia' or T2.teamname = 'Serbia' and T3.teamname = 'Switzerland'
+
+
+Q214
+select * from club as c where c.country = 'Switzerland' and c.found_year > 1930;
+
+Q219
+select distinct nt.teamname, p.player_name, pf.shirt_number
+ from player as p
+ join player_fact as pf on p.player_id = pf.player_id
+ join national_team as nt on pf.team_id = nt.team_id
+ where pf.player_id in (
+ select mf.player_id
+ from match as m
+ join match_fact as mf on m.match_id = mf.match_id
+ where m.year = 2006 and mf.line_up = 'true'
+ and m.match_id in (
+ select m.match_id
+ from match as m
+ where m.year = 2006
+ order by m.datetime
+ limit 1))
+
+Q221
+select HNT.teamname, ONT.teamname, m.home_team_goals, m.away_team_goals
+ from match as m
+ join stadium as s on m.stadium_id = s.stadium_id
+ join national_team as HNT on m.home_team_id = HNT.team_id
+ join national_team as ONT on ONT.team_id = m.away_team_id
+ where s.stadium_name = 'Allianz Arena';
+
+Q228
+SELECT * FROM player_club_team AS T3 JOIN player AS T2 ON T3.player_id = T2.player_id WHERE T2.player_name ilike '%MESSI%'
+
+Q231
+select HNT.teamname, ANT.teamname
+ from match as m
+ join stadium as s on m.stadium_id = s.stadium_id
+ join national_team as HNT on m.home_team_id = HNT.team_id
+ join national_team as ANT on m.away_team_id = ANT.team_id
+ where s.stadium_name = 'Giuseppe Meazza';
+
+Q246
+SELECT T1.player_name
+ FROM player AS T1 JOIN player_fact AS T3 ON T1.player_id = T3.player_id 
+ JOIN national_team AS T2 ON T3.team_id = T2.team_id 
+ WHERE T2.teamname = 'Switzerland' and T2.year = 2018
+
+Q259
+SELECT T2.teamname
+FROM world_cup AS T1
+    JOIN national_team AS T2 ON T1.winner = T2.team_id
+GROUP BY T2.teamname
+ HAVING COUNT(t1.year) > 2
+
+Q268
+SELECT * FROM club WHERE country = 'Brazil'
+
+Q284
+select t1.player_name, count(*) from player as t1
+ join match_fact as t13 on t1.player_id = t13.player_id
+ group by t1.player_name order by count(*) desc limit 1;
+
+Q295
+SELECT T1.club_name FROM club AS T1 WHERE T1.country = 'Austria'
+
+Q297
+SELECT count(T1.teamname) from national_team as T1 where T1.year = '2022'
+
+Q314
+SELECT T1.player_name
+ FROM player AS T1
+ JOIN player_fact AS T3 ON T1.player_id = T3.player_id
+ JOIN national_team AS T2 ON T3.team_id = T2.team_id
+ WHERE T2.teamname = 'France' and T2.year = 2018
+
+Q319
+SELECT T1.year, T1.teamname as home_team_name, T3.teamname as away_team_name, T2.home_team_goals, T2.away_team_goals
+FROM national_team AS T1
+    JOIN match AS T2 on T2.home_team_id = T1.team_id
+    JOIN national_team AS T3 ON T3.team_id = T2.away_team_id
+WHERE (T1.teamname = 'Switzerland' and T3.teamname = 'Spain')
+   or (T1.teamname = 'Spain' and T3.teamname = 'Switzerland');
+
+
+Q327
+SELECT T2.teamname, T3.teamname, T1.home_team_goals, T1.away_team_goals, T1.year
+FROM match AS T1
+    JOIN national_team AS T2 ON T1.home_team_id = T2.team_id
+    JOIN national_team AS T3 ON T1.away_team_id = T3.team_id
+WHERE T1.stage = 'Final' and T1.year = 2018
+
+Q351
+SELECT T1.year, T2.teamname, T3.teamname, T1.home_team_goals, T1.away_team_goals
+FROM match AS T1
+    JOIN national_team AS T2 ON T1.home_team_id = T2.team_id
+    JOIN national_team AS T3 ON T1.away_team_id = T3.team_id
+WHERE T2.teamname = 'Brazil' and T3.teamname = 'Argentina' or T2.teamname = 'Argentina' and T3.teamname = 'Brazil'
+
+
+Q377
+SELECT DISTINCT T1.club_team_name 
+ FROM player_club_team AS T1 
+ JOIN player AS T3 
+ ON T1.player_id = T3.player_id 
+ JOIN player_fact AS 
+ T4 ON T3.player_id = T4.player_id 
+ JOIN national_team AS T2 
+ ON T4.team_id = T2.team_id 
+ WHERE T2.year = '2018 World Cup'
+
+Q388
+select c.country_code from coach as c where c.coach_name ilike '%Arrigo Sacchi%';
+
+Q395
+SELECT T1.teamname, T3.teamname, T2.home_team_goals, T2.away_team_goals, T2.year
+ FROM national_team AS T1
+     JOIN match AS T2 ON T2.home_team_id = T1.team_id
+     JOIN national_team as T3 on T2.away_team_id = T3.team_id
+ WHERE T1.teamname = 'Austria' and T3.teamname = 'Italy'
+UNION
+SELECT T1.teamname, T3.teamname, T2.home_team_goals, T2.away_team_goals, T2.year
+ FROM national_team AS T1
+     JOIN match AS T2 ON T2.home_team_id = T1.team_id
+     JOIN national_team as T3 on T2.away_team_id = T3.team_id
+ WHERE T3.teamname = 'Austria' and T1.teamname = 'Italy'
+
+Q407
+SELECT T1.teamname FROM national_team AS T1 JOIN player_fact AS T3 ON T1.team_id = T3.team_id JOIN player AS T2 ON T3.player_id = T2.player_id WHERE T2.player_name ilike '%David Beckham%'
+
+Q412
+SELECT p.player_name, COUNT(DISTINCT mf.match_id)
+ FROM match_fact AS mf
+ JOIN match AS m ON m.match_id = mf.match_id
+ JOIN player AS p ON p.player_id = mf.player_id
+ WHERE m.year = 2014
+ AND mf.substitution_out = 'true'
+ GROUP BY p.player_name
+ ORDER BY COUNT(DISTINCT mf.match_id) DESC
+ LIMIT 1
+
+Q426
+SELECT T1.teamname, T1.goals FROM national_team AS T1 WHERE T1.year = 2018 ORDER BY T1.goals DESC LIMIT 1
+
+Q435
+SELECT DISTINCT T1.coach_name
+FROM coach AS T1
+    JOIN player_fact AS T2 ON T1.coach_id = T2.coach_id
+    JOIN national_team AS T4 ON T2.team_id = T4.team_id
+    JOIN match AS T3 ON T4.team_id = T3.home_team_id
+WHERE T2.shirt_number = 10 and T3.year = 2006
+UNION
+SELECT DISTINCT T1.coach_name
+FROM coach AS T1
+    JOIN player_fact AS T2 ON T1.coach_id = T2.coach_id
+    JOIN national_team AS T4 ON T2.team_id = T4.team_id
+    JOIN match AS T3 ON T4.team_id = T3.away_team_id
+WHERE T2.shirt_number = 10 and T3.year = 2006
+
+Q438
+SELECT T2.teamname, T3.teamname, T1.home_team_goals, T1.away_team_goals
+FROM match AS T1
+    JOIN national_team AS T2 ON T2.team_id = T1.home_team_id
+    JOIN national_team AS T3 ON T3.team_id = T1.away_team_id
+WHERE T3.teamname like '%Brazil%' and T2.teamname like '%Germany%' and T1.year = 2014
+UNION
+SELECT T2.teamname, T3.teamname, T1.home_team_goals, T1.away_team_goals
+FROM match AS T1
+    JOIN national_team AS T2 ON T2.team_id = T1.home_team_id
+    JOIN national_team AS T3 ON T3.team_id = T1.away_team_id
+WHERE T2.teamname like '%Brazil%' and T3.teamname ilike '%Germany%' and T1.year = 2014
+
+Q447
+SELECT T2.year
+ FROM national_team AS T1
+ JOIN world_cup AS T2 ON T2.winner = T1.team_id
+ WHERE T1.teamname ilike '%England%'
+ ORDER BY T2.year DESC
+
+Q491
+select distinct t1.player_name
+ from player as t1
+ join match_fact as t2 on t2.player_id = t1.player_id
+ where t2.yellow_card = 'true';
+
+Q492
+select distinct t1.player_name
+ from player as t1
+ join match_fact as t2 on t2.player_id = t1.player_id
+ where t2.goal = 'true';
+
+Q506
+SELECT T1.teamname
+FROM national_team AS T1
+    JOIN world_cup AS T2 ON T1.team_id = T2.winner
+WHERE T2.year = 1998
+
+Q518
+SELECT T1.player_name, count( T2.yellow_card) FROM player AS T1 JOIN match_fact AS T2 ON T1.player_id = T2.player_id GROUP BY T1.player_name ORDER BY count( T2.yellow_card) DESC LIMIT 1
+
+Q528
+SELECT DISTINCT T1.player_name
+ FROM player AS T1
+     JOIN player_fact AS T3 ON T1.player_id = T3.player_id
+     JOIN national_team AS T2 ON T3.team_id = T2.team_id
+     JOIN match AS T4 ON T2.team_id = T4.home_team_id
+ WHERE T4.stage = 'Final' and T4.year = 2014
+UNION
+SELECT DISTINCT T1.player_name
+ FROM player AS T1
+     JOIN player_fact AS T3 ON T1.player_id = T3.player_id
+     JOIN national_team AS T2 ON T3.team_id = T2.team_id
+     JOIN match AS T4 ON T2.team_id = T4.away_team_id
+ WHERE T4.stage = 'Final' and T4.year = 2014
+
+Q529
+SELECT DISTINCT T2.player_name
+ FROM national_team AS T1
+ JOIN player_fact AS T4 ON T1.team_id = T4.team_id
+ JOIN player AS T2 ON T4.player_id = T2.player_id
+ JOIN match_fact AS T5 ON T2.player_id = T5.player_id
+ JOIN match AS T3 ON T5.match_id = T3.match_id
+ WHERE T2.dob >= '2004-01-01' and T3.year = 2022
+
+Q530
+select distinct p.player_name
+ from player AS p 
+ join player_club_team AS pc on p.player_id = pc.player_id
+ join club AS c on pc.club_id = c.club_id
+ where club_team_name = 'FC Bayern Munich'
+
+Q534
+select distinct p.player_name from player as p 
+ join player_fact as pf on p.player_id = pf.player_id 
+ join national_team as nt on pf.team_id = nt.team_id
+ where nt.teamname = 'Switzerland' and year = 2014;
+
+Q551
+SELECT T1.stadium_name, count(*) FROM stadium AS T1 JOIN match AS T2 ON T1.stadium_id = T2.stadium_id GROUP BY T1.stadium_name ORDER BY count(*) DESC LIMIT 1
+
+Q552
+SELECT T1.stadium_name FROM stadium AS T1 GROUP BY T1.stadium_name ORDER BY count(*) DESC LIMIT 1
+
+Q554
+SELECT T1.capacity, T1.stadium_name FROM stadium AS T1 GROUP BY T1.capacity, T1.stadium_name ORDER BY max( T1.capacity) DESC LIMIT 1
+
+Q565
+SELECT T1.teamname, count(*)
+FROM national_team AS T1
+    JOIN world_cup AS T2 ON T1.team_id = T2.winner
+GROUP BY T1.teamname ORDER BY count(*) DESC LIMIT 1
+
+Q567
+select nt.teamname, count(*) from world_cup as wc
+ join national_team as nt
+ on wc.winner = nt.team_id
+ group by nt.team_initials, nt.teamname
+ order by count(*) desc limit 1;
+
+Q568
+SELECT DISTINCT national_team.teamname FROM match JOIN national_team on match.away_team_id = national_team.team_id
+WHERE match.year = 2022 and match.stage = 'Group A';
+
+Q569
+select distinct T2.teamname
+ from match as T1
+ join national_team as T2 on T2.team_id = T1.home_team_id
+ where T1.year = 2018 and T1.stage = 'Group A'
+UNION
+select distinct T2.teamname
+ from match as T1
+ join national_team as T2 on T2.team_id = T1.away_team_id
+ where T1.year = 2018 and T1.stage = 'Group A'
+
+Q578
+select * from(
+select m.year, nt.teamname, m.home_team_goals
+ from match as m
+ join national_team as nt on m.home_team_id = nt.team_id
+ where m.stage = 'Final'
+UNION
+select m.year, nt.teamname, m.away_team_goals
+ from match as m
+ join national_team as nt on m.away_team_id = nt.team_id
+ where m.stage = 'Final') as t
+ORDER BY t.home_team_goals DESC LIMIT 1;
+
+Q584
+SELECT DISTINCT T1.teamname
+FROM national_team AS T1
+    JOIN world_cup AS T2 ON T1.team_id = T2.runner_up
+WHERE T2.year = 2018
+
+Q585
+SELECT teamname, COUNT(*)
+FROM world_cup AS w
+ JOIN national_team AS n ON w.third = n.team_id
+ GROUP BY n.teamname
+ ORDER BY COUNT(*) DESC
+
+Q591
+SELECT T1.teamname, T2.year FROM national_team AS T1 JOIN world_cup AS T2 ON T1.team_id = T2.winner
+ORDER BY T2.year DESC limit 1
+
+Q595
+select distinct T2.teamname
+from match as T1
+    join national_team as T2 on T2.team_id = T1.home_team_id
+where T1.year = 2022 and T1.stage = 'Group A'
+UNION
+select distinct T2.teamname
+from match as T1
+    join national_team as T2 on T2.team_id = T1.away_team_id
+where T1.year = 2022 and T1.stage = 'Group A'
+
+Q605
+select distinct T2.teamname
+ from match as T1
+ join national_team as T2 on T2.team_id = T1.home_team_id
+ where T1.year = 2018 and T1.stage = 'Semi-finals'
+UNION
+select distinct T2.teamname
+ from match as T1
+ join national_team as T2 on T2.team_id = T1.away_team_id
+ where T1.year = 2018 and T1.stage = 'Semi-finals'
+
+Q620
+SELECT t1.teamname
+ FROM national_team AS T1
+ JOIN match AS T2 on T2.home_team_id = T1.team_id
+ JOIN national_team AS T3 ON T3.team_id = T2.away_team_id
+ WHERE T3.teamname = 'Germany'
+ and T3.year = 2022 and T2.is_draw = 'true'
+UNION
+SELECT t3.teamname
+ FROM national_team AS T1
+ JOIN match AS T2 on T2.home_team_id = T1.team_id
+ JOIN national_team AS T3 ON T3.team_id = T2.away_team_id
+ WHERE T1.teamname = 'Germany'
+ and T3.year = 2022 and T2.is_draw = 'true';
+
+Q621
+SELECT DISTINCT T2.player_name
+ FROM national_team AS T1
+ JOIN player_fact AS T4 ON T1.team_id = T4.team_id
+ JOIN player AS T2 ON T4.player_id = T2.player_id
+ JOIN match_fact AS T5 ON T2.player_id = T5.player_id
+ JOIN match AS T3 ON T5.match_id = T3.match_id
+ WHERE T5.minute >= 120 AND T5.goal = 'true' and T3.year BETWEEN 2002 AND 2022
+
+Q645
+SELECT T1.player_name, T3.position FROM player AS T1 JOIN player_fact AS T3 ON T1.player_id = T3.player_id JOIN national_team AS T2 ON T3.team_id = T2.team_id WHERE T2.teamname = 'Germany' and T3.position = 'GK'
+
+Q667
+SELECT T1.player_name, count(*)
+ FROM player AS T1
+ JOIN match_fact AS T2 ON T1.player_id = T2.player_id
+ Join match AS T3 ON T3.match_id = T2.match_id
+ WHERE T2.goal = 'true' and T3.Year = 2022
+ GROUP BY T1.player_name
+ ORDER BY count(*) DESC
+ LIMIT 5
+
+Q668
+SELECT T1.player_name, count(*) FROM player AS T1 JOIN match_fact AS T2 ON T1.player_id = T2.player_id WHERE T2.goal = 'true' GROUP BY T1.player_name ORDER BY count(*) DESC
+
+Q691
+SELECT player_name, t.cnt
+FROM
+(SELECT T1.player_name, count(*) AS cnt
+FROM player AS T1
+    JOIN match_fact AS T2 ON T1.player_id = T2.player_id
+    JOIN match AS T3 ON T2.match_id = T3.match_id
+    JOIN national_team AS T4 ON T3.away_team_id = T4.team_id
+ WHERE T2.goal = 'true' and T3.year = 2018
+ GROUP BY T1.player_name
+UNION
+SELECT T1.player_name, count(*) AS cnt
+FROM player AS T1
+    JOIN match_fact AS T2 ON T1.player_id = T2.player_id
+    JOIN match AS T3 ON T2.match_id = T3.match_id
+    JOIN national_team AS T4 ON T3.home_team_id = T4.team_id
+ WHERE T2.goal = 'true' and T3.year = 2018
+ GROUP BY T1.player_name) AS t
+ORDER BY t.cnt DESC
+
+Q708
+SELECT T1.teamname 
+FROM national_team AS T1 
+    JOIN world_cup AS T2 ON T1.team_id = T2.winner 
+WHERE T2.year = 2014
+
+Q741
+SELECT DISTINCT T1.player_name FROM player AS T1 JOIN player_fact AS T3 ON T1.player_id = T3.player_id JOIN national_team AS T2 ON T3.team_id = T2.team_id WHERE T2.teamname = 'Switzerland' and T2.year = 2018
+
+Q749
+SELECT T1.player_name FROM player AS T1 JOIN player_fact AS T3 ON T1.player_id = T3.player_id JOIN national_team AS T2 ON T3.team_id = T2.team_id WHERE T2.teamname = 'Switzerland' and T2.year = 2022
+
+Q761
+SELECT T1.teamname, count(*)
+FROM national_team AS T1
+    JOIN world_cup AS T2 ON T1.team_id = T2.winner
+GROUP BY T1.teamname
+ORDER BY count(*) DESC LIMIT 1;
+
+Q773
+SELECT T1.teamname, T2.home_team_goals, T3.teamname, T2.away_team_goals, T2.year
+FROM national_team AS T1
+    JOIN match AS T2 ON T2.home_team_id = T1.team_id
+    JOIN national_team as T3 on T3.team_id = T2.away_team_id
+WHERE T2.year = 2018 and T2.stage = 'Final';
+
+Q779
+SELECT venue FROM world_cup WHERE world_cup.year = 2018;
+
+Q803
+SELECT T2.teamname, T3.teamname, T1.home_team_goals, T1.away_team_goals
+FROM match AS T1
+    JOIN national_team AS T2 ON T2.team_id = T1.home_team_id
+    JOIN national_team AS T3 ON T3.team_id = T1.away_team_id
+WHERE T2.teamname = 'Saudi Arabia' and T3.teamname = 'Argentina' or T2.teamname = 'Argentina' and T3.teamname = 'Saudi Arabia'
+
+
+Q861
+SELECT T1.club_name, T1.found_year FROM club AS T1
+ 
+  ORDER BY T1.found_year ASC LIMIT 1
+
+Q866
+SELECT T1.country , count( T1.club_id) FROM club AS T1
+ GROUP BY T1.country
+ ORDER BY count( T1.club_id) ASC limit 5
+
+Q867
+SELECT T1.teamname FROM national_team AS T1 WHERE T1.year = 1972
+
+Q888
+SELECT DISTINCT T1.player_name FROM player AS T1 JOIN match_fact AS T2 ON T1.player_id = T2.player_id WHERE T2.yellow_card = 'true'
+
+Q889
+SELECT club_name, country, found_year FROM club WHERE found_year = (SELECT MIN(found_year) FROM club) OR found_year = (SELECT MAX(found_year) FROM club)
+
+Q894
+SELECT teamname FROM national_team
+ JOIN world_cup ON national_team.team_id = world_cup.winner
+ WHERE world_cup.year = 1987;
+
+Q924
+SELECT player_name FROM player AS T1 JOIN player_fact as T2 on T1.player_id = T2.player_id JOIN match as T3 on T2.team_id = T3.away_team_id WHERE T3.did_home_win = 'true' UNION SELECT player_name FROM player AS T1 JOIN player_fact as T2 on T1.player_id = T2.player_id JOIN match as T4 on T2.team_id = T4.home_team_id WHERE T4.did_home_win = 'false'
+
+Q928
+SELECT T1.teamname FROM national_team AS T1 JOIN world_cup AS T2 ON T1.team_id = T2.winner WHERE T2.year = 1994
+
+Q958
+SELECT DISTINCT T1.city
+FROM stadium AS T1
+    JOIN match AS T3 ON T1.stadium_id = T3.stadium_id
+    JOIN match_fact AS T2 ON T3.match_id = T2.match_id
+WHERE T2.own_goal = 'true'
+
+Q961
+SELECT DISTINCT count(DISTINCT *), T1.player_id FROM player AS T1 JOIN match_fact AS T2 ON T1.player_id = T2.player_id WHERE T2.goal = 'true' GROUP BY T1.player_id ORDER BY count(*) DESC
+
+Q1005
+SELECT DISTINCT T1.coach_name
+ FROM coach AS T1
+  JOIN player_fact AS T3 ON T1.coach_id = T3.coach_id
+  JOIN national_team AS T2 ON T3.team_id = T2.team_id
+ WHERE T2.year = 2006 and T2.teamname = 'Italy'
+
+Q1024
+SELECT count(*)
+ FROM match_fact AS T1
+ JOIN player_fact as T2 on T1.player_id = T2.player_id
+ where T2.shirt_number = 13 AND T1.goal = 'true'
+
+Q1027
+SELECT count(*)
+ FROM match_fact AS T1
+ JOIN player_fact as T2 on T1.player_id = T2.player_id
+ where T2.shirt_number = 13 AND T1.goal = 'true'
+
+Q1039
+SELECT count(*) FROM match_fact AS T1 JOIN player AS T2 ON T1.player_id = T2.player_id WHERE T1.missed_penalty = 'true' and T2.player_name ilike '%Cristiano Ronald%'
+
+Q1043
+SELECT count(*)
+ FROM match_fact as T1
+ JOIN player_fact as T2 on T1.player_id = T2.player_id
+ WHERE T2.shirt_number = 13 AND T1.goal = 'true'
+
+Q1044
+SELECT DISTINCT T1.coach_name FROM coach AS T1 JOIN player_fact AS T2 ON T1.coach_id = T2.coach_id JOIN national_team AS T4 ON T2.team_id = T4.team_id JOIN match AS T3 ON T4.team_id = T3.away_team_id WHERE T2.shirt_number = 10 and T3.year = 2006
+
+Q1075
+SELECT T3.teamname
+ FROM match AS T1
+    JOIN national_team AS T2 ON T1.home_team_id = T2.team_id
+    JOIN national_team AS T3 ON T1.away_team_id = T3.team_id
+WHERE T3.teamname = 'Germany' and T1.did_home_win = 'true' AND T1.year = 2014
+UNION
+SELECT T3.teamname
+ FROM match AS T1
+    JOIN national_team AS T2 ON T1.home_team_id = T2.team_id
+    JOIN national_team AS T3 ON T1.away_team_id = T3.team_id
+ WHERE T2.teamname = 'Germany' and T1.did_home_win = 'False' AND T1.is_draw = 'False' AND T1.year = 2014
+

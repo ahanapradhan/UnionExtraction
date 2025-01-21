@@ -174,7 +174,8 @@ class GroupBy(GenerationPipeLineBase):
                     elif datatype in NUMBER_TYPES:
                         gap = zone_val - zero_val
                     else:
-                        raise ValueError
+                        self.logger.debug(f"Datatype '{datatype}' is not supported.")
+                        raise ValueError(f"Datatype '{datatype}' is not supported.")
                     if gap >= left:
                         zero_val = get_val_plus_delta(datatype, zero_val, left)
                         break

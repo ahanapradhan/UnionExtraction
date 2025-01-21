@@ -1,6 +1,7 @@
 import copy
 from abc import abstractmethod, ABC
 
+from ...core.abstract.MinimizerBase import Minimizer
 from ....src.core.aoa import InequalityPredicate
 from ....src.core.cs2 import Cs2
 from ....src.core.db_restorer import DbRestorer
@@ -74,7 +75,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.update_state(DB_MINIMIZATION + DONE)
         time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
         if not check or not vm.done:
-            self.error = "Cannot do database minimization. "
+            self.error = "Cannot do database minimization"
             self.logger.error(self.error)
             self.update_state(ERROR)
             self.info[DB_MINIMIZATION] = None

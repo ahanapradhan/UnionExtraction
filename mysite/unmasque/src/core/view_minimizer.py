@@ -76,6 +76,8 @@ class ViewMinimizer(Minimizer):
                                                                     self._get_dirty_name(tabname))
 
             if not self.sanity_check(query):
+                self.error_table = tabname
+                print(f"Query is producing empty result with following minimized table\n {tabname}, {core_sizes[tabname]}")
                 return False
 
         for tabname in self.core_relations:

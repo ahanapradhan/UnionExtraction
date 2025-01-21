@@ -1,23 +1,3 @@
-import signal
-import sys
-
-from .core.factory.PipeLineFactory import PipeLineFactory
-from .pipeline.abstract.TpchSanitizer import TpchSanitizer
-from .util.ConnectionFactory import ConnectionHelperFactory
-from .util.workload_queries import TestQuery
-
-
-def signal_handler(signum, frame):
-    print('You pressed Ctrl+C!')
-    sigconn = ConnectionHelperFactory().createConnectionHelper()
-    sigconn.connectUsingParams()
-    sanitizer = TpchSanitizer(sigconn)
-    sanitizer.sanitize()
-    sigconn.closeConnection()
-    print("database restored!")
-    sys.exit(0)
-
-
 class TestQuery:
     def __init__(self, name: str, hidden_query: str, cs2: bool, union: bool, oj: bool, nep: bool, orf=None):
         self.qid = name
@@ -459,66 +439,25 @@ WHERE p.p_brand = 'Brand#53'
   AND p.p_container = 'MED BAG'
   AND l.l_quantity < avg_lineitem.threshold_quantity;
 """, False, False, False, False),
-                     TestQuery("Nested_Test", """select
-        s_name,
-        s_address
-from
-        supplier,
-        nation,
-		partsupp,
-		part
-where
-        s_suppkey = ps_suppkey
-        and ps_partkey = p_partkey
-        and p_name like '%ivory%'
-		and s_nationkey = n_nationkey
-        and n_name = 'FRANCE'
-        and ps_availqty > (select min(c_acctbal) from customer)
-order by
-        s_name;""", False, False, False, False)
+                     TestQuery("curr", """select l_extendedprice * (1 - l_discount) as volume, n2.n_name as nation
+		from
+			part,
+			supplier,
+			lineitem,
+			orders,
+			customer,
+			nation n1,
+			nation n2,
+			region
+		where
+			p_partkey = l_partkey
+			and s_suppkey = l_suppkey
+			and l_orderkey = o_orderkey
+			and o_custkey = c_custkey
+			and c_nationkey = n1.n_nationkey
+			and n1.n_regionkey = r_regionkey
+			and s_nationkey = n2.n_nationkey
+			and o_orderdate between date '1995-01-01' and date '1996-12-31';""", False, False, False, False)
 
                      ]
     return test_workload
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    workload = create_workload()
-
-    workload_dict = {}
-    for elem in workload:
-        workload_dict[elem.qid] = workload.index(elem)
-
-    # print(workload_dict)
-
-    qid = sys.argv[1]
-    hq = workload[workload_dict[qid]]
-    query = hq.query
-    conn = ConnectionHelperFactory().createConnectionHelper()
-    conn.config.detect_union = hq.union
-    conn.config.detect_oj = hq.oj
-    conn.config.detect_nep = hq.nep
-    conn.config.use_cs2 = hq.cs2
-    conn.config.detect_or = hq.orf
-
-    print(f"Flags: Union {conn.config.detect_union}, OJ {conn.config.detect_oj}, "
-          f"NEP {conn.config.detect_nep}, CS2 {conn.config.use_cs2}")
-
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
-
-    factory = PipeLineFactory()
-    token = factory.init_job(conn, query)
-    factory.doJob(query, token)
-    result = factory.result
-
-    if result is not None:
-        print("============= Given Query ===============")
-        print(query)
-        print("=========== Extracted Query =============")
-        print(result)
-        print("================ Profile ================")
-        pipe = factory.get_pipeline_obj(token)
-        pipe.time_profile.print()
-    else:
-        print("I had some Trouble! Check the log file for the details..")
