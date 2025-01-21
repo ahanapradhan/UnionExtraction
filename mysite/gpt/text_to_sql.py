@@ -2,7 +2,7 @@ import sys
 
 from openai import OpenAI
 
-from ..gpt.tpch_chatgpt_text import Q1, Q3, Q4, Q5, Q6, Q9, Q10, Q12, Q14, Q15
+from ..gpt.tpch_chatgpt_text import Q1, Q3, Q4, Q5, Q6, Q9, Q10, Q12, Q14, Q15, demotext
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -113,7 +113,7 @@ def one_round(query):
 orig_out = sys.stdout
 f = open('chatgpt_tpch_sql.py', 'w')
 sys.stdout = f
-for query in [Q1, Q3, Q4, Q5, Q6, Q9, Q10, Q12, Q14, Q15]:
+for query in [demotext]: #[Q1, Q3, Q4, Q5, Q6, Q9, Q10, Q12, Q14, Q15]:
     one_round(query)
 sys.stdout = orig_out
 f.close()

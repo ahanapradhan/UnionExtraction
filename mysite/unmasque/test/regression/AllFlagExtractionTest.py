@@ -33,6 +33,27 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.use_cs2 = True
         self.pipeline = None
 
+    def test_nested(self):
+        query = """select
+        s_name,
+        s_address
+from
+        supplier,
+        nation,
+		partsupp,
+		part
+where
+        s_suppkey = ps_suppkey
+        and ps_partkey = p_partkey
+        and p_name like '%ivory%'
+		and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+        and ps_availqty > (select sum(c_nationkey) from customer where c_phone LIKE '%78-1123%')
+order by
+        s_name;"""
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
     def test_ij_aoa_scalar(self):
         query = """
     (SELECT c_name as entity_name, n_name as country, o_totalprice as price
@@ -310,15 +331,15 @@ from
                 select
                         extract(year from o_orderdate) as o_year,
                         l_extendedprice * (1 - l_discount) as volume,
-                        n2.n_name as nation
+                        n2.n2_name as nation
                 from
                         part,
                         supplier,
                         lineitem,
                         orders,
                         customer,
-                        nation n1,
-                        nation n2,
+                        nation1 n1,
+                        nation2 n2,
                         region
                 where
                         p_partkey = l_partkey
@@ -328,7 +349,7 @@ from
                         and c_nationkey = n1.n_nationkey
                         and n1.n_regionkey = r_regionkey
                         and r_name = 'ASIA'
-                        and s_nationkey = n2.n_nationkey
+                        and s_nationkey = n2.n2_nationkey
                         and o_orderdate between date '1995-01-01' and date '1996-12-31'
                         and p_type = 'ECONOMY ANODIZED STEEL'
         ) as all_nations
@@ -396,7 +417,7 @@ group by
         cntrycode
 order by
         cntrycode;"""
-        self.conn.config.detect_or = False
+        self.conn.config.detect_or = True
         self.conn.config.detect_union = False
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
@@ -517,10 +538,10 @@ where
                 select
                         *
                 from
-                        lineitem l2
+                        lineitem2 l2
                 where
-                        l2.l_orderkey = l1.l_orderkey
-                        and l2.l_suppkey <> l1.l_suppkey
+                        l2.l2_orderkey = l1.l_orderkey
+                        and l2.l2_suppkey <> l1.l_suppkey
         )
         and not exists (
                 select
@@ -1018,6 +1039,53 @@ order by
     def test_extraction_Q7(self):
         key = 'Q7'
         query = queries.queries_dict[key]
+        self.do_test(query)
+
+    def test_extraction_Q7_actual_benchmark(self):
+        query = """select
+        supp_nation,
+        cust_nation,
+        l_year,
+        sum(volume) as revenue
+from
+        (
+                select
+                        n1.n_name as supp_nation,
+                        n2.n2_name as cust_nation,
+                        extract(year from l_shipdate) as l_year,
+                        l_extendedprice * (1 - l_discount) as volume
+                from
+                        supplier,
+                        lineitem,
+                        orders,
+                        customer,
+                        nation1 n1,
+                        nation2 n2
+                where
+                        s_suppkey = l_suppkey
+                        and o_orderkey = l_orderkey
+                        and c_custkey = o_custkey
+                        and s_nationkey = n1.n_nationkey
+                        and c_nationkey = n2.n2_nationkey
+                        and (
+                                (n1.n_name = 'GERMANY' and n2.n2_name = 'FRANCE')
+                                or (n1.n_name = 'FRANCE' and n2.n2_name = 'GERMANY')
+                        )
+                        and l_shipdate between date '1995-01-01' and date '1996-12-31'
+        ) as shipping
+group by
+        supp_nation,
+        cust_nation,
+        l_year
+order by
+        supp_nation,
+        cust_nation,
+        l_year;"""
+        self.conn.config.use_cs2 = False
+        self.conn.config.detect_union = False
+        self.conn.config.detect_oj = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_or = True
         self.do_test(query)
 
     def test_extraction_Q11(self):

@@ -20,3 +20,6 @@ Q14 = "What percentage of the revenue in January 1995 was generated from promoti
 
 Q15 = "Which supplier generated the highest total revenue from line items shipped in the first quarter of 1995, and what are the details of this supplier, including their name, address, and phone number?"
 
+demotext = "The query analyzes high-value customer purchases and supplier transactions under specific pricing conditions. " \
+           "It selects customers whose orders fall within their account balance limits and prioritizes the lowest prices. Suppliers are evaluated based on average discounted item prices, ensuring their balance stays within order limits while excluding the Europian region. " \
+           "The results highlight key customers, cost-efficient suppliers, and regional sales trends."

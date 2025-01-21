@@ -559,3 +559,752 @@ order by
  --- extracted query:
  Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        cntrycode,
+        count(*) as numcust,
+        sum(c_acctbal) as totacctbal
+from
+        (
+                select
+                        substring(c_phone from 1 for 2) as cntrycode,
+                        c_acctbal
+                from
+                        customer
+                where
+                        substring(c_phone from 1 for 2) in
+                                ('13', '31', '23', '29', '30', '18', '17')
+                        and c_acctbal > (
+                                select
+                                        avg(c_acctbal)
+                                from
+                                        customer
+                                where
+                                        c_acctbal > 0.00
+                                        and substring(c_phone from 1 for 2) in
+                                                ('13', '31', '23', '29', '30', '18', '17')
+                        )
+                        and not exists (
+                                select
+                                        *
+                                from
+                                        orders
+                                where
+                                        o_custkey = c_custkey
+                        )
+        ) as custsale
+group by
+        cntrycode
+order by
+        cntrycode;
+ --- extracted query:
+ Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        cntrycode,
+        count(*) as numcust,
+        sum(c_acctbal) as totacctbal
+from
+        (
+                select
+                        substring(c_phone from 1 for 2) as cntrycode,
+                        c_acctbal
+                from
+                        customer
+                where
+                        substring(c_phone from 1 for 2) in
+                                ('13', '31', '23', '29', '30', '18', '17')
+                        and c_acctbal > (
+                                select
+                                        avg(ic_acctbal)
+                                from
+                                        inner_customer
+                                where
+                                        ic_acctbal > 0.00
+                                        and substring(ic_phone from 1 for 2) in
+                                                ('13', '31', '23', '29', '30', '18', '17')
+                        )
+                        and not exists (
+                                select
+                                        *
+                                from
+                                        orders
+                                where
+                                        o_custkey = c_custkey
+                        )
+        ) as custsale
+group by
+        cntrycode
+order by
+        cntrycode;
+ --- extracted query:
+ too many values to unpack (expected 2)
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_name,
+        s_address
+from
+        supplier,
+        nation
+where
+        s_suppkey in (
+                select
+                        ps_suppkey
+                from
+                        partsupp
+                where
+                        ps_partkey in (
+                                select
+                                        p_partkey
+                                from
+                                        part
+                                where
+                                        p_name like '%cornsilk%'
+                        )
+                        and ps_availqty > (
+                                select
+                                        0.5 * sum(l_quantity)
+                                from
+                                        lineitem
+                                where
+                                        l_partkey = ps_partkey
+                                        and l_suppkey = ps_suppkey
+                                        and l_shipdate >= date '1995-01-01'
+                                        and l_shipdate < date '1995-01-01' + interval '1' year
+                        )
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'CANADA'
+order by
+        s_name;
+ --- extracted query:
+  
+ Select s_name, s_address 
+ From lineitem, nation, part, partsupp, supplier 
+ Where lineitem.l_partkey = part.p_partkey
+ and part.p_partkey = partsupp.ps_partkey
+ and lineitem.l_suppkey = partsupp.ps_suppkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and nation.n_nationkey = supplier.s_nationkey
+ and nation.n_name = 'CANADA'
+ and lineitem.l_quantity <= 2589.99
+ and lineitem.l_shipdate between '1995-01-01' and '1995-12-31'
+ and part.p_name LIKE '%cornsilk%'
+ and partsupp.ps_availqty >= 10 
+ Order By s_name asc;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_name,
+        s_address
+from
+        supplier,
+        nation
+where
+        s_suppkey in (
+                select
+                        ps_suppkey
+                from
+                        partsupp
+                where
+                        ps_partkey in (
+                                select
+                                        p_partkey
+                                from
+                                        part
+                                where
+                                        p_name like '%ivory%'
+                        )
+                        and ps_availqty > (
+                                select
+                                        0.5 * sum(l_quantity)
+                                from
+                                        lineitem
+                                where
+                                        l_partkey = ps_partkey
+                                        and l_suppkey = ps_suppkey
+                                        and l_shipdate >= date '1995-01-01'
+                                        and l_shipdate < date '1995-01-01' + interval '1' year
+                        )
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+order by
+        s_name;
+ --- extracted query:
+  
+ Select s_name, s_address 
+ From lineitem, nation, part, partsupp, supplier 
+ Where lineitem.l_partkey = part.p_partkey
+ and part.p_partkey = partsupp.ps_partkey
+ and lineitem.l_suppkey = partsupp.ps_suppkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and nation.n_nationkey = supplier.s_nationkey
+ and nation.n_name = 'FRANCE'
+ and lineitem.l_quantity <= 9687.99
+ and lineitem.l_shipdate between '1995-01-01' and '1995-12-31'
+ and part.p_name LIKE '%ivory%'
+ and partsupp.ps_availqty >= 12 
+ Order By s_name asc;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_acctbal,
+        s_name,
+        n_name,
+        p_partkey,
+        p_mfgr,
+        s_address,
+        s_phone,
+        s_comment
+from
+        part,
+        supplier,
+        partsupp,
+        nation,
+        region
+where
+        p_partkey = ps_partkey
+        and s_suppkey = ps_suppkey
+        and p_size = 15
+        and p_type like '%BRASS'
+        and s_nationkey = n_nationkey
+        and n_regionkey = r_regionkey
+        and r_name = 'EUROPE'
+        and ps_supplycost = (
+                select
+                        min(ps_supplycost)
+                from
+                        partsupp,
+                        supplier,
+                        nation,
+                        region
+                where
+                        p_partkey = ps_partkey
+                        and s_suppkey = ps_suppkey
+                        and s_nationkey = n_nationkey
+                        and n_regionkey = r_regionkey
+                        and r_name = 'EUROPE'
+        )
+order by
+        s_acctbal desc,
+        n_name,
+        s_name,
+        p_partkey;
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_acctbal,
+        s_name,
+        n_name,
+        p_partkey,
+        p_mfgr,
+        s_address,
+        s_phone,
+        s_comment
+from
+        part,
+        supplier,
+        partsupp,
+        nation,
+        region
+where
+        p_partkey = ps_partkey
+        and s_suppkey = ps_suppkey
+        and p_size = 15
+        and p_type like '%BRASS'
+        and s_nationkey = n_nationkey
+        and n_regionkey = r_regionkey
+        and r_name = 'EUROPE'
+        and ps_supplycost = (
+                select
+                        min(ps_supplycost)
+                from
+                        partsupp,
+                        supplier,
+                        nation,
+                        region
+                where
+                        p_partkey = ps_partkey
+                        and s_suppkey = ps_suppkey
+                        and s_nationkey = n_nationkey
+                        and n_regionkey = r_regionkey
+                        and r_name = 'EUROPE'
+        )
+order by
+        s_acctbal desc,
+        n_name,
+        s_name,
+        p_partkey;
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_acctbal,
+        s_name,
+        n_name,
+        p_partkey,
+        p_mfgr,
+        s_address,
+        s_phone,
+        s_comment
+from
+        part,
+        supplier,
+        partsupp,
+        nation,
+        region
+where
+        p_partkey = ps_partkey
+        and s_suppkey = ps_suppkey
+        and p_size = 15
+        and p_type like '%BRASS'
+        and s_nationkey = n_nationkey
+        and n_regionkey = r_regionkey
+        and r_name = 'EUROPE'
+        and ps_supplycost = (
+                select
+                        min(ps_supplycost)
+                from
+                        partsupp,
+                        supplier,
+                        nation,
+                        region
+                where
+                        p_partkey = ps_partkey
+                        and s_suppkey = ps_suppkey
+                        and s_nationkey = n_nationkey
+                        and n_regionkey = r_regionkey
+                        and r_name = 'EUROPE'
+        )
+order by
+        s_acctbal desc,
+        n_name,
+        s_name,
+        p_partkey;
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_acctbal,
+        s_name,
+        n_name,
+        p_partkey,
+        p_mfgr,
+        s_address,
+        s_phone,
+        s_comment
+from
+        part,
+        supplier,
+        partsupp,
+        nation,
+        region
+where
+        p_partkey = ps_partkey
+        and s_suppkey = ps_suppkey
+        and p_size = 15
+        and p_type like '%BRASS'
+        and s_nationkey = n_nationkey
+        and n_regionkey = r_regionkey
+        and r_name = 'EUROPE'
+        and ps_supplycost = (
+                select
+                        min(ps_supplycost)
+                from
+                        partsupp,
+                        supplier,
+                        nation,
+                        region
+                where
+                        p_partkey = ps_partkey
+                        and s_suppkey = ps_suppkey
+                        and s_nationkey = n_nationkey
+                        and n_regionkey = r_regionkey
+                        and r_name = 'EUROPE'
+        )
+order by
+        s_acctbal desc,
+        n_name,
+        s_name,
+        p_partkey;
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_acctbal,
+        s_name,
+        n_name,
+        p_partkey,
+        p_mfgr,
+        s_address,
+        s_phone,
+        s_comment
+from
+        part,
+        supplier,
+        partsupp,
+        nation,
+        region
+where
+        p_partkey = ps_partkey
+        and s_suppkey = ps_suppkey
+        and p_size = 15
+        and p_type like '%BRASS'
+        and s_nationkey = n_nationkey
+        and n_regionkey = r_regionkey
+        and r_name = 'EUROPE'
+        and ps_supplycost = (
+                select
+                        min(ps_supplycost)
+                from
+                        partsupp,
+                        supplier,
+                        nation,
+                        region
+                where
+                        p_partkey = ps_partkey
+                        and s_suppkey = ps_suppkey
+                        and s_nationkey = n_nationkey
+                        and n_regionkey = r_regionkey
+                        and r_name = 'EUROPE'
+        )
+order by
+        s_acctbal desc,
+        n_name,
+        s_name,
+        p_partkey;
+ --- extracted query:
+  
+ Select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment 
+ From nation, part, partsupp, region, supplier 
+ Where nation.n_nationkey = supplier.s_nationkey
+ and nation.n_regionkey = region.r_regionkey
+ and part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and part.p_size = 15
+ and region.r_name = 'EUROPE'
+ and part.p_type LIKE '%BRASS' 
+ Order By s_acctbal desc, n_name asc, s_name asc, p_partkey asc;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ Select  c_name, sum(l_extendedprice) as revenue, c_acctbal, n_name, c_address, c_phone, c_comment From  customer, orders, lineitem, nation Where  c_custkey = o_custkey and l_orderkey = o_orderkey and o_orderdate >= date '1994-01-01' and o_orderdate < date '1994-01-01' + interval '3' month and l_returnflag = 'R' and c_nationkey = n_nationkey Group By  c_name, c_acctbal, c_phone, n_name, c_address, c_comment Order By  revenue desc Limit  20;
+ --- extracted query:
+  
+ Select c_name, Sum(l_extendedprice) as revenue, c_acctbal, n_name, c_address, c_phone, c_comment 
+ From customer, lineitem, nation, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_nationkey = nation.n_nationkey
+ and lineitem.l_orderkey = orders.o_orderkey
+ and lineitem.l_returnflag = 'R'
+ and orders.o_orderdate between '1994-01-01' and '1994-03-31' 
+ Group By c_acctbal, c_address, c_comment, c_name, c_phone, n_name 
+ Order By revenue desc, c_name asc, c_acctbal asc, c_phone asc, n_name asc, c_address asc, c_comment asc 
+ Limit 20;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        supp_nation,
+        cust_nation,
+        l_year,
+        sum(volume) as revenue
+from
+        (
+                select
+                        n1.n_name as supp_nation,
+                        n2.n2_name as cust_nation,
+                        extract(year from l_shipdate) as l_year,
+                        l_extendedprice * (1 - l_discount) as volume
+                from
+                        supplier,
+                        lineitem,
+                        orders,
+                        customer,
+                        nation1 n1,
+                        nation2 n2
+                where
+                        s_suppkey = l_suppkey
+                        and o_orderkey = l_orderkey
+                        and c_custkey = o_custkey
+                        and s_nationkey = n1.n_nationkey
+                        and c_nationkey = n2.n2_nationkey
+                        and (
+                                (n1.n_name = 'GERMANY' and n2.n2_name = 'FRANCE')
+                                or (n1.n_name = 'FRANCE' and n2.n2_name = 'GERMANY')
+                        )
+                        and l_shipdate between date '1995-01-01' and date '1996-12-31'
+        ) as shipping
+group by
+        supp_nation,
+        cust_nation,
+        l_year
+order by
+        supp_nation,
+        cust_nation,
+        l_year;
+ --- extracted query:
+  
+ Select 'FRANCE                   ' as supp_nation, 'GERMANY                  ' as cust_nation, 1995.0 as l_year, l_extendedprice*(1 - l_discount) as revenue 
+ From customer, lineitem, nation1, nation2, orders, supplier 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_nationkey = nation2.n2_nationkey
+ and lineitem.l_orderkey = orders.o_orderkey
+ and lineitem.l_suppkey = supplier.s_suppkey
+ and nation1.n_nationkey = supplier.s_nationkey
+ and nation1.n_name IN ('FRANCE', 'GERMANY')
+ and nation2.n2_name IN ('FRANCE', 'GERMANY')
+ and lineitem.l_shipdate between '1995-01-01' and '1996-12-31';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        o_year,
+        sum(case
+                when nation = 'INDIA' then volume
+                else 0
+        end) / sum(volume) as mkt_share
+from
+        (
+                select
+                        extract(year from o_orderdate) as o_year,
+                        l_extendedprice * (1 - l_discount) as volume,
+                        n2.n2_name as nation
+                from
+                        part,
+                        supplier,
+                        lineitem,
+                        orders,
+                        customer,
+                        nation1 n1,
+                        nation2 n2,
+                        region
+                where
+                        p_partkey = l_partkey
+                        and s_suppkey = l_suppkey
+                        and l_orderkey = o_orderkey
+                        and o_custkey = c_custkey
+                        and c_nationkey = n1.n_nationkey
+                        and n1.n_regionkey = r_regionkey
+                        and r_name = 'ASIA'
+                        and s_nationkey = n2.n2_nationkey
+                        and o_orderdate between date '1995-01-01' and date '1996-12-31'
+                        and p_type = 'ECONOMY ANODIZED STEEL'
+        ) as all_nations
+group by
+        o_year
+order by
+        o_year;
+ --- extracted query:
+ too many values to unpack (expected 2)
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        o_year,
+        sum(case
+                when nation = 'INDIA' then volume
+                else 0
+        end) / sum(volume) as mkt_share
+from
+        (
+                select
+                        extract(year from o_orderdate) as o_year,
+                        l_extendedprice * (1 - l_discount) as volume,
+                        n2.n2_name as nation
+                from
+                        part,
+                        supplier,
+                        lineitem,
+                        orders,
+                        customer,
+                        nation1 n1,
+                        nation2 n2,
+                        region
+                where
+                        p_partkey = l_partkey
+                        and s_suppkey = l_suppkey
+                        and l_orderkey = o_orderkey
+                        and o_custkey = c_custkey
+                        and c_nationkey = n1.n_nationkey
+                        and n1.n_regionkey = r_regionkey
+                        and r_name = 'ASIA'
+                        and s_nationkey = n2.n2_nationkey
+                        and o_orderdate between date '1995-01-01' and date '1996-12-31'
+                        and p_type = 'ECONOMY ANODIZED STEEL'
+        ) as all_nations
+group by
+        o_year
+order by
+        o_year;
+ --- extracted query:
+ too many values to unpack (expected 2)
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_name,
+        count(*) as numwait
+from
+        supplier,
+        lineitem l1,
+        orders,
+        nation
+where
+        s_suppkey = l1.l_suppkey
+        and o_orderkey = l1.l_orderkey
+        and o_orderstatus = 'F'
+        and l1.l_receiptdate > l1.l_commitdate
+        and exists (
+                select
+                        *
+                from
+                        lineitem2 l2
+                where
+                        l2.l2_orderkey = l1.l_orderkey
+                        and l2.l2_suppkey <> l1.l_suppkey
+        )
+        and not exists (
+                select
+                        *
+                from
+                        lineitem l3
+                where
+                        l3.l_orderkey = l1.l_orderkey
+                        and l3.l_suppkey <> l1.l_suppkey
+                        and l3.l_receiptdate > l3.l_commitdate
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'ARGENTINA'
+group by
+        s_name
+order by
+        numwait desc,
+        s_name;
+ --- extracted query:
+ too many values to unpack (expected 2)
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+
+
+
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_name,
+        s_address
+from
+        supplier,
+        nation,
+		partsupp,
+		part
+where
+        s_suppkey = ps_suppkey
+        and ps_partkey = p_partkey
+        and p_name like '%ivory%'
+		and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+        and ps_availqty > (select sum(c_nationkey) from customer where c_phone LIKE '%78-1123%')
+order by
+        s_name;
+ --- extracted query:
+  
+ Select s_name, s_address 
+ From customer, nation, part, partsupp, supplier 
+ Where nation.n_nationkey = supplier.s_nationkey
+ and part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and customer.c_nationkey < partsupp.ps_availqty
+ and nation.n_name = 'FRANCE'
+ and customer.c_phone LIKE '%78-1123%'
+ and part.p_name LIKE '%ivory%' 
+ Order By s_name asc;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_name,
+        s_address
+from
+        supplier,
+        nation,
+		partsupp,
+		part
+where
+        s_suppkey = ps_suppkey
+        and ps_partkey = p_partkey
+        and p_name like '%ivory%'
+		and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+        and ps_availqty > (select sum(c_nationkey) from customer where n_nationkey = c_nationkey and c_phone LIKE '%78-1123%')
+order by
+        s_name;
+ --- extracted query:
+ Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_name,
+        s_address
+from
+        supplier,
+        nation,
+		partsupp,
+		part
+where
+        s_suppkey = ps_suppkey
+        and ps_partkey = p_partkey
+        and p_name like '%ivory%'
+		and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+        and ps_availqty > (select sum(c_nationkey) from customer where c_phone LIKE '%78-1123%')
+order by
+        s_name;
+ --- extracted query:
+  
+ Select s_name, s_address 
+ From customer, nation, part, partsupp, supplier 
+ Where nation.n_nationkey = supplier.s_nationkey
+ and part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and customer.c_nationkey < partsupp.ps_availqty
+ and nation.n_name = 'FRANCE'
+ and customer.c_phone LIKE '%78-1123%'
+ and part.p_name LIKE '%ivory%' 
+ Order By s_name asc;
+ --- END OF ONE EXTRACTION EXPERIMENT

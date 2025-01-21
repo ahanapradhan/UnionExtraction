@@ -457,7 +457,24 @@ JOIN (
 WHERE p.p_brand = 'Brand#53'
   AND p.p_container = 'MED BAG'
   AND l.l_quantity < avg_lineitem.threshold_quantity;
-""", False, False, False, False)
+""", False, False, False, False),
+                     TestQuery("Nested_Test", """select
+        s_name,
+        s_address
+from
+        supplier,
+        nation,
+		partsupp,
+		part
+where
+        s_suppkey = ps_suppkey
+        and ps_partkey = p_partkey
+        and p_name like '%ivory%'
+		and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+        and ps_availqty > (select min(c_acctbal) from customer)
+order by
+        s_name;""", False, False, False, False)
 
                      ]
     return test_workload
