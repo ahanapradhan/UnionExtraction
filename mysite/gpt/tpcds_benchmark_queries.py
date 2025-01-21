@@ -1,3 +1,5 @@
+
+
 Q2_subquery = """SELECT sold_date_sk, 
                 sales_price 
          FROM   (SELECT ws_sold_date_sk    sold_date_sk, 
