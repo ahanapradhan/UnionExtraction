@@ -33,7 +33,14 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.use_cs2 = True
         self.pipeline = None
 
+
+    def test_exists(self):
+        query = """select n_regionkey from nation where exists (select * from customer, orders where c_custkey = o_custkey and o_totalprice < 10000);"""
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
     def test_nested(self):
+        self.conn.config.use_cs2 = False
         query = """select
         s_name,
         s_address
@@ -48,16 +55,15 @@ where
         and p_name like '%ivory%'
 		and s_nationkey = n_nationkey
         and n_name = 'FRANCE'
-        and ps_availqty > (select sum(c_nationkey) from customer where c_phone LIKE '%78-1123%')
+        and ps_availqty > (select max(c_nationkey) from customer where c_phone LIKE '%78-1123%')
 order by
         s_name;"""
-        self.conn.config.use_cs2 = False
         self.do_test(query)
 
     def test_ij_aoa_scalar(self):
         query = """
     (SELECT c_name as entity_name, n_name as country, o_totalprice as price
-from orders LEFT OUTER JOIN customer on c_custkey = o_custkeybvx
+from orders LEFT OUTER JOIN customer on c_custkey = o_custkey
 FROM supplier, lineitem, orders, nation, region
 WHERE l_suppkey = s_suppkey and l_orderkey = o_orderkey
 and s_nationkey = n_nationkey and n_regionkey = r_regionkey

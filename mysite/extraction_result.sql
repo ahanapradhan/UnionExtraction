@@ -700,6 +700,13 @@ order by
  and part.p_name LIKE '%cornsilk%'
  and partsupp.ps_availqty >= 10 
  Order By s_name asc;
+ select n_regionkey from nation where exists (select * from customer, orders where c_custkey = o_custkey and o_totalprice < 10000);
+ --- extracted query:
+  
+ Select n_regionkey 
+ From customer, nation, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and orders.o_totalprice <= 9999.99;
  --- END OF ONE EXTRACTION EXPERIMENT
 
  --- START OF ONE EXTRACTION EXPERIMENT
@@ -739,12 +746,78 @@ where
         )
         and s_nationkey = n_nationkey
         and n_name = 'FRANCE'
+        nation,
+		partsupp,
+		part
+where
+        s_suppkey = ps_suppkey
+        and ps_partkey = p_partkey
+        and p_name like '%ivory%'
+		and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+        and ps_availqty > (
+                                select
+                                        0.5 * sum(l_quantity)
+                                from
+                                        lineitem
+                                where
+                                        l_partkey = ps_partkey
+                                        and l_suppkey = ps_suppkey
+                                        and l_shipdate >= date '1995-01-01'
+                                        and l_shipdate < date '1995-01-01' + interval '1' year
+         )
+order by
+        s_name;
+ --- extracted query:
+ Cannot do database minimizationSome problem in Regular mutation pipeline. Aborting extraction!connection already closed
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_name,
+        s_address
+from
+        supplier,
+        nation,
+		partsupp,
+		part
+where
+        s_suppkey = ps_suppkey
+        and ps_partkey = p_partkey
+        and p_name like '%ivory%'
+		and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+        and ps_availqty > (select max(c_acctbal) from customer)
+order by
+        s_name;
+ --- extracted query:
+ Cannot do database minimizationSome problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        s_name,
+        s_address
+from
+        supplier,
+        nation,
+		partsupp,
+		part
+where
+        s_suppkey = ps_suppkey
+        and ps_partkey = p_partkey
+        and p_name like '%ivory%'
+		and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+        and ps_availqty > (select sum(c_acctbal) from customer where c_phone LIKE '%8-1123%')
 order by
         s_name;
  --- extracted query:
   
  Select s_name, s_address 
- From lineitem, nation, part, partsupp, supplier 
+ From lineitem, nation, part, partsupp, supplier
  Where lineitem.l_partkey = part.p_partkey
  and part.p_partkey = partsupp.ps_partkey
  and lineitem.l_suppkey = partsupp.ps_suppkey
@@ -1274,6 +1347,15 @@ order by
         s_name;
  --- extracted query:
  Cannot do database minimization. Some problem in Regular mutation pipeline. Aborting extraction!
+ From customer, nation, part, partsupp, supplier
+ Where nation.n_nationkey = supplier.s_nationkey
+ and part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and nation.n_name = 'FRANCE'
+ and customer.c_phone LIKE '%8-1123%'
+ and customer.c_acctbal <= 3093.99
+ and part.p_name LIKE '%ivory%'
+ and partsupp.ps_availqty >= 2200;
  --- END OF ONE EXTRACTION EXPERIMENT
 
  --- START OF ONE EXTRACTION EXPERIMENT
