@@ -641,6 +641,55 @@ WHERE
 
 #========================================================================================================
 
+Q74_subquery_TEXT = """The query calculates the total amount spent by each customer in both store and web sales channels 
+for the years 1999 and 2000, categorizing sales by channel type."""
+Q74_subquery_QH = """SELECT c_customer_id    customer_id, 
+                c_first_name     customer_first_name, 
+                c_last_name      customer_last_name, 
+                d_year           AS year1, 
+                Sum(ss_net_paid) year_total, 
+                's'              sale_type 
+         FROM   customer, 
+                store_sales, 
+                date_dim 
+         WHERE  c_customer_sk = ss_customer_sk 
+                AND ss_sold_date_sk = d_date_sk 
+                AND d_year IN ( 1999, 1999 + 1 ) 
+         GROUP  BY c_customer_id, 
+                   c_first_name, 
+                   c_last_name, 
+                   d_year 
+         UNION ALL 
+         SELECT c_customer_id    customer_id, 
+                c_first_name     customer_first_name, 
+                c_last_name      customer_last_name, 
+                d_year           AS year1, 
+                Sum(ws_net_paid) year_total, 
+                'w'              sale_type 
+         FROM   customer, 
+                web_sales, 
+                date_dim 
+         WHERE  c_customer_sk = ws_bill_customer_sk 
+                AND ws_sold_date_sk = d_date_sk 
+                AND d_year IN ( 1999, 1999 + 1 ) 
+         GROUP  BY c_customer_id, 
+                   c_first_name, 
+                   c_last_name, 
+                   d_year"""
+#========================================================================================================
+
+Q56_full_text = "Compute the monthly sales amount for a specific month in a specific year, for items with three specific colors "\
+                 "across all sales channels. Only consider sales of customers residing in a specific time zone. Group sales by) "\
+                 "item and sort output by sales amount."
+#========================================================================================================
+
+Q66_subquery_text = """The query retrieves the monthly sales revenue and net sales for warehouses in 1998, categorized by web and catalog sales. 
+It filters transactions processed by specific shipping carriers ("ZOUROS" and "ZHOU") within a given time window. 
+The results include warehouse details such as name, size, city, county, state, and country. Sales figures are aggregated 
+per warehouse for each month of the year, enabling performance analysis across different locations and time periods."""
+#========================================================================================================
+
+
 tpcds_q7 = "Compute the average quantity, list price, discount, and sales price for promotional " \
            "items sold in stores where the " \
            "promotion is not offered by mail or a special event. Restrict the results to a specific " \

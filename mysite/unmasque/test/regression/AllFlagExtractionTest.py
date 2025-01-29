@@ -466,7 +466,14 @@ LIMIT 100; """
         self.do_test(query)
 
     def test_Q76(self):
-        query = """(SELECT 'store'            AS channel, 
+        query = """SELECT channel, 
+               col_name, 
+               d_year, 
+               d_qoy, 
+               i_category, 
+               Count(*)             sales_cnt, 
+               Sum(ext_sales_price) sales_amt 
+FROM   (SELECT 'store'            AS channel, 
                'ss_hdemo_sk'      col_name, 
                d_year, 
                d_qoy, 
@@ -475,8 +482,7 @@ LIMIT 100; """
         FROM   store_sales, 
                item, 
                date_dim 
-        WHERE  ss_hdemo_sk IS NULL 
-               AND ss_sold_date_sk = d_date_sk 
+        WHERE ss_sold_date_sk = d_date_sk 
                AND ss_item_sk = i_item_sk 
         UNION ALL 
         SELECT 'web'              AS channel, 
@@ -488,8 +494,7 @@ LIMIT 100; """
         FROM   web_sales, 
                item, 
                date_dim 
-        WHERE  ws_ship_hdemo_sk IS NULL 
-               AND ws_sold_date_sk = d_date_sk 
+        WHERE  ws_sold_date_sk = d_date_sk 
                AND ws_item_sk = i_item_sk 
         UNION ALL 
         SELECT 'catalog'          AS channel, 
@@ -501,12 +506,134 @@ LIMIT 100; """
         FROM   catalog_sales, 
                item, 
                date_dim 
-        WHERE  cs_warehouse_sk IS NULL 
-               AND cs_sold_date_sk = d_date_sk 
-               AND cs_item_sk = i_item_sk);"""
+        WHERE  cs_sold_date_sk = d_date_sk 
+               AND cs_item_sk = i_item_sk) foo 
+GROUP  BY channel, 
+          col_name, 
+          d_year, 
+          d_qoy, 
+          i_category 
+ORDER  BY channel, 
+          col_name, 
+          d_year, 
+          d_qoy, 
+          i_category
+LIMIT 100; """
+        self.do_test(query)
+
+    def test_Q77(self):
+        self.conn.config.detect_union = True
+        self.conn.config.detect_oj = True
+        query = """
+WITH ss AS 
+( 
+         SELECT   s_store_sk, 
+                  Sum(ss_ext_sales_price) AS sales, 
+                  Sum(ss_net_profit)      AS profit 
+         FROM     store_sales, 
+                  date_dim, 
+                  store 
+         WHERE    ss_sold_date_sk = d_date_sk 
+         AND      d_date BETWEEN Cast('2001-08-16' AS DATE) AND      ( 
+                           Cast('2001-08-16' AS DATE) + INTERVAL '30' day) 
+         AND      ss_store_sk = s_store_sk 
+         GROUP BY s_store_sk) , sr AS 
+( 
+         SELECT   s_store_sk, 
+                  sum(sr_return_amt) AS returns1, 
+                  sum(sr_net_loss)   AS profit_loss 
+         FROM     store_returns, 
+                  date_dim, 
+                  store 
+         WHERE    sr_returned_date_sk = d_date_sk 
+         AND      d_date BETWEEN cast('2001-08-16' AS date) AND      ( 
+                           cast('2001-08-16' AS date) + INTERVAL '30' day) 
+         AND      sr_store_sk = s_store_sk 
+         GROUP BY s_store_sk), cs AS 
+( 
+         SELECT   cs_call_center_sk, 
+                  sum(cs_ext_sales_price) AS sales, 
+                  sum(cs_net_profit)      AS profit 
+         FROM     catalog_sales, 
+                  date_dim 
+         WHERE    cs_sold_date_sk = d_date_sk 
+         AND      d_date BETWEEN cast('2001-08-16' AS date) AND      ( 
+                           cast('2001-08-16' AS date) + INTERVAL '30' day) 
+         GROUP BY cs_call_center_sk ), cr AS 
+( 
+         SELECT   cr_call_center_sk, 
+                  sum(cr_return_amount) AS returns1, 
+                  sum(cr_net_loss)      AS profit_loss 
+         FROM     catalog_returns, 
+                  date_dim 
+         WHERE    cr_returned_date_sk = d_date_sk 
+         AND      d_date BETWEEN cast('2001-08-16' AS date) AND      ( 
+                           cast('2001-08-16' AS date) + INTERVAL '30' day) 
+         GROUP BY cr_call_center_sk ), ws AS 
+( 
+         SELECT   wp_web_page_sk, 
+                  sum(ws_ext_sales_price) AS sales, 
+                  sum(ws_net_profit)      AS profit 
+         FROM     web_sales, 
+                  date_dim, 
+                  web_page 
+         WHERE    ws_sold_date_sk = d_date_sk 
+         AND      d_date BETWEEN cast('2001-08-16' AS date) AND      ( 
+                           cast('2001-08-16' AS date) + INTERVAL '30' day) 
+         AND      ws_web_page_sk = wp_web_page_sk 
+         GROUP BY wp_web_page_sk), wr AS 
+( 
+         SELECT   wp_web_page_sk, 
+                  sum(wr_return_amt) AS returns1, 
+                  sum(wr_net_loss)   AS profit_loss 
+         FROM     web_returns, 
+                  date_dim, 
+                  web_page 
+         WHERE    wr_returned_date_sk = d_date_sk 
+         AND      d_date BETWEEN cast('2001-08-16' AS date) AND      ( 
+                           cast('2001-08-16' AS date) + INTERVAL '30' day) 
+         AND      wr_web_page_sk = wp_web_page_sk 
+         GROUP BY wp_web_page_sk) 
+SELECT
+         channel , 
+         id , 
+         sum(sales)   AS sales , 
+         sum(returns1) AS returns1 , 
+         sum(profit)  AS profit 
+FROM     ( 
+                   SELECT    'store channel' AS channel , 
+                             ss.s_store_sk   AS id , 
+                             sales , 
+                             COALESCE(returns1, 0)               AS returns1 , 
+                             (profit - COALESCE(profit_loss,0)) AS profit 
+                   FROM      ss 
+                   LEFT JOIN sr 
+                   ON        ss.s_store_sk = sr.s_store_sk 
+                   UNION ALL 
+                   SELECT 'catalog channel' AS channel , 
+                          cs_call_center_sk AS id , 
+                          sales , 
+                          returns1 , 
+                          (profit - profit_loss) AS profit 
+                   FROM   cs , 
+                          cr 
+                   UNION ALL 
+                   SELECT    'web channel'     AS channel , 
+                             ws.wp_web_page_sk AS id , 
+                             sales , 
+                             COALESCE(returns1, 0)                  returns1 , 
+                             (profit - COALESCE(profit_loss,0)) AS profit 
+                   FROM      ws 
+                   LEFT JOIN wr 
+                   ON        ws.wp_web_page_sk = wr.wp_web_page_sk ) x 
+GROUP BY channel, id 
+ORDER BY channel , 
+         id 
+LIMIT 100; """
         self.do_test(query)
 
     def test_Q75(self):
+        self.conn.config.detect_oj = True
         query = """(SELECT d_year, 
                         i_brand_id, 
                         i_class_id, 
@@ -566,6 +693,111 @@ LIMIT 100; """
         self.conn.config.detect_oj = True
         self.do_test(query)
 
+    def test_Q80(self):
+        query = """SELECT
+         channel , 
+         id , 
+         sum(sales)   AS sales , 
+         sum(returns1) AS returns1 , 
+         sum(profit)  AS profit 
+FROM     ( 
+                SELECT 'store channel' AS channel , 
+                       'store' 
+                              || store_id AS id , 
+                       sales , 
+                       returns1 , 
+                       profit 
+                FROM   ( 
+                SELECT          s_store_id                                    AS store_id, 
+                                Sum(ss_ext_sales_price)                       AS sales, 
+                                Sum(COALESCE(sr_return_amt, 0))               AS returns1, 
+                                Sum(ss_net_profit - COALESCE(sr_net_loss, 0)) AS profit 
+                FROM            store_sales 
+                LEFT OUTER JOIN store_returns 
+                ON              ( 
+                                                ss_item_sk = sr_item_sk 
+                                AND             ss_ticket_number = sr_ticket_number), 
+                                date_dim, 
+                                store, 
+                                item, 
+                                promotion 
+                WHERE           ss_sold_date_sk = d_date_sk 
+                AND             d_date BETWEEN Cast('2000-08-26' AS DATE) AND             ( 
+                                                Cast('2000-08-26' AS DATE) + INTERVAL '30' day) 
+                AND             ss_store_sk = s_store_sk 
+                AND             ss_item_sk = i_item_sk 
+                AND             i_current_price > 50 
+                AND             ss_promo_sk = p_promo_sk 
+                AND             p_channel_tv = 'N' 
+                GROUP BY        s_store_id) as ssr
+                UNION ALL 
+                SELECT 'catalog channel' AS channel , 
+                       'catalog_page' 
+                              || catalog_page_id AS id , 
+                       sales , 
+                       returns1 , 
+                       profit 
+                FROM   ( 
+                SELECT          cp_catalog_page_id                            AS catalog_page_id, 
+                                sum(cs_ext_sales_price)                       AS sales, 
+                                sum(COALESCE(cr_return_amount, 0))            AS returns1, 
+                                sum(cs_net_profit - COALESCE(cr_net_loss, 0)) AS profit 
+                FROM            catalog_sales 
+                LEFT OUTER JOIN catalog_returns 
+                ON              ( 
+                                                cs_item_sk = cr_item_sk 
+                                AND             cs_order_number = cr_order_number), 
+                                date_dim, 
+                                catalog_page, 
+                                item, 
+                                promotion 
+                WHERE           cs_sold_date_sk = d_date_sk 
+                AND             d_date BETWEEN cast('2000-08-26' AS date) AND             ( 
+                                                cast('2000-08-26' AS date) + INTERVAL '30' day) 
+                AND             cs_catalog_page_sk = cp_catalog_page_sk 
+                AND             cs_item_sk = i_item_sk 
+                AND             i_current_price > 50 
+                AND             cs_promo_sk = p_promo_sk 
+                AND             p_channel_tv = 'N' 
+                GROUP BY        cp_catalog_page_id) csr
+                UNION ALL 
+                SELECT 'web channel' AS channel , 
+                       'web_site' 
+                              || web_site_id AS id , 
+                       sales , 
+                       returns1 , 
+                       profit 
+                FROM   ( 
+                SELECT          web_site_id, 
+                                sum(ws_ext_sales_price)                       AS sales, 
+                                sum(COALESCE(wr_return_amt, 0))               AS returns1, 
+                                sum(ws_net_profit - COALESCE(wr_net_loss, 0)) AS profit 
+                FROM            web_sales 
+                LEFT OUTER JOIN web_returns 
+                ON              ( 
+                                                ws_item_sk = wr_item_sk 
+                                AND             ws_order_number = wr_order_number), 
+                                date_dim, 
+                                web_site, 
+                                item, 
+                                promotion 
+                WHERE           ws_sold_date_sk = d_date_sk 
+                AND             d_date BETWEEN cast('2000-08-26' AS date) AND             ( 
+                                                cast('2000-08-26' AS date) + INTERVAL '30' day) 
+                AND             ws_web_site_sk = web_site_sk 
+                AND             ws_item_sk = i_item_sk 
+                AND             i_current_price > 50 
+                AND             ws_promo_sk = p_promo_sk 
+                AND             p_channel_tv = 'N' 
+                GROUP BY        web_site_id) wsr) x 
+GROUP BY channel, id 
+ORDER BY channel , 
+         id 
+LIMIT 100; """
+        self.conn.config.detect_oj = True
+        self.conn.config.detect_union = True
+        self.do_test(query)
+
     def test_Q60(self):
         query = """(SELECT i_item_id, 
                 Sum(ss_ext_sales_price) total_sales 
@@ -617,8 +849,91 @@ LIMIT 100; """
         self.conn.config.detect_or = True
         self.do_test(query)
 
+    def test_Q23(self):
+        query = """
+WITH frequent_ss_items 
+     AS (SELECT Substr(i_item_desc, 1, 30) itemdesc, 
+                i_item_sk                  item_sk, 
+                d_date                     solddate, 
+                Count(*)                   cnt 
+         FROM   store_sales, 
+                date_dim, 
+                item 
+         WHERE  ss_sold_date_sk = d_date_sk 
+                AND ss_item_sk = i_item_sk 
+                AND d_year IN ( 2000 , 2000  + 1, 2000  + 2, 2000  + 3 ) 
+         GROUP  BY Substr(i_item_desc, 1, 30), 
+                   i_item_sk, 
+                   d_date 
+         HAVING Count(*) > 1),
+	max_store_sales 
+     AS (SELECT Max(csales) tpcds_cmax 
+         FROM   (SELECT c_customer_sk, 
+                        Sum(ss_quantity * ss_sales_price) csales 
+                 FROM   store_sales, 
+                        customer, 
+                        date_dim 
+                 WHERE  ss_customer_sk = c_customer_sk 
+                        AND ss_sold_date_sk = d_date_sk 
+                        AND d_year IN ( 2000 , 2000  + 1, 2000  + 2, 2000  + 3 ) 
+                 GROUP  BY c_customer_sk) foo1),
+    best_ss_customer 
+     AS (SELECT c_customer_sk, 
+                Sum(ss_quantity * ss_sales_price) ssales 
+         FROM   store_sales, 
+                customer 
+         WHERE  ss_customer_sk = c_customer_sk 
+         GROUP  BY c_customer_sk 
+         HAVING Sum(ss_quantity * ss_sales_price) > 
+                ( 95 / 100.0 ) * (SELECT * 
+                                  FROM   max_store_sales))
+SELECT c_last_name, 
+               c_first_name, 
+               sales 
+FROM   (SELECT c_last_name, 
+               c_first_name, 
+               Sum(cs_quantity * cs_list_price) sales 
+        FROM   catalog_sales, 
+               customer, 
+               date_dim 
+        WHERE  d_year = 2000  
+               AND d_moy = 6 
+               AND cs_sold_date_sk = d_date_sk 
+               AND cs_item_sk IN (SELECT item_sk 
+                                  FROM   frequent_ss_items) 
+               AND cs_bill_customer_sk IN (SELECT c_customer_sk 
+                                           FROM   best_ss_customer) 
+               AND cs_bill_customer_sk = c_customer_sk 
+        GROUP  BY c_last_name, 
+                  c_first_name 
+        UNION ALL 
+        SELECT c_last_name, 
+               c_first_name, 
+               Sum(ws_quantity * ws_list_price) sales 
+        FROM   web_sales, 
+               customer, 
+               date_dim 
+        WHERE  d_year = 2000 
+               AND d_moy = 6 
+               AND ws_sold_date_sk = d_date_sk 
+               AND ws_item_sk IN (SELECT item_sk 
+                                  FROM   frequent_ss_items) 
+               AND ws_bill_customer_sk IN (SELECT c_customer_sk 
+                                           FROM   best_ss_customer) 
+               AND ws_bill_customer_sk = c_customer_sk 
+        GROUP  BY c_last_name, 
+                  c_first_name) foo
+ORDER  BY c_last_name, 
+          c_first_name, 
+          sales
+LIMIT 100; """
+        self.conn.config.detect_union = True
+        #self.conn.config.detect_oj = True
+        self.do_test(query)
+
     def test_Q14_subquery(self):
-        query = """(SELECT ss_quantity   quantity, 
+        query = """SELECT Avg(quantity * list_price) average_sales 
+         FROM   (SELECT ss_quantity   quantity, 
                         ss_list_price list_price 
                  FROM   store_sales, 
                         date_dim 
@@ -637,7 +952,145 @@ LIMIT 100; """
                  FROM   web_sales, 
                         date_dim 
                  WHERE  ws_sold_date_sk = d_date_sk 
-                        AND d_year BETWEEN 1999 AND 1999 + 2)"""
+                        AND d_year BETWEEN 1999 AND 1999 + 2) x"""
+        self.do_test(query)
+
+    def test_Q49(self):
+        self.conn.config.detect_union = True
+        self.conn.config.detect_or = True
+        query = """-- start query 49 in stream 0 using template query49.tpl 
+SELECT 'web' AS channel, 
+               web.item, 
+               web.return_ratio, 
+               web.return_rank, 
+               web.currency_rank 
+FROM   (SELECT item, 
+               return_ratio, 
+               currency_ratio, 
+               Rank() 
+                 OVER ( 
+                   ORDER BY return_ratio)   AS return_rank, 
+               Rank() 
+                 OVER ( 
+                   ORDER BY currency_ratio) AS currency_rank 
+        FROM   (SELECT ws.ws_item_sk                                       AS 
+                       item, 
+                       ( Cast(Sum(COALESCE(wr.wr_return_quantity, 0)) AS DEC(15, 
+                              4)) / 
+                         Cast( 
+                         Sum(COALESCE(ws.ws_quantity, 0)) AS DEC(15, 4)) ) AS 
+                       return_ratio, 
+                       ( Cast(Sum(COALESCE(wr.wr_return_amt, 0)) AS DEC(15, 4)) 
+                         / Cast( 
+                         Sum( 
+                         COALESCE(ws.ws_net_paid, 0)) AS DEC(15, 
+                         4)) )                                             AS 
+                       currency_ratio 
+                FROM   web_sales ws 
+                       LEFT OUTER JOIN web_returns wr 
+                                    ON ( ws.ws_order_number = wr.wr_order_number 
+                                         AND ws.ws_item_sk = wr.wr_item_sk ), 
+                       date_dim 
+                WHERE  wr.wr_return_amt > 10000 
+                       AND ws.ws_net_profit > 1 
+                       AND ws.ws_net_paid > 0 
+                       AND ws.ws_quantity > 0 
+                       AND ws_sold_date_sk = d_date_sk 
+                       AND d_year = 1999 
+                       AND d_moy = 12 
+                GROUP  BY ws.ws_item_sk) in_web) web 
+WHERE  ( web.return_rank <= 10 
+          OR web.currency_rank <= 10 ) 
+UNION 
+SELECT 'catalog' AS channel, 
+       catalog.item, 
+       catalog.return_ratio, 
+       catalog.return_rank, 
+       catalog.currency_rank 
+FROM   (SELECT item, 
+               return_ratio, 
+               currency_ratio, 
+               Rank() 
+                 OVER ( 
+                   ORDER BY return_ratio)   AS return_rank, 
+               Rank() 
+                 OVER ( 
+                   ORDER BY currency_ratio) AS currency_rank 
+        FROM   (SELECT cs.cs_item_sk                                       AS 
+                       item, 
+                       ( Cast(Sum(COALESCE(cr.cr_return_quantity, 0)) AS DEC(15, 
+                              4)) / 
+                         Cast( 
+                         Sum(COALESCE(cs.cs_quantity, 0)) AS DEC(15, 4)) ) AS 
+                       return_ratio, 
+                       ( Cast(Sum(COALESCE(cr.cr_return_amount, 0)) AS DEC(15, 4 
+                              )) / 
+                         Cast(Sum( 
+                         COALESCE(cs.cs_net_paid, 0)) AS DEC( 
+                         15, 4)) )                                         AS 
+                       currency_ratio 
+                FROM   catalog_sales cs 
+                       LEFT OUTER JOIN catalog_returns cr 
+                                    ON ( cs.cs_order_number = cr.cr_order_number 
+                                         AND cs.cs_item_sk = cr.cr_item_sk ), 
+                       date_dim 
+                WHERE  cr.cr_return_amount > 10000 
+                       AND cs.cs_net_profit > 1 
+                       AND cs.cs_net_paid > 0 
+                       AND cs.cs_quantity > 0 
+                       AND cs_sold_date_sk = d_date_sk 
+                       AND d_year = 1999 
+                       AND d_moy = 12 
+                GROUP  BY cs.cs_item_sk) in_cat) catalog 
+WHERE  ( catalog.return_rank <= 10 
+          OR catalog.currency_rank <= 10 ) 
+UNION 
+SELECT 'store' AS channel, 
+       store.item, 
+       store.return_ratio, 
+       store.return_rank, 
+       store.currency_rank 
+FROM   (SELECT item, 
+               return_ratio, 
+               currency_ratio, 
+               Rank() 
+                 OVER ( 
+                   ORDER BY return_ratio)   AS return_rank, 
+               Rank() 
+                 OVER ( 
+                   ORDER BY currency_ratio) AS currency_rank 
+        FROM   (SELECT sts.ss_item_sk                                       AS 
+                       item, 
+                       ( Cast(Sum(COALESCE(sr.sr_return_quantity, 0)) AS DEC(15, 
+                              4)) / 
+                         Cast( 
+                         Sum(COALESCE(sts.ss_quantity, 0)) AS DEC(15, 4)) ) AS 
+                       return_ratio, 
+                       ( Cast(Sum(COALESCE(sr.sr_return_amt, 0)) AS DEC(15, 4)) 
+                         / Cast( 
+                         Sum( 
+                         COALESCE(sts.ss_net_paid, 0)) AS DEC(15, 4)) )     AS 
+                       currency_ratio 
+                FROM   store_sales sts 
+                       LEFT OUTER JOIN store_returns sr 
+                                    ON ( sts.ss_ticket_number = 
+                                         sr.sr_ticket_number 
+                                         AND sts.ss_item_sk = sr.sr_item_sk ), 
+                       date_dim 
+                WHERE  sr.sr_return_amt > 10000 
+                       AND sts.ss_net_profit > 1 
+                       AND sts.ss_net_paid > 0 
+                       AND sts.ss_quantity > 0 
+                       AND ss_sold_date_sk = d_date_sk 
+                       AND d_year = 1999 
+                       AND d_moy = 12 
+                GROUP  BY sts.ss_item_sk) in_store) store 
+WHERE  ( store.return_rank <= 10 
+          OR store.currency_rank <= 10 ) 
+ORDER  BY 1, 
+          4, 
+          5
+LIMIT 100; """
         self.do_test(query)
 
     def test_Q56(self):
@@ -765,8 +1218,6 @@ Limit 100 ; """
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
         self.do_test(query)
-
-
 
 
 if __name__ == '__main__':

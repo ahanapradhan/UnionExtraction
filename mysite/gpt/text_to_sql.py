@@ -21,7 +21,7 @@ def one_round(text):
                 "role": "user",
                 "content": f"{text_2_sql_prompt} {text}",
             },
-        ], temperature=0, stream=True
+        ], temperature=0, stream=False
     )
     for chunk in response:
         if not chunk.choices:
@@ -34,7 +34,7 @@ def one_round(text):
 orig_out = sys.stdout
 f = open('./mysite/gpt/chatgpt_tpcds_sql.py', 'a')
 sys.stdout = f
-for query in [Q60_subquery_TEXT]:
+for query in [Q5_CTE_TEXT]:
     one_round(query)
 sys.stdout = orig_out
 f.close()
