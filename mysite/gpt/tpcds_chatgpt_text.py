@@ -641,6 +641,218 @@ WHERE
 
 #========================================================================================================
 
+q56_text_full = """Compute the monthly sales amount for march, 1998, for items with 
+either of `firebrick', 'rosy' or 'white', 
+across all sales channels. Only consider sales of customers residing in time zone of GMT-6 hrs. Group sales by
+item and sort output by sales amount."""
+
+Q56_hqe_seed = """(Select i_item_id, Sum(ss_ext_sales_price) as total_sales 
+ From customer_address, date_dim, item, store_sales 
+ Where customer_address.ca_address_sk = store_sales.ss_addr_sk
+ and item.i_item_sk = store_sales.ss_item_sk
+ and date_dim.d_date_sk = store_sales.ss_sold_date_sk
+ and item.i_color IN ('firebrick', 'rosy', 'white')
+ and customer_address.ca_gmt_offset = -6.0
+ and date_dim.d_year = 1998
+ and date_dim.d_moy = 3 
+ Group By i_item_id 
+ Order By i_item_id asc)
+ UNION ALL  
+ (Select i_item_id, Sum(ws_ext_sales_price) as total_sales 
+ From customer_address, date_dim, item, web_sales 
+ Where customer_address.ca_address_sk = web_sales.ws_bill_addr_sk
+ and date_dim.d_date_sk = web_sales.ws_sold_date_sk
+ and item.i_item_sk = web_sales.ws_item_sk
+ and item.i_color IN ('rosy', 'white')
+ and customer_address.ca_gmt_offset = -6.0
+ and date_dim.d_year = 1998
+ and date_dim.d_moy = 3 
+ Group By i_item_id 
+ Order By i_item_id asc)
+ UNION ALL  
+ (Select i_item_id, Sum(cs_ext_sales_price) as total_sales 
+ From catalog_sales, customer_address, date_dim, item 
+ Where catalog_sales.cs_bill_addr_sk = customer_address.ca_address_sk
+ and catalog_sales.cs_sold_date_sk = date_dim.d_date_sk
+ and catalog_sales.cs_item_sk = item.i_item_sk
+ and item.i_color IN ('firebrick', 'rosy', 'white')
+ and customer_address.ca_gmt_offset = -6.0
+ and date_dim.d_year = 1998
+ and date_dim.d_moy = 3 
+ Group By i_item_id 
+ Order By i_item_id asc);"""
+#========================================================================================================
+Q75_text = """How do annual sales and returns for men's category items vary across different brands, 
+classes, categories, and manufacturers?"""
+
+Q75_hqe_seed = """(Select d_year, i_brand_id, i_class_id, i_category_id, i_manufact_id, cs_quantity as sales_cnt, cs_ext_sales_price as sales_amt 
+ From catalog_sales, date_dim, item 
+ Where catalog_sales.cs_sold_date_sk = date_dim.d_date_sk
+ and catalog_sales.cs_item_sk = item.i_item_sk
+ and item.i_category = 'Men' 
+ Group By cs_ext_sales_price, cs_quantity, d_year, i_brand_id, i_category_id, i_class_id, i_manufact_id 
+ Order By d_year desc, i_brand_id desc, i_class_id asc, i_manufact_id desc, sales_cnt desc, sales_amt asc)
+ UNION ALL  
+ (Select d_year, i_brand_id, i_class_id, i_category_id, i_manufact_id, ss_quantity as sales_cnt, ss_ext_sales_price as sales_amt 
+ From date_dim, item, store_sales 
+ Where date_dim.d_date_sk = store_sales.ss_sold_date_sk
+ and item.i_item_sk = store_sales.ss_item_sk
+ and item.i_category = 'Men' 
+ Group By d_year, i_brand_id, i_category_id, i_class_id, i_manufact_id, ss_ext_sales_price, ss_quantity 
+ Order By i_category_id desc, d_year asc, i_manufact_id asc, sales_cnt asc, i_brand_id desc)
+ UNION ALL  
+ (Select d_year, i_brand_id, i_class_id, i_category_id, i_manufact_id, ws_quantity as sales_cnt, ws_ext_sales_price as sales_amt 
+ From date_dim, item, web_sales 
+ Where item.i_item_sk = web_sales.ws_item_sk
+ and date_dim.d_date_sk = web_sales.ws_sold_date_sk
+ and item.i_category = 'Men' 
+ Group By d_year, i_brand_id, i_category_id, i_class_id, i_manufact_id, ws_ext_sales_price, ws_quantity 
+ Order By i_class_id asc, i_brand_id desc, d_year asc, i_category_id asc, i_manufact_id asc, sales_cnt desc);
+"""
+
+#========================================================================================================
+Q76_text_full = """Computes the average quantity, list price, discount, sales price for promotional items sold through the web
+channel where the promotion is not offered by mail or in an event for given gender, marital status and
+educational status."""
+
+Q76_text_chatgpt = """This query provides an aggregated sales report across store, web, and catalog channels, analyzing sales count and revenue by year, quarter, and product category. It also considers key demographic or warehouse-related attributes to understand sales trends. The report helps in comparing channel performance, seasonal variations, and product category insights."""
+
+Q76_hqe_seed = """(Select 'store' as channel, 'ss_hdemo_sk' as col_name, d_year, d_qoy, i_category, Count(*) as sales_cnt, Sum(ss_ext_sales_price) as sales_amt 
+ From date_dim, item, store_sales 
+ Where item.i_item_sk = store_sales.ss_item_sk
+ and date_dim.d_date_sk = store_sales.ss_sold_date_sk 
+ Group By d_qoy, d_year, i_category 
+ Order By channel asc, col_name asc, d_year asc, d_qoy asc, i_category asc 
+ Limit 100)
+ UNION ALL  
+ (Select 'web' as channel, 'ws_ship_hdemo_sk' as col_name, d_year, d_qoy, i_category, Count(*) as sales_cnt, Sum(ws_ext_sales_price) as sales_amt 
+ From date_dim, item, web_sales 
+ Where date_dim.d_date_sk = web_sales.ws_sold_date_sk
+ and item.i_item_sk = web_sales.ws_item_sk 
+ Group By d_qoy, d_year, i_category 
+ Order By channel asc, col_name asc, d_year asc, d_qoy asc, i_category asc 
+ Limit 100)
+ UNION ALL  
+ (Select 'catalog' as channel, 'cs_warehouse_sk' as col_name, d_year, d_qoy, i_category, Count(*) as sales_cnt, Sum(cs_ext_sales_price) as sales_amt 
+ From catalog_sales, date_dim, item 
+ Where catalog_sales.cs_sold_date_sk = date_dim.d_date_sk
+ and catalog_sales.cs_item_sk = item.i_item_sk 
+ Group By d_qoy, d_year, i_category 
+ Order By channel asc, col_name asc, d_year asc, d_qoy asc, i_category asc 
+ Limit 100);
+"""
+hq_Q76_full = """SELECT channel, 
+               col_name, 
+               d_year, 
+               d_qoy, 
+               i_category, 
+               Count(*)             sales_cnt, 
+               Sum(ext_sales_price) sales_amt 
+FROM   (SELECT 'store'            AS channel, 
+               'ss_hdemo_sk'      col_name, 
+               d_year, 
+               d_qoy, 
+               i_category, 
+               ss_ext_sales_price ext_sales_price 
+        FROM   store_sales, 
+               item, 
+               date_dim 
+        WHERE  ss_hdemo_sk IS NULL 
+               AND ss_sold_date_sk = d_date_sk 
+               AND ss_item_sk = i_item_sk 
+        UNION ALL 
+        SELECT 'web'              AS channel, 
+               'ws_ship_hdemo_sk' col_name, 
+               d_year, 
+               d_qoy, 
+               i_category, 
+               ws_ext_sales_price ext_sales_price 
+        FROM   web_sales, 
+               item, 
+               date_dim 
+        WHERE  ws_ship_hdemo_sk IS NULL 
+               AND ws_sold_date_sk = d_date_sk 
+               AND ws_item_sk = i_item_sk 
+        UNION ALL 
+        SELECT 'catalog'          AS channel, 
+               'cs_warehouse_sk'  col_name, 
+               d_year, 
+               d_qoy, 
+               i_category, 
+               cs_ext_sales_price ext_sales_price 
+        FROM   catalog_sales, 
+               item, 
+               date_dim 
+        WHERE  cs_warehouse_sk IS NULL 
+               AND cs_sold_date_sk = d_date_sk 
+               AND cs_item_sk = i_item_sk) foo 
+GROUP  BY channel, 
+          col_name, 
+          d_year, 
+          d_qoy, 
+          i_category 
+ORDER  BY channel, 
+          col_name, 
+          d_year, 
+          d_qoy, 
+          i_category
+LIMIT 100; """
+#========================================================================================================
+
+Q77_text = """Report the total sales, returns and profit for all three sales channels for a given 30 day period. Roll up the
+results by channel and a unique channel location identifier."""
+
+Q77_hint = """It is a union query of 3 subqueries, having following set of tables in their from clauses: {'web_sales', 'web_page', 'date_dim'}, {'catalog_sales', 'catalog_returns', 'date_dim'}, {'store_sales', 'store', 'date_dim'}
+"""
+#========================================================================================================
+#=====
+Q80_text = """Report extended sales, extended net profit and returns in the store, catalog, and web channels for a 30 day
+window for items with prices larger than $50 not promoted on television, rollup results by sales channel and
+channel specific sales means (store for store sales, catalog page for catalog sales and web site for web sales)"""
+Q80_hqe_seed = """(Select 'catalog channel' as channel, cp_catalog_page_id as id, Sum(cs_ext_sales_price) as sales, 0.0 as returns1, Sum(cs_net_profit) as profit 
+ From catalog_page, catalog_sales, date_dim, item, promotion 
+ Where catalog_sales.cs_sold_date_sk = date_dim.d_date_sk
+ and catalog_sales.cs_promo_sk = promotion.p_promo_sk
+ and catalog_page.cp_catalog_page_sk = catalog_sales.cs_catalog_page_sk
+ and catalog_sales.cs_item_sk = item.i_item_sk
+ and promotion.p_channel_tv = 'N'
+ and date_dim.d_date between '2000-08-26' and '2000-09-25'
+ and item.i_current_price >= 50.01 
+ Group By cp_catalog_page_id 
+ Order By channel asc, id asc 
+ Limit 100)
+ UNION ALL  
+ (Select 'web channel' as channel, web_site_id as id, Sum(ws_ext_sales_price) as sales, 0.0 as returns1, Sum(ws_net_profit) as profit 
+ From date_dim, item, promotion, web_sales, web_site 
+ Where date_dim.d_date_sk = web_sales.ws_sold_date_sk
+ and item.i_item_sk = web_sales.ws_item_sk
+ and web_sales.ws_web_site_sk = web_site.web_site_sk
+ and promotion.p_promo_sk = web_sales.ws_promo_sk
+ and promotion.p_channel_tv = 'N'
+ and date_dim.d_date between '2000-08-26' and '2000-09-25'
+ and item.i_current_price >= 50.01 
+ Group By web_site_id 
+ Order By channel asc, id asc 
+ Limit 100)
+ UNION ALL  
+ (Select 'store channel' as channel, s_store_id as id, Sum(ss_ext_sales_price) as sales, 0.0 as returns1, Sum(ss_net_profit) as profit 
+ From date_dim, item, promotion, store, store_sales 
+ Where date_dim.d_date_sk = store_sales.ss_sold_date_sk
+ and item.i_item_sk = store_sales.ss_item_sk
+ and store.s_store_sk = store_sales.ss_store_sk
+ and promotion.p_promo_sk = store_sales.ss_promo_sk
+ and promotion.p_channel_tv = 'N'
+ and date_dim.d_date between '2000-08-26' and '2000-09-25'
+ and item.i_current_price >= 50.01 
+ Group By s_store_id 
+ Order By channel asc, id asc 
+ Limit 100);"""
+# ===================================================================================================
+Q14_subquery_text = """This query calculates the average sales value across store, catalog, and web channels by considering the product of quantity sold and list price for transactions between 1999 and 2001."""
+
+#========================================================================================================
+#========================================================================================================
+
 tpcds_q7 = "Compute the average quantity, list price, discount, and sales price for promotional " \
            "items sold in stores where the " \
            "promotion is not offered by mail or a special event. Restrict the results to a specific " \

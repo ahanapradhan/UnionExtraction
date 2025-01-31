@@ -238,4 +238,4 @@ WHERE
        FROM customer_address
        WHERE ca_gmt_offset = -6
    );
-"""
+"""----- streaming request -----
