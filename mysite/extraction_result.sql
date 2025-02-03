@@ -1425,3 +1425,63 @@ order by
  --- extracted query:
  too many values to unpack (expected 3)
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        o_orderpriority,
+        count(*) as order_count
+from
+        orders
+where
+        o_orderdate >= date '1994-01-01'
+        and o_orderdate < date '1994-01-01' + interval '3' month
+        and exists (
+                (select
+                        *
+                from
+                        web_lineitem
+                where
+                        wl_orderkey = o_orderkey
+                        and wl_commitdate < wl_receiptdate)
+                UNION ALL
+                (select
+                        *
+                from
+                        store_lineitem
+                where
+                        sl_orderkey = o_orderkey
+                        and sl_commitdate < sl_receiptdate)
+        )
+group by
+        o_orderpriority
+order by
+        o_orderpriority;
+ --- extracted query:
+ too many values to unpack (expected 3)
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        sum(lineitem.l_extendedprice * lineitem.l_discount) as revenue
+from
+        (select wl_extendedprice as l_extendedprice,
+        wl_discount as l_discount
+        from web_lineitem 
+        where wl_shipdate >= date '1993-01-01'
+        and wl_shipdate < date '1994-03-01' + interval '1' year
+        and wl_discount between 0.06 - 0.01 and 0.06 + 0.01
+        and wl_quantity < 10
+        UNION ALL
+        select sl_extendedprice as l_extendedprice,
+        sl_discount as l_discount
+        from store_lineitem 
+        where sl_shipdate >= date '1993-01-01'
+        and sl_shipdate < date '1994-03-01' + interval '1' year
+        and sl_discount between 0.06 - 0.01 and 0.06 + 0.01
+        and sl_quantity < 10) as lineitem;
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!current transaction is aborted, commands ignored until end of transaction block
+
+ --- END OF ONE EXTRACTION EXPERIMENT

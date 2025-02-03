@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 import pytest
 
-from mysite.unmasque.test.eTPCH_Queries import Q4
+from mysite.unmasque.test.eTPCH_Queries import Q4, Q6
 from ...src.core.factory.PipeLineFactory import PipeLineFactory
 from ..util import queries
 from ..util.BaseTestCase import BaseTestCase
@@ -937,6 +937,14 @@ order by
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
         self.do_test(Q4)
+
+    def test_etpchQ6(self):
+        self.conn.config.detect_union = True
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(Q6)
 
     def test_Q16_sql(self):
         query = "Select p_brand, p_type, p_size, count(*) as supplier_cnt From partsupp, part               " \

@@ -158,7 +158,7 @@ from
             wl_suppkey as l_suppkey,
             wl_orderkey as l_orderkey,
             s_nationkey,
-            o_custkey,
+            o_custkey
         from web_lineitem, orders, supplier
         where 
             o_orderdate >= date '1995-01-01'
@@ -172,7 +172,7 @@ from
             sl_suppkey as l_suppkey,
             sl_orderkey as l_orderkey,
             s_nationkey,
-            o_custkey,
+            o_custkey
         from store_lineitem, orders, supplier
         where 
             o_orderdate >= date '1995-01-01'
@@ -192,7 +192,24 @@ group by
         n_name
 order by
         revenue desc;"""
-Q6 = """"""
+Q6 = """select
+        sum(lineitem.l_extendedprice * lineitem.l_discount) as revenue
+from
+        (select wl_extendedprice as l_extendedprice,
+        wl_discount as l_discount
+        from web_lineitem 
+        where wl_shipdate >= date '1993-01-01'
+        and wl_shipdate < date '1994-03-01' + interval '1' year
+        and wl_discount between 0.06 - 0.01 and 0.06 + 0.01
+        and wl_quantity < 10
+        UNION ALL
+        select sl_extendedprice as l_extendedprice,
+        sl_discount as l_discount
+        from store_lineitem 
+        where sl_shipdate >= date '1993-01-01'
+        and sl_shipdate < date '1994-03-01' + interval '1' year
+        and sl_discount between 0.06 - 0.01 and 0.06 + 0.01
+        and sl_quantity < 10) as lineitem;"""
 Q7 = """"""
 Q8 = """"""
 Q9 = """"""
