@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 import pytest
 
+from mysite.unmasque.test.eTPCH_Queries import Q4
 from ...src.core.factory.PipeLineFactory import PipeLineFactory
 from ..util import queries
 from ..util.BaseTestCase import BaseTestCase
@@ -32,7 +33,6 @@ class ExtractionTestCase(BaseTestCase):
 
         self.conn.config.use_cs2 = True
         self.pipeline = None
-
 
     def test_exists(self):
         query = """select n_regionkey from nation where exists (select * from customer, orders where c_custkey = o_custkey and o_totalprice < 10000);"""
@@ -930,6 +930,13 @@ order by
                 "on s_nationkey = n_nationkey and n_name <> 'GERMANY' Group By s_name, n_name, l_returnflag, o_clerk " \
                 "Order By numwait desc, s_name Limit 1200;"  # it needs config limit to be set to higher value
         self.do_test(query)
+
+    def test_etpchQ4(self):
+        self.conn.config.detect_union = True
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.do_test(Q4)
 
     def test_Q16_sql(self):
         query = "Select p_brand, p_type, p_size, count(*) as supplier_cnt From partsupp, part               " \

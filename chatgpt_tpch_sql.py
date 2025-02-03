@@ -1,276 +1,60 @@
------ streaming request -----
-
-```
-sql
-
-
+```sql
 SELECT
- 
+    returnflag,
+    linestatus,
+    SUM(sum_qty) AS sum_qty,
+    SUM(sum_base_price) AS sum_base_price,
+    SUM(sum_disc_price) AS sum_disc_price,
+    SUM(sum_charge) AS sum_charge,
+    AVG(avg_qty) AS avg_qty,
+    AVG(avg_price) AS avg_price,
+    AVG(avg_disc) AS avg_disc,
+    SUM(count_order) AS count_order
+FROM (
+    SELECT
+        wl_returnflag AS returnflag,
+        wl_linestatus AS linestatus,
+        SUM(wl_quantity) AS sum_qty,
+        SUM(wl_extendedprice) AS sum_base_price,
+        SUM(wl_extendedprice * (1 - wl_discount)) AS sum_disc_price,
+        SUM(wl_extendedprice * (1 - wl_discount) * (1 + wl_tax)) AS sum_charge,
+        AVG(wl_quantity) AS avg_qty,
+        AVG(wl_extendedprice) AS avg_price,
+        AVG(wl_discount) AS avg_disc,
+        COUNT(*) AS count_order
+    FROM
+        web_lineitem
+    WHERE
+        wl_shipdate <= DATE '1998-12-01' - INTERVAL '3' DAY
+    GROUP BY
+        wl_returnflag,
+        wl_linestatus
 
-   
- c
-.c
-_c
-ust
-key
-,
- 
+    UNION ALL
 
-   
- c
-.c
-_name
-,
- 
-
-   
- o
-.o
-_order
-key
-,
- 
-
-   
- o
-.o
-_total
-price
-,
- 
-
-   
- s
-.s
-_s
-upp
-key
-,
- 
-
-   
- s
-.s
-_name
-,
- 
-
-   
- AVG
-(l
-.l
-_extended
-price
- *
- (
-1
- -
- l
-.l
-_discount
-))
- AS
- avg
-_discount
-ed
-_price
-
-
-FROM
- 
-
-   
- customer
- c
-
-
-JOIN
- 
-
-   
- orders
- o
- ON
- c
-.c
-_c
-ust
-key
- =
- o
-.o
-_c
-ust
-key
-
-
-JOIN
- 
-
-   
- line
-item
- l
- ON
- o
-.o
-_order
-key
- =
- l
-.l
-_order
-key
-
-
-JOIN
- 
-
-   
- supplier
- s
- ON
- l
-.l
-_s
-upp
-key
- =
- s
-.s
-_s
-upp
-key
-
-
-JOIN
- 
-
-   
- nation
- n
- ON
- s
-.s
-_n
-ation
-key
- =
- n
-.n
-_n
-ation
-key
-
-
-JOIN
- 
-
-   
- region
- r
- ON
- n
-.n
-_region
-key
- =
- r
-.r
-_region
-key
-
-
-WHERE
- 
-
-   
- c
-.c
-_ac
-ct
-bal
- >=
- o
-.o
-_total
-price
-
-
-   
- AND
- s
-.s
-_ac
-ct
-bal
- >=
- o
-.o
-_total
-price
-
-
-   
- AND
- r
-.r
-_name
- NOT
- IN
- ('
-EU
-RO
-PE
-')
-
-GROUP
- BY
- 
-
-   
- c
-.c
-_c
-ust
-key
-,
- c
-.c
-_name
-,
- o
-.o
-_order
-key
-,
- o
-.o
-_total
-price
-,
- s
-.s
-_s
-upp
-key
-,
- s
-.s
-_name
-
-
-ORDER
- BY
- 
-
-   
- avg
-_discount
-ed
-_price
- ASC
-;
-
+    SELECT
+        sl_returnflag AS returnflag,
+        sl_linestatus AS linestatus,
+        SUM(sl_quantity) AS sum_qty,
+        SUM(sl_extendedprice) AS sum_base_price,
+        SUM(sl_extendedprice * (1 - sl_discount)) AS sum_disc_price,
+        SUM(sl_extendedprice * (1 - sl_discount) * (1 + sl_tax)) AS sum_charge,
+        AVG(sl_quantity) AS avg_qty,
+        AVG(sl_extendedprice) AS avg_price,
+        AVG(sl_discount) AS avg_disc,
+        COUNT(*) AS count_order
+    FROM
+        store_lineitem
+    WHERE
+        sl_shipdate <= DATE '1998-12-01' - INTERVAL '3' DAY
+    GROUP BY
+        sl_returnflag,
+        sl_linestatus
+) AS combined
+GROUP BY
+    returnflag,
+    linestatus
+ORDER BY
+    returnflag,
+    linestatus;
 ```
-None

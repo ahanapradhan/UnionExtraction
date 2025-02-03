@@ -1390,3 +1390,38 @@ order by
  and part.p_name LIKE '%ivory%' 
  Order By s_name asc;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        o_orderpriority,
+        count(*) as order_count
+from
+        orders
+where
+        o_orderdate >= date '1994-01-01'
+        and o_orderdate < date '1994-01-01' + interval '3' month
+        and exists (
+                (select
+                        *
+                from
+                        web_lineitem
+                where
+                        wl_orderkey = o_orderkey
+                        and wl_commitdate < wl_receiptdate)
+                UNION ALL
+                (select
+                        *
+                from
+                        store_lineitem
+                where
+                        sl_orderkey = o_orderkey
+                        and sl_commitdate < sl_receiptdate)
+        )
+group by
+        o_orderpriority
+order by
+        o_orderpriority;
+ --- extracted query:
+ too many values to unpack (expected 3)
+ --- END OF ONE EXTRACTION EXPERIMENT
