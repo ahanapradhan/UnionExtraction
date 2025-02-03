@@ -53,7 +53,11 @@ class GroupBy(GenerationPipeLineBase):
                     for k in range(no_of_rows):
                         insert_values = []
                         for attrib_inner in attrib_list_inner:
-                            datatype = self.get_datatype((tabname_inner, attrib_inner))
+                            try:
+                                datatype = self.get_datatype((tabname_inner, attrib_inner))
+                            except ValueError:
+                                self.logger.error(f"Skipping {attrib_inner}")
+                                continue
 
                             if has_attrib_key_condition(attrib, attrib_inner, key_list):
                                 self.insert_values_for_joined_attribs(attrib_inner, curr_attrib_value, datatype,

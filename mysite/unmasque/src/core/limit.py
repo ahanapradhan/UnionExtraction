@@ -76,7 +76,11 @@ class Limit(GenerationPipeLineBase):
                                   tabname_inner):
         insert_values = []
         for attrib_inner in attrib_list_inner:
-            datatype = self.get_datatype((tabname_inner, attrib_inner))
+            try:
+                datatype = self.get_datatype((tabname_inner, attrib_inner))
+            except ValueError:
+                self.logger.error(f"Skipping {attrib_inner}")
+                continue
             if attrib_inner in grouping_attribute_values.keys():
                 insert_values.append(grouping_attribute_values[attrib_inner][k])
             elif attrib_inner not in self.joined_attribs \
@@ -97,7 +101,11 @@ class Limit(GenerationPipeLineBase):
                 if elt not in self.filter_attrib_dict.keys():
                     pre_assignment = False
                     break
-                datatype = self.get_datatype(elt)
+                try:
+                    datatype = self.get_datatype(elt)
+                except ValueError:
+                    self.logger.error(f"Skipping {elt}")
+                    continue
                 if datatype in NON_TEXT_TYPES:
                     tot_values = self.__compute_total_values(datatype, elt, total_combinations)
                     self.__get_temp_total_values(datatype, elt, temp, tot_values)

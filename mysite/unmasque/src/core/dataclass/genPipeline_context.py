@@ -235,7 +235,10 @@ class GenPipelineContext:
             if len(self.filter_attrib_dict[key]) > 2 or any(isinstance(v, tuple) for v in self.filter_attrib_dict[key]):
                 continue
             bounds = self.filter_attrib_dict[key]
-            datatype = self.get_datatype((key[0], key[1]))
+            try:
+                datatype = self.get_datatype((key[0], key[1]))
+            except ValueError:
+                continue
             i_min, i_max = get_min_and_max_val(datatype)
             if not isinstance(bounds, tuple):  # single value
                 op = '='

@@ -1047,51 +1047,18 @@ order by
         query = queries.queries_dict[key]
         self.do_test(query)
 
-    def test_extraction_Q7_actual_benchmark(self):
-        query = """select
-        supp_nation,
-        cust_nation,
-        l_year,
-        sum(volume) as revenue
-from
-        (
-                select
-                        n1.n_name as supp_nation,
-                        n2.n2_name as cust_nation,
-                        extract(year from l_shipdate) as l_year,
-                        l_extendedprice * (1 - l_discount) as volume
-                from
-                        supplier,
-                        lineitem,
-                        orders,
-                        customer,
-                        nation1 n1,
-                        nation2 n2
-                where
-                        s_suppkey = l_suppkey
-                        and o_orderkey = l_orderkey
-                        and c_custkey = o_custkey
-                        and s_nationkey = n1.n_nationkey
-                        and c_nationkey = n2.n2_nationkey
-                        and (
-                                (n1.n_name = 'GERMANY' and n2.n2_name = 'FRANCE')
-                                or (n1.n_name = 'FRANCE' and n2.n2_name = 'GERMANY')
-                        )
-                        and l_shipdate between date '1995-01-01' and date '1996-12-31'
-        ) as shipping
-group by
-        supp_nation,
-        cust_nation,
-        l_year
-order by
-        supp_nation,
-        cust_nation,
-        l_year;"""
+    def test_Q51(self):
+        query = """SELECT m.year, nt.teamname, nt2.teamname1, 
+                     m.home_team_goals, m.away_team_goals 
+FROM match AS m     
+JOIN national_team as nt on m.home_team_id = nt.team_id     
+JOIN national_team1 as nt2 on nt2.team1_id = m.away_team_id
+where m.stage = 'Quarter-finals' order by m.year desc;"""
         self.conn.config.use_cs2 = False
         self.conn.config.detect_union = False
         self.conn.config.detect_oj = False
         self.conn.config.detect_nep = False
-        self.conn.config.detect_or = True
+        self.conn.config.detect_or = False
         self.do_test(query)
 
     def test_extraction_Q11(self):

@@ -1390,3 +1390,87 @@ order by
  and part.p_name LIKE '%ivory%' 
  Order By s_name asc;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT m.year, nt.teamname, nt2.teamname1, 
+                     m.home_team_goals, m.away_team_goals 
+FROM match AS m     
+JOIN national_team as nt on m.home_team_id = nt.team_id     
+JOIN national_team1 as nt2 on nt2.team1_id = m.away_team_id
+where m.stage = 'Quarter-finals' order by m.year desc;
+ --- extracted query:
+ Datatype 'timestamp without time zone' for attribute 'datetime' in table 'match' is not supported.
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT m.year, nt.teamname, nt2.teamname1, 
+                     m.home_team_goals, m.away_team_goals 
+FROM match AS m     
+JOIN national_team as nt on m.home_team_id = nt.team_id     
+JOIN national_team1 as nt2 on nt2.team1_id = m.away_team_id
+where m.stage = 'Quarter-finals' order by m.year desc;
+ --- extracted query:
+ Datatype 'timestamp without time zone' for attribute 'datetime' in table 'match' is not supported.
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT m.year, nt.teamname, nt2.teamname1, 
+                     m.home_team_goals, m.away_team_goals 
+FROM match AS m     
+JOIN national_team as nt on m.home_team_id = nt.team_id     
+JOIN national_team1 as nt2 on nt2.team1_id = m.away_team_id
+where m.stage = 'Quarter-finals' order by m.year desc;
+ --- extracted query:
+ Datatype 'timestamp without time zone' for attribute 'datetime' in table 'match' is not supported.
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT m.year, nt.teamname, nt2.teamname1, 
+                     m.home_team_goals, m.away_team_goals 
+FROM match AS m     
+JOIN national_team as nt on m.home_team_id = nt.team_id     
+JOIN national_team1 as nt2 on nt2.team1_id = m.away_team_id
+where m.stage = 'Quarter-finals' order by m.year desc;
+ --- extracted query:
+ --- Extraction Failed! Nothing to show! 
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT m.year, nt.teamname, nt2.teamname1, 
+                     m.home_team_goals, m.away_team_goals 
+FROM match AS m     
+JOIN national_team as nt on m.home_team_id = nt.team_id     
+JOIN national_team1 as nt2 on nt2.team1_id = m.away_team_id
+where m.stage = 'Quarter-finals' order by m.year desc;
+ --- extracted query:
+ --- Extraction Failed! Nothing to show! 
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT m.year, nt.teamname, nt2.teamname1, 
+                     m.home_team_goals, m.away_team_goals 
+FROM match AS m     
+JOIN national_team as nt on m.home_team_id = nt.team_id     
+JOIN national_team1 as nt2 on nt2.team1_id = m.away_team_id
+where m.stage = 'Quarter-finals' order by m.year desc;
+ --- extracted query:
+ --- Extraction Failed! Nothing to show! 
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT m.year, nt.teamname, nt2.teamname1, 
+                     m.home_team_goals, m.away_team_goals 
+FROM match AS m     
+JOIN national_team as nt on m.home_team_id = nt.team_id     
+JOIN national_team1 as nt2 on nt2.team1_id = m.away_team_id
+where m.stage = 'Quarter-finals' order by m.year desc;
+ --- extracted query:
+ too many values to unpack (expected 2)
+ --- END OF ONE EXTRACTION EXPERIMENT

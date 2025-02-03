@@ -213,7 +213,12 @@ class OrderBy(GenerationPipeLineBase):
                     attrib_list_str = ",".join(attrib_list_inner)
                     att_order = f"({attrib_list_str})"
                     for attrib_inner in attrib_list_inner:
-                        datatype = self.get_datatype((tabname_inner, attrib_inner))
+                        try:
+                            datatype = self.get_datatype((tabname_inner, attrib_inner))
+                        except ValueError:
+                            self.logger.error(f"Skipping {attrib_inner}")
+                            continue
+
                         if self.is_part_of_output(tabname_inner, attrib_inner):
                             if datatype in NON_TEXT_TYPES:
                                 first, second = self.get_non_text_attrib(datatype, attrib_inner, tabname_inner)

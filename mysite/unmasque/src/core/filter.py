@@ -89,7 +89,11 @@ class Filter(UN2WhereClause):
         for tabname in self.core_relations:
             attrib_list = self.global_all_attribs[tabname]
             for attrib in attrib_list:
-                datatype = self.get_datatype((tabname, attrib))
+                try:
+                    datatype = self.get_datatype((tabname, attrib))
+                except ValueError:
+                    self.logger.error(f"Cannot handle {attrib}, skipping it!..")
+                    continue
                 self.extract_filter_on_attrib_set(filter_attribs, query, [(tabname, attrib)], datatype)
         return filter_attribs
 

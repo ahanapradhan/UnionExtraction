@@ -330,7 +330,11 @@ class Projection(GenerationPipeLineBase):
         if key in self.or_predicates_dict.keys():
             s_val = self.__assign_next_s_value_for_or_attrib([self.get_dmin_val(key[1], key[0])], key)
         elif key in self.filter_attrib_dict.keys():
-            datatype = self.get_datatype(key)
+            try:
+                datatype = self.get_datatype(key)
+            except ValueError:
+                self.logger.error(f"Skipping {key} for dependency check!")
+                return
             mini = max(mini, get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False))
             maxi, ub = min(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True)), \
                 max(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True))

@@ -127,7 +127,11 @@ class GenerationPipeLineBase(MutationPipeLineBase):
             update_q = self.connectionHelper.queries.update_tab_attrib_with_value(
                 self.get_fully_qualified_table_name(tabname), attrib, val)
         else:
-            datatype = self.get_datatype((tabname, attrib))
+            try:
+                datatype = self.get_datatype((tabname, attrib))
+            except ValueError:
+                self.logger.error(f"Skipping {attrib}")
+                return
             if datatype in NON_TEXT_TYPES:
                 update_q = self.connectionHelper.queries.update_tab_attrib_with_value(
                     self.get_fully_qualified_table_name(tabname), attrib, get_format(datatype, val))
@@ -171,7 +175,11 @@ class GenerationPipeLineBase(MutationPipeLineBase):
         return val
 
     def get_different_s_val(self, attrib: str, tabname: str, prev) -> Union[int, float, date, str]:
-        datatype = self.get_datatype((tabname, attrib))
+        try:
+            datatype = self.get_datatype((tabname, attrib))
+        except ValueError:
+            self.logger.error(f"Cannot get different s_val! returning {prev}.")
+            return prev
         self.logger.debug(f"datatype of {attrib} is {datatype}")
         if datatype in NON_TEXT_TYPES:
             if (tabname, attrib) in self.filter_attrib_dict.keys():
