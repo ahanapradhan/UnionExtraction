@@ -1,23 +1,18 @@
 ```sql
-SELECT o_orderpriority, COUNT(DISTINCT o_orderkey) AS order_count
-FROM (
-    SELECT o_orderpriority, o_orderkey
-    FROM orders
-    JOIN web_lineitem ON orders.o_orderkey = web_lineitem.wl_orderkey
-    WHERE web_lineitem.wl_commitdate < web_lineitem.wl_receiptdate
-    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-03-31'
-
-    UNION ALL
-
-    SELECT o_orderpriority, o_orderkey
-    FROM orders
-    JOIN store_lineitem ON orders.o_orderkey = store_lineitem.sl_orderkey
-    WHERE store_lineitem.sl_commitdate < store_lineitem.sl_receiptdate
-    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-03-31'
-) AS combined_orders
-GROUP BY o_orderpriority
-ORDER BY o_orderpriority ASC;
+SELECT partsupp.ps_partkey, nation.n_name, SUM(partsupp.ps_availqty * partsupp.ps_supplycost) AS part_value
+FROM nation, supplier, partsupp
+WHERE supplier.s_nationkey = nation.n_nationkey 
+  AND supplier.s_suppkey = partsupp.ps_suppkey 
+  AND nation.n_name = 'INDIA'
+GROUP BY partsupp.ps_partkey, nation.n_name
+HAVING SUM(partsupp.ps_availqty * partsupp.ps_supplycost) >= 
+       (SELECT SUM(ps_availqty * ps_supplycost) * 0.00001 
+        FROM partsupp, supplier, nation 
+        WHERE supplier.s_suppkey = partsupp.ps_suppkey 
+          AND supplier.s_nationkey = nation.n_nationkey 
+          AND nation.n_name = 'INDIA')
+ORDER BY part_value DESC;
 ```
 
-Token count = 2557
+Token count = 2124
 
