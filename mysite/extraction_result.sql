@@ -1930,3 +1930,72 @@ order by
  --- extracted query:
  too many values to unpack (expected 2)
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select
+        c_custkey,
+        c_name,
+        sum(l_extendedprice * (1 - l_discount)) as revenue,
+        c_acctbal,
+        n_name,
+        c_address,
+        c_phone,
+        c_comment
+from
+        customer,
+        orders,
+        (select 
+                        wl_extendedprice as l_extendedprice,
+                        wl_discount as l_discount,
+                        wl_returnflag as l_returnflag,
+                        wl_orderkey as l_orderkey
+                        from web_lineitem
+                        UNION ALL
+                        select 
+                        sl_extendedprice as l_extendedprice,
+                        sl_discount as l_discount,
+                        sl_returnflag as l_returnflag,
+                        sl_orderkey as l_orderkey
+                        from store_lineitem
+                        ) as lineitem,
+        nation
+where
+        c_custkey = o_custkey
+        and l_orderkey = o_orderkey
+        and o_orderdate >= date '1995-01-01'
+        and o_orderdate < date '1995-01-01' + interval '3' month
+        and l_returnflag = 'R'
+        and c_nationkey = n_nationkey
+group by
+        c_custkey,
+        c_name,
+        c_acctbal,
+        c_phone,
+        n_name,
+        c_address,
+        c_comment
+order by
+        revenue desc;
+ --- extracted query:
+  
+ (Select c_custkey, c_name, Sum(sl_extendedprice*(1 - sl_discount)) as revenue, c_acctbal, n_name, c_address, c_phone, c_comment 
+ From customer, nation, orders, store_lineitem 
+ Where orders.o_orderkey = store_lineitem.sl_orderkey
+ and customer.c_nationkey = nation.n_nationkey
+ and customer.c_custkey = orders.o_custkey
+ and store_lineitem.sl_returnflag = 'R'
+ and orders.o_orderdate between '1995-01-01' and '1995-03-31' 
+ Group By c_acctbal, c_address, c_comment, c_custkey, c_name, c_phone, n_name 
+ Order By revenue desc, c_custkey asc, c_name asc, c_acctbal asc, c_phone asc, n_name asc, c_address asc, c_comment asc)
+ UNION ALL  
+ (Select c_custkey, c_name, Sum(wl_extendedprice*(1 - wl_discount)) as revenue, c_acctbal, n_name, c_address, c_phone, c_comment 
+ From customer, nation, orders, web_lineitem 
+ Where customer.c_nationkey = nation.n_nationkey
+ and orders.o_orderkey = web_lineitem.wl_orderkey
+ and customer.c_custkey = orders.o_custkey
+ and web_lineitem.wl_returnflag = 'R'
+ and orders.o_orderdate between '1995-01-01' and '1995-03-31' 
+ Group By c_acctbal, c_address, c_comment, c_custkey, c_name, c_phone, n_name 
+ Order By revenue desc, c_custkey asc, c_name asc, c_acctbal asc, c_phone asc, n_name asc, c_address asc, c_comment asc);
+ --- END OF ONE EXTRACTION EXPERIMENT

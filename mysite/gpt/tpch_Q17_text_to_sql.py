@@ -1,5 +1,6 @@
 import sys
 
+import tiktoken
 from openai import OpenAI
 
 # gets API Key from environment variable OPENAI_API_KEY
@@ -80,25 +81,46 @@ CREATE TABLE Dingdan (
     Beizhu VARCHAR(79)
 );
 
-CREATE TABLE DingdanXiangmu (
-    DingdanJian INTEGER REFERENCES Dingdan(DingdanJian),
-    LingjianJian INTEGER REFERENCES Lingjian(LingjianJian),
-    GongyingshangJian INTEGER REFERENCES Gongyingshang(GongyingshangJian),
-    HangLieHao INTEGER NOT NULL,
-    Shuliang INTEGER NOT NULL,
-    KuozhanJiage DECIMAL(15, 2) NOT NULL,
-    Youhui DECIMAL(15, 2) NOT NULL,
-    Shuifei DECIMAL(15, 2) NOT NULL,
-    TuihuoBiaozhi CHAR(1) NOT NULL,
-    HangLieZhuangtai CHAR(1) NOT NULL,
-    FahuoRiqi DATE NOT NULL,
-    ChengnuoRiqi DATE NOT NULL,
-    ShouhuoRiqi DATE NOT NULL,
-    FahuoZhiling VARCHAR(25) NOT NULL,
-    FahuoFangshi VARCHAR(10) NOT NULL,
-    Beizhu VARCHAR(44),
-    PRIMARY KEY (DingdanJian, HangLieHao)
+CREATE TABLE web_DingdanXiangmu (
+    w_DingdanJian INTEGER REFERENCES Dingdan(DingdanJian),
+    w_LingjianJian INTEGER REFERENCES Lingjian(LingjianJian),
+    w_GongyingshangJian INTEGER REFERENCES Gongyingshang(GongyingshangJian),
+    w_HangLieHao INTEGER NOT NULL,
+    w_Shuliang INTEGER NOT NULL,
+    w_KuozhanJiage DECIMAL(15, 2) NOT NULL,
+    w_Youhui DECIMAL(15, 2) NOT NULL,
+    w_Shuifei DECIMAL(15, 2) NOT NULL,
+    w_TuihuoBiaozhi CHAR(1) NOT NULL,
+    w_HangLieZhuangtai CHAR(1) NOT NULL,
+    w_FahuoRiqi DATE NOT NULL,
+    w_ChengnuoRiqi DATE NOT NULL,
+    w_ShouhuoRiqi DATE NOT NULL,
+    w_FahuoZhiling VARCHAR(25) NOT NULL,
+    w_FahuoFangshi VARCHAR(10) NOT NULL,
+    w_Beizhu VARCHAR(44),
+    PRIMARY KEY (w_DingdanJian, w_HangLieHao)
 );
+
+CREATE TABLE store_DingdanXiangmu (
+    s_DingdanJian INTEGER REFERENCES Dingdan(DingdanJian),
+    s_LingjianJian INTEGER REFERENCES Lingjian(LingjianJian),
+    s_GongyingshangJian INTEGER REFERENCES Gongyingshang(GongyingshangJian),
+    s_HangLieHao INTEGER NOT NULL,
+    s_Shuliang INTEGER NOT NULL,
+    s_KuozhanJiage DECIMAL(15, 2) NOT NULL,
+    s_Youhui DECIMAL(15, 2) NOT NULL,
+    s_Shuifei DECIMAL(15, 2) NOT NULL,
+    s_TuihuoBiaozhi CHAR(1) NOT NULL,
+    s_HangLieZhuangtai CHAR(1) NOT NULL,
+    s_FahuoRiqi DATE NOT NULL,
+    s_ChengnuoRiqi DATE NOT NULL,
+    s_ShouhuoRiqi DATE NOT NULL,
+    s_FahuoZhiling VARCHAR(25) NOT NULL,
+    s_FahuoFangshi VARCHAR(10) NOT NULL,
+    s_Beizhu VARCHAR(44),
+    PRIMARY KEY (s_DingdanJian, s_HangLieHao)
+);
+
 
 
 Further instructions on query formulation:
@@ -106,14 +128,15 @@ Do not use redundant join conditions.
 Table DingdanXiangmu is used in the query twice. Table Lingjian is used in the query once.
 No other tables are used in the query.
 The output of the query:
-avg_yearly: 2069328.994285714286
+avg_yearly: 2069328.994285714286"""
 
+Next_prompt = """
 You formulated the following query in your first trial:
 WITH AverageShuliang AS (
     SELECT 
-        AVG(dx.Shuliang) AS avg_shuliang
+        AVG(dx.w_Shuliang) AS avg_shuliang
     FROM Lingjian l
-    JOIN DingdanXiangmu dx ON l.LingjianJian = dx.LingjianJian
+    JOIN web_DingdanXiangmu dx ON l.LingjianJian = dx.w_LingjianJian
     WHERE l.Pinpai = 'Brand#53'
       AND l.Rongqi = 'MED BAG'
 ),
@@ -126,12 +149,12 @@ Threshold AS (
 
 PotentialLoss AS (
     SELECT 
-        SUM(dx.KuozhanJiage) AS total_loss
-    FROM DingdanXiangmu dx
-    JOIN Lingjian l ON l.LingjianJian = dx.LingjianJian
+        SUM(dx.w_KuozhanJiage) AS total_loss
+    FROM web_DingdanXiangmu dx
+    JOIN Lingjian l ON l.LingjianJian = dx.w_LingjianJian
     WHERE l.Pinpai = 'Brand#53'
       AND l.Rongqi = 'MED BAG'
-      AND dx.Shuliang < (SELECT threshold FROM Threshold)
+      AND dx.w_Shuliang < (SELECT threshold FROM Threshold)
 )
 
 SELECT 
@@ -142,13 +165,15 @@ It gives the following result:
 2077424.101428571429
 
 Results do not match. Please try fixing the query again.
+"""
 
+shot_3 = """
 You formulated the following query in your second trial:
 WITH AverageShuliang AS (
     SELECT 
-        AVG(dx.Shuliang) AS avg_shuliang
+        AVG(dx.w_Shuliang) AS avg_shuliang
     FROM Lingjian l
-    JOIN DingdanXiangmu dx ON l.LingjianJian = dx.LingjianJian
+    JOIN web_DingdanXiangmu dx ON l.LingjianJian = dx.w_LingjianJian
     WHERE l.Pinpai = 'Brand#53'
       AND l.Rongqi = 'MED BAG'
 ),
@@ -161,12 +186,12 @@ Threshold AS (
 
 PotentialLoss AS (
     SELECT 
-        SUM((dx.KuozhanJiage + dx.Shuifei) * dx.Shuliang) AS total_loss
-    FROM DingdanXiangmu dx
-    JOIN Lingjian l ON l.LingjianJian = dx.LingjianJian
+        SUM((dx.w_KuozhanJiage + dx.w_Shuifei) * dx.w_Shuliang) AS total_loss
+    FROM web_DingdanXiangmu dx
+    JOIN Lingjian l ON l.LingjianJian = dx.w_LingjianJian
     WHERE l.Pinpai = 'Brand#53'
       AND l.Rongqi = 'MED BAG'
-      AND dx.Shuliang < (SELECT threshold FROM Threshold)
+      AND dx.w_Shuliang < (SELECT threshold FROM Threshold)
 )
 
 SELECT 
@@ -177,14 +202,16 @@ It gives the following result:
 25381003.654614285714
 
 Results do not match. Please try fixing the query again.
+"""
 
+Shot_4 = """
 You formulated the following query in your third trial:
 
 WITH AverageShuliang AS (
     SELECT 
-        AVG(dx.Shuliang) AS avg_shuliang
+        AVG(dx.w_Shuliang) AS avg_shuliang
     FROM Lingjian l
-    JOIN DingdanXiangmu dx ON l.LingjianJian = dx.LingjianJian
+    JOIN w_DingdanXiangmu dx ON l.LingjianJian = dx.w_LingjianJian
     WHERE l.Pinpai = 'Brand#53'
       AND l.Rongqi = 'MED BAG'
 ),
@@ -197,12 +224,12 @@ Threshold AS (
 
 PotentialLoss AS (
     SELECT 
-        SUM(dx.KuozhanJiage * dx.Shuliang) AS total_loss
-    FROM DingdanXiangmu dx
-    JOIN Lingjian l ON l.LingjianJian = dx.LingjianJian
+        SUM(dx.w_KuozhanJiage * dx.w_Shuliang) AS total_loss
+    FROM web_DingdanXiangmu dx
+    JOIN Lingjian l ON l.LingjianJian = dx.w_LingjianJian
     WHERE l.Pinpai = 'Brand#53'
       AND l.Rongqi = 'MED BAG'
-      AND dx.Shuliang < (SELECT threshold FROM Threshold)
+      AND dx.w_Shuliang < (SELECT threshold FROM Threshold)
 )
 
 SELECT 
@@ -212,6 +239,9 @@ FROM PotentialLoss;
 It gives the following result:
 24426637.395714285714
 Results do not match. Please try fixing the query again.
+"""
+
+shot_5 = """
 
 You formulated the following query in your fourth trial:
 
@@ -246,9 +276,11 @@ FROM PotentialLoss;
 
 It gives the following result:
 24426637.395714285714
-Results do not match. Please try fixing the query again.
+Results do not match. Please try fixing the query again."""
 
-Toy formulated the following query in your fifth trial:
+shot_6 = """
+
+You formulated the following query in your fifth trial:
 WITH AverageShuliang AS (
     SELECT 
         AVG(dx.Shuliang) AS avg_shuliang
@@ -614,7 +646,9 @@ FROM PotentialLoss;
 
 The expected result is: 161173.847142857143
 
-Fix the query.
+Fix the query."""
+
+shot_7 = """
 
 The query formulated by you in your latest trial is as follows:
 WITH AverageShuliang AS (
@@ -647,7 +681,9 @@ SELECT
 FROM PotentialLoss;
 
 Its output on the above sample data is: 2083636.475714285714, whereas the expected output is: 161173.847142857143
-Fix the query.
+Fix the query."""
+
+shot_8 ="""
 
 The query formulated by you in your latest trial is as follows:
 WITH AverageShuliang AS (
@@ -684,24 +720,49 @@ Fix the query. Do not use table Lingjian twice.
 
 """
 
+def count_tokens(text):
+    encoding = tiktoken.encoding_for_model("gpt-4o")
+    tokens = encoding.encode(text)
+    return len(tokens)
+
 
 def one_round():
-    print("----- streaming request -----")
+    text = f"{text_2_sql_prompt}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    text = f"{text_2_sql_prompt}\n{Next_prompt}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    text = f"{text_2_sql_prompt}\n{Next_prompt}\n{shot_3}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    text = f"{text_2_sql_prompt}\n{Next_prompt}\n{shot_3}\n{shot_5}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    text = f"{text_2_sql_prompt}\n{Next_prompt}\n{shot_3}\n{shot_5}\n{shot_6}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    text = f"{text_2_sql_prompt}\n{Next_prompt}\n{shot_3}\n{shot_5}\n{shot_6}\n{shot_7}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    text = f"{text_2_sql_prompt}\n{Next_prompt}\n{shot_3}\n{shot_5}\n{shot_6}\n{shot_7}\n{shot_8}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    """
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {
                 "role": "user",
-                "content": f"{text_2_sql_prompt}",
+                "content": f"{text}",
             },
-        ], temperature=0, stream=True
+        ], temperature=0, stream=False
     )
-    for chunk in response:
-        if not chunk.choices:
-            continue
-
-        print(chunk.choices[0].delta.content, end="")
-        print("")
+    reply = response.choices[0].message.content
+    print(reply)
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    """
 
 
 orig_out = sys.stdout

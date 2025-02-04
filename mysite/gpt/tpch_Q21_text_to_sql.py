@@ -1,5 +1,6 @@
 import sys
 
+import tiktoken
 from openai import OpenAI
 
 # gets API Key from environment variable OPENAI_API_KEY
@@ -8,7 +9,7 @@ client = OpenAI()
 text_2_sql_prompt = """Give me SQL for the following text:
 
 The query identifies fournisseurs, for nation 'ARGENTINA', 
-whose piece was part of a multi-fournisseur commande 
+whose piece was part of a multi-fournisseur online commande 
 (with current statutCommande of `'F'`) where they were the only 
 fournisseur who failed to meet the committed dateEngagement for delivery.
 
@@ -47,24 +48,44 @@ CREATE TABLE fournisseur (
     s_commentaire VARCHAR(101)
 );
 
-CREATE TABLE lignecommande (
-    l_cleCommande INTEGER REFERENCES commandes(o_cleCommande),
-    l_clePiece INTEGER REFERENCES piece(p_clePiece),
-    l_cleFournisseur INTEGER REFERENCES fournisseur(s_cleFournisseur),
-    l_numeroLigne INTEGER NOT NULL,
-    l_quantite DECIMAL(12,2) NOT NULL,
-    l_prixEtendu DECIMAL(12,2) NOT NULL,
-    l_remise DECIMAL(12,2) NOT NULL,
-    l_taxe DECIMAL(12,2) NOT NULL,
-    l_drapeauRetour CHAR(1) NOT NULL,
-    l_statutLigne CHAR(1) NOT NULL,
-    l_dateExpedition DATE NOT NULL,
-    l_dateEngagement DATE NOT NULL,
-    l_dateReception DATE NOT NULL,
-    l_instructionExpedition VARCHAR(25) NOT NULL,
-    l_modeExpedition VARCHAR(10) NOT NULL,
-    l_commentaire VARCHAR(44),
-    PRIMARY KEY (l_cleCommande, l_numeroLigne)
+CREATE TABLE web_lignecommande (
+    wl_cleCommande INTEGER REFERENCES commandes(o_cleCommande),
+    wl_clePiece INTEGER REFERENCES piece(p_clePiece),
+    wl_cleFournisseur INTEGER REFERENCES fournisseur(s_cleFournisseur),
+    wl_numeroLigne INTEGER NOT NULL,
+    wl_quantite DECIMAL(12,2) NOT NULL,
+    wl_prixEtendu DECIMAL(12,2) NOT NULL,
+    wl_remise DECIMAL(12,2) NOT NULL,
+    wl_taxe DECIMAL(12,2) NOT NULL,
+    wl_drapeauRetour CHAR(1) NOT NULL,
+    wl_statutLigne CHAR(1) NOT NULL,
+    wl_dateExpedition DATE NOT NULL,
+    wl_dateEngagement DATE NOT NULL,
+    wl_dateReception DATE NOT NULL,
+    wl_instructionExpedition VARCHAR(25) NOT NULL,
+    wl_modeExpedition VARCHAR(10) NOT NULL,
+    wl_commentaire VARCHAR(44),
+    PRIMARY KEY (wl_cleCommande, wl_numeroLigne)
+);
+
+CREATE TABLE store_lignecommande (
+    sl_cleCommande INTEGER REFERENCES commandes(o_cleCommande),
+    sl_clePiece INTEGER REFERENCES piece(p_clePiece),
+    sl_cleFournisseur INTEGER REFERENCES fournisseur(s_cleFournisseur),
+    sl_numeroLigne INTEGER NOT NULL,
+    sl_quantite DECIMAL(12,2) NOT NULL,
+    sl_prixEtendu DECIMAL(12,2) NOT NULL,
+    sl_remise DECIMAL(12,2) NOT NULL,
+    sl_taxe DECIMAL(12,2) NOT NULL,
+    sl_drapeauRetour CHAR(1) NOT NULL,
+    sl_statutLigne CHAR(1) NOT NULL,
+    sl_dateExpedition DATE NOT NULL,
+    sl_dateEngagement DATE NOT NULL,
+    sl_dateReception DATE NOT NULL,
+    sl_instructionExpedition VARCHAR(25) NOT NULL,
+    sl_modeExpedition VARCHAR(10) NOT NULL,
+    sl_commentaire VARCHAR(44),
+    PRIMARY KEY (sl_cleCommande, sl_numeroLigne)
 );
 
 CREATE TABLE nation (
@@ -102,32 +123,34 @@ CREATE TABLE region (
 );
 
 
-Further instructions on query formulation:
+Strict instructions on query formulation:
+The tables used in the query are: 'nation', 'web_lignecommande', 'fournisseur', 'commandes'
+Table web_lignecommande is used more than once.
 Do not use redundant join conditions.
-The tables used in the query are: 'nation', 'lignecommande', 'fournisseur', 'commandes'
-Table lignecommande is used more than once.
 
-You formulated the following query in your latest trial:
+"""
+
+next_shot = """You formulated the following query in your latest trial:
 SELECT DISTINCT f.s_nom
 FROM fournisseur f
 JOIN nation n ON f.s_cleNation = n.n_cleNation
-JOIN lignecommande lc ON f.s_cleFournisseur = lc.l_cleFournisseur
-JOIN commandes c ON lc.l_cleCommande = c.o_cleCommande
+JOIN web_lignecommande lc ON f.s_cleFournisseur = lc.wl_cleFournisseur
+JOIN commandes c ON lc.wl_cleCommande = c.o_cleCommande
 WHERE n.n_nom = 'ARGENTINA'
   AND c.o_statutCommande = 'F'
-  AND lc.l_dateReception > lc.l_dateEngagement
+  AND lc.wl_dateReception > lc.wl_dateEngagement
   AND NOT EXISTS (
     SELECT 1
     FROM lignecommande lc2
-    WHERE lc2.l_cleCommande = lc.l_cleCommande
-      AND lc2.l_cleFournisseur <> lc.l_cleFournisseur
-      AND lc2.l_dateReception > lc2.l_dateEngagement
+    WHERE lc2.wl_cleCommande = lc.wl_cleCommande
+      AND lc2.wl_cleFournisseur <> lc.wl_cleFournisseur
+      AND lc2.wl_dateReception > lc2.wl_dateEngagement
   )
   AND EXISTS (
     SELECT 1
-    FROM lignecommande lc3
-    WHERE lc3.l_cleCommande = lc.l_cleCommande
-      AND lc3.l_cleFournisseur <> lc.l_cleFournisseur
+    FROM web_lignecommande lc3
+    WHERE lc3.wl_cleCommande = lc.wl_cleCommande
+      AND lc3.wl_cleFournisseur <> lc.wl_cleFournisseur
   );
 
 It is taking too long to evaluate. Fix it. 
@@ -334,29 +357,37 @@ The expected output is:
 "Supplier#000001509       "	3
 "Supplier#000002316       "	3
 "Supplier#000002491       "	3
-
-Latest query formulated by you:
-
 """
 
 
+def count_tokens(text):
+    encoding = tiktoken.encoding_for_model("gpt-4o")
+    tokens = encoding.encode(text)
+    return len(tokens)
+
+
 def one_round():
-    print("----- streaming request -----")
+    text = f"{text_2_sql_prompt}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    text = f"{text_2_sql_prompt}\n{next_shot}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    """
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {
                 "role": "user",
-                "content": f"{text_2_sql_prompt}",
+                "content": f"{text}",
             },
-        ], temperature=0, stream=True
+        ], temperature=0, stream=False
     )
-    for chunk in response:
-        if not chunk.choices:
-            continue
-
-        print(chunk.choices[0].delta.content, end="")
-        print("")
+    reply = response.choices[0].message.content
+    print(reply)
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    """
 
 
 orig_out = sys.stdout

@@ -1,5 +1,6 @@
 import sys
 
+import tiktoken
 from openai import OpenAI
 
 # gets API Key from environment variable OPENAI_API_KEY
@@ -81,21 +82,38 @@ CREATE TABLE Aajna (
     a_aajnamahiti VARCHAR(79)
 );
 
-CREATE TABLE Aajnavastu (
-    av_aajnakramank INTEGER REFERENCES Aajna(a_aajnakramank),
-    av_vastukramank INTEGER REFERENCES Vastuvivara(v_vastukramank),
-    av_sarabharajudarakramank INTEGER REFERENCES Sarabharajudara(s_sarabharajudarakramank),
-    av_vastusankhya INTEGER,
-    av_vastubela DOUBLE PRECISION,
-    av_discount DOUBLE PRECISION,
-    av_kar DOUBLE PRECISION,
-    av_vastusanket CHAR(1),
-    av_vastusamahita DATE,
-    av_vastupoorakathe DATE,
-    av_vastusamapti DATE,
-    av_vastutharate CHAR(1),
-    av_vastumahiti VARCHAR(44),
-    PRIMARY KEY (av_aajnakramank, av_vastukramank, av_sarabharajudarakramank)
+CREATE TABLE web_Aajnavastu (
+    wav_aajnakramank INTEGER REFERENCES Aajna(a_aajnakramank),
+    wav_vastukramank INTEGER REFERENCES Vastuvivara(v_vastukramank),
+    wav_sarabharajudarakramank INTEGER REFERENCES Sarabharajudara(s_sarabharajudarakramank),
+    wav_vastusankhya INTEGER,
+    wav_vastubela DOUBLE PRECISION,
+    wav_discount DOUBLE PRECISION,
+    wav_kar DOUBLE PRECISION,
+    wav_vastusanket CHAR(1),
+    wav_vastusamahita DATE,
+    wav_vastupoorakathe DATE,
+    wav_vastusamapti DATE,
+    wav_vastutharate CHAR(1),
+    wav_vastumahiti VARCHAR(44),
+    PRIMARY KEY (wav_aajnakramank, wav_vastukramank, wav_sarabharajudarakramank)
+);
+
+CREATE TABLE store_Aajnavastu (
+    sav_aajnakramank INTEGER REFERENCES Aajna(a_aajnakramank),
+    sav_vastukramank INTEGER REFERENCES Vastuvivara(v_vastukramank),
+    sav_sarabharajudarakramank INTEGER REFERENCES Sarabharajudara(s_sarabharajudarakramank),
+    sav_vastusankhya INTEGER,
+    sav_vastubela DOUBLE PRECISION,
+    sav_discount DOUBLE PRECISION,
+    sav_kar DOUBLE PRECISION,
+    sav_vastusanket CHAR(1),
+    sav_vastusamahita DATE,
+    sav_vastupoorakathe DATE,
+    sav_vastusamapti DATE,
+    sav_vastutharate CHAR(1),
+    sav_vastumahiti VARCHAR(44),
+    PRIMARY KEY (sav_aajnakramank, sav_vastukramank, sav_sarabharajudarakramank)
 );
 
 Mandatory instructions on query formulation:
@@ -106,15 +124,15 @@ Mandatory instructions on query formulation:
  SELECT 
     s_sarabharajudaranama,
     s_sarabharajudarathikana
-FROM Aajnavastu av
-JOIN Vastuvivara v ON av.av_vastukramank = v.v_vastukramank
+FROM web_Aajnavastu av
+JOIN Vastuvivara v ON av.wav_vastukramank = v.v_vastukramank
 JOIN Sarabharajudaravastu sv ON v.v_vastukramank = sv.sv_vastukramank
-JOIN Sarabharajudara s ON av.av_sarabharajudarakramank = sv.sv_sarabharajudarakramank
+JOIN Sarabharajudara s ON av.wav_sarabharajudarakramank = sv.sv_sarabharajudarakramank
 JOIN Rashtra r ON s.s_rashtrakramank = r.r_rashtrakramank
 WHERE 
     r.r_rashtranama = 'FRANCE'
-    AND av.av_vastusankhya <= 9687.99
-    AND av.av_vastusamahita BETWEEN '1995-01-01' AND '1995-12-31'
+    AND av.wav_vastusankhya <= 9687.99
+    AND av.wav_vastusamahita BETWEEN '1995-01-01' AND '1995-12-31'
     AND v.v_vastunama LIKE '%ivory%'
     AND sv.sv_vastukanishta >= 12
 ORDER BY s_sarabharajudaranama ASC;
@@ -125,7 +143,9 @@ ORDER BY s_sarabharajudaranama ASC;
 9. Text-based filter predicates of the above query are accurate, however they may be 
 scattered around subqueries in the expected query.
 Strictly follow the above instructions while formulating the query.
+"""
 
+Next_shot = """
 The output produced by the above query is:
 "Sarabharajudara#000000198"	"ncWe9nTBqJETno"
 "Sarabharajudara#000000198"	"ncWe9nTBqJETno"
@@ -466,26 +486,33 @@ Which gives incorrect output:
 Fix the query.
 """
 
+def count_tokens(text):
+    encoding = tiktoken.encoding_for_model("gpt-4o")
+    tokens = encoding.encode(text)
+    return len(tokens)
+
 
 def one_round():
+    text = f"{text_2_sql_prompt}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    text = f"{text_2_sql_prompt}\n{Next_shot}"
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
+    """
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {
                 "role": "user",
-                "content": f"{text_2_sql_prompt}",
+                "content": f"{text}",
             },
         ], temperature=0, stream=False
     )
     reply = response.choices[0].message.content
     print(reply)
-    """
-    for chunk in response:
-        if not chunk.choices:
-            continue
-
-        print(chunk.choices[0].delta.content, end="")
-        print("")
+    c_token = count_tokens(text)
+    print(f"\nToken count = {c_token}\n")
     """
 
 
