@@ -331,12 +331,7 @@ class Projection(GenerationPipeLineBase):
             s_val = self.__assign_next_s_value_for_or_attrib([self.get_dmin_val(key[1], key[0])], key)
         elif key in self.filter_attrib_dict.keys():
             datatype = self.get_datatype(key)
-            mini = max(mini, get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False))
-            maxi, ub = min(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True)), \
-                max(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True))
-            self.logger.debug(f"mini: {mini}, maxi: {maxi}")
-            if mini >= maxi:
-                maxi = ub
+            maxi, mini = self.__get_min_max_s_values(key, maxi, mini)
             if datatype == 'int':
                 s_val = random.randrange(mini, maxi)
             elif datatype == 'numeric':
@@ -346,6 +341,20 @@ class Projection(GenerationPipeLineBase):
             s_val = random.randrange(math.floor(mini), math.ceil(maxi))
         self.logger.debug(f"s-value for {key} is {s_val}, assigned to coeff[{outer_idx}][{j}]")
         coeff[outer_idx][j] = s_val
+
+    def __get_min_max_s_values(self, key, maxi, mini):
+        lb, ub = get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False), get_boundary_value(
+            self.filter_attrib_dict[key][1], is_ub=True)
+        if float(mini) > float(lb) and float(maxi) < float(ub):  # good case
+            mini, maxi = lb, ub
+            return maxi, mini
+        mini = max(mini, get_boundary_value(self.filter_attrib_dict[key][0], is_ub=False))
+        maxi, ub = min(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True)), \
+            max(maxi, get_boundary_value(self.filter_attrib_dict[key][1], is_ub=True))
+        self.logger.debug(f"mini: {mini}, maxi: {maxi}")
+        if mini >= maxi:
+            maxi = ub
+        return maxi, mini
 
     def build_equation(self, projected_attrib, projection_dep, projection_sol):
         # print("Full list", self.param_list)

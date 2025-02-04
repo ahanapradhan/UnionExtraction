@@ -1,60 +1,51 @@
 ```sql
-SELECT
-    returnflag,
-    linestatus,
-    SUM(sum_qty) AS sum_qty,
-    SUM(sum_base_price) AS sum_base_price,
-    SUM(sum_disc_price) AS sum_disc_price,
-    SUM(sum_charge) AS sum_charge,
-    AVG(avg_qty) AS avg_qty,
-    AVG(avg_price) AS avg_price,
-    AVG(avg_disc) AS avg_disc,
-    SUM(count_order) AS count_order
-FROM (
-    SELECT
-        wl_returnflag AS returnflag,
-        wl_linestatus AS linestatus,
-        SUM(wl_quantity) AS sum_qty,
-        SUM(wl_extendedprice) AS sum_base_price,
-        SUM(wl_extendedprice * (1 - wl_discount)) AS sum_disc_price,
-        SUM(wl_extendedprice * (1 - wl_discount) * (1 + wl_tax)) AS sum_charge,
-        AVG(wl_quantity) AS avg_qty,
-        AVG(wl_extendedprice) AS avg_price,
-        AVG(wl_discount) AS avg_disc,
-        COUNT(*) AS count_order
-    FROM
-        web_lineitem
-    WHERE
-        wl_shipdate <= DATE '1998-12-01' - INTERVAL '3' DAY
-    GROUP BY
-        wl_returnflag,
-        wl_linestatus
+SELECT 
+    n.n_name AS nation, 
+    EXTRACT(YEAR FROM o.o_orderdate) AS o_year, 
+    SUM((wl.wl_extendedprice * (1 - wl.wl_discount)) - (ps.ps_supplycost * wl.wl_quantity)) AS sum_profit
+FROM 
+    nation n
+JOIN 
+    supplier s ON n.n_nationkey = s.s_nationkey
+JOIN 
+    partsupp ps ON s.s_suppkey = ps.ps_suppkey
+JOIN 
+    part p ON ps.ps_partkey = p.p_partkey
+JOIN 
+    web_lineitem wl ON p.p_partkey = wl.wl_partkey AND ps.ps_suppkey = wl.wl_suppkey
+JOIN 
+    orders o ON wl.wl_orderkey = o.o_orderkey
+WHERE 
+    p.p_name LIKE '%specified_substring%'
+GROUP BY 
+    n.n_name, o_year
 
-    UNION ALL
+UNION ALL
 
-    SELECT
-        sl_returnflag AS returnflag,
-        sl_linestatus AS linestatus,
-        SUM(sl_quantity) AS sum_qty,
-        SUM(sl_extendedprice) AS sum_base_price,
-        SUM(sl_extendedprice * (1 - sl_discount)) AS sum_disc_price,
-        SUM(sl_extendedprice * (1 - sl_discount) * (1 + sl_tax)) AS sum_charge,
-        AVG(sl_quantity) AS avg_qty,
-        AVG(sl_extendedprice) AS avg_price,
-        AVG(sl_discount) AS avg_disc,
-        COUNT(*) AS count_order
-    FROM
-        store_lineitem
-    WHERE
-        sl_shipdate <= DATE '1998-12-01' - INTERVAL '3' DAY
-    GROUP BY
-        sl_returnflag,
-        sl_linestatus
-) AS combined
-GROUP BY
-    returnflag,
-    linestatus
-ORDER BY
-    returnflag,
-    linestatus;
+SELECT 
+    n.n_name AS nation, 
+    EXTRACT(YEAR FROM o.o_orderdate) AS o_year, 
+    SUM((sl.sl_extendedprice * (1 - sl.sl_discount)) - (ps.ps_supplycost * sl.sl_quantity)) AS sum_profit
+FROM 
+    nation n
+JOIN 
+    supplier s ON n.n_nationkey = s.s_nationkey
+JOIN 
+    partsupp ps ON s.s_suppkey = ps.ps_suppkey
+JOIN 
+    part p ON ps.ps_partkey = p.p_partkey
+JOIN 
+    store_lineitem sl ON p.p_partkey = sl.sl_partkey AND ps.ps_suppkey = sl.sl_suppkey
+JOIN 
+    orders o ON sl.sl_orderkey = o.o_orderkey
+WHERE 
+    p.p_name LIKE '%specified_substring%'
+GROUP BY 
+    n.n_name, o_year
+
+ORDER BY 
+    nation ASC, o_year DESC;
 ```
+
+Token count = 1955
+

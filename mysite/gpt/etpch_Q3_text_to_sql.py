@@ -6,48 +6,12 @@ from openai import OpenAI
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
 
-"""select
-        l_returnflag,
-        l_linestatus,
-        sum(l_quantity) as sum_qty,
-        sum(l_extendedprice) as sum_base_price,
-        sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
-        sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
-        avg(l_quantity) as avg_qty,
-        avg(l_extendedprice) as avg_price,
-        avg(l_discount) as avg_disc,
-        count(*) as count_order
-from
-        (select wl_returnflag as l_returnflag,
-        wl_linestatus as l_linestatus,
-        wl_quantity as l_quantity,
-        wl_extendedprice as l_extendedprice,
-        wl_discount as l_discout,
-        wl_tax as l_tax 
-        from web_lineitem where wl_shipdate <= date '1998-12-01' - interval '3' day
-        UNION ALL 
-        select sl_returnflag as l_returnflag,
-        sl_linestatus as l_linestatus,
-        sl_quantity as l_quantity,
-        sl_extendedprice as l_extendedprice,
-        sl_discount as l_discout,
-        sl_tax as l_tax 
-        from store_lineitem where sl_shipdate <= date '1998-12-01' - interval '3' day
-        ) as lineitem
-group by
-        l_returnflag,
-        l_linestatus
-order by
-        l_returnflag,
-        l_linestatus;"""
 
 text_2_sql_prompt = """Give me SQL for the following text:
-The Query provides a summary pricing report for all lineitems shipped as of a given date.
-The date is within 3 days of the greatest ship date contained in the database. The query lists totals for
-extended price, discounted extended price, discounted extended price plus tax, average quantity, average extended
-price, and average discount. These aggregates are grouped by RETURNFLAG and LINESTATUS, and listed in
-ascending order of RETURNFLAG and LINESTATUS. A count of the number of lineitems in each group is
-included.  1998-12-01 is the highest possible ship date as defined in the database population.
+The Query retrieves the shipping priority and potential revenue, defined as the sum of
+extendedprice * (1-discount), of the orders having the largest revenue among those that had not been shipped as
+of a given date. Orders are listed in decreasing order of revenue. If more than 10 unshipped orders exist, only the 10
+orders with the largest revenue are listed.
 
 Give only the SQL, do not add any explaination.
 Put the SQL within Python style comment quotes.
@@ -247,49 +211,59 @@ ADD CONSTRAINT nation_region_fkey
    
 
 Mandatory instructions on SQL query formulation:
-1. Do not use redundant join conditions.
-2. Do not use any predicate with place holder parameter.
-3. No attribute in the database has NULL value.
+1. Strictly use all the tables present in the following query.
+2. Do not use redundant join conditions.
+3. Do not use any predicate with place holder parameter.
+4. No attribute in the database has NULL value.
+5. Use all the group by attributes present in the following query.
 
 Refine the following SQL to reach to the final query:
 
 (select
-        wl_returnflag,
-        wl_linestatus,
-        sum(wl_quantity) as sum_qty,
-        sum(wl_extendedprice) as sum_base_price,
-        sum(wl_extendedprice * (1 - wl_discount)) as sum_disc_price,
-        sum(wl_extendedprice * (1 - wl_discount) * (1 + wl_tax)) as sum_charge,
-        avg(wl_quantity) as avg_qty,
-        avg(wl_extendedprice) as avg_price,
-        avg(wl_discount) as avg_disc,
-        count(*) as count_order
-from web_lineitem where wl_shipdate <= date '1998-12-01' - interval '3' day
+        wl_orderkey,
+        sum(wl_extendedprice * (1 - wl_discount)) as revenue,
+        o_orderdate,
+        o_shippriority
+from
+        customer,
+        orders,
+        web_lineitem
+where
+        c_mktsegment = 'FURNITURE'
+        and c_custkey = o_custkey
+        and wl_orderkey = o_orderkey
+        and o_orderdate < date '1995-01-01'
+        and wl_shipdate > date '1995-01-01'
 group by
-        wl_returnflag,
-        wl_linestatus
+        wl_orderkey,
+        o_orderdate,
+        o_shippriority
 order by
-        wl_returnflag,
-        wl_linestatus)
+        revenue desc,
+        o_orderdate)
 UNION ALL
 (select
-        sl_returnflag,
-        sl_linestatus,
-        sum(sl_quantity) as sum_qty,
-        sum(sl_extendedprice) as sum_base_price,
-        sum(sl_extendedprice * (1 - sl_discount)) as sum_disc_price,
-        sum(sl_extendedprice * (1 - sl_discount) * (1 + sl_tax)) as sum_charge,
-        avg(sl_quantity) as avg_qty,
-        avg(sl_extendedprice) as avg_price,
-        avg(sl_discount) as avg_disc,
-        count(*) as count_order
-from store_lineitem where sl_shipdate <= date '1998-12-01' - interval '3' day
+        sl_orderkey,
+        sum(sl_extendedprice * (1 - sl_discount)) as revenue,
+        o_orderdate,
+        o_shippriority
+from
+        customer,
+        orders,
+        web_lineitem
+where
+        c_mktsegment = 'FURNITURE'
+        and c_custkey = o_custkey
+        and sl_orderkey = o_orderkey
+        and o_orderdate < date '1995-01-01'
+        and sl_shipdate > date '1995-01-01'
 group by
-        sl_returnflag,
-        sl_linestatus
+        sl_orderkey,
+        o_orderdate,
+        o_shippriority
 order by
-        sl_returnflag,
-        sl_linestatus);
+        revenue desc,
+        o_orderdate);
 """
 next_prompt = """        
 The above query gives output as follows:
@@ -319,7 +293,7 @@ def count_tokens(text):
 
 
 def one_round():
-    text = f"{text_2_sql_prompt}\n {next_prompt}"
+    text = f"{text_2_sql_prompt}"
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[

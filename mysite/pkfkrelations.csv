@@ -11,6 +11,7 @@ web_lineitem,wl_linenumber,y,n,,
 store_lineitem,sl_orderkey,y,y,orders,o_orderkey
 store_lineitem,sl_linenumber,y,n,,
 nation,n_nationkey,y,n,,
+nation1,n1_nationkey,y,n,,
 region,r_regionkey,y,n,,
 customer,c_nationkey,n,y,nation,n_nationkey
 orders,o_custkey,n,y,customer,c_custkey
@@ -23,3 +24,4 @@ store_lineitem,sl_suppkey,n,y,supplier,s_suppkey
 store_lineitem,sl_partkey,n,y,partsupp,ps_partkey
 store_lineitem,sl_suppkey,n,y,partsupp,ps_suppkey
 nation,n_regionkey,n,y,region,r_regionkey
+nation1,n1_regionkey,n,y,region,r_regionkey

@@ -193,27 +193,166 @@ group by
 order by
         revenue desc;"""
 Q6 = """select
-        sum(lineitem.l_extendedprice * lineitem.l_discount) as revenue
+        sum(lineitem.l_extendedprice *(1 - lineitem.l_discount)) as revenue
 from
         (select wl_extendedprice as l_extendedprice,
         wl_discount as l_discount
         from web_lineitem 
         where wl_shipdate >= date '1993-01-01'
         and wl_shipdate < date '1994-03-01' + interval '1' year
-        and wl_discount between 0.06 - 0.01 and 0.06 + 0.01
-        and wl_quantity < 10
+        and wl_discount between 0.07 - 0.01 and 0.07 + 0.01
+        and wl_quantity < 24
         UNION ALL
         select sl_extendedprice as l_extendedprice,
         sl_discount as l_discount
         from store_lineitem 
         where sl_shipdate >= date '1993-01-01'
         and sl_shipdate < date '1994-03-01' + interval '1' year
-        and sl_discount between 0.06 - 0.01 and 0.06 + 0.01
-        and sl_quantity < 10) as lineitem;"""
-Q7 = """"""
+        and sl_discount between 0.07 - 0.01 and 0.07 + 0.01
+        and sl_quantity < 24
+        ) as lineitem;"""
+Q7 = """SELECT supp_nation,
+       cust_nation,
+       l_year,
+       SUM(volume) AS revenue
+FROM   (SELECT n1.n_name  AS supp_nation,
+               n2.n1_name  AS cust_nation,
+               los.l_year AS l_year,
+               los.volume AS volume
+        FROM   (SELECT Extract(year FROM wl_shipdate)         AS l_year,
+                       wl_extendedprice * ( 1 - wl_discount ) AS volume,
+                       s_nationkey,
+                       o_custkey
+                FROM   supplier,
+                       web_lineitem,
+                       orders
+                WHERE  s_suppkey = wl_suppkey
+                       AND o_orderkey = wl_orderkey
+                       AND wl_shipdate BETWEEN DATE '1995-01-01' AND DATE
+                                               '1996-12-31'
+                UNION ALL
+                SELECT Extract(year FROM sl_shipdate)         AS l_year,
+                       sl_extendedprice * ( 1 - sl_discount ) AS volume,
+                       s_nationkey,
+                       o_custkey
+                FROM   supplier,
+                       store_lineitem,
+                       orders
+                WHERE  s_suppkey = sl_suppkey
+                       AND o_orderkey = sl_orderkey
+                       AND sl_shipdate BETWEEN DATE '1995-01-01' AND DATE
+                                               '1996-12-31')
+               AS los,
+               customer,
+               nation n1,
+               nation1 n2
+        WHERE  c_custkey = los.o_custkey
+               AND los.s_nationkey = n1.n_nationkey
+               AND c_nationkey = n2.n1_nationkey
+               AND ( ( n1.n_name = 'GERMANY'
+                       AND n2.n1_name = 'FRANCE' )
+                      OR ( n1.n_name = 'FRANCE'
+                           AND n2.n1_name = 'GERMANY' ) )) AS shipping
+GROUP  BY supp_nation,
+          cust_nation,
+          l_year
+ORDER  BY supp_nation,
+          cust_nation,
+          l_year; """
 Q8 = """"""
-Q9 = """"""
-Q10 = """"""
+Q9 = """select
+        nation,
+        o_year,
+        sum(amount) as sum_profit
+from
+        (
+                select
+                        n_name as nation, p_name,
+                        extract(year from o_orderdate) as o_year,
+                        l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount
+                from
+                        part,
+                        supplier,
+                        (select 
+                        wl_extendedprice as l_extendedprice,
+                        wl_discount as l_discount,
+                        wl_quantity as l_quantity,
+                        wl_suppkey as l_suppkey,
+                        wl_partkey as l_partkey,
+                        wl_orderkey as l_orderkey
+                        from web_lineitem
+                        UNION ALL
+                        select 
+                        sl_extendedprice as l_extendedprice,
+                        sl_discount as l_discount,
+                        sl_quantity as l_quantity,
+                        sl_suppkey as l_suppkey,
+                        sl_partkey as l_partkey,
+                        sl_orderkey as l_orderkey
+                        from store_lineitem
+                        ) as lineitem,
+                        partsupp,
+                        orders,
+                        nation
+                where
+                        s_suppkey = l_suppkey
+                        and ps_suppkey = l_suppkey
+                        and ps_partkey = l_partkey
+                        and p_partkey = l_partkey
+                        and o_orderkey = l_orderkey
+                        and s_nationkey = n_nationkey
+                        and p_name like 'co%'
+        ) as profit
+group by
+        nation,
+        o_year
+order by
+        nation,
+        o_year desc;"""
+Q10 = """select
+        c_custkey,
+        c_name,
+        sum(l_extendedprice * (1 - l_discount)) as revenue,
+        c_acctbal,
+        n_name,
+        c_address,
+        c_phone,
+        c_comment
+from
+        customer,
+        orders,
+        (select 
+                        wl_extendedprice as l_extendedprice,
+                        wl_discount as l_discount,
+                        wl_returnflag as l_returnflag,
+                        wl_orderkey as l_orderkey
+                        from web_lineitem
+                        UNION ALL
+                        select 
+                        sl_extendedprice as l_extendedprice,
+                        sl_discount as l_discount,
+                        sl_returnflag as l_returnflag,
+                        sl_orderkey as l_orderkey
+                        from store_lineitem
+                        ) as lineitem,
+        nation
+where
+        c_custkey = o_custkey
+        and l_orderkey = o_orderkey
+        and o_orderdate >= date '1995-01-01'
+        and o_orderdate < date '1995-01-01' + interval '3' month
+        and l_returnflag = 'R'
+        and c_nationkey = n_nationkey
+group by
+        c_custkey,
+        c_name,
+        c_acctbal,
+        c_phone,
+        n_name,
+        c_address,
+        c_comment
+order by
+        revenue desc;"""
 Q11 = """"""
 Q12 = """"""
 Q13 = """"""
