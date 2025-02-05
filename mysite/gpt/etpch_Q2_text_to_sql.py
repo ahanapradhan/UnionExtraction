@@ -8,15 +8,43 @@ client = OpenAI()
 
 text_2_sql_prompt = """Give me SQL for the following text:
 
-The Query finds, in a given region, for each part of a certain type and size, the supplier who
-can supply it at minimum cost. If several suppliers in that region offer the desired part type and size at the same
+The Query finds, in Europe, for each part made of Brass and of size 15, the supplier who
+can supply it at minimum cost. If several European suppliers offer the desired part type and size at the same
 (minimum) cost, the query lists the parts from suppliers with the 100 highest account balances. For each supplier,
 the query lists the supplier's account balance, name and nation; the part's number and manufacturer; the supplier's
 address, phone number and comment information.
 
 Give only the SQL, do not add any explaination.
 MANDATORY RULE: Never use any window function. Never use RANK OVER PARTITION BY.
+'RANK() OVER (PARTITION BY..' should not appear in your output.
+
 Put the SQL within python style comment quotes.
+
+Mandatory instructions on query formulation:
+Additionally, use the following guidelines:
+1. Do not use redundant join conditions.
+2. Do not use any predicate with place holder parameter.
+3. No attribute in the database has NULL value.
+4. Do not use predicate on any other attribute than that are used in the following query:
+
+ Select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment 
+ From nation, part, partsupp, region, supplier 
+ Where nation.n_nationkey = supplier.s_nationkey
+ and nation.n_regionkey = region.r_regionkey
+ and part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and part.p_size = 15
+ and region.r_name = 'EUROPE'
+ and part.p_type LIKE '%BRASS' 
+ Order By s_acctbal desc, n_name asc, s_name asc, p_partkey asc
+Limit 100;   
+
+5. The attributes present in projections are accurate, use them in projection. 
+6. Also use the projection aliases used in the query.
+7. Use the tables present in the FROM clause of the query in your query. No table appears more than once in the query.
+8. Order by of the above query is accurate, reuse it.
+9. Text-based filter predicates of the above query are accurate, however they may be 
+scattered around subqueries in the expected query.
 
 Consider the following schema while formulating the SQL query:
 CREATE TABLE nation
@@ -212,31 +240,7 @@ ADD CONSTRAINT nation_region_fkey
    
 
 
-Mandatory instructions on query formulation:
-Additionally, use the following guidelines:
-1. Do not use redundant join conditions.
-2. Do not use any predicate with place holder parameter.
-3. No attribute in the database has NULL value.
-4. Do not use predicate on any other attribute than that are used in the following query:
 
- Select s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment 
- From nation, part, partsupp, region, supplier 
- Where nation.n_nationkey = supplier.s_nationkey
- and nation.n_regionkey = region.r_regionkey
- and part.p_partkey = partsupp.ps_partkey
- and partsupp.ps_suppkey = supplier.s_suppkey
- and part.p_size = 15
- and region.r_name = 'EUROPE'
- and part.p_type LIKE '%BRASS' 
- Order By s_acctbal desc, n_name asc, s_name asc, p_partkey asc
-Limit 100;   
-
-5. The attributes present in projections are accurate, use them in projection. 
-6. Also use the projection aliases used in the query.
-7. Use the tables present in the FROM clause of the query in your query. No table appears more than once in the query.
-8. Order by of the above query is accurate, reuse it.
-9. Text-based filter predicates of the above query are accurate, however they may be 
-scattered around subqueries in the expected query.
 """
 
 next_prompt = """The query you produced is as follows:
@@ -474,6 +478,8 @@ The output produced by the expected query should be:
 8929.42	"Supplier#000008770       "	"FRANCE                   "	173735	"Manufacturer#4           "	"R7cG26TtXrHAP9 HckhfRi"	"16-242-746-9248"	"cajole furiously unusual requests. quickly stealthy requests are. "
 Fix the query."""
 
+shot_2 = """Validate each predicate in your generated response and then refine further before finally responding."""
+
 next_shot1 = """
 You formulated the following query, which is giving different result:
 
@@ -663,7 +669,11 @@ def count_tokens(text):
 
 
 def one_round():
-    text = f"{text_2_sql_prompt}\n{next_prompt}\n {next_shot}"
+    k = 1
+    #text = f"{text_2_sql_prompt}"
+    #text = f"{text_2_sql_prompt}\n{next_prompt}"
+    text = f"{text_2_sql_prompt}\n{next_prompt}\n{shot_2}"
+
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -671,10 +681,14 @@ def one_round():
                 "role": "user",
                 "content": f"{text}",
             },
-        ], temperature=0, stream=False
+        ], temperature=0, logprobs=True, top_logprobs=k, stream=False
     )
-    reply = response.choices[0].message.content
-    print(reply)
+
+    for i in range(len(response.choices)):
+        tokens = response.choices[i].logprobs.content
+        for token_info in tokens:
+            print(token_info.token, end="")
+
     c_token = count_tokens(text)
     print(f"\nToken count = {c_token}\n")
 

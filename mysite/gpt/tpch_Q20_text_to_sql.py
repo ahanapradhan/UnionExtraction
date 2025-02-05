@@ -493,13 +493,8 @@ def count_tokens(text):
 
 
 def one_round():
+    k = 2
     text = f"{text_2_sql_prompt}"
-    c_token = count_tokens(text)
-    print(f"\nToken count = {c_token}\n")
-    text = f"{text_2_sql_prompt}\n{Next_shot}"
-    c_token = count_tokens(text)
-    print(f"\nToken count = {c_token}\n")
-    """
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -507,13 +502,16 @@ def one_round():
                 "role": "user",
                 "content": f"{text}",
             },
-        ], temperature=0, stream=False
+        ], temperature=0, logprobs=True, top_logprobs=k, stream=False
     )
-    reply = response.choices[0].message.content
-    print(reply)
+
+    for i in range(len(response.choices)):
+        tokens = response.choices[i].logprobs.content
+        for token_info in tokens:
+            print(token_info.token, end="")
+
     c_token = count_tokens(text)
     print(f"\nToken count = {c_token}\n")
-    """
 
 
 orig_out = sys.stdout

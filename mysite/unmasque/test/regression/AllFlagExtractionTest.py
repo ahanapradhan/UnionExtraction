@@ -1443,6 +1443,76 @@ group by n_name, s_name, s_acctbal
         self.conn.config.detect_nep = True
         self.do_test(query)
 
+    def test_eTPCHQ23(self):
+        """
+        DSB Q101 Text:
+-- Query 101
+--      Find the cities and item brands where a customer first buys and returns on web, and then buys again from store.
+-- Query type: non PKFK joins
+
+In our E-TPCH, I have the following similar text and query:
+Find the cities and part brands where a customer first buys and returns on web, and then buys again from store. City is identified as the last 5 characters of customer's address.
+
+Select RIGHT(c_address, 5) as city, p_brand as part_brand
+from customer, orders o1, orders o2, store_lineitem, web_lineitem, part
+where c_custkey = o1.o_custkey and c_custkey = o2.o_custkey             — same customer
+and o1.o_orderkey = wl_orderkey and wl_returnflag = 'A'                   — was bought, and returned successfully
+and o2.o_orderkey = sl_orderkey and sl_returnflag = 'N'           — bought and not returned
+and wl_partkey = sl_partkey and sl_partkey = p_partkey            — same item
+and wl_receiptdate < sl_receiptdate                               — web order was before store order
+and o1.o_orderdate between date '1995-01-01' and date '1995-12-31'
+and o2.o_orderdate between date '1995-01-01' and date '1995-12-31'
+group by RIGHT(c_address, 5), p_brand
+;
+
+-- Query 102
+--      Find the customer demographics where the customer buys an item from the store and buys it again from web,
+--      where the initial purchase could have been made from the web as well.
+-- Query type: non PKFK joins
+
+Similarly, we have the following.
+We do not have warehouse and inventory tables. So using ps_availqty attribute instead.
+
+Select RIGHT(c_address, 5) as city
+from customer,
+orders o1,
+orders o2,
+store_lineitem,
+web_lineitem w,
+part,
+web_lineitem w1,
+partsupp ps1,
+partsupp ps2
+where c_custkey = o1.o_custkey and c_custkey = o2.o_custkey
+and o1.o_orderkey = sl_orderkey and sl_returnflag = 'A'.     --- store order returned
+and o2.o_orderkey = w.wl_orderkey and w.wl_returnflag = 'N'       --- web order not returned
+and w.wl_partkey = sl_partkey and sl_partkey = p_partkey and w1.wl_partkey = p_partkey.  — same item in all the orders
+and sl_receiptdate < w.wl_receiptdate   --- bought from web later than bought from store
+and w.wl_suppkey = ps1.ps_suppkey and w1.wl_suppkey = ps2.ps_suppkey  — identify ps component
+and ps2.ps_availqty >= ps1.ps_availqty                     -- current web store has more quantity
+and o1.o_orderdate between date '1995-01-01' and date '1995-12-31'
+and o2.o_orderdate between date '1995-01-01' and date '1995-12-31'
+group by RIGHT(c_address, 5)
+;
+
+        """
+        query = """select c_name, c_address, p_brand
+from customer, orders o1, orders o2, store_lineitem, web_lineitem, part
+where c_custkey = o1.o_custkey and c_custkey = o2.o_custkey 
+and o1.o_orderkey = wl_orderkey and wl_returnflag = 'A'
+and o2.o_orderkey = sl_orderkey and sl_returnflag = 'N'
+and wl_partkey = sl_partkey and sl_partkey = p_partkey
+and wl_receiptdate < sl_receiptdate
+and o1.o_orderdate between date '1995-01-01' and date '1995-12-31'
+and o2.o_orderdate between date '1995-01-01' and date '1995-12-31'
+;"""
+        self.conn.config.detect_union = False
+        self.conn.config.detect_oj = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_or = False
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
 
 if __name__ == '__main__':
     unittest.main()

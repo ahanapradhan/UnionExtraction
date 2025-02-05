@@ -118,6 +118,7 @@ FROM
 ORDER BY
     revenue DESC
 LIMIT 10;"""
+
 Q4 = """SELECT o_orderpriority,
        Count(*) AS order_count
 FROM   orders
@@ -252,7 +253,43 @@ GROUP  BY supp_nation,
 ORDER  BY supp_nation,
           cust_nation,
           l_year; """
-Q8 = """"""
+Q8 = """select
+        o_year,
+        sum(case
+                when nation = 'INDIA' then volume
+                else 0
+        end) / sum(volume) as mkt_share
+from
+        (
+                select
+                        extract(year from o_orderdate) as o_year,
+                        l_extendedprice * (1 - l_discount) as volume,
+                        n2.n_name as nation
+                from
+                        part,
+                        supplier,
+                        lineitem,
+                        orders,
+                        customer,
+                        nation n1,
+                        nation n2,
+                        region
+                where
+                        p_partkey = l_partkey
+                        and s_suppkey = l_suppkey
+                        and l_orderkey = o_orderkey
+                        and o_custkey = c_custkey
+                        and c_nationkey = n1.n_nationkey
+                        and n1.n_regionkey = r_regionkey
+                        and r_name = 'ASIA'
+                        and s_nationkey = n2.n_nationkey
+                        and o_orderdate between date '1995-01-01' and date '1996-12-31'
+                        and p_type = 'ECONOMY ANODIZED STEEL'
+        ) as all_nations
+group by
+        o_year
+order by
+        o_year;"""
 Q9 = """select
         nation,
         o_year,
@@ -346,9 +383,89 @@ group by
         c_comment
 order by
         revenue desc;"""
-Q11 = """"""
-Q12 = """"""
-Q13 = """"""
+Q11 = """SELECT
+    ps_partkey, n_name,
+    SUM(ps_supplycost * ps_availqty) AS total_value
+FROM
+    partsupp, supplier, nation 
+where
+    ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+GROUP BY
+    ps_partkey, n_name
+HAVING
+    SUM(ps_supplycost * ps_availqty) > (
+        SELECT SUM(ps_supplycost * ps_availqty) * 0.00001
+        FROM partsupp, supplier, nation WHERE 
+        ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+    )
+ORDER BY
+    total_value DESC;"""
+Q12 = """select
+        l_shipmode,
+        sum(case
+                when o_orderpriority = '1-URGENT'
+                        or o_orderpriority = '2-HIGH'
+                        then 1
+                else 0
+        end) as high_line_count,
+        sum(case
+                when o_orderpriority <> '1-URGENT'
+                        and o_orderpriority <> '2-HIGH'
+                        then 1
+                else 0
+        end) as low_line_count
+from
+        orders,
+        (select 
+                sl_shipmode as l_shipmode,
+                sl_orderkey as l_orderkey,
+                sl_commitdate as l_commitdate,
+                sl_shipdate as l_shipdate,
+                sl_receiptdate as l_receiptdate
+                from store_lineitem
+                UNION ALL
+                select 
+                wl_shipmode as l_shipmode,
+                wl_orderkey as l_orderkey,
+                wl_commitdate as l_commitdate,
+                wl_shipdate as l_shipdate,
+                wl_receiptdate as l_receiptdate
+                from web_lineitem) as lineitem
+where
+        o_orderkey = l_orderkey
+        and l_shipmode IN ('SHIP','TRUCK')
+        and l_commitdate < l_receiptdate
+        and l_shipdate < l_commitdate
+        and l_receiptdate >= date '1995-01-01'
+        and l_receiptdate < date '1995-01-01' + interval '1' year
+group by
+        l_shipmode
+order by
+        l_shipmode;"""
+Q13 = """select
+        c_count, c_orderdate,
+        count(*) as custdist
+from
+        (
+                select
+                        c_custkey, o_orderdate,
+                        count(o_orderkey)
+                from
+                        customer left outer join orders on
+                                c_custkey = o_custkey
+                                and o_comment not like '%special%requests%'
+                group by
+                        c_custkey, o_orderdate
+        ) as c_orders (c_custkey, c_count, c_orderdate)
+group by
+        c_count, c_orderdate
+order by
+        custdist desc,
+        c_count desc;"""
 Q14 = """select
         100.00 * sum(case
                 when p_type like 'PROMO%'
@@ -360,6 +477,19 @@ from
 		 sl_extendedprice as l_extendedprice,
 		 sl_discount as l_discount,
 		 sl_partkey as l_partkey,
+		 sl_shipdate as l_shipdate
+		 from store_lineitem
+		 UNION ALL
+		 select wl_extendedprice as l_extendedprice,
+		 wl_discount as l_discount,
+		 wl_partkey as l_partkey,
+		 wl_shipdate as l_shipdate
+		 from web_lineitem) as lineitem,
+		 part
+		 where         
+		 l_partkey = p_partkey
+        and l_shipdate >= date '1995-01-01'
+        and l_shipdate < date '1995-01-01' + interval '1' month;
 """
 Q15 = """with revenue(supplier_no, total_revenue) as        
 (select
@@ -406,12 +536,280 @@ where
         )
 order by
         s_suppkey;"""
-Q16 = """"""
-Q17 = """"""
-Q18 = """"""
-Q19 = """"""
-Q20 = """"""
-Q21 = """"""
-Q22 = """"""
-Q23 = """"""
-Q24 = """"""
+Q16 = """select
+        p_brand,
+        p_type,
+        p_size,
+        count(distinct ps_suppkey) as supplier_cnt
+from
+        partsupp,
+        part
+where
+        p_partkey = ps_partkey
+        and p_brand <> 'Brand#23'
+    AND p_type NOT LIKE 'MEDIUM POLISHED%' 
+        and p_size IN (1, 4, 7)
+        and ps_suppkey not in (
+                select
+                        s_suppkey
+                from
+                        supplier
+                where
+                        s_comment like '%Customer%Complaints%'
+        )
+group by
+        p_brand,
+        p_type,
+        p_size
+order by
+        supplier_cnt desc,
+        p_brand,
+        p_type,
+        p_size;"""
+Q17 = """select sum(wl_extendedprice) / 7.0 as avg_yearly
+from
+        web_lineitem,
+        part
+where
+        p_partkey = l_partkey
+        and p_brand = 'Brand#53'
+        and p_container = 'MED BAG'
+        and wl_quantity < (
+                select
+                        0.7 * avg(wl_quantity)
+                from
+                        web_lineitem
+                where
+                        wl_partkey = p_partkey
+        );"""
+Q18 = """select
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice,
+        sum(l_quantity)
+from
+        customer,
+        orders,
+        lineitem
+where
+        o_orderkey in (
+                select
+                        l_orderkey
+                from
+                        lineitem
+                group by
+                        l_orderkey having
+                                sum(l_quantity) > 300
+        )
+        and c_custkey = o_custkey
+        and o_orderkey = l_orderkey
+group by
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice
+order by
+        o_totalprice desc,
+        o_orderdate;"""
+Q19 = """select
+        sum(l_extendedprice* (1 - l_discount)) as revenue
+from
+        lineitem,
+        part
+where
+        (
+                p_partkey = l_partkey
+                and p_brand = 'Brand#12'
+                and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+                and l_quantity >= 1 and l_quantity <= 1 + 10
+                and p_size between 1 and 5
+                and l_shipmode in ('AIR', 'AIR REG')
+                and l_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = l_partkey
+                and p_brand = 'Brand#23'
+                and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+                and l_quantity >= 10 and l_quantity <= 10 + 10
+                and p_size between 1 and 10
+                and l_shipmode in ('AIR', 'AIR REG')
+                and l_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = l_partkey
+                and p_brand = 'Brand#34'
+                and p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+                and l_quantity >= 20 and l_quantity <= 20 + 10
+                and p_size between 1 and 15
+                and l_shipmode in ('AIR', 'AIR REG')
+                and l_shipinstruct = 'DELIVER IN PERSON'
+        );"""
+Q20 = """select
+        s_name,
+        s_address
+from
+        supplier,
+        nation
+where
+        s_suppkey in (
+                select
+                        ps_suppkey
+                from
+                        partsupp
+                where
+                        ps_partkey in (
+                                select
+                                        p_partkey
+                                from
+                                        part
+                                where
+                                        p_name like '%ivory%'
+                        )
+                        and ps_availqty > (
+                                select
+                                        0.5 * sum(l_quantity)
+                                from
+                                        lineitem
+                                where
+                                        l_partkey = ps_partkey
+                                        and l_suppkey = ps_suppkey
+                                        and l_shipdate >= date '1995-01-01'
+                                        and l_shipdate < date '1995-01-01' + interval '1' year
+                        )
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+order by
+        s_name;"""
+Q21 = """select
+        s_name,
+        count(*) as numwait
+from
+        supplier,
+        lineitem l1,
+        orders,
+        nation
+where
+        s_suppkey = l1.l_suppkey
+        and o_orderkey = l1.l_orderkey
+        and o_orderstatus = 'F'
+        and l1.l_receiptdate > l1.l_commitdate
+        and exists (
+                select
+                        *
+                from
+                        lineitem l2
+                where
+                        l2.l_orderkey = l1.l_orderkey
+                        and l2.l_suppkey <> l1.l_suppkey
+        )
+        and not exists (
+                select
+                        *
+                from
+                        lineitem l3
+                where
+                        l3.l_orderkey = l1.l_orderkey
+                        and l3.l_suppkey <> l1.l_suppkey
+                        and l3.l_receiptdate > l3.l_commitdate
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'ARGENTINA'
+group by
+        s_name
+order by
+        numwait desc,
+        s_name;"""
+Q22 = """select
+        cntrycode,
+        count(*) as numcust,
+        sum(c_acctbal) as totacctbal
+from
+        (
+                select
+                        substring(c_phone from 1 for 2) as cntrycode,
+                        c_acctbal
+                from
+                        customer
+                where
+                        substring(c_phone from 1 for 2) in
+                                ('13', '31', '23', '29', '30', '18', '17')
+                        and c_acctbal > (
+                                select
+                                        avg(c_acctbal)
+                                from
+                                        customer
+                                where
+                                        c_acctbal > 0.00
+                                        and substring(c_phone from 1 for 2) in
+                                                ('13', '31', '23', '29', '30', '18', '17')
+                        )
+                        and not exists (
+                                select
+                                        *
+                                from
+                                        orders
+                                where
+                                        o_custkey = c_custkey
+                        )
+        ) as custsale
+group by
+        cntrycode
+order by
+        cntrycode;"""
+Q23 = """SELECT   RIGHT(c_address, 5) AS city,
+         p_brand             AS part_brand
+FROM     customer,
+         orders o1,
+         orders o2,
+         store_lineitem,
+         web_lineitem,
+         part
+WHERE    c_custkey = o1.o_custkey
+AND      c_custkey = o2.o_custkey 
+AND      o1.o_orderkey = wl_orderkey
+AND      wl_returnflag = 'A' 
+AND      o2.o_orderkey = sl_orderkey
+AND      sl_returnflag = 'N' 
+AND      wl_partkey = sl_partkey
+AND      sl_partkey = p_partkey
+AND      o1.o_orderdate < o2.o_orderdate
+AND      wl_receiptdate < sl_receiptdate 
+AND      o1.o_orderdate BETWEEN date '1995-01-01' AND      date '1995-12-31'
+AND      o2.o_orderdate BETWEEN date '1995-01-01' AND      date '1995-12-31'
+GROUP BY RIGHT(c_address, 5),
+         p_brand 
+ORDER BY city, part_brand;"""
+
+Q24 = """SELECT Right(c_address, 5) AS city
+FROM   customer,
+       orders o1,
+       orders o2,
+       store_lineitem,
+       web_lineitem w,
+       part,
+       web_lineitem w1,
+       partsupp ps1,
+       partsupp ps2
+WHERE  c_custkey = o1.o_custkey
+       AND c_custkey = o2.o_custkey
+       AND o1.o_orderkey = sl_orderkey
+       AND sl_returnflag = 'A'
+       AND o2.o_orderkey = w.wl_orderkey
+       AND w.wl_returnflag = 'N'
+       AND w.wl_partkey = sl_partkey
+       AND sl_partkey = p_partkey
+       AND w1.wl_partkey = p_partkey
+       AND sl_receiptdate < w.wl_receiptdate
+       AND o1.o_orderdate < o2.o_orderdate
+       AND w.wl_suppkey = ps1.ps_suppkey
+       AND w1.wl_suppkey = ps2.ps_suppkey
+       AND ps2.ps_availqty >= ps1.ps_availqty
+       AND o1.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'
+       AND o2.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'
+GROUP  BY Right(c_address, 5) ;"""
