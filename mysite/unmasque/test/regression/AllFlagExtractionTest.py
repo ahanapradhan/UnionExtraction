@@ -936,7 +936,73 @@ order by
         self.conn.config.detect_or = False
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
         self.do_test(Q4)
+
+    def test_etpchQ15(self):
+        self.conn.config.detect_union = True
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(Q15)
+
+    def test_etpchQ12(self):
+        self.conn.config.detect_union = True
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test("""select
+        l_shipmode,
+        sum(case
+                when o_orderpriority = '1-URGENT'
+                        or o_orderpriority = '2-HIGH'
+                        then 1
+                else 0
+        end) as high_line_count,
+        sum(case
+                when o_orderpriority <> '1-URGENT'
+                        and o_orderpriority <> '2-HIGH'
+                        then 1
+                else 0
+        end) as low_line_count
+from
+        orders,
+        (select 
+                sl_shipmode as l_shipmode,
+                sl_orderkey as l_orderkey,
+                sl_commitdate as l_commitdate,
+                sl_shipdate as l_shipdate,
+                sl_receiptdate as l_receiptdate
+                from store_lineitem
+                UNION ALL
+                select 
+                wl_shipmode as l_shipmode,
+                wl_orderkey as l_orderkey,
+                wl_commitdate as l_commitdate,
+                wl_shipdate as l_shipdate,
+                wl_receiptdate as l_receiptdate
+                from web_lineitem) as lineitem
+where
+        o_orderkey = l_orderkey
+        and l_shipmode = 'SHIP'
+        and l_commitdate < l_receiptdate
+        and l_shipdate < l_commitdate
+        and l_receiptdate >= date '1995-01-01'
+        and l_receiptdate < date '1995-01-01' + interval '1' year
+group by
+        l_shipmode
+order by
+        l_shipmode;""")
+
+    def test_etpchQ5(self):
+        self.conn.config.detect_union = True
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = True
+        self.do_test(Q5)
 
     def test_etpchQ6(self):
         self.conn.config.detect_union = False

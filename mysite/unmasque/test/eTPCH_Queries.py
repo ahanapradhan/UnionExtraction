@@ -118,35 +118,28 @@ FROM
 ORDER BY
     revenue DESC
 LIMIT 10;"""
-Q4 = """select
-        o_orderpriority,
-        count(*) as order_count
-from
-        orders
-where
-        o_orderdate >= date '1994-01-01'
-        and o_orderdate < date '1994-01-01' + interval '3' month
-        and exists (
-                (select
-                        *
-                from
-                        web_lineitem
-                where
-                        wl_orderkey = o_orderkey
-                        and wl_commitdate < wl_receiptdate)
-                UNION ALL
-                (select
-                        *
-                from
-                        store_lineitem
-                where
-                        sl_orderkey = o_orderkey
-                        and sl_commitdate < sl_receiptdate)
-        )
-group by
-        o_orderpriority
-order by
-        o_orderpriority;"""
+Q4 = """SELECT o_orderpriority,
+       Count(*) AS order_count
+FROM   orders
+WHERE  o_orderdate >= DATE '1995-01-01'
+AND    o_orderdate <  DATE '1995-01-01' + interval '3' month
+AND    EXISTS
+       (
+              SELECT *
+              FROM   (
+                     (
+                            SELECT sl_commitdate  AS l_commitdate,
+                                   sl_receiptdate AS l_receiptdate,
+                                   sl_orderkey    AS l_orderkey
+                            FROM   store_lineitem)
+              UNION ALL
+                        (
+                               SELECT wl_commitdate  AS l_commitdate,
+                                      wl_receiptdate AS l_receiptdate,
+                                      wl_orderkey    AS l_orderkey
+                               FROM   web_lineitem)) AS lineitem
+           WHERE     l_orderkey = o_orderkey
+           AND       l_commitdate < l_receiptdate) GROUP BY o_orderpriority ORDER BY o_orderpriority;"""
 Q5 = """select
         n_name,
         sum(los.l_extendedprice * (1 - los.l_discount)) as revenue
@@ -367,6 +360,16 @@ from
 		 sl_extendedprice as l_extendedprice,
 		 sl_discount as l_discount,
 		 sl_partkey as l_partkey,
+"""
+Q15 = """with revenue(supplier_no, total_revenue) as        
+(select
+                l_suppkey,
+                sum(l_extendedprice * (1 - l_discount))
+        from
+                (select 
+		 sl_extendedprice as l_extendedprice,
+		 sl_discount as l_discount,
+		 sl_suppkey as l_suppkey,
 		 sl_shipdate as l_shipdate
 		 from store_lineitem
 		 UNION ALL
@@ -381,8 +384,28 @@ from
 where
         l_partkey = p_partkey
         and l_shipdate >= date '1995-01-01'
-        and l_shipdate < date '1995-01-01' + interval '1' month;"""
-Q15 = """"""
+        and l_shipdate < date '1995-01-01' + interval '1' month
+        group by
+                l_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
+order by
+        s_suppkey;"""
 Q16 = """"""
 Q17 = """"""
 Q18 = """"""
