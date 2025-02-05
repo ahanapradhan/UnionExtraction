@@ -1,21 +1,41 @@
 ```sql
-SELECT SUM(revenue_increase) AS total_revenue_increase
+SELECT s_suppkey, s_name, s_address, s_phone, total_revenue
 FROM (
-    SELECT wl_extendedprice * wl_discount AS revenue_increase
-    FROM web_lineitem
-    WHERE wl_shipdate >= DATE '1993-01-01'
-      AND wl_shipdate < DATE '1995-01-01'
-      AND wl_discount BETWEEN 0.05 AND 0.07
-      AND wl_quantity < 24
+    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(wl_extendedprice * (1 - wl_discount)) AS total_revenue
+    FROM supplier s
+    JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
+    WHERE wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
+
     UNION ALL
-    SELECT sl_extendedprice * sl_discount AS revenue_increase
-    FROM store_lineitem
-    WHERE sl_shipdate >= DATE '1993-01-01'
-      AND sl_shipdate < DATE '1995-01-01'
-      AND sl_discount BETWEEN 0.05 AND 0.07
-      AND sl_quantity < 24
-) AS combined_lineitems;
+
+    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(sl_extendedprice * (1 - sl_discount)) AS total_revenue
+    FROM supplier s
+    JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
+    WHERE sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
+) AS supplier_revenue
+GROUP BY s_suppkey, s_name, s_address, s_phone, total_revenue
+HAVING total_revenue = (
+    SELECT MAX(total_revenue)
+    FROM (
+        SELECT s.s_suppkey, SUM(wl_extendedprice * (1 - wl_discount)) AS total_revenue
+        FROM supplier s
+        JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
+        WHERE wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+        GROUP BY s.s_suppkey
+
+        UNION ALL
+
+        SELECT s.s_suppkey, SUM(sl_extendedprice * (1 - sl_discount)) AS total_revenue
+        FROM supplier s
+        JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
+        WHERE sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+        GROUP BY s.s_suppkey
+    ) AS max_revenue
+)
+ORDER BY s_suppkey;
 ```
 
-Token count = 2067
+Token count = 2232
 

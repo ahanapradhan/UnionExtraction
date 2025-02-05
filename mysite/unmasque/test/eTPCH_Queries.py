@@ -356,7 +356,32 @@ order by
 Q11 = """"""
 Q12 = """"""
 Q13 = """"""
-Q14 = """"""
+Q14 = """select
+        100.00 * sum(case
+                when p_type like 'PROMO%'
+                        then l_extendedprice * (1 - l_discount)
+                else 0
+        end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue
+from
+        (select 
+		 sl_extendedprice as l_extendedprice,
+		 sl_discount as l_discount,
+		 sl_partkey as l_partkey,
+		 sl_shipdate as l_shipdate
+		 from store_lineitem
+		 UNION ALL
+		 select
+		 wl_extendedprice as l_extendedprice,
+		 wl_discount as l_discount,
+		 wl_partkey as l_partkey,
+		 wl_shipdate as l_shipdate
+		 from web_lineitem
+        ) as lineitem,
+        part
+where
+        l_partkey = p_partkey
+        and l_shipdate >= date '1995-01-01'
+        and l_shipdate < date '1995-01-01' + interval '1' month;"""
 Q15 = """"""
 Q16 = """"""
 Q17 = """"""
