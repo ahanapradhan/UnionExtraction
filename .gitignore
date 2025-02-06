@@ -27,3 +27,4 @@ mysite/extraction_result.sql
 mysite/gpt/chatgpt_tpch_sql.py
 *.iml
 .idea/UnionExtraction.iml
+*.ini

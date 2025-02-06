@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 import pytest
 
-from mysite.unmasque.test.eTPCH_Queries import Q4, Q6, Q7, Q9, Q10, Q14
+from mysite.unmasque.test.eTPCH_Queries import Q4, Q6, Q7, Q9, Q10, Q14, Q5
 from ...src.core.factory.PipeLineFactory import PipeLineFactory
 from ..util import queries
 from ..util.BaseTestCase import BaseTestCase
@@ -1035,6 +1035,36 @@ order by
         self.conn.config.detect_oj = False
         self.conn.config.use_cs2 = False
         self.do_test(Q10)
+
+    def test_etpchQ24(self):
+        q24 = """select c_address as city 
+from customer, 
+orders o1, 
+orders1 o2, 
+store_lineitem, 
+web_lineitem w, 
+part, 
+web_lineitem1 w1, 
+partsupp ps1, 
+partsupp1 ps2
+where c_custkey = o1.o_custkey and c_custkey = o2.o1_custkey 
+and o1.o_orderkey = sl_orderkey and sl_returnflag = 'A'
+and o2.o1_orderkey = w.wl_orderkey and w.wl_returnflag = 'N'
+and w.wl_partkey = sl_partkey and sl_partkey = p_partkey and w1.wl1_partkey = p_partkey
+and sl_receiptdate < w.wl_receiptdate 
+and o1.o_orderdate < o2.o1_orderdate
+and w.wl_suppkey = ps1.ps_suppkey and w1.wl1_suppkey = ps2.ps1_suppkey
+and ps2.ps1_availqty >= ps1.ps_availqty
+and o1.o_orderdate between date '1995-01-01' and date '1995-12-31'
+and o2.o1_orderdate between date '1995-01-01' and date '1995-12-31'
+group by c_address
+;"""
+        self.conn.config.detect_union = False
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(q24)
 
     def test_etpchQ14(self):
         self.conn.config.detect_union = True
