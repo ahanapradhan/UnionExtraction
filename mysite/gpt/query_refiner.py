@@ -9,7 +9,8 @@ from mysite.gpt.Q13_benchmark import Q13_text, Q13_seed, Q13_seed_output, Q13_ac
     Q13_feedback1, Q13_feedback2, Q13_feedback4_sample_data
 from mysite.gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guidelines, text_2_sql_question, \
     seed_query_question, Q1_seed_output, Q1_actual_output, Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, Q4_text, \
-    Q4_seed_output, Q4_actual_output, Q4_seed, Q4_feedback1, Q3_feedback1
+    Q4_seed_output, Q4_actual_output, Q4_seed, Q4_feedback1, Q3_feedback1, Q5_text, Q5_seed, Q5_seed_output, \
+    Q5_actual_output
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -108,6 +109,7 @@ class Gpt4oRefiner(Refiner):
 benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q3": [Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, [Q3_feedback1]],
                   "Q4": [Q4_text, Q4_seed, Q4_seed_output, Q4_actual_output, [Q4_feedback1]],
+                  "Q5": [Q5_text, Q5_seed, Q5_seed_output, Q5_actual_output],
                   "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output,
                           etpch_schema_Q13, [Q13_feedback1, Q13_feedback2, Q13_feedback4_sample_data]]}
 

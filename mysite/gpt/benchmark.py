@@ -400,3 +400,59 @@ All the filter predicates should be as per the seed query.
 The second projection values are larger than expected. So it must not be count(*).
 Maintain the distinct groups in the first projection.
 """
+
+Q5_text = """The  Query lists for each nation in Asia the revenue volume that resulted from lineitem
+transactions in which the customer ordering parts and the supplier filling them were both within that nation. The
+query is run in order to determine whether to institute local distribution centers in a given region. The query considers only parts ordered in the year of 1995. The query displays the nations and revenue volume in descending order by
+revenue. Revenue volume for all qualifying lineitems in a particular nation is defined as sum(l_extendedprice * (1 -
+l_discount))."""
+
+Q5_seed = """(Select n_name, Sum(wl_extendedprice*(1 - wl_discount)) as revenue 
+ From customer, nation, orders, region, supplier, web_lineitem 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_nationkey = nation.n_nationkey
+ and nation.n_nationkey = supplier.s_nationkey
+ and orders.o_orderkey = web_lineitem.wl_orderkey
+ and nation.n_regionkey = region.r_regionkey
+ and supplier.s_suppkey = web_lineitem.wl_suppkey
+ and region.r_name = 'ASIA'
+ and orders.o_orderdate between '1995-01-01' and '1995-12-31' 
+ Group By n_name 
+ Order By revenue desc, n_name asc)
+ UNION ALL  
+ (Select n_name, Sum(sl_extendedprice*(1 - sl_discount)) as revenue 
+ From customer, nation, orders, region, store_lineitem, supplier 
+ Where orders.o_orderkey = store_lineitem.sl_orderkey
+ and store_lineitem.sl_suppkey = supplier.s_suppkey
+ and customer.c_custkey = orders.o_custkey
+ and customer.c_nationkey = nation.n_nationkey
+ and nation.n_nationkey = supplier.s_nationkey
+ and nation.n_regionkey = region.r_regionkey
+ and region.r_name = 'ASIA'
+ and orders.o_orderdate between '1995-01-01' and '1995-12-31' 
+ Group By n_name 
+ Order By revenue desc, n_name asc); """
+
+Q5_actual_output = """But the expected output is as follows:
+"CHINA                    "	114024399.8524
+"INDIA                    "	105857316.5416
+"INDONESIA                "	103946938.2060
+"VIETNAM                  "	102155527.2612
+"JAPAN                    "	90082333.7968
+
+Fix the seed query."""
+
+Q5_seed_output = """The above seed query gives the following output:
+
+"CHINA                    "	57012199.9262
+"INDIA                    "	52928658.2708
+"INDONESIA                "	51973469.1030
+"VIETNAM                  "	51077763.6306
+"JAPAN                    "	45041166.8984
+"CHINA                    "	57012199.9262
+"INDIA                    "	52928658.2708
+"INDONESIA                "	51973469.1030
+"VIETNAM                  "	51077763.6306
+"JAPAN                    "	45041166.8984
+"""
+
