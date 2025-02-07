@@ -346,7 +346,10 @@ Q3_actual_output = """But my expected output is as follows:
 "N"	"O"	76562572	111000813442.64	105448419350.231	109670632253.69768	25.499760531453646	36969.68489491028	0.05002611173022852	3002482
 "R"	"F"	37744994	54690862067.84	51959600163.9714	54036465621.57103	25.51844400003786	36975.12048861287	0.049998931801617984	1479126
 
-Fix the seed query."""
+Fix the seed SQL query."""
+
+Q3_feedback1 = """The seed query looks like to have duplicated groups. 
+Keep the UNION ALL operator, but merge the duplicated groups."""
 
 Q4_text = """The Query counts the number of orders ordered in a given quarter of 1995 in which
 at least one lineitem was received by the customer later than its committed date. The query lists the count of such
