@@ -486,6 +486,7 @@ Which gives incorrect output:
 Fix the query.
 """
 
+
 def count_tokens(text):
     encoding = tiktoken.encoding_for_model("gpt-4o")
     tokens = encoding.encode(text)

@@ -265,7 +265,7 @@ ON subquery.p_partkey = min_costs.ps_partkey AND subquery.ps_supplycost = min_co
 ORDER BY s_acctbal DESC, n_name ASC, s_name ASC, p_partkey ASC
 LIMIT 100;
 
-Try duplicating filter predicates present in the outer query into the inner query as well. 
+Try putting some of the filter predicates present in the outer query into the inner query as well. 
 Adjust the tables and joins accordingly.
 """
 
