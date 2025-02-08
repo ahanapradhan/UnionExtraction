@@ -11,7 +11,7 @@ from mysite.gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guideli
     seed_query_question, Q1_seed_output, Q1_actual_output, Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, Q4_text, \
     Q4_seed_output, Q4_actual_output, Q4_seed, Q4_feedback1, Q3_feedback1, Q5_text, Q5_seed, Q5_seed_output, \
     Q5_actual_output, Q6_text, Q6_seed_output, Q6_actual_output, Q6_seed, Q14_text, Q14_seed, Q14_seed_output, \
-    Q14_actual_output, Q14_feedback1, refinement_show
+    Q14_actual_output, Q14_feedback1, refinement_show, Q7_text, Q7_seed, Q7_seed_output, Q7_actual_output, Q7_feedback1
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -112,6 +112,7 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q4": [Q4_text, Q4_seed, Q4_seed_output, Q4_actual_output, [Q4_feedback1]],
                   "Q5": [Q5_text, Q5_seed, Q5_seed_output, Q5_actual_output],
                   "Q6": [Q6_text, Q6_seed, Q6_seed_output, Q6_actual_output],
+                  "Q7": [Q7_text, Q7_seed, Q7_seed_output, Q7_actual_output, [Q7_feedback1]],
                   "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output,
                           etpch_schema_Q13, [Q13_feedback1, Q13_feedback2, Q13_feedback4_sample_data]],
                   "Q14": [Q14_text, Q14_seed, Q14_seed_output, Q14_actual_output, [Q14_feedback1]],
@@ -170,6 +171,9 @@ if __name__ == '__main__':
              f"{seed_query_question}\n{get_seed(query_key)}" \
              f"\n{get_seed_output(query_key)}\n{get_actual_output(query_key)}" \
              f"\n{schema}\n{general_guidelines}"
+    if not len(prompt.strip()):
+        print("No input prompt!")
+        exit()
     output1 = refiner.doJob_write(prompt, query_key)
     print(output1)
     needed_feedback = len(get_feedback_prompts(query_key))

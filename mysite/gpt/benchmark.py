@@ -207,6 +207,7 @@ Do not use NULLIF in your SQLs.
 Put the SQL within Python style comment quotes):"""
 
 seed_query_question = """Refine the following 'seed query' SQL to reach to the final query:"""
+refinement_show = "You formulated the following query:"
 
 Q1_text = """
 The Query provides a summary pricing report for all lineitems shipped as of a given date.
@@ -216,7 +217,6 @@ price, and average discount. These aggregates are grouped by RETURNFLAG and LINE
 ascending order of RETURNFLAG and LINESTATUS. A count of the number of lineitems in each group is
 included.  1998-12-01 is the highest possible ship date as defined in the database population.
 """
-
 Q1_seed = """
 (select
         wl_returnflag,
@@ -256,7 +256,6 @@ order by
         sl_returnflag,
         sl_linestatus);
 """
-
 Q1_seed_output = """     
 The above seed query gives output as follows:
 "A"	"F"	18865717	27356549949.99	25988356900.45	27027321931.296696	25.519179575692974	37004.5151607654	0.05000787256721441	739276
@@ -268,7 +267,6 @@ The above seed query gives output as follows:
 "R"	"F"	18872497	27345431033.92	25979800081.9857	27018232810.785515	25.51844400003786	36975.12048861287	0.049998931801617984	739563
 "R"	"F"	18872497	27345431033.92	25979800081.9857	27018232810.785515	25.51844400003786	36975.12048861287	0.049998931801617984	739563
 """
-
 Q1_actual_output = """
 But my expected output is as follows:
 "A"	"F"	37731434	54713099899.98	51976713800.9	54054643862.59339	25.519179575692974	37004.5151607654	0.05000787256721441	1478552
@@ -278,12 +276,18 @@ But my expected output is as follows:
 
 Fix the seed query."""
 
+Q2_text = """"""
+Q2_seed = """"""
+Q2_seed_output = """Output of the above seed query is as follows:"""
+Q2_actual_output = """But the actual output should be as follows:
+
+Fix the seed query."""
+
 Q3_text = """The Query retrieves the shipping priority and potential revenue, defined as the sum of
 extendedprice * (1-discount), of the orders having the largest revenue among those that had not been shipped as
 of a given date. Orders are listed in decreasing order of revenue. If more than 10 unshipped orders exist, only the 10
 orders with the largest revenue are listed.
 """
-
 Q3_seed = """(select
         wl_orderkey,
         sum(wl_extendedprice * (1 - wl_discount)) as revenue,
@@ -329,7 +333,6 @@ group by
 order by
         revenue desc,
         o_orderdate);"""
-
 Q3_seed_output = """The above seed query gives output as follows:
 "A"	"F"	18865717	27356549949.99	25988356900.45	27027321931.296696	25.519179575692974	37004.5151607654	0.05000787256721441	739276
 "A"	"F"	18865717	27356549949.99	25988356900.45	27027321931.296696	25.519179575692974	37004.5151607654	0.05000787256721441	739276
@@ -340,7 +343,6 @@ Q3_seed_output = """The above seed query gives output as follows:
 "R"	"F"	18872497	27345431033.92	25979800081.9857	27018232810.785515	25.51844400003786	36975.12048861287	0.049998931801617984	739563
 "R"	"F"	18872497	27345431033.92	25979800081.9857	27018232810.785515	25.51844400003786	36975.12048861287	0.049998931801617984	739563
 """
-
 Q3_actual_output = """But my expected output is as follows:
 "A"	"F"	37731434	54713099899.98	51976713800.9	54054643862.59339	25.519179575692974	37004.5151607654	0.05000787256721441	1478552
 "N"	"F"	999192	1447564312.34	1375622948.2042	1430547058.353024	25.562627916496112	37033.4709460704	0.04980607859189521	39088
@@ -348,7 +350,6 @@ Q3_actual_output = """But my expected output is as follows:
 "R"	"F"	37744994	54690862067.84	51959600163.9714	54036465621.57103	25.51844400003786	36975.12048861287	0.049998931801617984	1479126
 
 Fix the seed SQL query."""
-
 Q3_feedback1 = """The seed query looks like to have duplicated groups. 
 Keep the UNION ALL operator, but merge the duplicated groups."""
 
@@ -356,7 +357,6 @@ Q4_text = """The Query counts the number of orders ordered in a given quarter of
 at least one lineitem was received by the customer later than its committed date. The query lists the count of such
 orders for each order priority sorted in ascending priority order.
 """
-
 Q4_seed = """(Select o_orderpriority, Count(*) as order_count 
  From orders, web_lineitem 
  Where orders.o_orderkey = web_lineitem.wl_orderkey
@@ -372,7 +372,6 @@ Q4_seed = """(Select o_orderpriority, Count(*) as order_count
  and orders.o_orderdate between '1995-01-01' and '1995-03-31' 
  Group By o_orderpriority 
  Order By o_orderpriority asc);"""
-
 Q4_seed_output = """"The above seed query gives output as follows:
 "1-URGENT       "	14161
 "2-HIGH         "	14427
@@ -385,7 +384,6 @@ Q4_seed_output = """"The above seed query gives output as follows:
 "4-NOT SPECIFIED"	14270
 "5-LOW          "	14412
 """
-
 Q4_actual_output = """But my expected output is as follows:
 "1-URGENT       "	5176
 "2-HIGH         "	5311
@@ -394,7 +392,6 @@ Q4_actual_output = """But my expected output is as follows:
 "5-LOW          "	5210
 Fix the seed SQL query.
 """
-
 Q4_feedback1 = """
 Do not put any redundant filter predicate. 
 All the filter predicates should be as per the seed query.
@@ -407,7 +404,6 @@ transactions in which the customer ordering parts and the supplier filling them 
 query is run in order to determine whether to institute local distribution centers in a given region. The query considers only parts ordered in the year of 1995. The query displays the nations and revenue volume in descending order by
 revenue. Revenue volume for all qualifying lineitems in a particular nation is defined as sum(l_extendedprice * (1 -
 l_discount))."""
-
 Q5_seed = """(Select n_name, Sum(wl_extendedprice*(1 - wl_discount)) as revenue 
  From customer, nation, orders, region, supplier, web_lineitem 
  Where customer.c_custkey = orders.o_custkey
@@ -433,7 +429,6 @@ Q5_seed = """(Select n_name, Sum(wl_extendedprice*(1 - wl_discount)) as revenue
  and orders.o_orderdate between '1995-01-01' and '1995-12-31' 
  Group By n_name 
  Order By revenue desc, n_name asc); """
-
 Q5_actual_output = """But the expected output is as follows:
 "CHINA                    "	114024399.8524
 "INDIA                    "	105857316.5416
@@ -442,7 +437,6 @@ Q5_actual_output = """But the expected output is as follows:
 "JAPAN                    "	90082333.7968
 
 Fix the seed query."""
-
 Q5_seed_output = """The above seed query gives the following output:
 
 "CHINA                    "	57012199.9262
@@ -488,7 +482,6 @@ Fix the seed query SQL. """
 Q14_text = """The Query determines what percentage of the revenue in a given year and month was derived from
 promotional parts. The query considers only parts actually shipped in that month and gives the percentage. Revenue
 is defined as (extended price * (1-discount))."""
-
 Q14_seed = """(Select Sum(0) as promo_revenue 
  From part, store_lineitem 
  Where part.p_partkey = store_lineitem.sl_partkey
@@ -498,7 +491,6 @@ Q14_seed = """(Select Sum(0) as promo_revenue
  From part, web_lineitem 
  Where part.p_partkey = web_lineitem.wl_partkey
  and web_lineitem.wl_shipdate between '1995-01-01' and '1995-01-31');  """
-
 Q14_seed_output = """Output of the above seed query is as follows:
 0
 0"""
@@ -509,7 +501,6 @@ But the actual output should be:
 The actual query gives a single aggregated value.
 Fix the seed sql query.
 """
-
 Q14_feedback1 = """
 The query produced by you gives output as follows:
 
@@ -522,5 +513,62 @@ The actual query gives a single aggregated value.
 So maybe, put the aggregation after the union.
 """
 
-refinement_show = "You formulated the following query:"
+Q7_text = """The Query finds, for two given nations, the gross discounted revenues derived from line items in
+which parts were shipped from a supplier in either nation to a customer in the other nation during 1995 and 1996.
+The query lists the supplier nation, the customer nation, the year, and the revenue from shipments that took place in
+that year. The query orders the answer by Supplier nation, Customer nation, and year (all ascending).
+"""
+Q7_seed = """(Select n1.n_name as supp_nation, n2.n_name as cust_nation, wl_shipdate as l_year, wl_extendedprice*(1 - wl_discount) as revenue 
+ From customer, nation n1, nation n2, orders, supplier, web_lineitem 
+ Where orders.o_orderkey = web_lineitem.wl_orderkey
+ and supplier.s_suppkey = web_lineitem.wl_suppkey
+ and customer.c_custkey = orders.o_custkey
+ and customer.c_nationkey = n2.n_nationkey
+ and n1.n_nationkey = supplier.s_nationkey
+ and (n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY') OR (n2.n_name = 'FRANCE' and n1.n_name = 'GERMANY')
+ and web_lineitem.wl_shipdate between '1995-01-01' and '1996-12-31')
+ UNION ALL  
+ (Select n1.n_name as supp_nation, n2.n_name as cust_nation, sl_shipdate as l_year, sl_extendedprice*(1 - sl_discount) as revenue 
+ From customer, nation n1, nation n2, orders, supplier, store_lineitem 
+ Where orders.o_orderkey = store_lineitem.sl_orderkey
+ and supplier.s_suppkey = store_lineitem.sl_suppkey
+ and customer.c_custkey = orders.o_custkey
+ and customer.c_nationkey = n2.n_nationkey
+ and n1.n_nationkey = supplier.s_nationkey
+ and (n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY') OR (n2.n_name = 'FRANCE' and n1.n_name = 'GERMANY')
+ and store_lineitem.sl_shipdate between '1995-01-01' and '1996-12-31'); 
+;"""
+Q7_seed_output = """Output of the above seed query is not known as it is taking more than 4 minutes to execute.
+"""
+Q7_actual_output = """But the actual output should be as follows, which was produced in just 4 seconds:
+"FRANCE"	"GERMANY"	1995	9274470.3002
+"FRANCE"	"GERMANY"	1996	10449559.1472
+"GERMANY"	"FRANCE"	1995	12465637.4074
+"GERMANY"	"FRANCE"	1996	11114624.2242
 
+Fix the seed query."""
+Q7_feedback1 = """The output of your current query is as follows:
+"FRANCE"	"GERMANY"	1995	4637235.1501
+"FRANCE"	"GERMANY"	1995	4637235.1501
+"FRANCE"	"GERMANY"	1996	5224779.5736
+"FRANCE"	"GERMANY"	1996	5224779.5736
+"GERMANY"	"FRANCE"	1995	6232818.7037
+"GERMANY"	"FRANCE"	1995	6232818.7037
+"GERMANY"	"FRANCE"	1996	5557312.1121
+"GERMANY"	"FRANCE"	1996	5557312.1121
+
+Looks like it has duplicated groups. If group by clause is present within union subqueries, try putting it out."""
+
+Q8_text = """"""
+Q8_seed = """"""
+Q8_seed_output = """Output of the above seed query is as follows:"""
+Q8_actual_output = """But the actual output should be as follows:
+
+Fix the seed query."""
+
+Q9_text = """"""
+Q9_seed = """"""
+Q9_seed_output = """Output of the above seed query is as follows:"""
+Q9_actual_output = """But the actual output should be as follows:
+
+Fix the seed query."""
