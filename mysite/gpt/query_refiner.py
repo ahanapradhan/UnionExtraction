@@ -10,7 +10,8 @@ from mysite.gpt.Q13_benchmark import Q13_text, Q13_seed, Q13_seed_output, Q13_ac
 from mysite.gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guidelines, text_2_sql_question, \
     seed_query_question, Q1_seed_output, Q1_actual_output, Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, Q4_text, \
     Q4_seed_output, Q4_actual_output, Q4_seed, Q4_feedback1, Q3_feedback1, Q5_text, Q5_seed, Q5_seed_output, \
-    Q5_actual_output
+    Q5_actual_output, Q6_text, Q6_seed_output, Q6_actual_output, Q6_seed, Q14_text, Q14_seed, Q14_seed_output, \
+    Q14_actual_output, Q14_feedback1, refinement_show
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -110,8 +111,11 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q3": [Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, [Q3_feedback1]],
                   "Q4": [Q4_text, Q4_seed, Q4_seed_output, Q4_actual_output, [Q4_feedback1]],
                   "Q5": [Q5_text, Q5_seed, Q5_seed_output, Q5_actual_output],
+                  "Q6": [Q6_text, Q6_seed, Q6_seed_output, Q6_actual_output],
                   "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output,
-                          etpch_schema_Q13, [Q13_feedback1, Q13_feedback2, Q13_feedback4_sample_data]]}
+                          etpch_schema_Q13, [Q13_feedback1, Q13_feedback2, Q13_feedback4_sample_data]],
+                  "Q14": [Q14_text, Q14_seed, Q14_seed_output, Q14_actual_output, [Q14_feedback1]],
+                  }
 
 
 def get_feedback_prompts(key):
@@ -173,9 +177,8 @@ if __name__ == '__main__':
         feedbacks = get_feedback_prompts(query_key)
         for i, feedback in enumerate(feedbacks):
             print(f"Trying out feedback {i + 1}")
-            prompt = f"{text_2_sql_question}\n{get_text(query_key)}\n" \
-                     f"{seed_query_question}\n{output1}" \
-                     f"\n{feedback}" \
-                     f"\n{schema}\n{general_guidelines}"
+            prompt = f"{prompt}\n" \
+                     f"{refinement_show}\n{output1}" \
+                     f"\n{feedback}"
             output2 = refiner.doJob_write(prompt, query_key)
             print(output2)

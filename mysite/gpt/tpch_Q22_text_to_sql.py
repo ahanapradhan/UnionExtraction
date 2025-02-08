@@ -12,7 +12,6 @@ This query counts how many Graahaka within Rashtra codes among
 '13', '31', '23', '29', '30', '18', and '17' have 
 not placed Aajna for 7 years but who have a greater than average “positive” g_mulyam. 
 It also reflects the magnitude of that g_mulyam.  
-
 Rashtra code is defined as the first two characters of g_vishaya.
 
 Give only the SQL, do not add any explaination.

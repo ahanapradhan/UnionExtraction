@@ -203,6 +203,7 @@ general_guidelines = """Strictly follow the instructions given below for your SQ
 text_2_sql_question = """Give me SQL for the following text 
 (Give only the SQL, do not add any explanation. 
 Do not use COALESCE in your SQLs.
+Do not use NULLIF in your SQLs.
 Put the SQL within Python style comment quotes):"""
 
 seed_query_question = """Refine the following 'seed query' SQL to reach to the final query:"""
@@ -455,4 +456,71 @@ Q5_seed_output = """The above seed query gives the following output:
 "VIETNAM                  "	51077763.6306
 "JAPAN                    "	45041166.8984
 """
+
+Q6_text = """The Query considers all the line items shipped in year 1993 and 1994, with discounts between
+0.06-0.01 and 0.06+0.01. The query lists the amount by which the total revenue would have
+increased if these discounts had been eliminated for line items with l_quantity less than 24. Note that the
+potential revenue increase is equal to the sum of [extendedprice * discount] for all line items with discounts and
+quantities in the qualifying range."""
+Q6_seed = """select sum(wl_extendedprice*wl_discount) as revenue
+        from web_lineitem 
+        where wl_shipdate >= date '1993-01-01'
+        and wl_shipdate < date '1994-12-31'
+        and wl_discount between 0.05 and 0.07
+        and wl_quantity < 24
+        UNION ALL
+        select sum(sl_extendedprice*sl_discount) as revenue
+        from store_lineitem 
+        where sl_shipdate >= date '1993-01-01'
+        and sl_shipdate < date '1994-12-31'
+        and sl_discount between 0.05 and 0.07
+        and sl_quantity < 24;"""
+Q6_actual_output = """The expected output is as follows:
+4035401223.9508. 
+
+It is a single aggregated value. So the final query should have one aggregate function in the projection."""
+Q6_seed_output = """The above seed query gives the following output: 
+1866473627.9654
+1866473627.9654.
+
+Fix the seed query SQL. """
+
+Q14_text = """The Query determines what percentage of the revenue in a given year and month was derived from
+promotional parts. The query considers only parts actually shipped in that month and gives the percentage. Revenue
+is defined as (extended price * (1-discount))."""
+
+Q14_seed = """(Select Sum(0) as promo_revenue 
+ From part, store_lineitem 
+ Where part.p_partkey = store_lineitem.sl_partkey
+ and store_lineitem.sl_shipdate between '1995-01-01' and '1995-01-31')
+ UNION ALL  
+ (Select Sum(0) as promo_revenue 
+ From part, web_lineitem 
+ Where part.p_partkey = web_lineitem.wl_partkey
+ and web_lineitem.wl_shipdate between '1995-01-01' and '1995-01-31');  """
+
+Q14_seed_output = """Output of the above seed query is as follows:
+0
+0"""
+Q14_actual_output = """
+But the actual output should be:
+16.9227056452702565
+
+The actual query gives a single aggregated value.
+Fix the seed sql query.
+"""
+
+Q14_feedback1 = """
+The query produced by you gives output as follows:
+
+16.92270564527025649000
+16.92270564527025649000
+
+Fix the query.
+Use all the filter predicates of the seed query. Do not use any other filter.
+The actual query gives a single aggregated value.
+So maybe, put the aggregation after the union.
+"""
+
+refinement_show = "You formulated the following query:"
 

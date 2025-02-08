@@ -116,7 +116,7 @@ Use all the predicates used in the ***seed query***.
 text_2_sql_prompt = """Give me SQL for the following text:
 The Query determines what percentage of the revenue in a given year and month was derived from
 promotional parts. The query considers only parts actually shipped in that month and gives the percentage. Revenue
-is defined as (extendedprice * (1-discount)).
+is defined as (extended price * (1-discount)).
 
 The output should be:
 16.9227056452702565
