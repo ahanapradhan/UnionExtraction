@@ -273,7 +273,7 @@ class Projection(GenerationPipeLineBase):
             return [[1]]
 
         coeff = np.zeros((2 ** n, 2 ** n))
-        np.set_printoptions(formatter={'float': '{:0.2f}'.format})
+        np.set_printoptions(formatter={'float': '{:0.3f}'.format})
 
         for i in range(n):
             coeff[0][i] = value_used[value_used.index(dep[i][1]) + 1]
@@ -312,7 +312,7 @@ class Projection(GenerationPipeLineBase):
         self.logger.debug("Coeff: ", coeff, "b: ", b)
         # self.logger.debug(f"condition number: {str(np.linalg.cond(coeff))}")
         solution = np.linalg.solve(coeff, b)
-        solution = np.around(solution, decimals=2)
+        solution = np.around(solution, decimals=3)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
@@ -375,7 +375,7 @@ class Projection(GenerationPipeLineBase):
             if datatype == 'int':
                 s_val = random.randrange(mini, maxi)
             elif datatype == 'numeric':
-                s_val = round(random.uniform(mini, maxi), 2)
+                s_val = round(random.uniform(mini, maxi), 3)
         else:
             self.logger.debug(f"mini: {mini}, maxi: {maxi}")
             s_val = random.randrange(math.floor(mini), math.ceil(maxi))
