@@ -572,3 +572,691 @@ Q9_seed_output = """Output of the above seed query is as follows:"""
 Q9_actual_output = """But the actual output should be as follows:
 
 Fix the seed query."""
+
+Q21_text = """The query identifies suppliers, for nation 'ARGENTINA', whose product was part of a
+multi-supplier online order (with current status of 'F') where they were the 
+only supplier who failed to meet the committed delivery date."""
+
+Q21_seed = """Select s_name, <unknown> as numwait 
+ From web_lineitem l1, web_lineitem l2, nation, orders, supplier 
+ Where l1.wl_orderkey = l2.wl_orderkey
+ and l2.wl_orderkey = o_orderkey
+ and l1.wl_suppkey = s_suppkey
+ and n_nationkey = s_nationkey
+ and l1.wl_commitdate < l1.wl_receiptdate
+ and n_name = 'ARGENTINA'
+ and o_orderstatus = 'F' 
+ Order By s_name asc; """
+
+Q21_seed_output = """The seed query has the second projection unidentified. 
+The actual output of the query shows it an integer number, in decreasing order.
+Validate the predicates in the seed query against the text description and refine them.
+"""
+Q21_actual_output = """The actual output should be as follows:
+
+"Supplier#000000985       "	18
+"Supplier#000000521       "	17
+"Supplier#000000748       "	17
+"Supplier#000001110       "	17
+"Supplier#000001771       "	17
+"Supplier#000001823       "	17
+"Supplier#000002320       "	17
+"Supplier#000003512       "	17
+"Supplier#000002122       "	16
+"Supplier#000002928       "	16
+"Supplier#000004227       "	16
+"Supplier#000002686       "	15
+"Supplier#000004503       "	15
+"Supplier#000004550       "	15
+"Supplier#000000544       "	14
+"Supplier#000000721       "	14
+"Supplier#000001573       "	14
+"Supplier#000001991       "	14
+"Supplier#000002057       "	14
+"Supplier#000004004       "	14
+"Supplier#000004198       "	14
+"Supplier#000004581       "	14
+"Supplier#000004640       "	14
+"Supplier#000000849       "	13
+"Supplier#000001902       "	13
+"Supplier#000002745       "	13
+"Supplier#000002883       "	13
+"Supplier#000002886       "	13
+"Supplier#000002977       "	13
+"Supplier#000002982       "	13
+"Supplier#000003311       "	13
+"Supplier#000003321       "	13
+"Supplier#000003404       "	13
+"Supplier#000003426       "	13
+"Supplier#000003636       "	13
+"Supplier#000004350       "	13
+"Supplier#000004385       "	13
+"Supplier#000004605       "	13
+"Supplier#000000071       "	12
+"Supplier#000000567       "	12
+"Supplier#000000678       "	12
+"Supplier#000000714       "	12
+"Supplier#000001402       "	12
+"Supplier#000001544       "	12
+"Supplier#000002017       "	12
+"Supplier#000002429       "	12
+"Supplier#000003210       "	12
+"Supplier#000003453       "	12
+"Supplier#000003495       "	12
+"Supplier#000003813       "	12
+"Supplier#000004627       "	12
+"Supplier#000004798       "	12
+"Supplier#000000186       "	11
+"Supplier#000000485       "	11
+"Supplier#000000624       "	11
+"Supplier#000000730       "	11
+"Supplier#000000868       "	11
+"Supplier#000000945       "	11
+"Supplier#000000950       "	11
+"Supplier#000001084       "	11
+"Supplier#000001270       "	11
+"Supplier#000001280       "	11
+"Supplier#000002143       "	11
+"Supplier#000002519       "	11
+"Supplier#000002547       "	11
+"Supplier#000002612       "	11
+"Supplier#000003174       "	11
+"Supplier#000003351       "	11
+"Supplier#000003581       "	11
+"Supplier#000003789       "	11
+"Supplier#000003791       "	11
+"Supplier#000004050       "	11
+"Supplier#000004080       "	11
+"Supplier#000004210       "	11
+"Supplier#000004309       "	11
+"Supplier#000004573       "	11
+"Supplier#000004745       "	11
+"Supplier#000000836       "	10
+"Supplier#000001186       "	10
+"Supplier#000001360       "	10
+"Supplier#000001810       "	10
+"Supplier#000001811       "	10
+"Supplier#000002174       "	10
+"Supplier#000002250       "	10
+"Supplier#000002291       "	10
+"Supplier#000002734       "	10
+"Supplier#000002808       "	10
+"Supplier#000002957       "	10
+"Supplier#000003006       "	10
+"Supplier#000003065       "	10
+"Supplier#000003483       "	10
+"Supplier#000003743       "	10
+"Supplier#000003859       "	10
+"Supplier#000004213       "	10
+"Supplier#000004248       "	10
+"Supplier#000004277       "	10
+"Supplier#000004344       "	10
+"Supplier#000004434       "	10
+"Supplier#000004593       "	10
+"Supplier#000004841       "	10
+"Supplier#000004909       "	10
+"Supplier#000000297       "	9
+"Supplier#000000430       "	9
+"Supplier#000000852       "	9
+"Supplier#000000873       "	9
+"Supplier#000000886       "	9
+"Supplier#000001020       "	9
+"Supplier#000001076       "	9
+"Supplier#000001136       "	9
+"Supplier#000001957       "	9
+"Supplier#000002052       "	9
+"Supplier#000002107       "	9
+"Supplier#000002111       "	9
+"Supplier#000002359       "	9
+"Supplier#000002502       "	9
+"Supplier#000002733       "	9
+"Supplier#000002821       "	9
+"Supplier#000002843       "	9
+"Supplier#000003005       "	9
+"Supplier#000003209       "	9
+"Supplier#000003559       "	9
+"Supplier#000003916       "	9
+"Supplier#000004053       "	9
+"Supplier#000004189       "	9
+"Supplier#000004252       "	9
+"Supplier#000004359       "	9
+"Supplier#000004777       "	9
+"Supplier#000004803       "	9
+"Supplier#000004892       "	9
+"Supplier#000000029       "	8
+"Supplier#000000127       "	8
+"Supplier#000000244       "	8
+"Supplier#000000336       "	8
+"Supplier#000000792       "	8
+"Supplier#000000989       "	8
+"Supplier#000001224       "	8
+"Supplier#000001596       "	8
+"Supplier#000001647       "	8
+"Supplier#000001965       "	8
+"Supplier#000002199       "	8
+"Supplier#000002515       "	8
+"Supplier#000002880       "	8
+"Supplier#000003010       "	8
+"Supplier#000003194       "	8
+"Supplier#000003601       "	8
+"Supplier#000003787       "	8
+"Supplier#000004301       "	8
+"Supplier#000004457       "	8
+"Supplier#000004756       "	8
+"Supplier#000004881       "	8
+"Supplier#000000003       "	7
+"Supplier#000000230       "	7
+"Supplier#000000518       "	7
+"Supplier#000000539       "	7
+"Supplier#000001533       "	7
+"Supplier#000001734       "	7
+"Supplier#000001854       "	7
+"Supplier#000001884       "	7
+"Supplier#000001936       "	7
+"Supplier#000002463       "	7
+"Supplier#000002803       "	7
+"Supplier#000003510       "	7
+"Supplier#000003535       "	7
+"Supplier#000003570       "	7
+"Supplier#000003661       "	7
+"Supplier#000003816       "	7
+"Supplier#000004214       "	7
+"Supplier#000004282       "	7
+"Supplier#000004762       "	7
+"Supplier#000004863       "	7
+"Supplier#000000725       "	6
+"Supplier#000000801       "	6
+"Supplier#000001213       "	6
+"Supplier#000001743       "	6
+"Supplier#000002058       "	6
+"Supplier#000002128       "	6
+"Supplier#000002332       "	6
+"Supplier#000002633       "	6
+"Supplier#000002762       "	6
+"Supplier#000002899       "	6
+"Supplier#000003119       "	6
+"Supplier#000003790       "	6
+"Supplier#000003841       "	6
+"Supplier#000004466       "	6
+"Supplier#000004646       "	6
+"Supplier#000001660       "	5
+"Supplier#000001918       "	5
+"Supplier#000004407       "	5
+"Supplier#000004773       "	5
+"Supplier#000004834       "	5
+"Supplier#000000184       "	4
+"Supplier#000000363       "	4
+"Supplier#000001124       "	4
+"Supplier#000002493       "	4
+"Supplier#000003554       "	4
+"Supplier#000003804       "	4
+"Supplier#000004584       "	4
+"Supplier#000000203       "	3
+"Supplier#000001509       "	3
+"Supplier#000002316       "	3
+"Supplier#000002491       "	3
+
+Fix the seed query."""
+
+Q21_feedback1 = """
+You produced the following query:
+SELECT s_name, COUNT(*) AS numfailures
+FROM supplier, nation, web_lineitem, orders
+WHERE s_suppkey = wl_suppkey
+  AND o_orderkey = wl_orderkey
+  AND s_nationkey = n_nationkey
+  AND n_name = 'ARGENTINA'
+  AND o_orderstatus = 'F'
+  AND wl_receiptdate > wl_commitdate
+  AND NOT EXISTS (
+    SELECT 1
+    FROM web_lineitem l2
+    WHERE l2.wl_orderkey = wl_orderkey
+      AND l2.wl_suppkey <> wl_suppkey
+      AND l2.wl_receiptdate > l2.wl_commitdate
+  )
+GROUP BY s_name
+ORDER BY numfailures DESC, s_name;
+
+
+It gives the following output:
+
+"Supplier#000000521       "	217
+"Supplier#000004605       "	217
+"Supplier#000004004       "	210
+"Supplier#000004252       "	210
+"Supplier#000004466       "	210
+"Supplier#000000985       "	209
+"Supplier#000004762       "	209
+"Supplier#000001402       "	206
+"Supplier#000001743       "	206
+"Supplier#000001136       "	205
+"Supplier#000004756       "	204
+"Supplier#000001810       "	203
+"Supplier#000001811       "	203
+"Supplier#000002745       "	203
+"Supplier#000003661       "	201
+"Supplier#000002429       "	200
+"Supplier#000002547       "	200
+"Supplier#000002843       "	200
+"Supplier#000002320       "	199
+"Supplier#000003559       "	199
+"Supplier#000004309       "	199
+"Supplier#000000336       "	198
+"Supplier#000000518       "	198
+"Supplier#000001918       "	198
+"Supplier#000003426       "	198
+"Supplier#000000624       "	197
+"Supplier#000002803       "	197
+"Supplier#000004581       "	197
+"Supplier#000000127       "	196
+"Supplier#000000873       "	196
+"Supplier#000002734       "	196
+"Supplier#000003512       "	196
+"Supplier#000000721       "	195
+"Supplier#000000849       "	195
+"Supplier#000002316       "	195
+"Supplier#000003816       "	195
+"Supplier#000004301       "	195
+"Supplier#000004909       "	195
+"Supplier#000000003       "	194
+"Supplier#000002143       "	194
+"Supplier#000003804       "	194
+"Supplier#000004550       "	194
+"Supplier#000002111       "	192
+"Supplier#000002612       "	192
+"Supplier#000002883       "	192
+"Supplier#000003065       "	192
+"Supplier#000003601       "	192
+"Supplier#000004640       "	192
+"Supplier#000001884       "	191
+"Supplier#000002502       "	191
+"Supplier#000000363       "	190
+"Supplier#000000792       "	190
+"Supplier#000000950       "	190
+"Supplier#000001573       "	190
+"Supplier#000003209       "	190
+"Supplier#000003311       "	190
+"Supplier#000003404       "	190
+"Supplier#000003841       "	190
+"Supplier#000004385       "	190
+"Supplier#000000029       "	189
+"Supplier#000000297       "	189
+"Supplier#000001270       "	189
+"Supplier#000003510       "	189
+"Supplier#000004210       "	189
+"Supplier#000004627       "	189
+"Supplier#000001647       "	188
+"Supplier#000001734       "	188
+"Supplier#000001902       "	188
+"Supplier#000002519       "	188
+"Supplier#000002733       "	188
+"Supplier#000003006       "	188
+"Supplier#000003636       "	188
+"Supplier#000001084       "	187
+"Supplier#000002686       "	187
+"Supplier#000003791       "	187
+"Supplier#000001110       "	186
+"Supplier#000001124       "	186
+"Supplier#000002017       "	186
+"Supplier#000002122       "	186
+"Supplier#000002291       "	186
+"Supplier#000003321       "	186
+"Supplier#000003743       "	186
+"Supplier#000003010       "	185
+"Supplier#000003174       "	185
+"Supplier#000003581       "	185
+"Supplier#000003790       "	185
+"Supplier#000003813       "	185
+"Supplier#000004227       "	185
+"Supplier#000000230       "	184
+"Supplier#000000485       "	184
+"Supplier#000002928       "	184
+"Supplier#000004050       "	184
+"Supplier#000000186       "	183
+"Supplier#000001280       "	183
+"Supplier#000001360       "	183
+"Supplier#000003554       "	183
+"Supplier#000004080       "	183
+"Supplier#000004277       "	183
+"Supplier#000004881       "	183
+"Supplier#000000748       "	182
+"Supplier#000001957       "	182
+"Supplier#000002128       "	182
+"Supplier#000003916       "	182
+"Supplier#000002052       "	181
+"Supplier#000002058       "	181
+"Supplier#000002515       "	181
+"Supplier#000003495       "	181
+"Supplier#000003570       "	181
+"Supplier#000004053       "	181
+"Supplier#000000184       "	180
+"Supplier#000001965       "	180
+"Supplier#000002332       "	180
+"Supplier#000002899       "	180
+"Supplier#000003194       "	180
+"Supplier#000002463       "	179
+"Supplier#000003859       "	179
+"Supplier#000004584       "	179
+"Supplier#000004745       "	179
+"Supplier#000004773       "	179
+"Supplier#000001224       "	178
+"Supplier#000001509       "	178
+"Supplier#000001771       "	178
+"Supplier#000002107       "	178
+"Supplier#000002977       "	178
+"Supplier#000004798       "	178
+"Supplier#000004803       "	178
+"Supplier#000000678       "	177
+"Supplier#000001854       "	177
+"Supplier#000002821       "	177
+"Supplier#000002982       "	177
+"Supplier#000002250       "	176
+"Supplier#000000886       "	175
+"Supplier#000001076       "	175
+"Supplier#000001213       "	175
+"Supplier#000002493       "	175
+"Supplier#000002057       "	174
+"Supplier#000002174       "	174
+"Supplier#000002808       "	174
+"Supplier#000003453       "	174
+"Supplier#000004593       "	174
+"Supplier#000004646       "	174
+"Supplier#000004777       "	174
+"Supplier#000004841       "	174
+"Supplier#000000244       "	173
+"Supplier#000000725       "	173
+"Supplier#000002886       "	173
+"Supplier#000003005       "	173
+"Supplier#000003351       "	173
+"Supplier#000003483       "	173
+"Supplier#000003789       "	173
+"Supplier#000004350       "	173
+"Supplier#000004359       "	173
+"Supplier#000004503       "	173
+"Supplier#000000714       "	172
+"Supplier#000001544       "	172
+"Supplier#000004407       "	172
+"Supplier#000000071       "	171
+"Supplier#000000852       "	171
+"Supplier#000001186       "	171
+"Supplier#000001936       "	171
+"Supplier#000004248       "	171
+"Supplier#000004457       "	171
+"Supplier#000004573       "	171
+"Supplier#000004892       "	171
+"Supplier#000000868       "	170
+"Supplier#000002633       "	170
+"Supplier#000002957       "	170
+"Supplier#000003210       "	170
+"Supplier#000000801       "	169
+"Supplier#000001020       "	169
+"Supplier#000001533       "	169
+"Supplier#000004282       "	169
+"Supplier#000002199       "	168
+"Supplier#000002491       "	168
+"Supplier#000003535       "	168
+"Supplier#000004189       "	168
+"Supplier#000004434       "	168
+"Supplier#000002762       "	167
+"Supplier#000004344       "	166
+"Supplier#000004863       "	165
+"Supplier#000000544       "	163
+"Supplier#000001660       "	163
+"Supplier#000004834       "	163
+"Supplier#000000836       "	162
+"Supplier#000001823       "	162
+"Supplier#000003119       "	162
+"Supplier#000002880       "	161
+"Supplier#000000730       "	160
+"Supplier#000000945       "	160
+"Supplier#000003787       "	160
+"Supplier#000004198       "	160
+"Supplier#000000203       "	159
+"Supplier#000000430       "	158
+"Supplier#000000989       "	158
+"Supplier#000002359       "	158
+"Supplier#000000539       "	157
+"Supplier#000004214       "	157
+"Supplier#000001596       "	152
+"Supplier#000001991       "	148
+"Supplier#000004213       "	141
+"Supplier#000000567       "	139
+
+Result is not matching. 
+Validate all the predicates against the text again and fix the query.
+Consider 'multi-supplier' order with emphasis.
+Use alias for each instance of web_lineitem table.
+The second projection values are more than expected."""
+
+Q21_feedback2 = """
+Use alias for each instance of web_lineitem table.
+Do not reproduce the same incorrect query that you produced before.
+Last query produced by you was:
+SELECT s_name, COUNT(*) AS numfailures
+FROM supplier, nation, web_lineitem wl1, orders
+WHERE s_suppkey = wl1.wl_suppkey
+  AND o_orderkey = wl1.wl_orderkey
+  AND s_nationkey = n_nationkey
+  AND n_name = 'ARGENTINA'
+  AND o_orderstatus = 'F'
+  AND wl1.wl_receiptdate > wl1.wl_commitdate
+  AND NOT EXISTS (
+    SELECT 1
+    FROM web_lineitem wl2
+    WHERE wl2.wl_orderkey = wl1.wl_orderkey
+      AND wl2.wl_suppkey <> wl1.wl_suppkey
+      AND wl2.wl_receiptdate <= wl2.wl_commitdate
+  )
+GROUP BY s_name
+ORDER BY numfailures DESC, s_name;
+
+
+Result is still not matching. 
+The second projection values are more than expected.
+numwait values are more. See below, which is the current result.
+
+"Supplier#000002686       "	57
+"Supplier#000001810       "	56
+"Supplier#000004301       "	56
+"Supplier#000000003       "	55
+"Supplier#000004762       "	55
+"Supplier#000000985       "	53
+"Supplier#000004466       "	53
+"Supplier#000000297       "	52
+"Supplier#000001076       "	52
+"Supplier#000001224       "	52
+"Supplier#000002320       "	52
+"Supplier#000002612       "	52
+"Supplier#000000521       "	51
+"Supplier#000000873       "	51
+"Supplier#000001124       "	51
+"Supplier#000001811       "	51
+"Supplier#000001854       "	51
+"Supplier#000002429       "	51
+"Supplier#000003791       "	51
+"Supplier#000004210       "	51
+"Supplier#000001136       "	50
+"Supplier#000001270       "	50
+"Supplier#000001509       "	50
+"Supplier#000001884       "	50
+"Supplier#000002547       "	50
+"Supplier#000004227       "	50
+"Supplier#000003426       "	49
+"Supplier#000003661       "	49
+"Supplier#000004004       "	49
+"Supplier#000004773       "	49
+"Supplier#000000801       "	48
+"Supplier#000001020       "	48
+"Supplier#000001360       "	48
+"Supplier#000001647       "	48
+"Supplier#000002491       "	48
+"Supplier#000004627       "	48
+"Supplier#000000945       "	47
+"Supplier#000001902       "	47
+"Supplier#000002057       "	47
+"Supplier#000002982       "	47
+"Supplier#000003010       "	47
+"Supplier#000004550       "	47
+"Supplier#000004646       "	47
+"Supplier#000001402       "	46
+"Supplier#000002803       "	46
+"Supplier#000002843       "	46
+"Supplier#000003119       "	46
+"Supplier#000003601       "	46
+"Supplier#000003841       "	46
+"Supplier#000003859       "	46
+"Supplier#000004605       "	46
+"Supplier#000004756       "	46
+"Supplier#000000230       "	45
+"Supplier#000000485       "	45
+"Supplier#000001533       "	45
+"Supplier#000001743       "	45
+"Supplier#000001918       "	45
+"Supplier#000002128       "	45
+"Supplier#000002515       "	45
+"Supplier#000003535       "	45
+"Supplier#000003559       "	45
+"Supplier#000003570       "	45
+"Supplier#000004050       "	45
+"Supplier#000004248       "	45
+"Supplier#000004863       "	45
+"Supplier#000000336       "	44
+"Supplier#000000886       "	44
+"Supplier#000001186       "	44
+"Supplier#000003065       "	44
+"Supplier#000003510       "	44
+"Supplier#000003581       "	44
+"Supplier#000004841       "	44
+"Supplier#000000186       "	43
+"Supplier#000001084       "	43
+"Supplier#000002502       "	43
+"Supplier#000002745       "	43
+"Supplier#000002808       "	43
+"Supplier#000003483       "	43
+"Supplier#000004252       "	43
+"Supplier#000004309       "	43
+"Supplier#000004385       "	43
+"Supplier#000004573       "	43
+"Supplier#000004909       "	43
+"Supplier#000000518       "	42
+"Supplier#000000714       "	42
+"Supplier#000000730       "	42
+"Supplier#000000792       "	42
+"Supplier#000001660       "	42
+"Supplier#000001957       "	42
+"Supplier#000002017       "	42
+"Supplier#000002122       "	42
+"Supplier#000002519       "	42
+"Supplier#000002880       "	42
+"Supplier#000002899       "	42
+"Supplier#000003209       "	42
+"Supplier#000003404       "	42
+"Supplier#000003453       "	42
+"Supplier#000003512       "	42
+"Supplier#000003554       "	42
+"Supplier#000003804       "	42
+"Supplier#000004407       "	42
+"Supplier#000004457       "	42
+"Supplier#000004581       "	42
+"Supplier#000004777       "	42
+"Supplier#000004803       "	42
+"Supplier#000001734       "	41
+"Supplier#000002199       "	41
+"Supplier#000002332       "	41
+"Supplier#000002733       "	41
+"Supplier#000002977       "	41
+"Supplier#000003005       "	41
+"Supplier#000003636       "	41
+"Supplier#000003816       "	41
+"Supplier#000004640       "	41
+"Supplier#000000849       "	40
+"Supplier#000000852       "	40
+"Supplier#000002058       "	40
+"Supplier#000002143       "	40
+"Supplier#000002316       "	40
+"Supplier#000002633       "	40
+"Supplier#000003006       "	40
+"Supplier#000003194       "	40
+"Supplier#000003495       "	40
+"Supplier#000004053       "	40
+"Supplier#000004434       "	40
+"Supplier#000000244       "	39
+"Supplier#000000748       "	39
+"Supplier#000001280       "	39
+"Supplier#000001573       "	39
+"Supplier#000001936       "	39
+"Supplier#000002250       "	39
+"Supplier#000002734       "	39
+"Supplier#000002957       "	39
+"Supplier#000003351       "	39
+"Supplier#000003787       "	39
+"Supplier#000003916       "	39
+"Supplier#000004359       "	39
+"Supplier#000004881       "	39
+"Supplier#000000721       "	38
+"Supplier#000000868       "	38
+"Supplier#000000950       "	38
+"Supplier#000003174       "	38
+"Supplier#000004213       "	38
+"Supplier#000004344       "	38
+"Supplier#000004798       "	38
+"Supplier#000000127       "	37
+"Supplier#000000544       "	37
+"Supplier#000000678       "	37
+"Supplier#000000836       "	37
+"Supplier#000001965       "	37
+"Supplier#000002107       "	37
+"Supplier#000002463       "	37
+"Supplier#000002493       "	37
+"Supplier#000002821       "	37
+"Supplier#000003210       "	37
+"Supplier#000003311       "	37
+"Supplier#000004282       "	37
+"Supplier#000004584       "	37
+"Supplier#000000029       "	36
+"Supplier#000000363       "	36
+"Supplier#000002111       "	36
+"Supplier#000003321       "	36
+"Supplier#000003789       "	36
+"Supplier#000003790       "	36
+"Supplier#000004080       "	36
+"Supplier#000004593       "	36
+"Supplier#000004892       "	36
+"Supplier#000000430       "	35
+"Supplier#000000539       "	35
+"Supplier#000000624       "	35
+"Supplier#000002052       "	35
+"Supplier#000002291       "	35
+"Supplier#000002762       "	35
+"Supplier#000004350       "	35
+"Supplier#000004503       "	35
+"Supplier#000000071       "	34
+"Supplier#000000725       "	34
+"Supplier#000001544       "	34
+"Supplier#000003743       "	34
+"Supplier#000004745       "	34
+"Supplier#000000184       "	33
+"Supplier#000001213       "	33
+"Supplier#000001596       "	33
+"Supplier#000002883       "	33
+"Supplier#000003813       "	33
+"Supplier#000004277       "	33
+"Supplier#000000203       "	32
+"Supplier#000001110       "	32
+"Supplier#000002174       "	32
+"Supplier#000002886       "	32
+"Supplier#000004189       "	32
+"Supplier#000001823       "	31
+"Supplier#000002928       "	31
+"Supplier#000002359       "	30
+"Supplier#000004198       "	30
+"Supplier#000004834       "	30
+"Supplier#000004214       "	29
+"Supplier#000000989       "	28
+"Supplier#000001771       "	27
+"Supplier#000000567       "	26
+"Supplier#000001991       "	26
+Check again whether all the text requirements are captured in the query.
+"""
+

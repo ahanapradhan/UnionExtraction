@@ -11,7 +11,8 @@ from mysite.gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guideli
     seed_query_question, Q1_seed_output, Q1_actual_output, Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, Q4_text, \
     Q4_seed_output, Q4_actual_output, Q4_seed, Q4_feedback1, Q3_feedback1, Q5_text, Q5_seed, Q5_seed_output, \
     Q5_actual_output, Q6_text, Q6_seed_output, Q6_actual_output, Q6_seed, Q14_text, Q14_seed, Q14_seed_output, \
-    Q14_actual_output, Q14_feedback1, refinement_show, Q7_text, Q7_seed, Q7_seed_output, Q7_actual_output, Q7_feedback1
+    Q14_actual_output, Q14_feedback1, refinement_show, Q7_text, Q7_seed, Q7_seed_output, Q7_actual_output, Q7_feedback1, \
+    Q21_text, Q21_seed, Q21_seed_output, Q21_actual_output, Q21_feedback1, Q21_feedback2
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -113,45 +114,79 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q5": [Q5_text, Q5_seed, Q5_seed_output, Q5_actual_output],
                   "Q6": [Q6_text, Q6_seed, Q6_seed_output, Q6_actual_output],
                   "Q7": [Q7_text, Q7_seed, Q7_seed_output, Q7_actual_output, [Q7_feedback1]],
+                  "Q8": [],
+                  "Q9": [],
+                  "Q10": [],
+                  "Q11": [],
+                  "Q12": [],
                   "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output,
                           etpch_schema_Q13, [Q13_feedback1, Q13_feedback2, Q13_feedback4_sample_data]],
                   "Q14": [Q14_text, Q14_seed, Q14_seed_output, Q14_actual_output, [Q14_feedback1]],
+                  "Q21": [Q21_text, Q21_seed, Q21_seed_output, Q21_actual_output, [Q21_feedback1]],
                   }
 
 
 def get_feedback_prompts(key):
-    last = benchmark_dict[key][-1]
-    if isinstance(last, list):
-        return benchmark_dict[key][-1]
+    try:
+        last = benchmark_dict[key][-1]
+        if isinstance(last, list):
+            return benchmark_dict[key][-1]
+    except IndexError:
+        pass
     return ""
 
 
 def get_synonymous_schema(key):
-    if len(benchmark_dict[key]) > 4:
+    try:
         return benchmark_dict[key][4]
-    return ""
+    except IndexError:
+        return ""
 
 
 def get_text(key):
-    return benchmark_dict[key][0]
+    try:
+        return benchmark_dict[key][0]
+    except IndexError:
+        return ""
 
 
 def get_seed(key):
-    if len(benchmark_dict[key]) < 2:
+    try:
         return ""
-    return benchmark_dict[key][1]
+    except IndexError:
+        return benchmark_dict[key][1]
 
 
 def get_seed_output(key):
-    if len(benchmark_dict[key]) < 3:
+    try:
         return ""
-    return benchmark_dict[key][2]
+    except IndexError:
+        return benchmark_dict[key][2]
 
 
 def get_actual_output(key):
-    if len(benchmark_dict[key]) < 4:
+    try:
+        return benchmark_dict[key][3]
+    except IndexError:
         return ""
-    return benchmark_dict[key][3]
+
+
+def do_feedback_refinement(no_show=False):
+    global prompt
+    needed_feedback = len(get_feedback_prompts(query_key))
+    if needed_feedback:
+        feedbacks = get_feedback_prompts(query_key)
+        for i, feedback in enumerate(feedbacks):
+            print(f"Trying out feedback {i + 1}")
+            if not no_show:
+                prompt = f"{prompt}\n" \
+                         f"{refinement_show}\n{output1}" \
+                         f"\n{feedback}"
+            else:
+                prompt = f"{prompt}\n" \
+                         f"\n{feedback}"
+            output2 = refiner.doJob_write(prompt, query_key)
+            print(output2)
 
 
 if __name__ == '__main__':
@@ -163,26 +198,22 @@ if __name__ == '__main__':
         exit()
     model_name = sys.argv[1]
     query_key = sys.argv[2]
-    refiner = create_query_refiner(model_name)
-    schema = get_synonymous_schema(query_key)
-    if not len(schema):
-        schema = etpch_schema
-    prompt = f"{text_2_sql_question}\n{get_text(query_key)}\n" \
-             f"{seed_query_question}\n{get_seed(query_key)}" \
-             f"\n{get_seed_output(query_key)}\n{get_actual_output(query_key)}" \
-             f"\n{schema}\n{general_guidelines}"
-    if not len(prompt.strip()):
+    if not len(get_text(query_key)):
         print("No input prompt!")
         exit()
+
+    refiner = create_query_refiner(model_name)
+    schema = get_synonymous_schema(query_key)
+
+    if not len(schema):
+        schema = etpch_schema
+    unique_prompt = f"{get_text(query_key)}\n" \
+                    f"{seed_query_question}\n{get_seed(query_key)}" \
+                    f"\n{get_seed_output(query_key)}\n{get_actual_output(query_key)}"
+    # print(unique_prompt)
+    prompt = f"{text_2_sql_question}\n{unique_prompt}" \
+             f"\n{schema}\n{general_guidelines}"
+
     output1 = refiner.doJob_write(prompt, query_key)
     print(output1)
-    needed_feedback = len(get_feedback_prompts(query_key))
-    if needed_feedback:
-        feedbacks = get_feedback_prompts(query_key)
-        for i, feedback in enumerate(feedbacks):
-            print(f"Trying out feedback {i + 1}")
-            prompt = f"{prompt}\n" \
-                     f"{refinement_show}\n{output1}" \
-                     f"\n{feedback}"
-            output2 = refiner.doJob_write(prompt, query_key)
-            print(output2)
+    do_feedback_refinement(no_show=True)
