@@ -2106,60 +2106,12 @@ GROUP  BY c_address;
 
 Do not change the duplicated instances of tables from the seed query.
 Use all the join and filter predicates from the seed query.
-Strictly formulate your SQL from the seed query."""
+"""
 Q24_actual_output = """The expected output is as follows:
 "PLmwP"
 """
 Q24_seed_output = """
 The above seed query gives the following output:
-Ss5mZQDrMpA Wg4HNZbVUPLmwP.
+"Ss5mZQDrMpA Wg4HNZbVUPLmwP".
 
 Fix the query."""
-Q24_feedback1 = """
-You formulated the following query:
-SELECT DISTINCT SUBSTRING(c.c_address FROM LENGTH(c.c_address) - 4 FOR 5) AS city
-FROM customer c
-JOIN orders o ON c.c_custkey = o.o_custkey
-JOIN store_lineitem sl ON o.o_orderkey = sl.sl_orderkey
-JOIN web_lineitem wl ON o.o_orderkey = wl.wl_orderkey
-WHERE sl.sl_partkey = wl.wl_partkey
-
-It gives the following output:
-"  0qQ"
-"  5,R"
-"  8Bb"
-"  9BE"
-"  9Xb"
-"  A,8"
-"  AnV"
-"  BmI"
-"  D0R"
-"  FAp"
-
-Strictly use the seed query. Fix the query."""
-Q24_feedback2 = """Strictly use the following clauses in the query:
-FROM   customer,
-       orders o1,
-       orders o2,
-       store_lineitem,
-       web_lineitem w,
-       part,
-       web_lineitem w1,
-       partsupp ps1,
-       partsupp ps2
-WHERE  c_custkey = o1.o_custkey
-       AND c_custkey = o2.o_custkey
-       AND o1.o_orderkey = sl_orderkey
-       AND sl_returnflag = 'A'
-       AND o2.o_orderkey = w.wl_orderkey
-       AND w.wl_returnflag = 'N'
-       AND w.wl_partkey = sl_partkey
-       AND sl_partkey = p_partkey
-       AND w1.wl_partkey = p_partkey
-       AND sl_receiptdate < w.wl_receiptdate
-       AND o1.o_orderdate < o2.o_orderdate
-       AND w.wl_suppkey = ps1.ps_suppkey
-       AND w1.wl_suppkey = ps2.ps_suppkey
-       AND ps2.ps_availqty >= ps1.ps_availqty
-       AND o1.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'
-       AND o2.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'"""
