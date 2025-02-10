@@ -509,40 +509,6 @@ Q6_seed_output = """The above seed query gives the following output:
 
 Fix the seed query SQL. """
 
-Q14_text = """The Query determines what percentage of the revenue in a given year and month was derived from
-promotional parts. The query considers only parts actually shipped in that month and gives the percentage. Revenue
-is defined as (extended price * (1-discount))."""
-Q14_seed = """(Select Sum(0) as promo_revenue 
- From part, store_lineitem 
- Where part.p_partkey = store_lineitem.sl_partkey
- and store_lineitem.sl_shipdate between '1995-01-01' and '1995-01-31')
- UNION ALL  
- (Select Sum(0) as promo_revenue 
- From part, web_lineitem 
- Where part.p_partkey = web_lineitem.wl_partkey
- and web_lineitem.wl_shipdate between '1995-01-01' and '1995-01-31');  """
-Q14_seed_output = """Output of the above seed query is as follows:
-0
-0"""
-Q14_actual_output = """
-But the actual output should be:
-16.9227056452702565
-
-The actual query gives a single aggregated value.
-Fix the seed sql query.
-"""
-Q14_feedback1 = """
-The query produced by you gives output as follows:
-
-16.92270564527025649000
-16.92270564527025649000
-
-Fix the query.
-Use all the filter predicates of the seed query. Do not use any other filter.
-The actual query gives a single aggregated value.
-So maybe, put the aggregation after the union.
-"""
-
 Q7_text = """The Query finds, for two given nations, the gross discounted revenues derived from line items in
 which parts were shipped from a supplier in either nation to a customer in the other nation during 1995 and 1996.
 The query lists the supplier nation, the customer nation, the year, and the revenue from shipments that took place in
@@ -1674,6 +1640,290 @@ Q10_actual_output = """But the actual output should be as follows:
 
 Fix the seed query.
 """
+
+Q11_text = """The Query finds, from scanning the available stock of suppliers in India, all
+the parts that represent 0.001% of the total value of all available parts. The query displays the part
+number and the value of those parts in descending order of value.
+"""
+Q11_seed = """SELECT ps_partkey, n_name, MIN(partsupp.ps_availqty), MIN(partsupp.ps_supplycost)
+       FROM nation, supplier, partsupp
+       WHERE supplier.s_nationkey = nation.n_nationkey 
+       AND supplier.s_suppkey = partsupp.ps_suppkey 
+       AND nation.n_name = 'INDIA'
+       GROUP BY partsupp.ps_partkey, nation.n_name
+       HAVING MIN(partsupp.ps_availqty) >= 1 AND MIN(partsupp.ps_supplycost) >= 0.01;"""
+Q11_seed_output = """The above seed query produces the following output (first 100 rows):
+ 11	"INDIA                    "	4540	709.87
+14	"INDIA                    "	5278	650.07
+16	"INDIA                    "	854	781.91
+24	"INDIA                    "	5318	62.15
+28	"INDIA                    "	302	690.30
+31	"INDIA                    "	1951	120.99
+38	"INDIA                    "	1226	570.11
+39	"INDIA                    "	6259	737.86
+50	"INDIA                    "	2104	107.17
+56	"INDIA                    "	1330	52.29
+57	"INDIA                    "	4583	137.68
+59	"INDIA                    "	8374	357.22
+60	"INDIA                    "	6642	800.72
+62	"INDIA                    "	5896	348.82
+64	"INDIA                    "	9110	602.65
+67	"INDIA                    "	7908	546.75
+68	"INDIA                    "	6762	5.16
+72	"INDIA                    "	2654	762.61
+78	"INDIA                    "	1801	434.34
+80	"INDIA                    "	4034	797.05
+88	"INDIA                    "	9979	81.82
+92	"INDIA                    "	3199	91.63
+99	"INDIA                    "	7567	496.93
+101	"INDIA                    "	5589	305.40
+113	"INDIA                    "	4692	141.48
+119	"INDIA                    "	4955	488.93
+123	"INDIA                    "	5638	107.03
+126	"INDIA                    "	5458	929.43
+135	"INDIA                    "	6940	465.82
+138	"INDIA                    "	2535	885.35
+139	"INDIA                    "	1042	972.23
+142	"INDIA                    "	3076	860.55
+143	"INDIA                    "	1952	199.37
+149	"INDIA                    "	7392	266.53
+161	"INDIA                    "	9679	688.47
+164	"INDIA                    "	3245	814.67
+173	"INDIA                    "	6162	877.84
+186	"INDIA                    "	7898	812.37
+194	"INDIA                    "	377	430.21
+207	"INDIA                    "	7316	557.72
+209	"INDIA                    "	1513	507.38
+210	"INDIA                    "	4516	259.05
+213	"INDIA                    "	9377	797.64
+225	"INDIA                    "	4421	116.17
+226	"INDIA                    "	966	931.43
+231	"INDIA                    "	5360	308.95
+234	"INDIA                    "	3807	438.37
+237	"INDIA                    "	7643	255.01
+239	"INDIA                    "	4889	168.50
+240	"INDIA                    "	6917	91.89
+242	"INDIA                    "	2514	208.39
+244	"INDIA                    "	5942	148.84
+246	"INDIA                    "	3607	194.36
+248	"INDIA                    "	8054	425.78
+266	"INDIA                    "	1533	379.56
+270	"INDIA                    "	5513	559.02
+281	"INDIA                    "	935	587.67
+285	"INDIA                    "	8086	835.59
+289	"INDIA                    "	4570	715.63
+294	"INDIA                    "	5459	642.44
+302	"INDIA                    "	6118	885.76
+307	"INDIA                    "	1809	354.10
+320	"INDIA                    "	7644	663.54
+324	"INDIA                    "	8571	575.93
+325	"INDIA                    "	511	457.53
+330	"INDIA                    "	9145	539.12
+345	"INDIA                    "	2457	786.54
+346	"INDIA                    "	6697	26.92
+347	"INDIA                    "	5863	8.56
+362	"INDIA                    "	6711	357.00
+381	"INDIA                    "	6258	10.65
+386	"INDIA                    "	5970	203.07
+388	"INDIA                    "	2913	582.22
+393	"INDIA                    "	1801	698.08
+420	"INDIA                    "	9500	738.91
+431	"INDIA                    "	5332	226.17
+434	"INDIA                    "	5295	583.57
+444	"INDIA                    "	3183	494.99
+445	"INDIA                    "	9549	641.72
+454	"INDIA                    "	6906	195.33
+456	"INDIA                    "	8189	50.22
+516	"INDIA                    "	6105	600.29
+517	"INDIA                    "	1205	263.56
+521	"INDIA                    "	7639	728.23
+539	"INDIA                    "	9489	22.09
+546	"INDIA                    "	4052	218.77
+548	"INDIA                    "	8170	721.14
+550	"INDIA                    "	4396	27.02
+553	"INDIA                    "	7642	433.01
+556	"INDIA                    "	3441	637.90
+562	"INDIA                    "	2106	269.54
+564	"INDIA                    "	3416	505.71
+565	"INDIA                    "	4922	359.95
+571	"INDIA                    "	5772	123.84
+586	"INDIA                    "	4787	104.34
+590	"INDIA                    "	1278	812.56
+595	"INDIA                    "	3290	170.95
+598	"INDIA                    "	30	696.54
+599	"INDIA                    "	272	19.55
+600	"INDIA                    "	5063	97.67
+"""
+Q11_actual_output = """But the actual query should produce the following output in the first 100 rows:
+
+18488	"INDIA                    "	19174541.94
+144829	"INDIA                    "	17135050.20
+190890	"INDIA                    "	16161446.30
+161073	"INDIA                    "	15922727.76
+164317	"INDIA                    "	15644069.74
+90101	"INDIA                    "	15625869.68
+83048	"INDIA                    "	15538328.11
+153736	"INDIA                    "	15508971.80
+4034	"INDIA                    "	15467341.92
+53934	"INDIA                    "	15049974.47
+31030	"INDIA                    "	14971930.41
+20546	"INDIA                    "	14894720.75
+90302	"INDIA                    "	14850545.24
+191496	"INDIA                    "	14633952.90
+94361	"INDIA                    "	14616285.20
+109262	"INDIA                    "	14565469.80
+64702	"INDIA                    "	14441808.47
+26444	"INDIA                    "	14433196.77
+192862	"INDIA                    "	14196434.62
+77553	"INDIA                    "	14153465.50
+71548	"INDIA                    "	14004323.26
+172714	"INDIA                    "	13968532.17
+191431	"INDIA                    "	13734318.33
+17739	"INDIA                    "	13690503.01
+21876	"INDIA                    "	13656979.44
+9034	"INDIA                    "	13511965.62
+150847	"INDIA                    "	13396116.52
+112638	"INDIA                    "	13348431.76
+77643	"INDIA                    "	13276206.09
+40131	"INDIA                    "	13234395.53
+174820	"INDIA                    "	13194373.09
+120234	"INDIA                    "	13174796.94
+445	"INDIA                    "	13067392.32
+176425	"INDIA                    "	13063923.31
+197395	"INDIA                    "	12981969.21
+92104	"INDIA                    "	12808623.15
+158086	"INDIA                    "	12770522.75
+168417	"INDIA                    "	12719649.46
+191798	"INDIA                    "	12700646.65
+195686	"INDIA                    "	12686302.73
+96534	"INDIA                    "	12681861.55
+159390	"INDIA                    "	12631786.34
+100058	"INDIA                    "	12537249.57
+34088	"INDIA                    "	12460615.04
+143095	"INDIA                    "	12389065.18
+67713	"INDIA                    "	12372536.00
+166370	"INDIA                    "	12263381.62
+15680	"INDIA                    "	12221638.69
+175636	"INDIA                    "	12178581.75
+114208	"INDIA                    "	12152882.10
+117539	"INDIA                    "	12080773.77
+172128	"INDIA                    "	12071351.80
+3046	"INDIA                    "	12069953.30
+16322	"INDIA                    "	12034579.48
+40890	"INDIA                    "	12008546.53
+143071	"INDIA                    "	12007955.49
+48913	"INDIA                    "	11997334.26
+118789	"INDIA                    "	11953448.23
+2348	"INDIA                    "	11918765.08
+177521	"INDIA                    "	11912783.25
+184812	"INDIA                    "	11907931.99
+199610	"INDIA                    "	11907718.24
+146876	"INDIA                    "	11852239.04
+186479	"INDIA                    "	11837118.26
+173216	"INDIA                    "	11822897.01
+15756	"INDIA                    "	11787465.70
+97529	"INDIA                    "	11779480.19
+41436	"INDIA                    "	11752500.65
+14742	"INDIA                    "	11728370.94
+174980	"INDIA                    "	11724460.40
+99436	"INDIA                    "	11716653.62
+128098	"INDIA                    "	11687444.32
+13248	"INDIA                    "	11685383.76
+47730	"INDIA                    "	11641450.73
+177497	"INDIA                    "	11635582.42
+103162	"INDIA                    "	11616976.71
+99664	"INDIA                    "	11599517.20
+186425	"INDIA                    "	11583901.30
+175965	"INDIA                    "	11533005.95
+179769	"INDIA                    "	11527910.32
+142135	"INDIA                    "	11511373.75
+81463	"INDIA                    "	11383887.29
+181529	"INDIA                    "	11379335.37
+88528	"INDIA                    "	11379051.56
+22576	"INDIA                    "	11338105.60
+105040	"INDIA                    "	11320447.16
+146408	"INDIA                    "	11289037.13
+93409	"INDIA                    "	11226166.09
+35924	"INDIA                    "	11226074.00
+95689	"INDIA                    "	11221234.80
+170420	"INDIA                    "	11219830.84
+79834	"INDIA                    "	11167488.22
+65840	"INDIA                    "	11162658.60
+198886	"INDIA                    "	11161349.20
+141693	"INDIA                    "	11139793.20
+13194	"INDIA                    "	11106633.26
+181413	"INDIA                    "	11088579.67
+75744	"INDIA                    "	11070084.72
+98943	"INDIA                    "	11039316.76
+109035	"INDIA                    "	11027669.66
+
+Fix the seed query."""
+Q11_feedback1 = """You produced the following query.
+It does not produce any row in the result.
+Fix the query.
+Verify whether all the predicates implied in the text are present in the query.
+Consider having filter and join predicates inside the inner query as well."""
+
+Q12_text = """"""
+Q12_seed = """"""
+Q12_seed_output = """The above seed query produces the following output: """
+Q12_actual_output = """But the actual query should produce the following output:
+
+Fix the seed query."""
+
+Q13_text = """"""
+Q13_seed = """"""
+Q13_seed_output = """The above seed query produces the following output: """
+Q13_actual_output = """But the actual query should produce the following output:
+
+Fix the seed query."""
+
+Q14_text = """The Query determines what percentage of the revenue in a given year and month was derived from
+promotional parts. The query considers only parts actually shipped in that month and gives the percentage. Revenue
+is defined as (extended price * (1-discount))."""
+Q14_seed = """(Select Sum(0) as promo_revenue 
+ From part, store_lineitem 
+ Where part.p_partkey = store_lineitem.sl_partkey
+ and store_lineitem.sl_shipdate between '1995-01-01' and '1995-01-31')
+ UNION ALL  
+ (Select Sum(0) as promo_revenue 
+ From part, web_lineitem 
+ Where part.p_partkey = web_lineitem.wl_partkey
+ and web_lineitem.wl_shipdate between '1995-01-01' and '1995-01-31');  """
+Q14_seed_output = """Output of the above seed query is as follows:
+0
+0"""
+Q14_actual_output = """
+But the actual output should be:
+16.9227056452702565
+
+The actual query gives a single aggregated value.
+Fix the seed sql query.
+"""
+Q14_feedback1 = """
+The query produced by you gives output as follows:
+
+16.92270564527025649000
+16.92270564527025649000
+
+Fix the query.
+Use all the filter predicates of the seed query. Do not use any other filter.
+The actual query gives a single aggregated value.
+So maybe, put the aggregation after the union.
+"""
+Q15_text = """"""
+Q15_seed = """"""
+Q15_seed_output = """The above seed query produces the following output: """
+Q15_actual_output = """But the actual query should produce the following output:
+
+Fix the seed query."""
+
+Q16_text = """"""
+Q16_seed = """"""
+Q16_seed_output = """The above seed query produces the following output: """
+Q16_actual_output = """But the actual query should produce the following output:
+
+Fix the seed query."""
 
 Q18_text = """The Query finds a list of the top 100 customers who have ever placed more than 300 orders online.
 The query lists the customer name, customer key, the order key, 
