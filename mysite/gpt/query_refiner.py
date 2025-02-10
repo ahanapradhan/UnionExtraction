@@ -15,7 +15,7 @@ from mysite.gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guideli
     Q21_text, Q21_seed, Q21_seed_output, Q21_actual_output, Q21_feedback1, Q8_text, Q8_seed, \
     Q8_seed_output, Q8_actual_output, Q8_feedback1, Q23_text, Q23_seed, Q24_text, Q24_seed, Q24_seed_output, \
     Q24_actual_output, Q18_text, Q18_seed, Q18_seed_output, Q18_actual_output, \
-    Q18_feedback1
+    Q18_feedback1, Q9_actual_output, Q9_seed_output, Q9_seed, Q9_text
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -118,7 +118,7 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q6": [Q6_text, Q6_seed, Q6_seed_output, Q6_actual_output],
                   "Q7": [Q7_text, Q7_seed, Q7_seed_output, Q7_actual_output, [Q7_feedback1]],
                   "Q8": [Q8_text, Q8_seed, Q8_seed_output, Q8_actual_output, [Q8_feedback1]],
-                  "Q9": [],
+                  "Q9": [Q9_text, Q9_seed, Q9_seed_output, Q9_actual_output],
                   "Q10": [],
                   "Q11": [],
                   "Q12": [],

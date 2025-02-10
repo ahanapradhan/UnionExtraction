@@ -1269,12 +1269,318 @@ Do not use NULLIF.
 Use nation table twice.
 Fix the query."""
 
-Q9_text = """"""
-Q9_seed = """"""
-Q9_seed_output = """Output of the above seed query is as follows:"""
-Q9_actual_output = """But the actual output should be as follows:
+Q9_text = """The Query finds, for each nation and each year, the profit for all parts ordered in that
+year that contain a specified substring in their names and that were filled by a supplier in that nation. 
+The profit is defined as the sum of [(extended price*(1-discount)) - (supply cost * quantity)] for all 
+line items describing parts in the specified line. 
+The query lists the nations in ascending alphabetical order and, for each nation, the year
+and profit in descending order by year (most recent first)."""
+Q9_seed = """(Select n_name as nation, o_orderdate as o_year, Sum(-ps_supplycost*wl_quantity + wl_extendedprice*(1 - wl_discount)) as sum_profit 
+ From nation, orders, part, partsupp, supplier, web_lineitem 
+ Where orders.o_orderkey = web_lineitem.wl_orderkey
+ and part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_partkey = web_lineitem.wl_partkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and supplier.s_suppkey = web_lineitem.wl_suppkey
+ and nation.n_nationkey = supplier.s_nationkey
+ and part.p_name LIKE 'co%' 
+ Group By n_name , o_orderdate
+ Order By nation asc)
+ UNION ALL  
+ (Select n_name as nation, o_orderdate as o_year, Sum(-ps_supplycost*sl_quantity + sl_extendedprice*(1 - sl_discount)) as sum_profit 
+ From nation, orders, part, partsupp, store_lineitem, supplier 
+ Where orders.o_orderkey = store_lineitem.sl_orderkey
+ and part.p_partkey = partsupp.ps_partkey
+ and partsupp.ps_partkey = store_lineitem.sl_partkey
+ and partsupp.ps_suppkey = store_lineitem.sl_suppkey
+ and store_lineitem.sl_suppkey = supplier.s_suppkey
+ and nation.n_nationkey = supplier.s_nationkey
+ and part.p_name LIKE 'co%' 
+ Group By n_name , o_orderdate
+ Order By nation asc); """
+Q9_seed_output = """Output of the above seed query (first 100 rows) is as follows:
+"ALGERIA                  "	"1992-01-02"	52217.6040
+"ALGERIA                  "	"1992-01-07"	22592.1112
+"ALGERIA                  "	"1992-01-08"	38173.3618
+"ALGERIA                  "	"1992-01-19"	30579.0240
+"ALGERIA                  "	"1992-01-22"	41978.8080
+"ALGERIA                  "	"1992-01-25"	48992.7768
+"ALGERIA                  "	"1992-01-26"	18665.3740
+"ALGERIA                  "	"1992-01-27"	834.4632
+"ALGERIA                  "	"1992-02-06"	10565.9337
+"ALGERIA                  "	"1992-02-11"	4874.4000
+"ALGERIA                  "	"1992-02-13"	26284.7644
+"ALGERIA                  "	"1992-02-19"	14248.4034
+"ALGERIA                  "	"1992-02-21"	29988.4800
+"ALGERIA                  "	"1992-03-01"	48145.1750
+"ALGERIA                  "	"1992-03-03"	13978.4336
+"ALGERIA                  "	"1992-03-06"	8668.6400
+"ALGERIA                  "	"1992-03-09"	8350.8620
+"ALGERIA                  "	"1992-03-10"	12502.5960
+"ALGERIA                  "	"1992-03-12"	6302.1500
+"ALGERIA                  "	"1992-03-14"	4685.4588
+"ALGERIA                  "	"1992-03-19"	16700.5240
+"ALGERIA                  "	"1992-03-23"	-441.4288
+"ALGERIA                  "	"1992-03-28"	64381.8790
+"ALGERIA                  "	"1992-03-30"	14017.5240
+"ALGERIA                  "	"1992-04-15"	36841.8432
+"ALGERIA                  "	"1992-04-19"	47351.2352
+"ALGERIA                  "	"1992-04-21"	44387.6300
+"ALGERIA                  "	"1992-04-27"	21648.0998
+"ALGERIA                  "	"1992-04-29"	3025.9698
+"ALGERIA                  "	"1992-05-27"	13269.4299
+"ALGERIA                  "	"1992-05-29"	48655.3158
+"ALGERIA                  "	"1992-06-02"	119982.0985
+"ALGERIA                  "	"1992-06-09"	7877.7168
+"ALGERIA                  "	"1992-06-10"	22019.1760
+"ALGERIA                  "	"1992-06-12"	24748.9000
+"ALGERIA                  "	"1992-06-15"	29998.2336
+"ALGERIA                  "	"1992-06-20"	2269.7752
+"ALGERIA                  "	"1992-06-28"	4046.9526
+"ALGERIA                  "	"1992-07-03"	11010.5732
+"ALGERIA                  "	"1992-07-07"	14585.3568
+"ALGERIA                  "	"1992-07-14"	32983.8400
+"ALGERIA                  "	"1992-07-18"	10967.1450
+"ALGERIA                  "	"1992-07-20"	25666.8600
+"ALGERIA                  "	"1992-07-23"	43375.1608
+"ALGERIA                  "	"1992-07-24"	16613.1888
+"ALGERIA                  "	"1992-07-31"	4736.0800
+"ALGERIA                  "	"1992-08-11"	24581.9340
+"ALGERIA                  "	"1992-08-14"	47009.4000
+"ALGERIA                  "	"1992-08-15"	12385.4820
+"ALGERIA                  "	"1992-08-21"	37595.4800
+"ALGERIA                  "	"1992-08-26"	24733.2340
+"ALGERIA                  "	"1992-09-07"	8326.2696
+"ALGERIA                  "	"1992-09-15"	36298.7366
+"ALGERIA                  "	"1992-09-16"	11074.6680
+"ALGERIA                  "	"1992-09-18"	44222.2568
+"ALGERIA                  "	"1992-09-20"	56699.2893
+"ALGERIA                  "	"1992-09-26"	12278.7248
+"ALGERIA                  "	"1992-09-30"	25081.6203
+"ALGERIA                  "	"1992-10-11"	30034.7310
+"ALGERIA                  "	"1992-11-09"	11743.1580
+"ALGERIA                  "	"1992-11-14"	14300.3728
+"ALGERIA                  "	"1992-11-20"	10388.5980
+"ALGERIA                  "	"1992-11-25"	9485.3142
+"ALGERIA                  "	"1992-11-27"	12910.0200
+"ALGERIA                  "	"1992-11-28"	73329.7500
+"ALGERIA                  "	"1992-12-10"	32714.6400
+"ALGERIA                  "	"1992-12-11"	1398.2430
+"ALGERIA                  "	"1992-12-18"	26917.4688
+"ALGERIA                  "	"1992-12-22"	7301.4240
+"ALGERIA                  "	"1992-12-25"	63094.2840
+"ALGERIA                  "	"1992-12-29"	42892.1640
+"ALGERIA                  "	"1993-01-03"	26669.0048
+"ALGERIA                  "	"1993-01-09"	21027.8992
+"ALGERIA                  "	"1993-01-12"	16252.0480
+"ALGERIA                  "	"1993-01-15"	16773.8270
+"ALGERIA                  "	"1993-01-20"	18382.3560
+"ALGERIA                  "	"1993-02-03"	14048.3280
+"ALGERIA                  "	"1993-02-13"	51553.6808
+"ALGERIA                  "	"1993-02-14"	12271.6256
+"ALGERIA                  "	"1993-02-15"	14485.6116
+"ALGERIA                  "	"1993-02-23"	1628.6328
+"ALGERIA                  "	"1993-03-04"	39387.4532
+"ALGERIA                  "	"1993-03-08"	10688.3955
+"ALGERIA                  "	"1993-03-12"	41741.6800
+"ALGERIA                  "	"1993-03-13"	3950.3278
+"ALGERIA                  "	"1993-03-16"	34219.3840
+"ALGERIA                  "	"1993-03-20"	37016.3320
+"ALGERIA                  "	"1993-03-21"	41465.6669
+"ALGERIA                  "	"1993-03-22"	9527.0658
+"ALGERIA                  "	"1993-03-30"	23291.3700
+"ALGERIA                  "	"1993-04-10"	24430.5040
+"ALGERIA                  "	"1993-04-13"	31113.1296
+"ALGERIA                  "	"1993-04-19"	34942.5664
+"ALGERIA                  "	"1993-04-25"	36208.5504
+"ALGERIA                  "	"1993-05-03"	3672.0305
+"ALGERIA                  "	"1993-05-04"	10850.4800
+"ALGERIA                  "	"1993-05-12"	25401.1484
+"ALGERIA                  "	"1993-05-23"	47040.8400
+"ALGERIA                  "	"1993-05-26"	293.2347
+"ALGERIA                  "	"1993-05-30"	67197.4938"""
+Q9_actual_output = """But the actual output (total 175 rows) should be as follows:
+"ALGERIA                  "	1998	2104004.1284
+"ALGERIA                  "	1997	3187898.6232
+"ALGERIA                  "	1996	3348008.7712
+"ALGERIA                  "	1995	2553119.6322
+"ALGERIA                  "	1994	3931781.7352
+"ALGERIA                  "	1993	3021645.2510
+"ALGERIA                  "	1992	3600290.3246
+"ARGENTINA                "	1998	2311988.7706
+"ARGENTINA                "	1997	3940943.6760
+"ARGENTINA                "	1996	3064148.3502
+"ARGENTINA                "	1995	3255627.3616
+"ARGENTINA                "	1994	2588504.4388
+"ARGENTINA                "	1993	2970948.3448
+"ARGENTINA                "	1992	2978168.8384
+"BRAZIL                   "	1998	2781353.6244
+"BRAZIL                   "	1997	3396203.4000
+"BRAZIL                   "	1996	4327443.4166
+"BRAZIL                   "	1995	3640143.2078
+"BRAZIL                   "	1994	3744072.3024
+"BRAZIL                   "	1993	3436137.2152
+"BRAZIL                   "	1992	3372623.8388
+"CANADA                   "	1998	2729569.8680
+"CANADA                   "	1997	3741726.1976
+"CANADA                   "	1996	3357645.6088
+"CANADA                   "	1995	3424379.3520
+"CANADA                   "	1994	4403532.1800
+"CANADA                   "	1993	3712163.1378
+"CANADA                   "	1992	4674680.6596
+"CHINA                    "	1998	3615913.0748
+"CHINA                    "	1997	4323497.9548
+"CHINA                    "	1996	5528902.7568
+"CHINA                    "	1995	5487705.5278
+"CHINA                    "	1994	5270884.2816
+"CHINA                    "	1993	4606787.9344
+"CHINA                    "	1992	4182292.4676
+"EGYPT                    "	1998	2481437.5772
+"EGYPT                    "	1997	4114922.2236
+"EGYPT                    "	1996	3702451.8090
+"EGYPT                    "	1995	3529472.8496
+"EGYPT                    "	1994	3442477.6896
+"EGYPT                    "	1993	4074783.1102
+"EGYPT                    "	1992	3409149.9078
+"ETHIOPIA                 "	1998	2121814.2400
+"ETHIOPIA                 "	1997	3211633.2282
+"ETHIOPIA                 "	1996	2589985.8142
+"ETHIOPIA                 "	1995	2686025.4524
+"ETHIOPIA                 "	1994	3195577.3718
+"ETHIOPIA                 "	1993	3350494.1322
+"ETHIOPIA                 "	1992	3220323.7050
+"FRANCE                   "	1998	2223248.8126
+"FRANCE                   "	1997	3232875.8400
+"FRANCE                   "	1996	4218260.7646
+"FRANCE                   "	1995	3699545.5616
+"FRANCE                   "	1994	4872773.1830
+"FRANCE                   "	1993	3475385.2224
+"FRANCE                   "	1992	4165421.9176
+"GERMANY                  "	1998	2335955.0292
+"GERMANY                  "	1997	3530389.6948
+"GERMANY                  "	1996	3419933.8384
+"GERMANY                  "	1995	4775378.2214
+"GERMANY                  "	1994	4198636.0116
+"GERMANY                  "	1993	3924921.8952
+"GERMANY                  "	1992	4216749.2226
+"INDIA                    "	1998	2936418.5240
+"INDIA                    "	1997	4776117.3138
+"INDIA                    "	1996	5051142.5668
+"INDIA                    "	1995	4714627.7458
+"INDIA                    "	1994	5107550.4262
+"INDIA                    "	1993	5495393.1978
+"INDIA                    "	1992	5193487.8336
+"INDONESIA                "	1998	1641360.7140
+"INDONESIA                "	1997	2723306.5910
+"INDONESIA                "	1996	2703123.9018
+"INDONESIA                "	1995	3692098.2306
+"INDONESIA                "	1994	3017693.8096
+"INDONESIA                "	1993	3392005.5952
+"INDONESIA                "	1992	2908205.2664
+"IRAN                     "	1998	2424972.8214
+"IRAN                     "	1997	2507581.7116
+"IRAN                     "	1996	4116180.9910
+"IRAN                     "	1995	2695173.3900
+"IRAN                     "	1994	4400719.3440
+"IRAN                     "	1993	4372859.1966
+"IRAN                     "	1992	3410539.1062
+"IRAQ                     "	1998	2292411.7222
+"IRAQ                     "	1997	3824125.3636
+"IRAQ                     "	1996	4078092.2066
+"IRAQ                     "	1995	3521641.3486
+"IRAQ                     "	1994	4229767.8776
+"IRAQ                     "	1993	4051171.0774
+"IRAQ                     "	1992	5269411.4488
+"JAPAN                    "	1998	3009313.4820
+"JAPAN                    "	1997	3816386.7602
+"JAPAN                    "	1996	3792853.1580
+"JAPAN                    "	1995	3279782.3764
+"JAPAN                    "	1994	4965852.1768
+"JAPAN                    "	1993	3962919.5524
+"JAPAN                    "	1992	4418434.7210
+"JORDAN                   "	1998	2573778.0994
+"JORDAN                   "	1997	3514194.0232
+"JORDAN                   "	1996	3453956.3836
+"JORDAN                   "	1995	3383323.3440
+"JORDAN                   "	1994	3926366.7884
+"JORDAN                   "	1993	3429469.5752
+"JORDAN                   "	1992	4017195.7998
+"KENYA                    "	1998	1977128.2984
+"KENYA                    "	1997	3878886.6216
+"KENYA                    "	1996	4283770.0346
+"KENYA                    "	1995	3684121.9860
+"KENYA                    "	1994	3971431.3516
+"KENYA                    "	1993	2948158.9594
+"KENYA                    "	1992	4498902.5148
+"MOROCCO                  "	1998	2198734.4834
+"MOROCCO                  "	1997	4310307.2918
+"MOROCCO                  "	1996	3939839.8496
+"MOROCCO                  "	1995	3641705.5186
+"MOROCCO                  "	1994	3483693.4280
+"MOROCCO                  "	1993	3497790.9278
+"MOROCCO                  "	1992	4400737.8912
+"MOZAMBIQUE               "	1998	1688883.9064
+"MOZAMBIQUE               "	1997	2682173.8948
+"MOZAMBIQUE               "	1996	4004977.0842
+"MOZAMBIQUE               "	1995	4747655.3704
+"MOZAMBIQUE               "	1994	3152877.1692
+"MOZAMBIQUE               "	1993	4317364.0802
+"MOZAMBIQUE               "	1992	3212744.4826
+"PERU                     "	1998	2411280.2976
+"PERU                     "	1997	4175254.0198
+"PERU                     "	1996	4317638.4092
+"PERU                     "	1995	3430729.7046
+"PERU                     "	1994	4473833.9050
+"PERU                     "	1993	4736330.8054
+"PERU                     "	1992	3707311.5416
+"ROMANIA                  "	1998	2622829.0478
+"ROMANIA                  "	1997	2755161.2216
+"ROMANIA                  "	1996	3453235.0612
+"ROMANIA                  "	1995	4451177.9274
+"ROMANIA                  "	1994	3993678.6150
+"ROMANIA                  "	1993	3442406.7674
+"ROMANIA                  "	1992	3095445.2332
+"RUSSIA                   "	1998	2799367.1018
+"RUSSIA                   "	1997	3603951.3740
+"RUSSIA                   "	1996	4101893.7134
+"RUSSIA                   "	1995	4658737.4644
+"RUSSIA                   "	1994	3544939.9782
+"RUSSIA                   "	1993	4133056.0918
+"RUSSIA                   "	1992	3314228.0258
+"SAUDI ARABIA             "	1998	1392239.3674
+"SAUDI ARABIA             "	1997	3492712.3254
+"SAUDI ARABIA             "	1996	3280364.2032
+"SAUDI ARABIA             "	1995	2907473.2878
+"SAUDI ARABIA             "	1994	3626943.4308
+"SAUDI ARABIA             "	1993	2241815.5062
+"SAUDI ARABIA             "	1992	3418476.9324
+"UNITED KINGDOM           "	1998	2070530.8134
+"UNITED KINGDOM           "	1997	3496624.0942
+"UNITED KINGDOM           "	1996	4290566.0128
+"UNITED KINGDOM           "	1995	5011375.0620
+"UNITED KINGDOM           "	1994	4468388.6026
+"UNITED KINGDOM           "	1993	3762968.8560
+"UNITED KINGDOM           "	1992	4257172.9440
+"UNITED STATES            "	1998	2393679.8082
+"UNITED STATES            "	1997	4207789.5780
+"UNITED STATES            "	1996	4039274.9722
+"UNITED STATES            "	1995	5164820.5280
+"UNITED STATES            "	1994	4835206.8246
+"UNITED STATES            "	1993	4123589.6748
+"UNITED STATES            "	1992	4085300.3622
+"VIETNAM                  "	1998	1966093.5072
+"VIETNAM                  "	1997	2382124.5384
+"VIETNAM                  "	1996	3317171.0134
+"VIETNAM                  "	1995	2750725.8554
+"VIETNAM                  "	1994	3125713.7206
+"VIETNAM                  "	1993	2677794.0856
+"VIETNAM                  "	1992	2486942.9072
 
-Fix the seed query."""
+The expected result has much lesser number of groups per n_name.
+So, the position of group by clause in the seed and the expected query must be different.
+Considering performing union first and then group by.
+Fix the seed query.
+"""
 
 Q18_text = """The Query finds a list of the top 100 customers who have ever placed more than 300 orders online.
 The query lists the customer name, customer key, the order key, 
