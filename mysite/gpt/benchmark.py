@@ -193,7 +193,7 @@ ADD CONSTRAINT nation_region_fkey
    FOREIGN KEY (N_REGIONKEY) REFERENCES REGION(R_REGIONKEY);"""
 
 general_guidelines = """Strictly follow the instructions given below for your SQL output:
-1. Strictly use the tables given in the seed query. Do not use any table that is absent in the seed query
+1. Strictly use the tables given in the seed query. Do not use any table that is absent in the seed query.
 2. Do not use redundant join conditions. Do not use CROSS-JOIN.
 3. Do not use any predicate with place holder parameter.
 4. Do not use window functions, such as RANK() OVER PARTITION BY.
@@ -208,6 +208,36 @@ Put the SQL within Python style comment quotes):"""
 
 seed_query_question = """Refine the following 'seed query' SQL to reach to the final query:"""
 refinement_show = "You formulated the following query:"
+
+example_of_seed_refinement = """Here is an example of seed query refinement for you:
+
+text: select how many orders were placed online per city in 1995 January. 
+City is defined by last 5 characters of customer's address.
+
+seed query: 
+select count(*), c_address as city 
+from orders, customers, web_lineitem
+where o_orderdate between DATE '1995-01-01' and DATE '1995-01-31
+and c_custkey = o_custkey
+and o_orderkey = wl_orderkey'
+group by c_address;
+
+refined query:
+select count(*), RIGHT(c_address,5) as city 
+from orders, customers, web_lineitem
+where o_orderdate between DATE '1995-01-01' and DATE '1995-01-31
+and c_custkey = o_custkey
+and o_orderkey = wl_orderkey'
+group by RIGHT(c_address,5);
+
+The following instance is an incorrect seed refinement because it does not strictly reuse the tables of the seed query:
+select count(*), RIGHT(c_address,5) as city 
+from orders, customers
+where YEAR(o_orderdate) = 1995
+and MONTH(o_orderdate) = 1
+and c_custkey = o_custkey
+group by RIGHT(c_address,5);
+"""
 
 Q1_text = """
 The Query provides a summary pricing report for all lineitems shipped as of a given date.
@@ -1932,4 +1962,126 @@ numwait values are more. See below, which is the current result.
 "Supplier#000001991       "	26
 Check again whether all the text requirements are captured in the query.
 """
+
+Q23_text = """Find the cities and part brands where a customer first buys and returns on web, and then buys again from store. City is identified as the last
+5 characters of customer's address."""
+Q23_seed = """SELECT   c_address AS city,
+         p_brand             AS part_brand
+FROM     customer,
+         orders o1,
+         orders o2,
+         store_lineitem,
+         web_lineitem,
+         part
+WHERE    c_custkey = o1.o_custkey
+AND      c_custkey = o2.o_custkey 
+AND      o1.o_orderkey = wl_orderkey
+AND      wl_returnflag = 'A' 
+AND      o2.o_orderkey = sl_orderkey
+AND      sl_returnflag = 'N' 
+AND      wl_partkey = sl_partkey
+AND      sl_partkey = p_partkey
+AND      o1.o_orderdate < o2.o_orderdate
+AND      wl_receiptdate < sl_receiptdate 
+AND      o1.o_orderdate BETWEEN date '1995-01-01' AND      date '1995-12-31'
+AND      o2.o_orderdate BETWEEN date '1995-01-01' AND      date '1995-12-31'
+GROUP BY c_address,
+         p_brand 
+ORDER BY city, part_brand;   """
+
+Q24_text = """Find the cities where the customer buys an item from the store 
+and buys it again from web, 
+where the initial purchase could have been made
+from the web as well. 
+City is identified as the last 5 characters of customer's address."""
+Q24_seed = """SELECT c_address AS city
+FROM   customer,
+       orders o1,
+       orders o2,
+       store_lineitem,
+       web_lineitem w,
+       part,
+       web_lineitem w1,
+       partsupp ps1,
+       partsupp ps2
+WHERE  c_custkey = o1.o_custkey
+       AND c_custkey = o2.o_custkey
+       AND o1.o_orderkey = sl_orderkey
+       AND sl_returnflag = 'A'
+       AND o2.o_orderkey = w.wl_orderkey
+       AND w.wl_returnflag = 'N'
+       AND w.wl_partkey = sl_partkey
+       AND sl_partkey = p_partkey
+       AND w1.wl_partkey = p_partkey
+       AND sl_receiptdate < w.wl_receiptdate
+       AND o1.o_orderdate < o2.o_orderdate
+       AND w.wl_suppkey = ps1.ps_suppkey
+       AND w1.wl_suppkey = ps2.ps_suppkey
+       AND ps2.ps_availqty >= ps1.ps_availqty
+       AND o1.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'
+       AND o2.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'
+GROUP  BY c_address;
+
+Do not change the duplicated instances of tables from the seed query.
+Use all the join and filter predicates from the seed query.
+Strictly formulate your SQL from the seed query."""
+
+Q24_actual_output = """The expected output is as follows:
+"PLmwP"
+"""
+Q24_seed_output = """
+The above seed query gives the following output:
+Ss5mZQDrMpA Wg4HNZbVUPLmwP.
+
+Fix the query."""
+
+Q24_feedback1 = """
+You formulated the following query:
+SELECT DISTINCT SUBSTRING(c.c_address FROM LENGTH(c.c_address) - 4 FOR 5) AS city
+FROM customer c
+JOIN orders o ON c.c_custkey = o.o_custkey
+JOIN store_lineitem sl ON o.o_orderkey = sl.sl_orderkey
+JOIN web_lineitem wl ON o.o_orderkey = wl.wl_orderkey
+WHERE sl.sl_partkey = wl.wl_partkey
+
+It gives the following output:
+"  0qQ"
+"  5,R"
+"  8Bb"
+"  9BE"
+"  9Xb"
+"  A,8"
+"  AnV"
+"  BmI"
+"  D0R"
+"  FAp"
+
+Strictly use the seed query. Fix the query."""
+
+Q24_feedback2 = """Strictly use the following clauses in the query:
+FROM   customer,
+       orders o1,
+       orders o2,
+       store_lineitem,
+       web_lineitem w,
+       part,
+       web_lineitem w1,
+       partsupp ps1,
+       partsupp ps2
+WHERE  c_custkey = o1.o_custkey
+       AND c_custkey = o2.o_custkey
+       AND o1.o_orderkey = sl_orderkey
+       AND sl_returnflag = 'A'
+       AND o2.o_orderkey = w.wl_orderkey
+       AND w.wl_returnflag = 'N'
+       AND w.wl_partkey = sl_partkey
+       AND sl_partkey = p_partkey
+       AND w1.wl_partkey = p_partkey
+       AND sl_receiptdate < w.wl_receiptdate
+       AND o1.o_orderdate < o2.o_orderdate
+       AND w.wl_suppkey = ps1.ps_suppkey
+       AND w1.wl_suppkey = ps2.ps_suppkey
+       AND ps2.ps_availqty >= ps1.ps_availqty
+       AND o1.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'
+       AND o2.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'"""
 
