@@ -1234,7 +1234,7 @@ Q8_actual_output = """But the actual output should be as follows:
 1996	0.03570071939890738017
 
 Fix the seed query."""
-Q8_feedback1= """You formulated the following query:
+Q8_feedback1 = """You formulated the following query:
 SELECT 
     EXTRACT(YEAR FROM o_orderdate) AS year, 
     SUM(CASE WHEN n.n_name = 'INDIA' THEN wl_extendedprice * (1 - wl_discount) ELSE 0 END) / SUM(wl_extendedprice * (1 - wl_discount)) AS market_share
@@ -1276,10 +1276,95 @@ Q9_actual_output = """But the actual output should be as follows:
 
 Fix the seed query."""
 
+Q18_text = """The Query finds a list of the top 100 customers who have ever placed more than 300 orders online.
+The query lists the customer name, customer key, the order key, 
+date and total price and the quantity for the order."""
+Q18_seed = """SELECT c_custkey, c_name, wl_orderkey, SUM(wl_quantity)  
+        FROM customer, orders, web_lineitem
+        WHERE orders.o_orderkey = web_lineitem.wl_orderkey AND customer.c_custkey = orders.o_custkey
+        GROUP BY customer.c_custkey, customer.c_name, web_lineitem.wl_orderkey
+        HAVING SUM(web_lineitem.wl_quantity) >= 300.01;"""
+Q18_seed_output = """
+Output of the seed query is as follows:
+3566	"Customer#000003566"	2329187	304.00
+12251	"Customer#000012251"	735366	309.00
+13072	"Customer#000013072"	1481925	301.00
+13940	"Customer#000013940"	2232932	304.00
+15631	"Customer#000015631"	1845057	302.00
+16384	"Customer#000016384"	502886	312.00
+17746	"Customer#000017746"	6882	303.00
+24341	"Customer#000024341"	1474818	302.00
+50008	"Customer#000050008"	2366755	302.00
+53029	"Customer#000053029"	2662214	302.00
+64483	"Customer#000064483"	2745894	304.00
+66533	"Customer#000066533"	29158	305.00
+66790	"Customer#000066790"	2199712	327.00
+69904	"Customer#000069904"	1742403	305.00
+77260	"Customer#000077260"	1436544	307.00
+82441	"Customer#000082441"	857959	305.00
+88703	"Customer#000088703"	2995076	302.00
+88876	"Customer#000088876"	983201	304.00
+105995	"Customer#000105995"	2096705	307.00
+113131	"Customer#000113131"	967334	301.00
+114586	"Customer#000114586"	551136	308.00
+117919	"Customer#000117919"	2869152	317.00
+119989	"Customer#000119989"	1544643	320.00
+120098	"Customer#000120098"	1971680	308.00
+136573	"Customer#000136573"	2761378	301.00
+141098	"Customer#000141098"	565574	301.00
+141823	"Customer#000141823"	2806245	310.00
+147197	"Customer#000147197"	1263015	320.00
+148885	"Customer#000148885"	2942469	313.00"""
+Q18_actual_output = """
+But the actual output of the query is as follows:
+"Customer#000013940"	13940	2232932	"1997-04-13"	522720.61	304.00
+"Customer#000066790"	66790	2199712	"1996-09-30"	515531.82	327.00
+"Customer#000024341"	24341	1474818	"1992-11-15"	491348.26	302.00
+"Customer#000050008"	50008	2366755	"1996-12-09"	483891.26	302.00
+"Customer#000077260"	77260	1436544	"1992-09-12"	479499.43	307.00
+"Customer#000105995"	105995	2096705	"1994-07-03"	469692.58	307.00
+"Customer#000148885"	148885	2942469	"1992-05-31"	469630.44	313.00
+"Customer#000114586"	114586	551136	"1993-05-19"	469605.59	308.00
+"Customer#000147197"	147197	1263015	"1997-02-02"	467149.67	320.00
+"Customer#000064483"	64483	2745894	"1996-07-04"	466991.35	304.00
+"Customer#000136573"	136573	2761378	"1996-05-31"	461282.73	301.00
+"Customer#000016384"	16384	502886	"1994-04-12"	458378.92	312.00
+"Customer#000117919"	117919	2869152	"1996-06-20"	456815.92	317.00
+"Customer#000012251"	12251	735366	"1993-11-24"	455107.26	309.00
+"Customer#000120098"	120098	1971680	"1995-06-14"	453451.23	308.00
+"Customer#000088876"	88876	983201	"1993-12-30"	446717.46	304.00
+"Customer#000141823"	141823	2806245	"1996-12-29"	446269.12	310.00
+"Customer#000053029"	53029	2662214	"1993-08-13"	446144.49	302.00
+"Customer#000066533"	66533	29158	"1995-10-21"	443576.50	305.00
+"Customer#000003566"	3566	2329187	"1998-01-04"	439803.36	304.00
+"Customer#000119989"	119989	1544643	"1997-09-20"	434568.25	320.00
+"Customer#000113131"	113131	967334	"1995-12-15"	432957.75	301.00
+"Customer#000141098"	141098	565574	"1995-09-24"	430986.69	301.00
+"Customer#000015631"	15631	1845057	"1994-05-12"	419879.59	302.00
+"Customer#000069904"	69904	1742403	"1996-10-19"	408513.00	305.00
+"Customer#000017746"	17746	6882	"1997-04-09"	408446.93	303.00
+"Customer#000013072"	13072	1481925	"1998-03-15"	399195.47	301.00
+"Customer#000082441"	82441	857959	"1994-02-07"	382579.74	305.00
+"Customer#000088703"	88703	2995076	"1994-01-30"	363812.12	302.00
+
+Fix the seed query."""
+Q18_feedback1 = """You formulated the below query:
+SELECT c.c_custkey, c.c_name, o.o_orderkey, o.o_orderdate, o.o_totalprice, SUM(wl.wl_quantity) AS total_quantity
+FROM customer c
+JOIN orders o ON c.c_custkey = o.o_custkey
+JOIN web_lineitem wl ON o.o_orderkey = wl.wl_orderkey
+GROUP BY c.c_custkey, c.c_name, o.o_orderkey, o.o_orderdate, o.o_totalprice
+HAVING COUNT(DISTINCT o.o_orderkey) > 300
+ORDER BY total_quantity DESC
+LIMIT 100;
+
+It produces 0 rows in result.
+Fix the seed query. Hint: Try using SUM(wl_quantity) in both projection and HAVING clause.
+Also, reorder the projections to match the actual output."""
+
 Q21_text = """The query identifies suppliers, for nation 'ARGENTINA', whose product was part of a
 multi-supplier online order (with current status of 'F') where they were the 
 only supplier who failed to meet the committed delivery date."""
-
 Q21_seed = """Select s_name, <unknown> as numwait 
  From web_lineitem l1, web_lineitem l2, nation, orders, supplier 
  Where l1.wl_orderkey = l2.wl_orderkey
@@ -1290,7 +1375,6 @@ Q21_seed = """Select s_name, <unknown> as numwait
  and n_name = 'ARGENTINA'
  and o_orderstatus = 'F' 
  Order By s_name asc; """
-
 Q21_seed_output = """The seed query has the second projection unidentified. 
 The actual output of the query shows it an integer number, in decreasing order.
 Validate the predicates in the seed query against the text description and refine them.
@@ -1500,7 +1584,6 @@ Q21_actual_output = """The actual output should be as follows:
 "Supplier#000002491       "	3
 
 Fix the seed query."""
-
 Q21_feedback1 = """
 You produced the following query:
 SELECT s_name, COUNT(*) AS numfailures
@@ -1731,7 +1814,6 @@ Validate all the predicates against the text again and fix the query.
 Consider 'multi-supplier' order with emphasis.
 Use alias for each instance of web_lineitem table.
 The second projection values are more than expected."""
-
 Q21_feedback2 = """
 Use alias for each instance of web_lineitem table.
 Do not reproduce the same incorrect query that you produced before.
@@ -2025,7 +2107,6 @@ GROUP  BY c_address;
 Do not change the duplicated instances of tables from the seed query.
 Use all the join and filter predicates from the seed query.
 Strictly formulate your SQL from the seed query."""
-
 Q24_actual_output = """The expected output is as follows:
 "PLmwP"
 """
@@ -2034,7 +2115,6 @@ The above seed query gives the following output:
 Ss5mZQDrMpA Wg4HNZbVUPLmwP.
 
 Fix the query."""
-
 Q24_feedback1 = """
 You formulated the following query:
 SELECT DISTINCT SUBSTRING(c.c_address FROM LENGTH(c.c_address) - 4 FOR 5) AS city
@@ -2057,7 +2137,6 @@ It gives the following output:
 "  FAp"
 
 Strictly use the seed query. Fix the query."""
-
 Q24_feedback2 = """Strictly use the following clauses in the query:
 FROM   customer,
        orders o1,
@@ -2084,4 +2163,3 @@ WHERE  c_custkey = o1.o_custkey
        AND ps2.ps_availqty >= ps1.ps_availqty
        AND o1.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'
        AND o2.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-12-31'"""
-

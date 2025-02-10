@@ -14,7 +14,8 @@ from mysite.gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guideli
     Q14_actual_output, Q14_feedback1, refinement_show, Q7_text, Q7_seed, Q7_seed_output, Q7_actual_output, Q7_feedback1, \
     Q21_text, Q21_seed, Q21_seed_output, Q21_actual_output, Q21_feedback1, Q21_feedback2, Q8_text, Q8_seed, \
     Q8_seed_output, Q8_actual_output, Q8_feedback1, Q23_text, Q23_seed, Q24_text, Q24_seed, Q24_seed_output, \
-    Q24_actual_output, Q24_feedback1, Q24_feedback2
+    Q24_actual_output, Q24_feedback1, Q24_feedback2, Q18_text, Q18_seed, Q18_seed_output, Q18_actual_output, \
+    Q18_feedback1
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -124,6 +125,7 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output,
                           etpch_schema_Q13, [Q13_feedback1, Q13_feedback2, Q13_feedback4_sample_data]],
                   "Q14": [Q14_text, Q14_seed, Q14_seed_output, Q14_actual_output, [Q14_feedback1]],
+                  "Q18": [Q18_text, Q18_seed, Q18_seed_output, Q18_actual_output, [Q18_feedback1]],
                   "Q21": [Q21_text, Q21_seed, Q21_seed_output, Q21_actual_output, [Q21_feedback1]],
                   "Q22": [],
                   "Q23": [Q23_text, Q23_seed],
@@ -157,9 +159,9 @@ def get_text(key):
 
 def get_seed(key):
     try:
-        return ""
-    except IndexError:
         return benchmark_dict[key][1]
+    except IndexError:
+        return ""
 
 
 def get_seed_output(key):
@@ -215,7 +217,7 @@ if __name__ == '__main__':
     unique_prompt = f"{get_text(query_key)}\n" \
                     f"{seed_query_question}\n{get_seed(query_key)}" \
                     f"\n{get_seed_output(query_key)}\n{get_actual_output(query_key)}"
-    # print(unique_prompt)
+    print(unique_prompt)
     prompt = f"{text_2_sql_question}\n{unique_prompt}" \
              f"\n{schema}\n{general_guidelines}"
 
