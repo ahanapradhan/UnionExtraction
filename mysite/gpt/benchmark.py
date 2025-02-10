@@ -1864,12 +1864,71 @@ Fix the query.
 Verify whether all the predicates implied in the text are present in the query.
 Consider having filter and join predicates inside the inner query as well."""
 
-Q12_text = """"""
-Q12_seed = """"""
-Q12_seed_output = """The above seed query produces the following output: """
+Q12_text = """The Query counts, by ship mode, for line items actually received by customers in
+the year 1995, the number of line items belonging to orders for which the receiptdate exceeds the commitdate for
+two different specified ship modes. Only line items that were actually shipped before the commitdate are considered. 
+The late line items are partitioned into two groups, those with priority URGENT or HIGH, and those with a
+priority other than URGENT or HIGH.
+"""
+Q12_seed = """(Select sl_shipmode, 0 as high_line_count, Count(*) as low_line_count 
+ From orders, store_lineitem 
+ Where orders.o_orderkey = store_lineitem.sl_orderkey
+ and store_lineitem.sl_shipdate < store_lineitem.sl_commitdate
+ and store_lineitem.sl_commitdate < store_lineitem.sl_receiptdate
+ and store_lineitem.sl_shipmode IN ('SHIP', 'TRUCK')
+ and store_lineitem.sl_receiptdate between '1995-01-01' and '1995-12-31'
+group by sl_shipmode)
+ UNION ALL  
+ (Select wl_shipmode, 0 as high_line_count, Count(*) as low_line_count 
+ From orders, web_lineitem 
+ Where orders.o_orderkey = web_lineitem.wl_orderkey
+ and web_lineitem.wl_shipdate < web_lineitem.wl_commitdate
+ and web_lineitem.wl_commitdate < web_lineitem.wl_receiptdate
+ and web_lineitem.wl_shipmode IN ('SHIP', 'TRUCK')
+ and web_lineitem.wl_receiptdate between '1995-01-01' and '1995-12-31'
+ group by wl_shipmode);"""
+Q12_seed_output = """The above seed query produces the following output: 
+"SHIP      "	0	7778
+"TRUCK     "	0	7890
+"SHIP      "	0	7778
+"TRUCK     "	0	7890
+"""
 Q12_actual_output = """But the actual query should produce the following output:
+"SHIP      "	6176	9380
+"TRUCK     "	6392	9388
 
 Fix the seed query."""
+Q12_feedback1 = """You produced the following query:
+(SELECT sl_shipmode, 
+        SUM(CASE WHEN o_orderpriority IN ('1-URGENT', '2-HIGH') THEN 1 ELSE 0 END) AS high_line_count, 
+        SUM(CASE WHEN o_orderpriority NOT IN ('1-URGENT', '2-HIGH') THEN 1 ELSE 0 END) AS low_line_count 
+ FROM orders, store_lineitem 
+ WHERE orders.o_orderkey = store_lineitem.sl_orderkey
+   AND store_lineitem.sl_shipdate < store_lineitem.sl_commitdate
+   AND store_lineitem.sl_commitdate < store_lineitem.sl_receiptdate
+   AND store_lineitem.sl_shipmode IN ('SHIP', 'TRUCK')
+   AND store_lineitem.sl_receiptdate BETWEEN '1995-01-01' AND '1995-12-31'
+ GROUP BY sl_shipmode)
+UNION ALL  
+(SELECT wl_shipmode, 
+        SUM(CASE WHEN o_orderpriority IN ('1-URGENT', '2-HIGH') THEN 1 ELSE 0 END) AS high_line_count, 
+        SUM(CASE WHEN o_orderpriority NOT IN ('1-URGENT', '2-HIGH') THEN 1 ELSE 0 END) AS low_line_count 
+ FROM orders, web_lineitem 
+ WHERE orders.o_orderkey = web_lineitem.wl_orderkey
+   AND web_lineitem.wl_shipdate < web_lineitem.wl_commitdate
+   AND web_lineitem.wl_commitdate < web_lineitem.wl_receiptdate
+   AND web_lineitem.wl_shipmode IN ('SHIP', 'TRUCK')
+   AND web_lineitem.wl_receiptdate BETWEEN '1995-01-01' AND '1995-12-31'
+ GROUP BY wl_shipmode);
+
+It gives the following output:
+"SHIP      "	3088	4690
+"TRUCK     "	3196	4694
+"SHIP      "	3088	4690
+"TRUCK     "	3196	4694.
+Looks like one more grouping is do to be done.
+Consider doing union first and then group by.
+Fix the query."""
 
 Q13_text = """"""
 Q13_seed = """"""
