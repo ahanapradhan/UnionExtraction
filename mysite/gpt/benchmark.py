@@ -1582,6 +1582,99 @@ Considering performing union first and then group by.
 Fix the seed query.
 """
 
+Q10_text = """The Query finds the top 20 customers, in terms of their effect on lost revenue for a given
+quarter, who have returned parts. The query considers only parts that were ordered in the specified quarter. The
+query lists the customer's name, address, nation, phone number, account balance, comment information and revenue
+lost. The customers are listed in descending order of lost revenue. Revenue lost is defined as
+sum(extended price*(1-discount)) for all qualifying line items."""
+Q10_seed = """(Select c_custkey, c_name, Sum(sl_extendedprice*(1 - sl_discount)) as revenue, c_acctbal, n_name, c_address, c_phone, c_comment 
+ From customer, nation, orders, store_lineitem 
+ Where orders.o_orderkey = store_lineitem.sl_orderkey
+ and customer.c_nationkey = nation.n_nationkey
+ and customer.c_custkey = orders.o_custkey
+ and store_lineitem.sl_returnflag = 'R'
+ and orders.o_orderdate between '1995-01-01' and '1995-03-31' 
+ Group By c_acctbal, c_address, c_comment, c_custkey, c_name, c_phone, n_name 
+ Order By revenue desc, c_custkey asc, c_name asc, c_acctbal asc, c_phone asc, n_name asc, c_address asc, c_comment asc Limit 20)
+ UNION ALL  
+ (Select c_custkey, c_name, Sum(wl_extendedprice*(1 - wl_discount)) as revenue, c_acctbal, n_name, c_address, c_phone, c_comment 
+ From customer, nation, orders, web_lineitem 
+ Where customer.c_nationkey = nation.n_nationkey
+ and orders.o_orderkey = web_lineitem.wl_orderkey
+ and customer.c_custkey = orders.o_custkey
+ and web_lineitem.wl_returnflag = 'R'
+ and orders.o_orderdate between '1995-01-01' and '1995-03-31' 
+ Group By c_acctbal, c_address, c_comment, c_custkey, c_name, c_phone, n_name 
+ Order By revenue desc, c_custkey asc, c_name asc, c_acctbal asc, c_phone asc, n_name asc, c_address asc, c_comment asc Limit 20);  
+ """
+Q10_seed_output = """Output of the above seed query is as follows:
+109168	"Customer#000109168"	519856.2131	2947.40	"CHINA                    "	"9HqXcL6X4eyYc4OUd"	"28-198-666-9028"	"efully final, regular asymptotes. quickly ironic packages cajole carefully. blithely final platelets wak"
+30523	"Customer#000030523"	465052.1889	3463.98	"PERU                     "	"3A8vNPnR5e0Kz9ytD87XIfSGQZpVThT6RMTkd7"	"27-228-232-7684"	"s x-ray slyly. quickly unusual requests nag slyly at the unusual foxes. regular asymptotes haggle. brave, ir"
+116560	"Customer#000116560"	453467.6456	5025.79	"ARGENTINA                "	"KrtxggNsT247cfR7kgQeqlff3UuV3ntO2O4V7"	"11-288-140-7306"	" cajole slyly: fluffily unusual forges cajole closely excuses. regular requests are car"
+88561	"Customer#000088561"	432414.4599	5748.66	"BRAZIL                   "	"yZf,sUaIXAj96VD"	"12-940-159-1382"	"nal ideas. ironic forges boost final theodolites. regular theodolites sleep quickly. frays along the slyly iron"
+148096	"Customer#000148096"	414511.6748	7424.11	"BRAZIL                   "	"wT,X7eAaHza2MezMhFJV3gvw"	"12-348-875-7461"	" carefully along the regular asymptotes. final asympt"
+53578	"Customer#000053578"	414169.1446	5104.21	"JAPAN                    "	"AIMJGZAS09,bi73bd5UI u56EEdq8Y74PrGNsw"	"22-702-522-5799"	" the regular packages cajole after the instructions. furiously regular p"
+33859	"Customer#000033859"	414129.0876	736.03	"ETHIOPIA                 "	"gKSkGmDoUQo"	"15-777-264-6894"	"lithely ironic pinto beans. blithely special theodolites wake. requests sleep? express pack"
+116908	"Customer#000116908"	413815.5826	8079.23	"VIETNAM                  "	"kCt00BJVwUSKxuOySsLlLCS"	"31-857-393-5714"	"ending platelets. final dependencies haggle about the ironic, express courts. s"
+136261	"Customer#000136261"	411027.9035	6938.35	"CHINA                    "	"kYo34Vg9fmnmO9"	"28-404-274-5637"	"e carefully. slyly regular requests sleep ironic deposits. furiously special requests nag carefully. pending foxes a"
+135283	"Customer#000135283"	405256.1568	4815.70	"VIETNAM                  "	"iOMyJSkf4KvhHk"	"31-335-767-1486"	"sleep quickly. slyly final accounts about the blithely regular ideas haggle blithely along the"
+33242	"Customer#000033242"	405008.7760	1943.50	"VIETNAM                  "	"SkUOoPzhj TOiD1SOLzXuE2CjVBkDMTGP"	"31-986-245-4915"	"ideas detect above the sauternes. furiously bold accounts haggle fl"
+114196	"Customer#000114196"	399714.0085	6143.47	"UNITED KINGDOM           "	"mtxwzFZtNM9CJuXZxByEqKvPY5doW dxf"	"33-448-114-5319"	"sits sleep quickly! carefully bold packages cajole. furiously final courts cajole carefully ac"
+29177	"Customer#000029177"	390522.5906	8021.35	"ETHIOPIA                 "	"z2IuNjmQ5tFcKXBdRzeolZ"	"15-847-713-2601"	" the slyly bold packages. even asymptotes nag carefully among the excu"
+125224	"Customer#000125224"	388107.1938	4914.39	"KENYA                    "	"58XfDlDHRMv2g2jmWT1"	"24-418-197-2510"	"ily. carefully pending requests nag finally dogged accounts. ruthless, express deposits can wake furiously among t"
+129826	"Customer#000129826"	386727.9483	3140.91	"MOROCCO                  "	"4GjFPTcfkiqDXz0I1l7wIbKy 6uEkuAPsm0Gq"	"25-392-585-6654"	"express deposits integrate above the express packages. furio"
+137560	"Customer#000137560"	385141.5356	7740.63	"SAUDI ARABIA             "	"nHreto1raUjP3"	"30-834-144-7543"	"ns. slyly even dolphins above the bold requests solve along the deposits. slyl"
+39133	"Customer#000039133"	376593.8134	9998.87	"KENYA                    "	"qM8wFLRAvta"	"24-625-551-5999"	"fluffily final pinto beans are final excuses. final, "
+68104	"Customer#000068104"	374649.5796	1406.31	"JORDAN                   "	"CF3NdL0EwkK"	"23-674-353-2981"	"ely final dependencies nod bold, even packages. furiously ev"
+59701	"Customer#000059701"	374561.7646	-826.85	"MOZAMBIQUE               "	"3ozfZWPYiBeYjFZO MupLVNHw"	"26-422-892-1848"	"pinto beans nag never express accounts. final, sil"
+73081	"Customer#000073081"	374412.6512	1137.00	"IRAN                     "	"IwsV4dgelg8 ,hQUqCb8eX4tyW3xX1EWaeWc2"	"20-566-486-8077"	"aggle blithely above the regular theodolites. quickly ironic dolphins along the even, s"
+109168	"Customer#000109168"	519856.2131	2947.40	"CHINA                    "	"9HqXcL6X4eyYc4OUd"	"28-198-666-9028"	"efully final, regular asymptotes. quickly ironic packages cajole carefully. blithely final platelets wak"
+30523	"Customer#000030523"	465052.1889	3463.98	"PERU                     "	"3A8vNPnR5e0Kz9ytD87XIfSGQZpVThT6RMTkd7"	"27-228-232-7684"	"s x-ray slyly. quickly unusual requests nag slyly at the unusual foxes. regular asymptotes haggle. brave, ir"
+116560	"Customer#000116560"	453467.6456	5025.79	"ARGENTINA                "	"KrtxggNsT247cfR7kgQeqlff3UuV3ntO2O4V7"	"11-288-140-7306"	" cajole slyly: fluffily unusual forges cajole closely excuses. regular requests are car"
+88561	"Customer#000088561"	432414.4599	5748.66	"BRAZIL                   "	"yZf,sUaIXAj96VD"	"12-940-159-1382"	"nal ideas. ironic forges boost final theodolites. regular theodolites sleep quickly. frays along the slyly iron"
+148096	"Customer#000148096"	414511.6748	7424.11	"BRAZIL                   "	"wT,X7eAaHza2MezMhFJV3gvw"	"12-348-875-7461"	" carefully along the regular asymptotes. final asympt"
+53578	"Customer#000053578"	414169.1446	5104.21	"JAPAN                    "	"AIMJGZAS09,bi73bd5UI u56EEdq8Y74PrGNsw"	"22-702-522-5799"	" the regular packages cajole after the instructions. furiously regular p"
+33859	"Customer#000033859"	414129.0876	736.03	"ETHIOPIA                 "	"gKSkGmDoUQo"	"15-777-264-6894"	"lithely ironic pinto beans. blithely special theodolites wake. requests sleep? express pack"
+116908	"Customer#000116908"	413815.5826	8079.23	"VIETNAM                  "	"kCt00BJVwUSKxuOySsLlLCS"	"31-857-393-5714"	"ending platelets. final dependencies haggle about the ironic, express courts. s"
+136261	"Customer#000136261"	411027.9035	6938.35	"CHINA                    "	"kYo34Vg9fmnmO9"	"28-404-274-5637"	"e carefully. slyly regular requests sleep ironic deposits. furiously special requests nag carefully. pending foxes a"
+135283	"Customer#000135283"	405256.1568	4815.70	"VIETNAM                  "	"iOMyJSkf4KvhHk"	"31-335-767-1486"	"sleep quickly. slyly final accounts about the blithely regular ideas haggle blithely along the"
+33242	"Customer#000033242"	405008.7760	1943.50	"VIETNAM                  "	"SkUOoPzhj TOiD1SOLzXuE2CjVBkDMTGP"	"31-986-245-4915"	"ideas detect above the sauternes. furiously bold accounts haggle fl"
+114196	"Customer#000114196"	399714.0085	6143.47	"UNITED KINGDOM           "	"mtxwzFZtNM9CJuXZxByEqKvPY5doW dxf"	"33-448-114-5319"	"sits sleep quickly! carefully bold packages cajole. furiously final courts cajole carefully ac"
+29177	"Customer#000029177"	390522.5906	8021.35	"ETHIOPIA                 "	"z2IuNjmQ5tFcKXBdRzeolZ"	"15-847-713-2601"	" the slyly bold packages. even asymptotes nag carefully among the excu"
+125224	"Customer#000125224"	388107.1938	4914.39	"KENYA                    "	"58XfDlDHRMv2g2jmWT1"	"24-418-197-2510"	"ily. carefully pending requests nag finally dogged accounts. ruthless, express deposits can wake furiously among t"
+129826	"Customer#000129826"	386727.9483	3140.91	"MOROCCO                  "	"4GjFPTcfkiqDXz0I1l7wIbKy 6uEkuAPsm0Gq"	"25-392-585-6654"	"express deposits integrate above the express packages. furio"
+137560	"Customer#000137560"	385141.5356	7740.63	"SAUDI ARABIA             "	"nHreto1raUjP3"	"30-834-144-7543"	"ns. slyly even dolphins above the bold requests solve along the deposits. slyl"
+39133	"Customer#000039133"	376593.8134	9998.87	"KENYA                    "	"qM8wFLRAvta"	"24-625-551-5999"	"fluffily final pinto beans are final excuses. final, "
+68104	"Customer#000068104"	374649.5796	1406.31	"JORDAN                   "	"CF3NdL0EwkK"	"23-674-353-2981"	"ely final dependencies nod bold, even packages. furiously ev"
+59701	"Customer#000059701"	374561.7646	-826.85	"MOZAMBIQUE               "	"3ozfZWPYiBeYjFZO MupLVNHw"	"26-422-892-1848"	"pinto beans nag never express accounts. final, sil"
+73081	"Customer#000073081"	374412.6512	1137.00	"IRAN                     "	"IwsV4dgelg8 ,hQUqCb8eX4tyW3xX1EWaeWc2"	"20-566-486-8077"	"aggle blithely above the regular theodolites. quickly ironic dolphins along the even, s"
+"""
+Q10_actual_output = """But the actual output should be as follows:
+
+109168	"Customer#000109168"	1039712.4262	2947.40	"CHINA                    "	"9HqXcL6X4eyYc4OUd"	"28-198-666-9028"	"efully final, regular asymptotes. quickly ironic packages cajole carefully. blithely final platelets wak"
+30523	"Customer#000030523"	930104.3778	3463.98	"PERU                     "	"3A8vNPnR5e0Kz9ytD87XIfSGQZpVThT6RMTkd7"	"27-228-232-7684"	"s x-ray slyly. quickly unusual requests nag slyly at the unusual foxes. regular asymptotes haggle. brave, ir"
+116560	"Customer#000116560"	906935.2912	5025.79	"ARGENTINA                "	"KrtxggNsT247cfR7kgQeqlff3UuV3ntO2O4V7"	"11-288-140-7306"	" cajole slyly: fluffily unusual forges cajole closely excuses. regular requests are car"
+88561	"Customer#000088561"	864828.9198	5748.66	"BRAZIL                   "	"yZf,sUaIXAj96VD"	"12-940-159-1382"	"nal ideas. ironic forges boost final theodolites. regular theodolites sleep quickly. frays along the slyly iron"
+148096	"Customer#000148096"	829023.3496	7424.11	"BRAZIL                   "	"wT,X7eAaHza2MezMhFJV3gvw"	"12-348-875-7461"	" carefully along the regular asymptotes. final asympt"
+53578	"Customer#000053578"	828338.2892	5104.21	"JAPAN                    "	"AIMJGZAS09,bi73bd5UI u56EEdq8Y74PrGNsw"	"22-702-522-5799"	" the regular packages cajole after the instructions. furiously regular p"
+33859	"Customer#000033859"	828258.1752	736.03	"ETHIOPIA                 "	"gKSkGmDoUQo"	"15-777-264-6894"	"lithely ironic pinto beans. blithely special theodolites wake. requests sleep? express pack"
+116908	"Customer#000116908"	827631.1652	8079.23	"VIETNAM                  "	"kCt00BJVwUSKxuOySsLlLCS"	"31-857-393-5714"	"ending platelets. final dependencies haggle about the ironic, express courts. s"
+136261	"Customer#000136261"	822055.8070	6938.35	"CHINA                    "	"kYo34Vg9fmnmO9"	"28-404-274-5637"	"e carefully. slyly regular requests sleep ironic deposits. furiously special requests nag carefully. pending foxes a"
+135283	"Customer#000135283"	810512.3136	4815.70	"VIETNAM                  "	"iOMyJSkf4KvhHk"	"31-335-767-1486"	"sleep quickly. slyly final accounts about the blithely regular ideas haggle blithely along the"
+33242	"Customer#000033242"	810017.5520	1943.50	"VIETNAM                  "	"SkUOoPzhj TOiD1SOLzXuE2CjVBkDMTGP"	"31-986-245-4915"	"ideas detect above the sauternes. furiously bold accounts haggle fl"
+114196	"Customer#000114196"	799428.0170	6143.47	"UNITED KINGDOM           "	"mtxwzFZtNM9CJuXZxByEqKvPY5doW dxf"	"33-448-114-5319"	"sits sleep quickly! carefully bold packages cajole. furiously final courts cajole carefully ac"
+29177	"Customer#000029177"	781045.1812	8021.35	"ETHIOPIA                 "	"z2IuNjmQ5tFcKXBdRzeolZ"	"15-847-713-2601"	" the slyly bold packages. even asymptotes nag carefully among the excu"
+125224	"Customer#000125224"	776214.3876	4914.39	"KENYA                    "	"58XfDlDHRMv2g2jmWT1"	"24-418-197-2510"	"ily. carefully pending requests nag finally dogged accounts. ruthless, express deposits can wake furiously among t"
+129826	"Customer#000129826"	773455.8966	3140.91	"MOROCCO                  "	"4GjFPTcfkiqDXz0I1l7wIbKy 6uEkuAPsm0Gq"	"25-392-585-6654"	"express deposits integrate above the express packages. furio"
+137560	"Customer#000137560"	770283.0712	7740.63	"SAUDI ARABIA             "	"nHreto1raUjP3"	"30-834-144-7543"	"ns. slyly even dolphins above the bold requests solve along the deposits. slyl"
+39133	"Customer#000039133"	753187.6268	9998.87	"KENYA                    "	"qM8wFLRAvta"	"24-625-551-5999"	"fluffily final pinto beans are final excuses. final, "
+68104	"Customer#000068104"	749299.1592	1406.31	"JORDAN                   "	"CF3NdL0EwkK"	"23-674-353-2981"	"ely final dependencies nod bold, even packages. furiously ev"
+59701	"Customer#000059701"	749123.5292	-826.85	"MOZAMBIQUE               "	"3ozfZWPYiBeYjFZO MupLVNHw"	"26-422-892-1848"	"pinto beans nag never express accounts. final, sil"
+73081	"Customer#000073081"	748825.3024	1137.00	"IRAN                     "	"IwsV4dgelg8 ,hQUqCb8eX4tyW3xX1EWaeWc2"	"20-566-486-8077"	"aggle blithely above the regular theodolites. quickly ironic dolphins along the even, s"
+
+Fix the seed query.
+"""
+
 Q18_text = """The Query finds a list of the top 100 customers who have ever placed more than 300 orders online.
 The query lists the customer name, customer key, the order key, 
 date and total price and the quantity for the order."""
