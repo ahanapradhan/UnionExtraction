@@ -2315,7 +2315,11 @@ ORDER BY s_suppkey;
 
 Fix the query. """
 
-Q16_text = """"""
+Q16_text = """The Query counts the number of suppliers who can supply parts that satisfy a particular
+customer's requirements. The customer is interested in parts of sizes 1, 4, and 7 as long as 
+they are not polished medium, not of `Brand#23'`, and not from a supplier who has had complaints 
+registered at the Better Business Bureau.
+Results must be presented in descending count and ascending brand, type, and size."""
 Q16_seed = """"""
 Q16_seed_output = """The above seed query produces the following output: """
 Q16_actual_output = """But the actual query should produce the following output:
