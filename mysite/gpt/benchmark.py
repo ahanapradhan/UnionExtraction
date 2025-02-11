@@ -1930,13 +1930,6 @@ Looks like one more grouping is do to be done.
 Consider doing union first and then group by.
 Fix the query."""
 
-Q13_text = """"""
-Q13_seed = """"""
-Q13_seed_output = """The above seed query produces the following output: """
-Q13_actual_output = """But the actual query should produce the following output:
-
-Fix the seed query."""
-
 Q14_text = """The Query determines what percentage of the revenue in a given year and month was derived from
 promotional parts. The query considers only parts actually shipped in that month and gives the percentage. Revenue
 is defined as (extended price * (1-discount))."""
@@ -1970,17 +1963,143 @@ Use all the filter predicates of the seed query. Do not use any other filter.
 The actual query gives a single aggregated value.
 So maybe, put the aggregation after the union.
 """
-Q15_text = """"""
-Q15_seed = """"""
-Q15_seed_output = """The above seed query produces the following output: """
-Q15_actual_output = """But the actual query should produce the following output:
 
-Fix the seed query."""
+Q15_text = """The Query finds the supplier who contributed the most to the overall revenue for parts shipped during
+the first quarter of 1995. In case of a tie, the query lists all suppliers whose contribution was equal to the
+maximum, presented in supplier number order. Revenue is calculated as sum(extended price*(1-discount)).
+"""
+Q15_seed = """Here are some hints on the query.
+1. The query involves a UNION ALL operator between two subqueries.
+2. FROM clause of one subquery has tables: supplier, web_lineitem
+3. FROM clause of the other subquery has tables: supplier, store_lineitem"""
+Q15_seed_output = """"""
+Q15_actual_output = """But the actual query should produce the following output:
+1181	"Supplier#000001181       "	"e,Ld995DWYXRrqQRLS9MtmWinb64wGm5JjMhRXF"	"19-963-905-7803"	3532163.1474
+
+Give me the correct query.
+If there is a common subquery used more than once, make it a CTE with an alias and use it."""
+Q15_feedback1 = """You formulated the following query:
+
+SELECT s_suppkey, s_name, s_address, s_phone, total_revenue
+FROM (
+    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(wl.wl_extendedprice * (1 - wl.wl_discount)) AS total_revenue
+    FROM supplier s
+    JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
+    WHERE wl.wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
+    UNION ALL
+    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(sl.sl_extendedprice * (1 - sl.sl_discount)) AS total_revenue
+    FROM supplier s
+    JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
+    WHERE sl.sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
+) AS combined_revenue
+WHERE total_revenue = (
+    SELECT MAX(total_revenue)
+    FROM (
+        SELECT SUM(wl.wl_extendedprice * (1 - wl.wl_discount)) AS total_revenue
+        FROM supplier s
+        JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
+        WHERE wl.wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+        GROUP BY s.s_suppkey
+        UNION ALL
+        SELECT SUM(sl.sl_extendedprice * (1 - sl.sl_discount)) AS total_revenue
+        FROM supplier s
+        JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
+        WHERE sl.sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+        GROUP BY s.s_suppkey
+    ) AS max_revenue
+)
+ORDER BY s_suppkey;
+
+It gives the following output:
+1181	"Supplier#000001181       "	"e,Ld995DWYXRrqQRLS9MtmWinb64wGm5JjMhRXF"	"19-963-905-7803"	1766081.5737
+1181	"Supplier#000001181       "	"e,Ld995DWYXRrqQRLS9MtmWinb64wGm5JjMhRXF"	"19-963-905-7803"	1766081.5737
+
+Eliminate duplication in result. Fix the query."""
+Q15_feedback2 = """You also formulated the following query:
+SELECT s_suppkey, s_name, s_address, s_phone, SUM(total_revenue) AS total_revenue
+FROM (
+    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(wl.wl_extendedprice * (1 - wl.wl_discount)) AS total_revenue
+    FROM supplier s
+    JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
+    WHERE wl.wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
+    UNION ALL
+    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(sl.sl_extendedprice * (1 - sl.sl_discount)) AS total_revenue
+    FROM supplier s
+    JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
+    WHERE sl.sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
+) AS combined_revenue
+GROUP BY s_suppkey, s_name, s_address, s_phone
+HAVING SUM(total_revenue) = (
+    SELECT MAX(total_revenue)
+    FROM (
+        SELECT s.s_suppkey, SUM(wl.wl_extendedprice * (1 - wl.wl_discount)) AS total_revenue
+        FROM supplier s
+        JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
+        WHERE wl.wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+        GROUP BY s.s_suppkey
+        UNION ALL
+        SELECT s.s_suppkey, SUM(sl.sl_extendedprice * (1 - sl.sl_discount)) AS total_revenue
+        FROM supplier s
+        JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
+        WHERE sl.sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+        GROUP BY s.s_suppkey
+    ) AS max_revenue
+)
+ORDER BY s_suppkey;
+
+It is not producing any result. Fix the query.
+
+The following query also does not produce any result:
+SELECT s_suppkey, s_name, s_address, s_phone, SUM(total_revenue) AS total_revenue
+FROM (
+    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(wl.wl_extendedprice * (1 - wl.wl_discount)) AS total_revenue
+    FROM supplier s
+    JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
+    WHERE wl.wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
+    UNION ALL
+    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(sl.sl_extendedprice * (1 - sl.sl_discount)) AS total_revenue
+    FROM supplier s
+    JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
+    WHERE sl.sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
+) AS combined_revenue
+GROUP BY s_suppkey, s_name, s_address, s_phone
+HAVING SUM(total_revenue) = (
+    SELECT MAX(total_revenue)
+    FROM (
+        SELECT s.s_suppkey, SUM(wl.wl_extendedprice * (1 - wl.wl_discount)) AS total_revenue
+        FROM supplier s
+        JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
+        WHERE wl.wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+        GROUP BY s.s_suppkey
+        UNION ALL
+        SELECT s.s_suppkey, SUM(sl.sl_extendedprice * (1 - sl.sl_discount)) AS total_revenue
+        FROM supplier s
+        JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
+        WHERE sl.sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+        GROUP BY s.s_suppkey
+    ) AS max_revenue
+)
+ORDER BY s_suppkey;
+
+Fix the query. """
 
 Q16_text = """"""
 Q16_seed = """"""
 Q16_seed_output = """The above seed query produces the following output: """
 Q16_actual_output = """But the actual query should produce the following output:
+
+Fix the seed query."""
+
+Q17_text = """"""
+Q17_seed = """"""
+Q17_seed_output = """The above seed query produces the following output: """
+Q17_actual_output = """But the actual query should produce the following output:
 
 Fix the seed query."""
 
