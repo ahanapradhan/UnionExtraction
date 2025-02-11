@@ -18,7 +18,8 @@ from mysite.gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guideli
     Q18_feedback1, Q9_actual_output, Q9_seed_output, Q9_seed, Q9_text, Q10_text, Q10_seed, Q10_seed_output, \
     Q10_actual_output, Q11_text, Q11_seed, Q11_seed_output, Q11_actual_output, Q11_feedback1, Q12_text, Q12_seed, \
     Q12_seed_output, Q12_actual_output, Q12_feedback1, Q15_text, Q15_seed, Q15_seed_output, Q15_actual_output, \
-    Q15_feedback1, Q15_feedback2, Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output
+    Q15_feedback1, Q15_feedback2, Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output, Q2_text, Q2_seed, \
+    Q2_seed_output, Q2_actual_output
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -115,6 +116,7 @@ class Gpt4oRefiner(Refiner):
 
 
 benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
+                  "Q2": [Q2_text, Q2_seed, Q2_seed_output, Q2_actual_output],
                   "Q3": [Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, [Q3_feedback1]],
                   "Q4": [Q4_text, Q4_seed, Q4_seed_output, Q4_actual_output, [Q4_feedback1]],
                   "Q5": [Q5_text, Q5_seed, Q5_seed_output, Q5_actual_output],
