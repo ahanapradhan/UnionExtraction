@@ -124,3 +124,164 @@ group by c_address
  Group By c_address 
  Order By city asc;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ with revenue(supplier_no, total_revenue) as        
+(select
+                l_suppkey,
+                sum(l_extendedprice * (1 - l_discount))
+        from
+                (select 
+		 sl_extendedprice as l_extendedprice,
+		 sl_discount as l_discount,
+		 sl_partkey as l_partkey,
+		 sl_suppkey as l_suppkey,
+		 sl_shipdate as l_shipdate
+		 from store_lineitem
+		 UNION ALL
+		 select
+		 wl_extendedprice as l_extendedprice,
+		 wl_discount as l_discount,
+		 wl_partkey as l_partkey,
+		 wl_suppkey as l_suppkey,
+		 wl_shipdate as l_shipdate
+		 from web_lineitem
+        ) as lineitem,
+        part
+where
+        l_partkey = p_partkey
+        and l_shipdate >= date '1995-01-01'
+        and l_shipdate < date '1995-01-01' + interval '1' month
+        group by
+                l_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
+order by
+        s_suppkey;
+ --- extracted query:
+ connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "tpch_tiny" does not exist
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ with revenue(supplier_no, total_revenue) as        
+(select
+                l_suppkey,
+                sum(l_extendedprice * (1 - l_discount))
+        from
+                (select 
+		 sl_extendedprice as l_extendedprice,
+		 sl_discount as l_discount,
+		 sl_partkey as l_partkey,
+		 sl_suppkey as l_suppkey,
+		 sl_shipdate as l_shipdate
+		 from store_lineitem
+		 UNION ALL
+		 select
+		 wl_extendedprice as l_extendedprice,
+		 wl_discount as l_discount,
+		 wl_partkey as l_partkey,
+		 wl_suppkey as l_suppkey,
+		 wl_shipdate as l_shipdate
+		 from web_lineitem
+        ) as lineitem,
+        part
+where
+        l_partkey = p_partkey
+        and l_shipdate >= date '1995-01-01'
+        and l_shipdate < date '1995-01-01' + interval '1' month
+        group by
+                l_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
+order by
+        s_suppkey;
+ --- extracted query:
+ connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "tpch_tiny" does not exist
+
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ with revenue(supplier_no, total_revenue) as        
+(select
+                l_suppkey,
+                sum(l_extendedprice * (1 - l_discount))
+        from
+                (select 
+		 sl_extendedprice as l_extendedprice,
+		 sl_discount as l_discount,
+		 sl_partkey as l_partkey,
+		 sl_suppkey as l_suppkey,
+		 sl_shipdate as l_shipdate
+		 from store_lineitem
+		 UNION ALL
+		 select
+		 wl_extendedprice as l_extendedprice,
+		 wl_discount as l_discount,
+		 wl_partkey as l_partkey,
+		 wl_suppkey as l_suppkey,
+		 wl_shipdate as l_shipdate
+		 from web_lineitem
+        ) as lineitem,
+        part
+where
+        l_partkey = p_partkey
+        and l_shipdate >= date '1995-01-01'
+        and l_shipdate < date '1995-01-01' + interval '1' month
+        group by
+                l_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
+order by
+        s_suppkey;
+ --- extracted query:
+ too many values to unpack (expected 2)
+ --- END OF ONE EXTRACTION EXPERIMENT

@@ -196,7 +196,7 @@ general_guidelines = """Strictly follow the instructions given below for your SQ
 1. Strictly use the tables given in the seed query. Do not use any table that is absent in the seed query.
 2. Do not use redundant join conditions. Do not use CROSS-JOIN.
 3. Do not use any predicate with place holder parameter.
-4. Do not use window functions, such as RANK() OVER PARTITION BY.
+4. Do not use window functions, such as RANK() OVER PARTITION BY, and functions such as NULLIF, COALESCE.
 5. Whenever the seed query has projections, strictly re-use their order and aliases.
 6. Produce SQL compatible for PostgreSQL Engine.
 """
@@ -553,7 +553,8 @@ Q7_feedback1 = """The output of your current query is as follows:
 "GERMANY"	"FRANCE"	1996	5557312.1121
 "GERMANY"	"FRANCE"	1996	5557312.1121
 
-Looks like it has duplicated groups. If group by clause is present within union subqueries, try putting it out."""
+Looks like it has duplicated groups. 
+If group by clause is present within union subqueries, try putting it out."""
 
 Q8_text = """The market share for 'INDIA' within Asian region is defined as the fraction of the revenue,
 the sum of [extended price * (1-discount)], from the products of 'ECONOMY ANODIZED STEEL' type sold online in that
@@ -1969,10 +1970,120 @@ the first quarter of 1995. In case of a tie, the query lists all suppliers whose
 maximum, presented in supplier number order. Revenue is calculated as sum(extended price*(1-discount)).
 """
 Q15_seed = """Here are some hints on the query.
-1. The query involves a UNION ALL operator between two subqueries.
-2. FROM clause of one subquery has tables: supplier, web_lineitem
-3. FROM clause of the other subquery has tables: supplier, store_lineitem"""
-Q15_seed_output = """"""
+(Select Max(wl_suppkey) as s_suppkey, s_name, s_address, s_phone, Sum(wl_extendedprice*(1 - wl_discount)) as total_revenue 
+ From supplier, web_lineitem 
+ Where supplier.s_suppkey = web_lineitem.wl_suppkey
+ and web_lineitem.wl_shipdate between '1995-01-01' and '1995-01-31'
+ group by s_name, s_address, s_phone)
+ UNION ALL  
+ (Select Max(sl_suppkey) as s_suppkey, s_name, s_address, s_phone, Sum(sl_extendedprice*(1 - sl_discount)) as total_revenue 
+ From store_lineitem, supplier 
+ Where store_lineitem.sl_suppkey = supplier.s_suppkey
+ and store_lineitem.sl_shipdate between '1995-01-01' and '1995-01-31'
+ group by s_name, s_address, s_phone);
+ """
+Q15_seed_output = """ The seed query produces the following output (first 100 rows): 
+1559	"Supplier#000001559       "	"cTgcN,Vi N"	"17-553-423-6440"	204029.9644
+1528	"Supplier#000001528       "	"it4EmP9yhW0IZvUnapbYfoKXVvY2"	"13-570-757-5808"	275455.7616
+4818	"Supplier#000004818       "	" pq 8W7GgiPQEHo4qMvREULChRuKqxSP9GQm2ox"	"14-584-467-9693"	80264.3490
+4759	"Supplier#000004759       "	"bxwpbOzAFn2goILzqnWso"	"28-520-218-8613"	149383.4646
+3867	"Supplier#000003867       "	"Vl0it8GSnzR3rthsVcI5bk2qxEi"	"10-523-466-5029"	240073.1633
+3414	"Supplier#000003414       "	"loSCvoLk0uUDFaCvql3yt5tHp6P1a"	"30-252-605-4415"	254902.4632
+2581	"Supplier#000002581       "	"JNhWdkCsY913kACx9zOSkDnj2kqnyH"	"24-129-434-1961"	157632.0462
+788	"Supplier#000000788       "	"jL QLbG475Uszs4 2RxBp4oR"	"30-377-394-1108"	173025.0691
+488	"Supplier#000000488       "	"AzfObar4VYwnQvsGbISGCshVM AIWYq9"	"23-609-606-3265"	472276.5929
+626	"Supplier#000000626       "	"uaYN3Mg6sVtD"	"23-672-133-9305"	186703.1658
+2601	"Supplier#000002601       "	"O,xUQnlTenpSKG4f9SBXcWpr1Yb"	"10-898-717-9719"	289316.9714
+1907	"Supplier#000001907       "	"ybAHrX,OnohkqolW ZBY4YhW63IRCUtuIehrJk8J"	"30-901-567-4832"	456761.9070
+3059	"Supplier#000003059       "	"4L5nNuegCdCY3m,88BFVEut28TFlbZ6hHCj"	"24-184-213-4553"	40651.0995
+1333	"Supplier#000001333       "	"gKunwze79R7QX8j"	"17-962-950-1375"	496383.4482
+1574	"Supplier#000001574       "	"010G9zS4hWlWkl1X3 F7Ha2 Vnq2Qc2"	"23-997-787-7515"	265654.9187
+2240	"Supplier#000002240       "	"hTJM3PXSdUuF0wFb0geX"	"12-390-860-8618"	438020.7881
+3017	"Supplier#000003017       "	"45FE 2ykESNBNe4Sp b"	"14-285-994-8319"	392420.4972
+1014	"Supplier#000001014       "	"8o3SbVMNnBM1foNWeoiVXoPpLhhZcc6tB"	"12-528-127-4486"	253684.0798
+3896	"Supplier#000003896       "	"mWr2VTZVOlAdk6RXnSAPSNHL3Xdu3FfnrPQh"	"29-261-495-9146"	349147.0126
+2000	"Supplier#000002000       "	"b1,LW1CcQX7Mp2RQgKXLrKGvuJmM"	"21-860-645-7227"	362476.3550
+3364	"Supplier#000003364       "	"5p6HNshx2rf4EKNYzm9Y1vU3"	"26-278-540-7484"	87170.8975
+206	"Supplier#000000206       "	"hva5xXEn5j7H27CdKcjFqi,QnunUZyt8,a"	"29-156-330-8311"	213188.4672
+2195	"Supplier#000002195       "	"aDZzLrVyjTGTrQkFbZIsVRz HvhC4Qvd"	"28-154-128-8030"	245164.5741
+2679	"Supplier#000002679       "	"MaiB0O77I5cCcE9w"	"14-228-859-6923"	205316.4659
+3669	"Supplier#000003669       "	"yxO31BBDfe5vIKGwLWhZGsWzngdAgs8oSq6L"	"33-852-933-2119"	360914.4410
+3849	"Supplier#000003849       "	"KgbZEaRk,6Q3mWvwh6uptrs1KRUHg 0"	"13-582-965-9117"	128591.7915
+2719	"Supplier#000002719       "	"4nnzQI2CbqREQUuIsXTBVUkaP4mNS3"	"13-241-286-9786"	168175.6385
+2921	"Supplier#000002921       "	"S1UO1Dfj5y0kG0ui6gJ30yt5CUVaebtyIlRSp"	"10-392-215-8665"	264817.4324
+2208	"Supplier#000002208       "	"N3a93D2ALpD4hf 8DicAAi KZG"	"14-369-691-4892"	455246.2758
+149	"Supplier#000000149       "	"pVyWsjOidpHKp4NfKU4yLeym"	"16-660-553-2456"	199249.4052
+153	"Supplier#000000153       "	"qkCHAU1v9CtEBOGXhdFXJsx5L5gViVm5k,"	"19-346-843-5260"	424435.7317
+565	"Supplier#000000565       "	",oYB9wlD3mtL lj3PJC67a RGXaqh69sHK5G4e"	"30-487-989-9411"	60801.0918
+145	"Supplier#000000145       "	"pSsVRBOlNKVuvXcjAEKxxy0hD8kA aZf"	"16-136-582-9756"	261958.5550
+3789	"Supplier#000003789       "	"iDiVfkHeNky"	"11-732-905-1016"	188963.5953
+3629	"Supplier#000003629       "	"fco32LPL55pLFoH0"	"28-780-309-4610"	461024.2724
+3861	"Supplier#000003861       "	"kiZ4YdXV0Ah,kRkyIJ17R6Qh"	"21-850-998-6046"	232950.2762
+1179	"Supplier#000001179       "	"l9JHnPjgaxrY11cPiCE"	"28-156-806-5348"	383605.9158
+3886	"Supplier#000003886       "	"c,VP75QAJqi ig1gNOWsxXdsuZQbi4ZJ5 3"	"34-418-995-7074"	280850.9316
+1289	"Supplier#000001289       "	"xrtlwRNxzz 8J,6"	"18-840-902-3456"	330317.6159
+2683	"Supplier#000002683       "	"WMUccHizpga,Z2BSAV"	"17-754-432-1167"	191762.7157
+2743	"Supplier#000002743       "	"Ogj4Ndxtu7FARpgYmpeQMjoAnYlIi"	"20-176-647-8475"	208417.9130
+1685	"Supplier#000001685       "	"YZZuwx45JDn6 QsARZq"	"26-877-710-5379"	111460.1084
+1307	"Supplier#000001307       "	"MPZXf,9fmn0H5Bgtfyv2c74pCy"	"27-897-389-5613"	277859.9316
+4272	"Supplier#000004272       "	"0CUBdD9KyyE"	"21-375-837-7482"	205402.2794
+4249	"Supplier#000004249       "	"dqjRKOF5zt6IBAEHkbniUdyu4kREGJGqQV9"	"15-272-365-4305"	221361.0593
+1080	"Supplier#000001080       "	"RPVbFa a5wCXrpH Y8V"	"31-148-197-8002"	308125.2413
+3048	"Supplier#000003048       "	"Cu nnq0xHJm8MfHUw5KwjlYgI"	"30-282-606-3047"	309744.2258
+4414	"Supplier#000004414       "	"DvgX74btfxm83Rxf81LTicpT9Eo vTi 0"	"23-302-983-3738"	195060.3992
+2314	"Supplier#000002314       "	"iU5DZSv3 i04wiV,cTxg0joJLG5AJzVxMdtHW"	"10-848-716-8078"	159823.0904
+1350	"Supplier#000001350       "	"JeFDZXbYECk"	"23-431-834-8413"	376672.9593
+2722	"Supplier#000002722       "	"YlPsKWwJQTZj5aAq4XTVnYDBZaw9"	"29-868-338-3436"	493951.0595
+3643	"Supplier#000003643       "	"DPMM fUKicM rvf3pg27FFtux,XG07bcom5o "	"28-892-419-1661"	412551.8009
+1282	"Supplier#000001282       "	"UA gsripU3RMLvlJ"	"12-744-273-6433"	85002.2986
+4963	"Supplier#000004963       "	"F5naCEAdQhhjm3IwJsla7 OF6mMbbjtH90"	"24-756-311-4817"	199946.4774
+2026	"Supplier#000002026       "	"ZJzy4wu,lfoZugo6,cRgWvbca gFv4SzximYFeG"	"24-814-878-2691"	231664.3372
+3010	"Supplier#000003010       "	"vOeYAusMVN9HDeDJZuvr9nC0E1a"	"11-900-702-4200"	148510.1252
+453	"Supplier#000000453       "	"bpt98PxU5HSQt61bVB695JPjBmJKUv hNzQeHvC"	"31-882-179-6015"	383841.5961
+3836	"Supplier#000003836       "	"tdBz4J0l7wDJJu Dej1"	"16-958-229-2290"	266318.1655
+2803	"Supplier#000002803       "	"6pUdfifEqaKeD3rScPUlSApW1TbxYlA5NleGhl"	"11-452-177-8866"	492650.5959
+4208	"Supplier#000004208       "	"x3jZYF7ZYN 8a4LY1c1kEsh"	"21-468-998-1571"	281296.9845
+980	"Supplier#000000980       "	"jfgiJfywBW88ZEYM 5V"	"23-105-829-3910"	317521.6427
+1355	"Supplier#000001355       "	"OmfBiXdFaTc"	"12-815-691-5142"	296834.0398
+1487	"Supplier#000001487       "	"0ISabDJ8Fj7H8qu3qPvx"	"28-878-390-8065"	368173.9737
+4478	"Supplier#000004478       "	"zkONvYIl3m8"	"15-839-281-1312"	218278.9653
+852	"Supplier#000000852       "	"n3zasd04WljXdo9xMjQRkZKrEB"	"11-574-892-3228"	294850.9465
+3871	"Supplier#000003871       "	"0l9vr6DDagytSNo,SD2mkG4XezH8L1loBW7uXV"	"10-678-935-9330"	185494.6337
+3948	"Supplier#000003948       "	"XYiD 7s4dikkL8B9"	"15-543-886-7762"	150303.9137
+949	"Supplier#000000949       "	"a,UE,6nRVl2fCphkOoetR1ajIzAEJ1Aa1G1HV"	"33-332-697-2768"	393401.6226
+4765	"Supplier#000004765       "	"LCJ8Mtc6bGYDK7Kg5EKq1tudlQpkT54R8R8j"	"14-523-229-1984"	140051.6038
+4238	"Supplier#000004238       "	"ycSsD71UyOr"	"10-689-876-6705"	570893.0966
+2631	"Supplier#000002631       "	"jbO, cOqoJTHQAetYnUNOKa3U"	"28-153-887-4167"	226962.3896
+4258	"Supplier#000004258       "	"oXKtTTKlpcYIbuiMgfnP0sWD2P2Ngas"	"33-173-309-5477"	435411.9214
+2500	"Supplier#000002500       "	"3E6egPL3NCIN4Vawqt0pxUoH7ji Zp"	"28-937-418-6930"	313244.3106
+1266	"Supplier#000001266       "	"lwHRpzssxFZW9"	"20-985-871-8162"	27616.7880
+3715	"Supplier#000003715       "	"tEgnSYHQkY"	"23-414-190-3025"	241145.5545
+3082	"Supplier#000003082       "	"vLhIfPUhiW1Y rYmcj"	"33-680-262-1683"	282728.1721
+4467	"Supplier#000004467       "	"7BTW,9Tvb7WeewsQrIUhKsAaaU8pLxHNHpG mN1"	"19-443-184-3520"	145223.3124
+3730	"Supplier#000003730       "	"CQwSVgaug86Vhwt"	"19-147-682-6287"	245003.2459
+2310	"Supplier#000002310       "	"E FGFgvWTLL3beRdu5V3mEVNaYvW61"	"23-736-684-2154"	244098.9442
+2291	"Supplier#000002291       "	"cREl5ZgjwUa"	"11-877-834-5524"	386624.5870
+2863	"Supplier#000002863       "	"CKTfjYetZLnm1KxDLjb3Br4Nec"	"18-744-168-9042"	342632.2199
+4670	"Supplier#000004670       "	"fnLEhL1yrH7XT4N"	"18-302-357-9648"	303404.2827
+4438	"Supplier#000004438       "	"X3YNSKLk1Bmh9OAFND7qUAdEb1I"	"29-834-445-2433"	78105.3685
+610	"Supplier#000000610       "	"cRikc,rgxAM3yz0IR85OD"	"30-402-585-4900"	229642.4004
+406	"Supplier#000000406       "	"zMhU58CDF4aHTeodxg9IgRZgq"	"31-926-216-4352"	167740.0460
+1631	"Supplier#000001631       "	"3JwfERzppDc6h7BV0I"	"22-255-355-8658"	278166.0510
+1654	"Supplier#000001654       "	"5F6ZEzmh6PWDS"	"12-219-980-3825"	409857.3706
+3117	"Supplier#000003117       "	"awKOkc6y,vmP3jAD6BfL4i"	"18-191-586-4745"	324128.2180
+1534	"Supplier#000001534       "	",rRNXQRJQd6JXzpwnEuKkKn"	"30-891-630-2295"	428143.9176
+2361	"Supplier#000002361       "	"1p U8A z36oRmNfqN"	"27-333-451-9926"	57937.6140
+2435	"Supplier#000002435       "	"2Wg6s 0Y5Mnfuois3iIoaq1wrVETh"	"31-379-702-6071"	350485.5576
+370	"Supplier#000000370       "	"yyNSJAG9UXcWit4SeMkEIrNcdVq5"	"10-602-768-3758"	313897.5375
+913	"Supplier#000000913       "	"c78mMYZkHE7ktVSoB9D"	"34-601-419-1634"	258912.8464
+3790	"Supplier#000003790       "	"vKEajCmMniaZBxwyOb1qwk63IlQJL8bENqQIJn"	"11-386-956-2273"	140554.4534
+4338	"Supplier#000004338       "	"fHVztcdO93vdaB2W9p3O67V20"	"18-464-476-3509"	167439.7608
+2239	"Supplier#000002239       "	"NL9w9GFCzq6N"	"10-191-563-6127"	252531.6953
+4460	"Supplier#000004460       "	"2AqMg2cKVwauYYw8hSpKQEM0M ZuK2ZuWK3T"	"32-777-383-6892"	240052.4582
+2277	"Supplier#000002277       "	"uxpnnDRwK1m, "	"17-762-810-4943"	361000.0582
+4175	"Supplier#000004175       "	"MVBQawEe,35kLvhEdC8F8tJMWenyu,apYhHEDohw"	"10-920-963-6166"	320703.3293
+2376	"Supplier#000002376       "	"dKY1qJIOWUBZF99EXp"	"14-803-406-2891"	222827.0811
+"""
 Q15_actual_output = """But the actual query should produce the following output:
 1181	"Supplier#000001181       "	"e,Ld995DWYXRrqQRLS9MtmWinb64wGm5JjMhRXF"	"19-963-905-7803"	3532163.1474
 
@@ -1980,35 +2091,35 @@ Give me the correct query.
 If there is a common subquery used more than once, make it a CTE with an alias and use it."""
 Q15_feedback1 = """You formulated the following query:
 
-SELECT s_suppkey, s_name, s_address, s_phone, total_revenue
-FROM (
-    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(wl.wl_extendedprice * (1 - wl.wl_discount)) AS total_revenue
-    FROM supplier s
-    JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
-    WHERE wl.wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
-    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
+WITH combined_revenue AS (
+    SELECT wl_suppkey AS s_suppkey, 
+           s_name, 
+           s_address, 
+           s_phone, 
+           SUM(wl_extendedprice * (1 - wl_discount)) AS total_revenue
+    FROM web_lineitem
+    JOIN supplier ON supplier.s_suppkey = web_lineitem.wl_suppkey
+    WHERE wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY wl_suppkey, s_name, s_address, s_phone
+
     UNION ALL
-    SELECT s.s_suppkey, s.s_name, s.s_address, s.s_phone, SUM(sl.sl_extendedprice * (1 - sl.sl_discount)) AS total_revenue
-    FROM supplier s
-    JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
-    WHERE sl.sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
-    GROUP BY s.s_suppkey, s.s_name, s.s_address, s.s_phone
-) AS combined_revenue
+
+    SELECT sl_suppkey AS s_suppkey, 
+           s_name, 
+           s_address, 
+           s_phone, 
+           SUM(sl_extendedprice * (1 - sl_discount)) AS total_revenue
+    FROM store_lineitem
+    JOIN supplier ON supplier.s_suppkey = store_lineitem.sl_suppkey
+    WHERE sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY sl_suppkey, s_name, s_address, s_phone
+)
+
+SELECT s_suppkey, s_name, s_address, s_phone, total_revenue
+FROM combined_revenue
 WHERE total_revenue = (
-    SELECT MAX(total_revenue)
-    FROM (
-        SELECT SUM(wl.wl_extendedprice * (1 - wl.wl_discount)) AS total_revenue
-        FROM supplier s
-        JOIN web_lineitem wl ON s.s_suppkey = wl.wl_suppkey
-        WHERE wl.wl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
-        GROUP BY s.s_suppkey
-        UNION ALL
-        SELECT SUM(sl.sl_extendedprice * (1 - sl.sl_discount)) AS total_revenue
-        FROM supplier s
-        JOIN store_lineitem sl ON s.s_suppkey = sl.sl_suppkey
-        WHERE sl.sl_shipdate BETWEEN '1995-01-01' AND '1995-03-31'
-        GROUP BY s.s_suppkey
-    ) AS max_revenue
+    SELECT MAX(total_revenue) 
+    FROM combined_revenue
 )
 ORDER BY s_suppkey;
 

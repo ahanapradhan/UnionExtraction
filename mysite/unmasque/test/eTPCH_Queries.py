@@ -499,6 +499,7 @@ Q15 = """with revenue(supplier_no, total_revenue) as
                 (select 
 		 sl_extendedprice as l_extendedprice,
 		 sl_discount as l_discount,
+		 sl_partkey as l_partkey,
 		 sl_suppkey as l_suppkey,
 		 sl_shipdate as l_shipdate
 		 from store_lineitem
@@ -507,13 +508,12 @@ Q15 = """with revenue(supplier_no, total_revenue) as
 		 wl_extendedprice as l_extendedprice,
 		 wl_discount as l_discount,
 		 wl_partkey as l_partkey,
+		 wl_suppkey as l_suppkey,
 		 wl_shipdate as l_shipdate
 		 from web_lineitem
         ) as lineitem,
-        part
 where
-        l_partkey = p_partkey
-        and l_shipdate >= date '1995-01-01'
+        l_shipdate >= date '1995-01-01'
         and l_shipdate < date '1995-01-01' + interval '1' month
         group by
                 l_suppkey)

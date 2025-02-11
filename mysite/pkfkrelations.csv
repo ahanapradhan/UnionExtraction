@@ -4,10 +4,8 @@ supplier,s_suppkey,y,n,,
 supplier,s_nationkey,n,y,nation,n_nationkey
 partsupp,ps_partkey,y,y,part,p_partkey
 partsupp,ps_suppkey,y,y,supplier,s_suppkey
-partsupp1,ps1_suppkey,y,y,supplier,s_suppkey
 customer,c_custkey,y,n,,
 orders,o_orderkey,y,n,,
-orders1,o1_orderkey,y,n,,
 web_lineitem,wl_orderkey,y,y,orders,o_orderkey
 web_lineitem,wl_linenumber,y,n,,
 store_lineitem,sl_orderkey,y,y,orders,o_orderkey
@@ -17,7 +15,6 @@ region,r_regionkey,y,n,,
 customer,c_nationkey,n,y,nation,n_nationkey
 orders,o_custkey,n,y,customer,c_custkey
 web_lineitem,wl_partkey,n,y,part,p_partkey
-web_lineitem1,wl1_partkey,n,y,part,p_partkey
 web_lineitem,wl_suppkey,n,y,supplier,s_suppkey
 web_lineitem,wl_partkey,n,y,partsupp,ps_partkey
 web_lineitem,wl_suppkey,n,y,partsupp,ps_suppkey
