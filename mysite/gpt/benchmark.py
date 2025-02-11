@@ -3292,6 +3292,67 @@ numwait values are more. See below, which is the current result.
 Check again whether all the text requirements are captured in the query.
 """
 
+Q22_text = """This query counts how many customers within country 
+codes among '13', '31', '23', '29', '30', '18', and '17' 
+have not placed orders for 7 years
+but who have a greater than average ``positive" account balance. 
+It also reflects the magnitude of that balance.
+Country code is defined as the first two characters of c_phone."""
+Q22_seed = """Select c1.c_phone as cntrycode, <unknown> as numcust, c1.c_acctbal as totacctbal 
+ From customer c1, customer c2, orders 
+ Where c2.c_acctbal < c1.c_acctbal
+ and (c1.c_phone LIKE '30%' OR c1.c_phone LIKE '13%' OR c1.c_phone LIKE '31%' OR c1.c_phone LIKE '17%' OR
+ c1.c_phone LIKE '18%' OR c1.c_phone LIKE '23%' OR c1.c_phone LIKE '29%')
+ and (c2.c_phone LIKE '30%' OR c2.c_phone LIKE '13%' OR c2.c_phone LIKE '31%' OR c2.c_phone LIKE '17%' OR
+ c2.c_phone LIKE '18%' OR c2.c_phone LIKE '23%' OR c2.c_phone LIKE '29%')
+ and c2.c_acctbal >= 0.01"""
+Q22_seed_output = """
+Re-use the two instances of customer table, 
+and the related predicates of the seed query in your query.
+Validate each predicate and optimize if possible."""
+Q22_actual_output = """The query should produce the following output:
+"13"	888	6737713.99
+"17"	861	6460573.72
+"18"	964	7236687.40
+"23"	892	6701457.95
+"29"	948	7158866.63
+"30"	909	6808436.13
+"31"	922	6806670.18"""
+Q22_feedback1 = """You produced the following query:
+SELECT 
+    SUBSTRING(c1.c_phone FROM 1 FOR 2) AS cntrycode, 
+    COUNT(DISTINCT c1.c_custkey) AS numcust, 
+    SUM(c1.c_acctbal) AS totacctbal
+FROM 
+    customer c1
+LEFT JOIN 
+    orders o ON c1.c_custkey = o.o_custkey AND o.o_orderdate >= CURRENT_DATE - INTERVAL '7 years'
+WHERE 
+    SUBSTRING(c1.c_phone FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+    AND c1.c_acctbal > (
+        SELECT AVG(c2.c_acctbal)
+        FROM customer c2
+        WHERE c2.c_acctbal > 0
+    )
+    AND o.o_orderkey IS NULL
+GROUP BY 
+    cntrycode
+ORDER BY 
+    cntrycode;
+
+It produces the following reuslt:
+"13"	2680	20224566.84
+"17"	2642	19835161.13
+"18"	2779	20952115.38
+"23"	2697	20238991.21
+"29"	2835	21222036.16
+"30"	2653	19895118.39
+"31"	2739	20526474.44.
+
+Do not use predicate on any attribute that is not present in the seed query.
+
+Fix the query."""
+
 Q23_text = """Find the cities and part brands where a customer first buys and returns on web, and then buys again from store. City is identified as the last
 5 characters of customer's address."""
 Q23_seed = """SELECT   c_address AS city,
