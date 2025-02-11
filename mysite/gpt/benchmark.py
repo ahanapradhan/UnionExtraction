@@ -2317,14 +2317,36 @@ Fix the query. """
 
 Q16_text = """The Query counts the number of suppliers who can supply parts that satisfy a particular
 customer's requirements. The customer is interested in parts of sizes 1, 4, and 7 as long as 
-they are not polished medium, not of `Brand#23'`, and not from a supplier who has had complaints 
+they are not like 'MEDIUM POLISHED%', not of `Brand#23'`, and not from a supplier who has had complaints 
 registered at the Better Business Bureau.
 Results must be presented in descending count and ascending brand, type, and size."""
-Q16_seed = """"""
+Q16_seed = """Select p_brand, p_type, p_size, Count(*) as supplier_cnt 
+ From part, partsupp, supplier 
+ Where part.p_partkey = partsupp.ps_partkey
+ and part.p_size IN (1, 4, 7) 
+ Group By p_brand, p_size, p_type; 
+ Validate all the predicates of the above query against the text description.
+ Make sure s_comment based predicate string captures Customer Complaints.
+If the seed query has redundant tables, 
+where join predicates are missing, may be there is a hidden <> predicate!"""
 Q16_seed_output = """The above seed query produces the following output: """
 Q16_actual_output = """But the actual query should produce the following output:
 
 Fix the seed query."""
+Q16_feedback1 = """You formulated the following SQL query:
+SELECT p_brand, p_type, p_size, COUNT(*) AS supplier_cnt
+FROM part
+JOIN partsupp ON part.p_partkey = partsupp.ps_partkey
+JOIN supplier ON partsupp.ps_suppkey = supplier.s_suppkey
+WHERE part.p_size IN (1, 4, 7)
+AND part.p_type <> 'polished medium'
+AND part.p_brand <> 'Brand#23'
+AND supplier.s_comment NOT LIKE '%Better Business Bureau%'
+GROUP BY p_brand, p_size, p_type
+ORDER BY supplier_cnt DESC, p_brand ASC, p_type ASC, p_size ASC;
+
+It produces 7118 rows. But the actual queries return 6878 rows. Fix the query. 
+"""
 
 Q17_text = """"""
 Q17_seed = """"""
