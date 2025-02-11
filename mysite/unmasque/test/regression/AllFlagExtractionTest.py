@@ -945,7 +945,53 @@ order by
         self.conn.config.detect_nep = False
         self.conn.config.detect_oj = False
         self.conn.config.use_cs2 = False
-        self.do_test(Q15)
+        self.do_test("""with revenue(supplier_no, total_revenue) as        
+(select
+                l_suppkey,
+                sum(l_extendedprice * (1 - l_discount))
+        from
+                (select 
+		 sl_extendedprice as l_extendedprice,
+		 sl_discount as l_discount,
+		 sl_partkey as l_partkey,
+		 sl_suppkey as l_suppkey,
+		 sl_shipdate as l_shipdate
+		 from store_lineitem
+		 UNION ALL
+		 select
+		 wl_extendedprice as l_extendedprice,
+		 wl_discount as l_discount,
+		 wl_partkey as l_partkey,
+		 wl_suppkey as l_suppkey,
+		 wl_shipdate as l_shipdate
+		 from web_lineitem
+        ) as lineitem,
+        part
+where
+        l_partkey = p_partkey
+        and l_shipdate >= date '1995-01-01'
+        and l_shipdate < date '1995-01-01' + interval '1' month
+        group by
+                l_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
+order by
+        s_suppkey;""")
 
     def test_etpchQ12(self):
         self.conn.config.detect_union = True
@@ -1243,9 +1289,40 @@ order by
         self.do_test(query)
 
     def test_extraction_Q16(self):
-        key = 'Q16'
-        query = queries.queries_dict[key]
-        self.do_test(query)
+        self.conn.config.use_cs2 = False
+        self.conn.config.detect_union = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_or = True
+        self.do_test("""select
+	p_brand,
+	p_type,
+	p_size,
+	count(distinct ps_suppkey) as supplier_cnt
+from
+	partsupp,
+	part
+where
+	p_partkey = ps_partkey
+	and p_brand <> 'Brand#23'
+    AND p_type NOT LIKE 'MEDIUM POLISHED%' 
+	and p_size IN (1, 4, 7)
+	and ps_suppkey not in (
+		select
+			s_suppkey
+		from
+			supplier
+		where
+			s_comment like '%Customer%Complaints%'
+	)
+group by
+	p_brand,
+	p_type,
+	p_size
+order by
+	supplier_cnt desc,
+	p_brand,
+	p_type,
+	p_size;""")
 
     def test_extraction_Q17(self):
         key = 'Q17'

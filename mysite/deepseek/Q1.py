@@ -9,6 +9,52 @@ included.  1998-12-01 is the highest possible ship date as defined in the databa
 Give only the SQL, do not add any explaination.
 Put the SQL within Python style comment quotes.
 
+Mandatory instructions on SQL query formulation:
+1. Do not use redundant join conditions.
+2. Do not use any predicate with place holder parameter.
+3. No attribute in the database has NULL value.
+
+Refine the following 'seed query' SQL to reach to the final query:
+
+(select
+        wl_returnflag,
+        wl_linestatus,
+        sum(wl_quantity) as sum_qty,
+        sum(wl_extendedprice) as sum_base_price,
+        sum(wl_extendedprice * (1 - wl_discount)) as sum_disc_price,
+        sum(wl_extendedprice * (1 - wl_discount) * (1 + wl_tax)) as sum_charge,
+        avg(wl_quantity) as avg_qty,
+        avg(wl_extendedprice) as avg_price,
+        avg(wl_discount) as avg_disc,
+        count(*) as count_order
+from web_lineitem where wl_shipdate <= date '1998-12-01' - interval '3' day
+group by
+        wl_returnflag,
+        wl_linestatus
+order by
+        wl_returnflag,
+        wl_linestatus)
+UNION ALL
+(select
+        sl_returnflag,
+        sl_linestatus,
+        sum(sl_quantity) as sum_qty,
+        sum(sl_extendedprice) as sum_base_price,
+        sum(sl_extendedprice * (1 - sl_discount)) as sum_disc_price,
+        sum(sl_extendedprice * (1 - sl_discount) * (1 + sl_tax)) as sum_charge,
+        avg(sl_quantity) as avg_qty,
+        avg(sl_extendedprice) as avg_price,
+        avg(sl_discount) as avg_disc,
+        count(*) as count_order
+from store_lineitem where sl_shipdate <= date '1998-12-01' - interval '3' day
+group by
+        sl_returnflag,
+        sl_linestatus
+order by
+        sl_returnflag,
+        sl_linestatus);
+
+
 Consider the following schema while formulating the SQL query:
 
 CREATE TABLE nation
@@ -203,50 +249,6 @@ ADD CONSTRAINT nation_region_fkey
    FOREIGN KEY (N_REGIONKEY) REFERENCES REGION(R_REGIONKEY);
 
 
-Mandatory instructions on SQL query formulation:
-1. Do not use redundant join conditions.
-2. Do not use any predicate with place holder parameter.
-3. No attribute in the database has NULL value.
-
-Refine the following 'seed query' SQL to reach to the final query:
-
-(select
-        wl_returnflag,
-        wl_linestatus,
-        sum(wl_quantity) as sum_qty,
-        sum(wl_extendedprice) as sum_base_price,
-        sum(wl_extendedprice * (1 - wl_discount)) as sum_disc_price,
-        sum(wl_extendedprice * (1 - wl_discount) * (1 + wl_tax)) as sum_charge,
-        avg(wl_quantity) as avg_qty,
-        avg(wl_extendedprice) as avg_price,
-        avg(wl_discount) as avg_disc,
-        count(*) as count_order
-from web_lineitem where wl_shipdate <= date '1998-12-01' - interval '3' day
-group by
-        wl_returnflag,
-        wl_linestatus
-order by
-        wl_returnflag,
-        wl_linestatus)
-UNION ALL
-(select
-        sl_returnflag,
-        sl_linestatus,
-        sum(sl_quantity) as sum_qty,
-        sum(sl_extendedprice) as sum_base_price,
-        sum(sl_extendedprice * (1 - sl_discount)) as sum_disc_price,
-        sum(sl_extendedprice * (1 - sl_discount) * (1 + sl_tax)) as sum_charge,
-        avg(sl_quantity) as avg_qty,
-        avg(sl_extendedprice) as avg_price,
-        avg(sl_discount) as avg_disc,
-        count(*) as count_order
-from store_lineitem where sl_shipdate <= date '1998-12-01' - interval '3' day
-group by
-        sl_returnflag,
-        sl_linestatus
-order by
-        sl_returnflag,
-        sl_linestatus);
 
 The above seed query gives output as follows:
 "A"	"F"	18865717	27356549949.99	25988356900.45	27027321931.296696	25.519179575692974	37004.5151607654	0.05000787256721441	739276
@@ -264,5 +266,5 @@ But my expected output is as follows:
 "N"	"O"	76562572	111000813442.64	105448419350.231	109670632253.69768	25.499760531453646	36969.68489491028	0.05002611173022852	3002482
 "R"	"F"	37744994	54690862067.84	51959600163.9714	54036465621.57103	25.51844400003786	36975.12048861287	0.049998931801617984	1479126
 
-Fix the seed query.
+Fix the seed query. Give me output in SQL. Do not give me suggestion on how to fix. Produce SQL.
 """

@@ -2,6 +2,8 @@ import json
 
 import requests
 
+from .Q1 import Q1_text_2_sql
+
 text_2_sql = """Give me SQL for the following text:
 The Query provides a summary pricing report for all lineitems shipped as of a given date.
 The date is within 3 days of the greatest ship date contained in the database. The query lists totals for
@@ -268,7 +270,7 @@ with requests.post(
     "http://localhost:11434/api/generate",
     json={
         "model": "deepseek-r1",
-        "prompt": f"{text_2_sql}",
+        "prompt": f"{Q1_text_2_sql}",
         "stream": True
     }
 ) as response:
