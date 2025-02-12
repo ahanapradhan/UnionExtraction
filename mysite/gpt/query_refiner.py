@@ -5,8 +5,6 @@ from abc import abstractmethod
 import tiktoken
 from openai import OpenAI
 
-from mysite.gpt.Q13_benchmark import Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output, etpch_schema_Q13, \
-    Q13_feedback1, Q13_feedback2, Q13_feedback4_sample_data
 from mysite.gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guidelines, text_2_sql_question, \
     seed_query_question, Q1_seed_output, Q1_actual_output, Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, Q4_text, \
     Q4_seed_output, Q4_actual_output, Q4_seed, Q4_feedback1, Q3_feedback1, Q5_text, Q5_seed, Q5_seed_output, \
@@ -18,9 +16,10 @@ from mysite.gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guideli
     Q18_feedback1, Q9_actual_output, Q9_seed_output, Q9_seed, Q9_text, Q10_text, Q10_seed, Q10_seed_output, \
     Q10_actual_output, Q11_text, Q11_seed, Q11_seed_output, Q11_actual_output, Q11_feedback1, Q12_text, Q12_seed, \
     Q12_seed_output, Q12_actual_output, Q12_feedback1, Q15_text, Q15_seed, Q15_seed_output, Q15_actual_output, \
-    Q15_feedback1, Q15_feedback2, Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output, Q2_text, Q2_seed, \
-    Q2_seed_output, Q2_actual_output, Q16_text, Q16_seed, Q16_feedback1, Q22_text, Q22_seed, Q22_seed_output, \
-    Q22_actual_output, Q22_feedback1
+    Q15_feedback1, Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output, Q2_text, Q2_seed, \
+    Q2_seed_output, Q2_actual_output, Q16_text, Q16_seed, Q22_text, Q22_seed, Q22_seed_output, \
+    Q22_actual_output, Q22_feedback1, Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output, Q13_feedback1, Q19_text, \
+    Q19_seed, Q19_seed_output, Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -128,12 +127,13 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q10": [Q10_text, Q10_seed, Q10_seed_output, Q10_actual_output],
                   "Q11": [Q11_text, Q11_seed, Q11_seed_output, Q11_actual_output, [Q11_feedback1]],
                   "Q12": [Q12_text, Q12_seed, Q12_seed_output, Q12_actual_output, [Q12_feedback1]],
-                  "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output,
-                          etpch_schema_Q13, [Q13_feedback1, Q13_feedback2, Q13_feedback4_sample_data]],
+                  "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output, [Q13_feedback1]],
                   "Q14": [Q14_text, Q14_seed, Q14_seed_output, Q14_actual_output, [Q14_feedback1]],
                   "Q15": [Q15_text, Q15_seed, Q15_seed_output, Q15_actual_output, [Q15_feedback1]],
                   "Q16": [Q16_text, Q16_seed, "", ""],
+                  "Q17": [Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output],
                   "Q18": [Q18_text, Q18_seed, Q18_seed_output, Q18_actual_output, [Q18_feedback1]],
+                  "Q19": [Q19_text, Q19_seed, Q19_seed_output, ""],
                   "Q20": [Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output],
                   "Q21": [Q21_text, Q21_seed, Q21_seed_output, Q21_actual_output, [Q21_feedback1]],
                   "Q22": [Q22_text, Q22_seed, Q22_seed_output, Q22_actual_output, [Q22_feedback1]],

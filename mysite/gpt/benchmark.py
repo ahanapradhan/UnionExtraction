@@ -2046,6 +2046,337 @@ Looks like one more grouping is do to be done.
 Consider doing union first and then group by.
 Fix the query."""
 
+Q13_text = """This query determines the distribution of customers by the number of orders they have made, including customers
+who have no record of orders, past or present. It counts and reports how many customers have no orders, how many
+have 1, 2, 3, etc. A check is made to ensure that the orders counted do not fall into one of several special categories
+of orders. Special categories are identified in the order comment column by looking for pattern '%special%requests%'."""
+Q13_seed = """Select o_orderdate as c_count, Count(*) as c_orderdate, 1 as custdist 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey 
+ Group By o_orderdate 
+ Order By c_count desc, custdist asc; 
+ 
+ o_orderdate attribute of orders table must be used in the query.
+ Projection 'o_orderdate as c_count' must be there in the query.
+"""
+Q13_seed_output = """The above seed query gives the following result (first 100 rows):
+"1998-08-02"	581	1
+"1998-08-01"	618	1
+"1998-07-31"	621	1
+"1998-07-30"	619	1
+"1998-07-29"	608	1
+"1998-07-28"	612	1
+"1998-07-27"	602	1
+"1998-07-26"	630	1
+"1998-07-25"	627	1
+"1998-07-24"	606	1
+"1998-07-23"	640	1
+"1998-07-22"	648	1
+"1998-07-21"	629	1
+"1998-07-20"	606	1
+"1998-07-19"	638	1
+"1998-07-18"	640	1
+"1998-07-17"	641	1
+"1998-07-16"	620	1
+"1998-07-15"	639	1
+"1998-07-14"	636	1
+"1998-07-13"	572	1
+"1998-07-12"	630	1
+"1998-07-11"	668	1
+"1998-07-10"	658	1
+"1998-07-09"	606	1
+"1998-07-08"	620	1
+"1998-07-07"	627	1
+"1998-07-06"	620	1
+"1998-07-05"	592	1
+"1998-07-04"	606	1
+"1998-07-03"	645	1
+"1998-07-02"	616	1
+"1998-07-01"	651	1
+"1998-06-30"	588	1
+"1998-06-29"	629	1
+"1998-06-28"	634	1
+"1998-06-27"	567	1
+"1998-06-26"	632	1
+"1998-06-25"	620	1
+"1998-06-24"	659	1
+"1998-06-23"	588	1
+"1998-06-22"	616	1
+"1998-06-21"	639	1
+"1998-06-20"	603	1
+"1998-06-19"	567	1
+"1998-06-18"	625	1
+"1998-06-17"	626	1
+"1998-06-16"	597	1
+"1998-06-15"	606	1
+"1998-06-14"	638	1
+"1998-06-13"	634	1
+"1998-06-12"	636	1
+"1998-06-11"	685	1
+"1998-06-10"	616	1
+"1998-06-09"	597	1
+"1998-06-08"	660	1
+"1998-06-07"	585	1
+"1998-06-06"	640	1
+"1998-06-05"	620	1
+"1998-06-04"	612	1
+"1998-06-03"	623	1
+"1998-06-02"	648	1
+"1998-06-01"	600	1
+"1998-05-31"	593	1
+"1998-05-30"	604	1
+"1998-05-29"	649	1
+"1998-05-28"	656	1
+"1998-05-27"	630	1
+"1998-05-26"	671	1
+"1998-05-25"	590	1
+"1998-05-24"	636	1
+"1998-05-23"	640	1
+"1998-05-22"	578	1
+"1998-05-21"	622	1
+"1998-05-20"	643	1
+"1998-05-19"	667	1
+"1998-05-18"	623	1
+"1998-05-17"	663	1
+"1998-05-16"	605	1
+"1998-05-15"	607	1
+"1998-05-14"	652	1
+"1998-05-13"	609	1
+"1998-05-12"	631	1
+"1998-05-11"	621	1
+"1998-05-10"	624	1
+"1998-05-09"	631	1
+"1998-05-08"	590	1
+"1998-05-07"	599	1
+"1998-05-06"	609	1
+"1998-05-05"	613	1
+"1998-05-04"	670	1
+"1998-05-03"	615	1
+"1998-05-02"	635	1
+"1998-05-01"	656	1
+"1998-04-30"	654	1
+"1998-04-29"	639	1
+"1998-04-28"	625	1
+"1998-04-27"	633	1
+"1998-04-26"	611	1
+"1998-04-25"	566	1
+"""
+Q13_actual_output = """The actual output of the query is (first 100 rows):
+	0	50005
+"1995-01-13"	1	686
+"1996-05-31"	1	685
+"1993-03-19"	1	685
+"1998-01-21"	1	683
+"1995-04-13"	1	682
+"1998-02-16"	1	681
+"1996-12-31"	1	681
+"1994-03-15"	1	681
+"1996-09-23"	1	680
+"1997-07-28"	1	678
+"1994-09-12"	1	678
+"1993-08-01"	1	678
+"1992-02-24"	1	678
+"1998-03-21"	1	676
+"1997-08-23"	1	676
+"1993-08-12"	1	676
+"1993-01-22"	1	676
+"1997-03-22"	1	675
+"1998-01-15"	1	674
+"1997-12-02"	1	674
+"1997-01-05"	1	674
+"1994-08-01"	1	674
+"1992-10-24"	1	673
+"1996-11-29"	1	672
+"1996-07-26"	1	672
+"1995-03-26"	1	672
+"1993-01-02"	1	672
+"1995-10-11"	1	671
+"1994-01-02"	1	671
+"1997-08-17"	1	670
+"1996-07-01"	1	670
+"1996-02-21"	1	670
+"1995-04-21"	1	670
+"1995-01-26"	1	670
+"1998-06-11"	1	669
+"1997-08-05"	1	669
+"1996-03-23"	1	669
+"1996-09-18"	1	668
+"1996-06-15"	1	668
+"1994-11-13"	1	668
+"1997-01-22"	1	667
+"1995-07-01"	1	667
+"1993-09-24"	1	667
+"1997-12-05"	1	666
+"1997-04-29"	1	666
+"1996-01-09"	1	666
+"1995-11-15"	1	666
+"1994-03-05"	1	666
+"1992-12-03"	1	666
+"1997-06-25"	1	665
+"1994-12-19"	1	665
+"1994-03-28"	1	665
+"1994-02-08"	1	665
+"1993-09-09"	1	665
+"1993-04-24"	1	665
+"1993-04-04"	1	665
+"1992-12-05"	1	665
+"1992-07-13"	1	665
+"1997-12-08"	1	664
+"1996-11-25"	1	664
+"1995-04-23"	1	664
+"1998-05-04"	1	663
+"1996-05-08"	1	663
+"1996-02-29"	1	663
+"1995-07-16"	1	663
+"1995-01-28"	1	663
+"1992-06-18"	1	663
+"1992-01-04"	1	663
+"1998-03-29"	1	662
+"1997-06-05"	1	662
+"1996-06-20"	1	662
+"1995-04-06"	1	662
+"1995-01-30"	1	662
+"1998-01-02"	1	661
+"1997-03-05"	1	661
+"1995-06-03"	1	661
+"1994-11-14"	1	661
+"1994-06-20"	1	661
+"1992-05-29"	1	661
+"1997-08-04"	1	660
+"1995-05-04"	1	660
+"1994-12-22"	1	660
+"1993-09-01"	1	660
+"1992-01-31"	1	660
+"1998-05-26"	1	659
+"1997-06-12"	1	659
+"1996-09-27"	1	659
+"1995-12-19"	1	659
+"1995-07-26"	1	659
+"1992-08-20"	1	659
+"1998-05-19"	1	658
+"1997-02-17"	1	658
+"1996-06-30"	1	658
+"1996-03-07"	1	658
+"1996-01-03"	1	658
+"1995-07-27"	1	658
+"1993-10-18"	1	658
+"1997-12-06"	1	657
+"1997-05-28"	1	657
+
+Fix the seed query.
+Do not use COALESCE in SELECT Clause."""
+Q13_feedback1 = """
+You formulated the following SQL:
+SELECT 
+    COALESCE(order_count, 0) AS c_count, 
+    COUNT(customer.c_custkey) AS c_orderdate, 
+    1 AS custdist
+FROM 
+    customer
+LEFT JOIN 
+    (SELECT 
+        o_custkey, 
+        COUNT(*) AS order_count
+     FROM 
+        orders
+     WHERE 
+        o_comment NOT LIKE '%special%requests%'
+     GROUP BY 
+        o_custkey) AS order_summary
+ON 
+    customer.c_custkey = order_summary.o_custkey
+GROUP BY 
+    order_count
+ORDER BY 
+    c_count DESC, custdist ASC;
+
+
+It gives the following incorrect result:
+41	2	1
+40	4	1
+39	1	1
+38	5	1
+37	5	1
+36	14	1
+35	37	1
+34	50	1
+33	75	1
+32	148	1
+31	226	1
+30	376	1
+29	593	1
+28	893	1
+27	1179	1
+26	1612	1
+25	2086	1
+24	2742	1
+23	3225	1
+22	3623	1
+21	4190	1
+20	4516	1
+19	4793	1
+18	4529	1
+17	4587	1
+16	4273	1
+15	4505	1
+14	4446	1
+13	5024	1
+12	5639	1
+11	6014	1
+10	6532	1
+9	6641	1
+8	5937	1
+7	4687	1
+6	3265	1
+5	1948	1
+4	1007	1
+3	415	1
+2	134	1
+1	17	1
+0	50005	1
+
+Projection 'o_orderdate as c_count' must be there in the query.
+Validate all the other projections against the text.
+Do not use COALESCE in SELECT Clause.
+The query has 3 projections, with their aliases as c_count, c_orderdate and custdist. 
+o_orderdate corresponds to c_count. 
+customer count corresponds to count(*). 
+Projection 1 AS custdist may be incorrect.
+Fix the SQL.
+
+Here is sample data from the tables. Fix the SQL to match input-output.
+input: table customer: 
+1        "Customer#000000001"        "IVhzIApeRb ot,c,E"        15        "25-989-741-2988"        711.56        "BUILDING "        "to the even, regular platelets. regular, ironic epitaphs nag e" 
+2        "Customer#000000002"        "XSTf4,NCwDVaWNe6tEgvwfmRchLXak"        13        "23-768-687-3665"        121.65        "AUTOMOBILE"        "l accounts. blithely ironic theodolites integrate boldly: caref" 
+3        "Customer#000000003"        "MG9kdTD2WBHm"        1        "11-719-748-3364"        7498.12        "AUTOMOBILE"        " deposits eat slyly ironic, even instructions. express foxes detect slyly. blithely even accounts abov" 
+4        "Customer#000000004"        "XxVSJsLAGtn"        4        "14-128-190-5944"        2866.83        "MACHINERY "        " requests. final, regular ideas sleep final accou" 
+5        "Customer#000000005"        "KvpyuHCplrB84WgAiGV6sYpZq7Tj"        3        "13-750-942-6364"        794.47        "HOUSEHOLD "        "n accounts will have to unwind. foxes cajole accor" 
+6        "Customer#000000006"        "sKZz0CsnMD7mp4Xd0YrBvx,LREYKUWAh yVn"        20        "30-114-968-4951"        7638.57        "AUTOMOBILE"        "tions. even deposits boost according to the slyly bold packages. final accounts cajole requests. furious" 
+7        "Customer#000000007"        "TcGe5gaZNgVePxU5kRrvXBfkasDTea"        18        "28-190-982-9759"        9561.95        "AUTOMOBILE"        "ainst the ironic, express theodolites. express, even pinto beans among the exp" 
+8        "Customer#000000008"        "I0B10bB0AymmC, 0PrRYBCP1yGJ8xcBPmWhl5"        17        "27-147-574-9335"        6819.74        "BUILDING "        "among the slyly regular theodolites kindle blithely courts. carefully even theodolites haggle slyly along the ide" 
+9        "Customer#000000009"        "xKiAFTjUsCuxfeleNqefumTrjS"        8        "18-338-906-3675"        8324.07        "FURNITURE "        "r theodolites according to the requests wake thinly excuses: pending requests haggle furiousl" 
+10        "Customer#000000010"        "6LrEaV6KR6PLVcgl2ArL Q3rqzLzcT1 v2"        5        "15-741-346-9870"        2753.54        "HOUSEHOLD "        "es regular deposits haggle. fur" 
+9173        "Customer#000009173"        "J,DDGgvPAYPtVVmrJEf9P0qmIsMa9nX"        21        "31-295-102-6784"        7825.85        "MACHINERY "        "refully? express, regular pinto beans according to the final dependencies integrate regu" 
+65003        "Customer#000065003"        "Uvc6EL2aXpbYmM4cqo3Zl15,El1"        10        "20-344-332-1611"        3057.31        "MACHINERY "        "efully silent requests wake fluffily above the furiously ironic instructions. regul" 
+69907        "Customer#000069907"        " wsJD2vI0ykDND7YBV7d6TbLvv TZj06SU,L"        16        "26-451-896-8813"        134.81        "FURNITURE "        "e alongside of the always even accounts. brave deposits nag fluffil" 
+92101        "Customer#000092101"        "KNM8yon1cK9YwVYVZl h6iU"        19        "29-517-223-9433"        9555.81        "HOUSEHOLD "        "e ideas haggle slyly after the ironic, even foxes. bold tithes around the regular id" 
+97762        "Customer#000097762"        "KPAKqViTQ79aGimDDL"        2        "12-847-650-5180"        1791.51        "AUTOMOBILE"        " blithely ironic platelets haggle carefully slyly blithe foxes. brave, regular pinto beans after the blithely pendin" 
+108329        "Customer#000108329"        "onQupjdagLioEDzvx a7,"        15        "25-966-528-5654"        1348.15        "MACHINERY "        "ccording to the furiously bold pack" 110239        "Customer#000110239"        "arQFcOQHO4mCv4AS7ia,wSbtALVonjoPDgzGfh"        15        "25-636-569-5568"        513.76        "AUTOMOBILE"        " dolphins haggle slyly against the carefully ironic asympt" 
+114913        "Customer#000114913"        "o4cYmrBfHu8TMPPFy7"        21        "31-641-361-8112"        6362.24        "AUTOMOBILE"        "ily regular pinto beans. regular deposits against the unusual packages engage furiously special ideas. thinl" 
+114980        "Customer#000114980"        "hEMrRKrbaT 3w0Ujh5yNFQZl"        6        "16-913-755-5631"        4327.40        "FURNITURE "        "ecial foxes: furiously unusual reques" 
+131048        "Customer#000131048"        "okJsLKaD77E4n5 JM2JWYqcrT"        12        "22-812-281-1179"        4211.04        "FURNITURE "        "refully enticing excuses cajole fluffily. blithely final pinto beans promise quickly slyly final sheaves. carefully " 
+
+table orders: 
+1798564        114913        "F"        17568.26        "1992-02-11"        "2-HIGH "        "Clerk#000000373"        0        "counts. carefully unusual gifts use quickly along the slyly bold foxes. q" 
+1798565        92101        "F"        142767.20        "1992-06-17"        "2-HIGH "        "Clerk#000000517"        0        "dolites wake daringly around the even pains. f" 1798566        69907        "F"        145736.06        "1994-07-06"        "2-HIGH "        "Clerk#000000944"        0        "ggle. regular, ironic packages cajole bl" 1798567        97762        "F"        124611.17        "1995-01-31"        "3-MEDIUM "        "Clerk#000000508"        0        " wake. packages poac" 1798592        110239        "O"        265909.17        "1998-01-06"        "5-LOW "        "Clerk#000000698"        0        " quickly. carefully ironic instructions cajole quickly al" 1798593        114980        "O"        145706.20        "1998-04-26"        "1-URGENT "        "Clerk#000000891"        0        " quickly regular pinto beans. slyly ironic platelets maintain furi" 1798594        9173        "O"        146467.34        "1996-01-27"        "2-HIGH "        "Clerk#000000801"        0        " packages. thin, silent f" 1798595        108329        "O"        319689.68        "1996-03-20"        "2-HIGH "        "Clerk#000000917"        0        " around the final packages wake ironic, regular accounts. regular, even co" 1798596        131048        "O"        290838.48        "1998-07-09"        "4-NOT SPECIFIED"        "Clerk#000000258"        0        "ross the special accounts. blithely unusual deposit" 1798597        65003        "O"        152586.37        "1997-12-28"        "3-MEDIUM "        "Clerk#000000007"        0        "ests wake dependencies. furiously unusual re" Output:         0        10 "1998-07-09"        1        1 "1998-04-26"        1        1 "1998-01-06"        1        1 "1997-12-28"        1        1 "1996-03-20"        1        1 "1996-01-27"        1        1 "1995-01-31"        1        1 "1994-07-06"        1        1 "1992-06-17"        1        1 "1992-02-11"        1        1
+
+do not remove nesting of the SQL.
+Do not use COALESCE.
+Use the projection 'select o_orderdate as c_count' (SELECT clause)
+Fix the SQL.
+custdist may be count(*)
+"""
+
 Q14_text = """The Query determines what percentage of the revenue in a given year and month was derived from
 promotional parts. The query considers only parts actually shipped in that month and gives the percentage. Revenue
 is defined as (extended price * (1-discount))."""
@@ -2348,11 +2679,21 @@ ORDER BY supplier_cnt DESC, p_brand ASC, p_type ASC, p_size ASC;
 It produces 7118 rows. But the actual queries return 6878 rows. Fix the query. 
 """
 
-Q17_text = """"""
-Q17_seed = """"""
-Q17_seed_output = """The above seed query produces the following output: """
-Q17_actual_output = """But the actual query should produce the following output:
-
+Q17_text = """The Query considers parts of a given brand and with a given container type and
+determines the average lineitem quantity of such parts ordered for all orders (past and pending) in the 7-year database. 
+What would be the average yearly gross (undiscounted) loss in revenue if orders for these parts with a quantity
+of less than 70% of this average were no longer taken?"""
+Q17_seed = """Select 0.14*wl_extendedprice as avg_yearly 
+From part, web_lineitem w1, web_lineitem w1 
+Where part.p_partkey = w1.wl_partkey
+ and w1.wl_partkey = w2.wl1_partkey
+ and w1.wl_quantity < w2.wl1_quantity
+ and part.p_brand = 'Brand#53'
+ and part.p_container = 'MED BAG'
+ and w1.wl_quantity <= 1503238553.51 ;
+"""
+Q17_seed_output = """Validate the predicates of the seed query against the text description."""
+Q17_actual_output = """
 Fix the seed query."""
 
 Q18_text = """The Query finds a list of the top 100 customers who have ever placed more than 300 orders online.
@@ -2440,6 +2781,103 @@ LIMIT 100;
 It produces 0 rows in result.
 Fix the seed query. Hint: Try using SUM(wl_quantity) in both projection and HAVING clause.
 Also, reorder the projections to match the actual output."""
+
+Q19_text = """The query finds the gross discounted revenue for all orders for three different types of parts
+that were shipped by air and delivered in person. Parts are selected based on the combination of specific brands, a
+list of containers, and a range of sizes."""
+Q19_seed = """select
+        sum(wl_extendedprice* (1 - wl_discount)) as revenue
+from
+        web_lineitem,
+        part
+where (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 5 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 1 and 11
+                and p_container = 'SM CASE') 
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 5 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 1 and 11
+                and p_container = 'SM BOX')
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 5 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 1 and 11
+                and p_container = 'SM PACK')
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 5 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 1 and 11
+                and p_container = 'SM PKG')
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 10 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 10 and 20
+                and p_container = 'MED CASE') 
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 10 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 10 and 20
+                and p_container = 'MED BOX')
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 10 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 10 and 20
+                and p_container = 'MED PACK')
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 10 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 10 and 20
+                and p_container = 'MED PKG')
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 15 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 20 and 30
+                and p_container = 'LG CASE') 
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 15 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 20 and 30
+                and p_container = 'LG BOX')
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 15 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 20 and 30
+                and p_container = 'LG PACK')
+    OR (p_partkey = wl_partkey
+                and p_brand = 'Brand#12' 
+                and p_size between 1 and 15 
+                and l_shipinstruct = 'DELIVER IN PERSON'
+                and l_shipmode = 'AIR'
+                and l_quantity between 20 and 30
+                and p_container = 'LG PKG');"""
+Q19_seed_output = """Organize the predicates of the seed query into three types."""
+Q19_actual_output = """But the actual query should produce the following output:
+
+Fix the seed query."""
 
 Q20_text = """The query identifies suppliers who have an excess of a given part available; 
 an excess is defined to be more than 50% of the parts like the given part that 
