@@ -49,7 +49,7 @@ class Refiner:
     def doJob(self, text):
         pass
 
-    def doJob_write(self, text, key):
+    def doJob_write(self, text, key, append=False):
         working_dir = self.working_dir_path + self.output_dirname
         if not os.path.exists(working_dir):
             os.makedirs(working_dir)
@@ -57,12 +57,14 @@ class Refiner:
         filename = f"{working_dir}{self.name}_{key}_{self.output_filename}"
 
         orig_out = sys.stdout
-        f = open(filename, 'w')
+        mode = 'a' if append else 'w'
+        f = open(filename, mode)
         sys.stdout = f
         reply = self.doJob(text)
         sys.stdout = orig_out
         f.close()
-        print(f"SQL saved into {filename}")
+        mode_name = 'appended' if mode == 'a' else 'written'
+        print(f"SQL {mode_name} into {filename}")
         return reply
 
 
@@ -201,7 +203,7 @@ def do_feedback_refinement(no_show=False):
             else:
                 prompt = f"{prompt}\n" \
                          f"\n{feedback}"
-            output2 = refiner.doJob_write(prompt, query_key)
+            output2 = refiner.doJob_write(prompt, query_key, True)
             print(output2)
 
 

@@ -475,7 +475,23 @@ where
         and n_name = 'FRANCE'
         and ps_availqty > (select min(c_acctbal) from customer)
 order by
-        s_name;""", False, False, False, False)
+        s_name;""", False, False, False, False),
+                     TestQuery("paper_sample", """(Select c_name as entity_name, n_name as country, o_totalprice as price
+From orders JOIN customer ON c_custkey = o_custkey
+and o_totalprice <= c_acctbal and c_acctbal >= 9000
+JOIN nation ON c_nationkey = n_nationkey Where o_totalprice <= 15000
+and c_mktsegment IN ('HOUSEHOLD','MACHINERY')
+Group By c_name, n_name, o_totalprice
+Order By price asc, country asc, entity_name)
+UNION ALL
+(Select s_name as entity_name, n_name as country,
+Avg(wl_extendedprice*(1 - wl_discount)) as price
+From web_lineitem, nation, orders, region, supplier
+Where wl_suppkey = s_suppkey and n_nationkey = s_nationkey and
+wl_orderkey = o_orderkey and n_regionkey = r_regionkey and s_acctbal
+<= o_totalprice and o_totalprice <= 15000
+Group By n_name, s_name
+Order By price desc, country desc, entity_name)""", False, False, False, False)
 
                      ]
     return test_workload
