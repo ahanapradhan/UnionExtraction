@@ -2690,10 +2690,13 @@ Where part.p_partkey = w1.wl_partkey
  and w1.wl_quantity < w2.wl1_quantity
  and part.p_brand = 'Brand#53'
  and part.p_container = 'MED BAG'
- and w1.wl_quantity <= 1503238553.51 ;
+ and w1.wl_quantity <= 1503238553.51 
+ 
+ part table is used only once. Web_lineitem is used twice. Strictly follow this;
 """
 Q17_seed_output = """Validate the predicates of the seed query against the text description."""
 Q17_actual_output = """
+part table is used only once. Do not use it both in outer and inner query.
 Fix the seed query."""
 
 Q18_text = """The Query finds a list of the top 100 customers who have ever placed more than 300 orders online.
