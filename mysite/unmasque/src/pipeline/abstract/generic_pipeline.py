@@ -118,7 +118,6 @@ class GenericPipeLine(ABC):
         self.update_state(RESULT_COMPARE + DONE)
 
     def verify_correctness(self, query, result):
-        return False
         self.update_state(RESULT_COMPARE + START)
         self.connectionHelper.connectUsingParams(True)
         rc = ResultComparator(self.connectionHelper, True, self.core_relations)
