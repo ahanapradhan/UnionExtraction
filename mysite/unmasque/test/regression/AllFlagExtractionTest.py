@@ -367,17 +367,17 @@ order by
         self.do_test(query)
 
     def test_Q17(self):
-        query = """SELECT SUM(l.l_extendedprice) / 7.0 AS avg_yearly
-FROM lineitem l
-JOIN part p ON p.p_partkey = l.l_partkey
+        query = """SELECT SUM(l.wl_extendedprice) / 7.0 AS avg_yearly
+FROM web_lineitem l
+JOIN part p ON p.p_partkey = l.wl_partkey
 JOIN (
-    SELECT l_partkey, 0.7 * AVG(l_quantity) AS threshold_quantity
-    FROM lineitem
-    GROUP BY l_partkey
-) AS avg_lineitem ON avg_lineitem.l_partkey = l.l_partkey
+    SELECT wl1_partkey, 0.7 * AVG(wl1_quantity) AS threshold_quantity
+    FROM web_lineitem1
+    GROUP BY wl1_partkey
+) AS avg_lineitem ON avg_lineitem.wl1_partkey = p.p_partkey
 WHERE p.p_brand = 'Brand#53'
   AND p.p_container = 'MED BAG'
-  AND l.l_quantity < avg_lineitem.threshold_quantity;"""
+  AND l.wl_quantity < avg_lineitem.threshold_quantity;"""
         self.conn.config.detect_or = False
         self.conn.config.detect_union = False
         self.conn.config.detect_nep = False
