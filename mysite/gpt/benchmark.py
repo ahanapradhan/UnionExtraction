@@ -500,7 +500,7 @@ Fix the seed SQL query."""
 Q3_feedback1 = """Consider performing union first then using group by."""
 
 Q4_text = """The Query counts the number of orders ordered in a given quarter of 1995 in which
-at least one lineitem was received by the customer later than its committed date. The query lists the count of such
+at least one line item was received by the customer later than its committed date. The query lists the count of such
 orders for each order priority sorted in ascending priority order.
 """
 Q4_seed = """(Select o_orderpriority, Count(*) as order_count 
@@ -541,9 +541,38 @@ Fix the seed SQL query.
 Q4_feedback1 = """
 Do not put any redundant filter predicate. 
 All the filter predicates should be as per the seed query.
-The second projection values are larger than expected. So it must not be count(*).
-Maintain the distinct groups in the first projection.
+Consider performing union first and then do group by.
 """
+Q4_feedback2 = """You produced the following query:
+SELECT o_orderpriority, SUM(order_count) AS order_count
+FROM (
+    SELECT o_orderpriority, COUNT(DISTINCT orders.o_orderkey) AS order_count
+    FROM orders, web_lineitem
+    WHERE orders.o_orderkey = web_lineitem.wl_orderkey
+    AND web_lineitem.wl_commitdate < web_lineitem.wl_receiptdate
+    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY o_orderpriority
+    UNION ALL
+    SELECT o_orderpriority, COUNT(DISTINCT orders.o_orderkey) AS order_count
+    FROM orders, store_lineitem
+    WHERE orders.o_orderkey = store_lineitem.sl_orderkey
+    AND store_lineitem.sl_commitdate < store_lineitem.sl_receiptdate
+    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY o_orderpriority
+) AS combined
+GROUP BY o_orderpriority
+ORDER BY o_orderpriority ASC;
+
+It produces the following result:
+"1-URGENT       "	10352
+"2-HIGH         "	10622
+"3-MEDIUM       "	10328
+"4-NOT SPECIFIED"	10364
+"5-LOW          "	10420
+
+order_count values are double than expected. 
+Validate all the predicates against the text description, especially with ``at least one line item".
+Fix the query."""
 
 Q5_text = """The  Query lists for each nation in Asia the revenue volume that resulted from lineitem
 transactions in which the customer ordering parts and the supplier filling them were both within that nation. The
@@ -1700,8 +1729,11 @@ Q16_seed = """Select p_brand, p_type, p_size, Count(*) as supplier_cnt
  Group By p_brand, p_size, p_type; 
  Validate all the predicates of the above query against the text description.
  Make sure s_comment based predicate string captures Customer Complaints.
-If the seed query has redundant tables, 
-where join predicates are missing, may be there is a hidden <> predicate!"""
+
+Do not use join predicate which is not present in the seed query.
+join predicate ' partsupp.ps_suppkey = supplier.s_suppkey' must not be in the query.
+But do not use cross join.
+"""
 Q16_seed_output = """The above seed query produces the following output: """
 Q16_actual_output = """But the actual query should produce the following output:
 
@@ -1720,6 +1752,23 @@ ORDER BY supplier_cnt DESC, p_brand ASC, p_type ASC, p_size ASC;
 
 It produces 7118 rows. But the actual queries return 6878 rows. Fix the query. 
 """
+Q16_feedback2 = """You produced the following query:
+SELECT p_brand, p_type, p_size, COUNT(*) AS supplier_cnt
+FROM part, partsupp, supplier
+WHERE part.p_partkey = partsupp.ps_partkey
+  AND part.p_size IN (1, 4, 7)
+  AND part.p_brand <> 'Brand#23'
+  AND part.p_type NOT LIKE 'MEDIUM POLISHED%'
+  AND supplier.s_comment NOT LIKE '%Customer Complaints%'
+GROUP BY p_brand, p_size, p_type
+ORDER BY supplier_cnt DESC, p_brand ASC, p_type ASC, p_size ASC;
+
+Here supplier table has no connection with the other tables. So it is becoming a cross join
+I told you not use cross join.
+supplier is not participating in equi-join. So there must be some other kind of connection.
+Carefully interpret the text description again and find it out.
+join predicate ' partsupp.ps_suppkey = supplier.s_suppkey' or 'supplier.s_suppkey = partsupp.ps_suppkey' must not be in the query.
+Fix the query."""
 
 Q17_text = """The Query considers parts of a given brand and with a given container type and
 determines the average lineitem quantity of such parts ordered for all orders (past and pending) in the 7-year database. 

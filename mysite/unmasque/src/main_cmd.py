@@ -45,8 +45,13 @@ ps_availqty > 200 Order By s_suppkey Limit 7);""", True, True, False, False),
  UNION ALL (SELECT p_partkey, p_name FROM part ,  lineitem where p_partkey = l_partkey and l_quantity > 20 Order By p_partkey desc Limit 7) 
  UNION ALL (SELECT ps_partkey, p_name FROM part ,  partsupp where p_partkey = ps_partkey and ps_supplycost >= 1000 Order By ps_partkey Limit 8)
 """, False, True, False, False),
-                     TestQuery("U5", """(SELECT o_orderkey, o_orderdate, n_name FROM orders, customer, nation where o_custkey = c_custkey and c_nationkey = n_nationkey and c_name like '%0001248%'  AND o_orderdate >= '1997-01-01' order by o_orderkey Limit 20) 
- UNION ALL (SELECT l_orderkey, l_shipdate, o_orderstatus FROM lineitem, orders where l_orderkey = o_orderkey and o_orderdate < '1994-01-01'   AND l_quantity > 20   AND l_extendedprice > 1000 order by l_orderkey Limit 5);
+                     TestQuery("U5", """(SELECT o_orderkey, o_orderdate, n_name 
+                     FROM orders, customer, nation where o_custkey = c_custkey and 
+                     c_nationkey = n_nationkey and c_name like '%0001248%'  
+                     AND o_orderdate >= '1997-01-01' order by o_orderkey Limit 20) 
+ UNION ALL (SELECT wl_orderkey, wl_shipdate, o_orderstatus FROM web_lineitem, orders where 
+ wl_orderkey = o_orderkey and o_orderdate < '1994-01-01'   
+ AND wl_quantity > 20   AND wl_extendedprice > 1000 order by wl_orderkey Limit 5);
 """, False, True, False, False),
                      TestQuery("U6", """(SELECT o_clerk as name, SUM(l_extendedprice) AS total_price FROM orders, lineitem where o_orderkey = l_orderkey and o_orderdate <= '1995-01-01' GROUP BY o_clerk ORDER BY total_price DESC LIMIT 10) 
  UNION ALL (SELECT n_name as name, SUM(s_acctbal) AS total_price FROM nation ,supplier where n_nationkey = s_nationkey and n_name like '%UNITED%' GROUP BY n_name ORDER BY n_name DESC Limit 10);
@@ -57,8 +62,8 @@ ps_availqty > 200 Order By s_suppkey Limit 7);""", True, True, False, False),
                      TestQuery("U8", """(SELECT     c_custkey as order_id,     COUNT(*) AS total FROM
 customer, orders where c_custkey = o_custkey and     o_orderdate >= '1995-01-01'
 GROUP BY     c_custkey ORDER BY     total ASC LIMIT 10) UNION ALL
-(SELECT     l_orderkey as order_id,     AVG(l_quantity) AS total FROM     orders, lineitem where
-l_orderkey = o_orderkey     AND o_orderdate < DATE '1996-07-01' GROUP BY     l_orderkey ORDER BY
+(SELECT     wl_orderkey as order_id,     AVG(wl_quantity) AS total FROM     orders, web_lineitem where
+wl_orderkey = o_orderkey     AND o_orderdate < DATE '1996-07-01' GROUP BY     wl_orderkey ORDER BY
 total DESC LIMIT 10);
 """, False, True, False, False),
                      TestQuery("U9", """(select c_name, n_name from customer, nation where

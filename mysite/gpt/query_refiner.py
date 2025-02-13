@@ -19,7 +19,8 @@ from ..gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guidelines, 
     Q15_feedback1, Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output, Q2_text, Q2_seed, \
     Q2_seed_output, Q2_actual_output, Q16_text, Q16_seed, Q22_text, Q22_seed, Q22_seed_output, \
     Q22_actual_output, Q22_feedback1, Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output, Q13_feedback1, Q19_text, \
-    Q19_seed, Q19_seed_output, Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output, Q13_feedback2
+    Q19_seed, Q19_seed_output, Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output, Q13_feedback2, Q4_feedback2, \
+    Q16_feedback2
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -50,6 +51,7 @@ class Refiner:
         pass
 
     def doJob_write(self, text, key, append=False):
+        print(text)
         working_dir = self.working_dir_path + self.output_dirname
         if not os.path.exists(working_dir):
             os.makedirs(working_dir)
@@ -120,7 +122,7 @@ class Gpt4oRefiner(Refiner):
 benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q2": [Q2_text, Q2_seed, Q2_seed_output, Q2_actual_output],
                   "Q3": [Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, [Q3_feedback1]],
-                  "Q4": [Q4_text, Q4_seed, Q4_seed_output, Q4_actual_output, [Q4_feedback1]],
+                  "Q4": [Q4_text, Q4_seed, Q4_seed_output, Q4_actual_output, [Q4_feedback1, Q4_feedback2]],
                   "Q5": [Q5_text, Q5_seed, Q5_seed_output, Q5_actual_output],
                   "Q6": [Q6_text, Q6_seed, Q6_seed_output, Q6_actual_output],
                   "Q7": [Q7_text, Q7_seed, Q7_seed_output, Q7_actual_output, [Q7_feedback1]],
@@ -132,7 +134,7 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output, [Q13_feedback1, Q13_feedback2]],
                   "Q14": [Q14_text, Q14_seed, Q14_seed_output, Q14_actual_output, [Q14_feedback1]],
                   "Q15": [Q15_text, Q15_seed, Q15_seed_output, Q15_actual_output, [Q15_feedback1]],
-                  "Q16": [Q16_text, Q16_seed, "", ""],
+                  "Q16": [Q16_text, Q16_seed, "", "", [Q16_feedback2]],
                   "Q17": [Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output],
                   "Q18": [Q18_text, Q18_seed, Q18_seed_output, Q18_actual_output, [Q18_feedback1]],
                   "Q19": [Q19_text, Q19_seed, Q19_seed_output, ""],
@@ -221,10 +223,7 @@ if __name__ == '__main__':
         exit()
 
     refiner = create_query_refiner(model_name)
-    schema = get_synonymous_schema(query_key)
-
-    if not len(schema):
-        schema = etpch_schema
+    schema = etpch_schema
     unique_prompt = f"{get_text(query_key)}\n" \
                     f"{seed_query_question}\n{get_seed(query_key)}" \
                     f"\n{get_seed_output(query_key)}\n{get_actual_output(query_key)}"
