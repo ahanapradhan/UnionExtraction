@@ -189,22 +189,57 @@ class Projection(GenerationPipeLineBase):
         return val
 
     def find_solution_on_multi(self, projected_attrib, projection_dep, query):
-        solution = []
-        for idx_pro, ele in enumerate(projected_attrib):
-            self.logger.debug("ele being checked", ele, idx_pro)
-            if projection_dep[idx_pro] == [] or (
-                    len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == constants.IDENTICAL_EXPR):
-                self.logger.debug("Simple Projection, Continue")
-                # Identical output column, so append empty list and continue
-                solution.append([])
-                self.param_list.append([])
-                self.syms.append([])
-            else:
-                value_used = self.construct_value_used_with_dmin()
-                self.logger.debug("Inside else", value_used)
-                solution.append(
-                    self.get_solution(projected_attrib, projection_dep, idx_pro, value_used, query))
-        return solution
+        sols = []
+        for i in range (1,3): #trying to get the solution twice
+            solution = []
+            for idx_pro, ele in enumerate(projected_attrib):
+                self.logger.debug("ele being checked, bravo1", ele, idx_pro)
+                if projection_dep[idx_pro] == [] or (
+                        len(projection_dep[idx_pro]) < 2 and projection_dep[idx_pro][0][0] == constants.IDENTICAL_EXPR):
+                    self.logger.debug("Simple Projection, Continue")
+                    # Identical output column, so append empty list and continue
+                    solution.append([])
+                    self.param_list.append([])
+                    self.syms.append([])
+                else:
+                    value_used = self.construct_value_used_with_dmin()
+                    self.logger.debug("Inside else", value_used)
+                    solution.append(self.get_solution(projected_attrib, projection_dep, idx_pro, value_used, query))
+                    self.logger.debug("viola1",solution)
+            sols.append(solution)
+
+        self.logger.debug("First coeff: ", sols[0])
+        self.logger.debug("Second coeff: ", sols[1])
+
+        # Function to compare two solutions
+        def matching_solutions(sol1, sol2):
+            i = 0
+            for item1, item2 in zip(sol1, sol2):
+                if isinstance(item1, np.ndarray) and isinstance(item2, np.ndarray):
+                    if not np.allclose(item1, item2):
+                        return False, i
+                elif isinstance(item1, list) and isinstance(item2, list):
+                    if item1 != item2:
+                        return False, i
+                else:
+                    return False, i
+                i += 1
+            return True, i
+
+        if sols[0] is None:
+            return sols[1] if sols[1] is not None else print("Singular matrix error")
+
+        if sols[1] is None:
+            return sols[0]
+
+        sols_comparison, index = matching_solutions(sols[0], sols[1])
+        if sols_comparison:
+            return sols[0]
+        else:
+            print("Projected attribute in place",index+1, "in extracted query is not extracted correctly.")
+            # print("Solution 1 ", sols[0][index])
+            # print("Solution 2 ", sols[1][index])
+        return sols[0]
 
     """
     Solve Ax=b to get the expression of the output column
@@ -238,7 +273,7 @@ class Projection(GenerationPipeLineBase):
             return [[1]]
 
         coeff = np.zeros((2 ** n, 2 ** n))
-        np.set_printoptions(formatter={'float': '{:0.2f}'.format})
+        np.set_printoptions(formatter={'float': '{:0.3f}'.format})
 
         for i in range(n):
             coeff[0][i] = value_used[value_used.index(dep[i][1]) + 1]
@@ -277,7 +312,7 @@ class Projection(GenerationPipeLineBase):
         self.logger.debug("Coeff: ", coeff, "b: ", b)
         # self.logger.debug(f"condition number: {str(np.linalg.cond(coeff))}")
         solution = np.linalg.solve(coeff, b)
-        solution = np.around(solution, decimals=2)
+        solution = np.around(solution, decimals=3)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
@@ -335,7 +370,7 @@ class Projection(GenerationPipeLineBase):
             if datatype == 'int':
                 s_val = random.randrange(mini, maxi)
             elif datatype == 'numeric':
-                s_val = round(random.uniform(mini, maxi), 2)
+                s_val = round(random.uniform(mini, maxi), 3)
         else:
             self.logger.debug(f"mini: {mini}, maxi: {maxi}")
             s_val = random.randrange(math.floor(mini), math.ceil(maxi))
