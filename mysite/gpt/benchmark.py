@@ -895,13 +895,12 @@ of orders. Special categories are identified in the order comment column by look
 Q13_seed = """Select o_orderdate as c_count, Count(*) as c_orderdate, <unknown> as custdist 
  From customer, orders 
  Where customer.c_custkey = orders.o_custkey 
- Group By o_orderdate
+ Group By o_orderdate, custdist
  Order By c_count DESC, custdist <unknwon>; 
  
- o_orderdate attribute of orders table must be used in the query.
  Projection 'o_orderdate as c_count' must be there in the query.
  The seed query produces more rows than the actual output.
- So, either 'Group by o_orderdate, , custdist' needs more attributes in this clause, or there needs to be nested group by clause.
+ So, either 'Group by o_orderdate, custdist' needs more attributes in this clause, or there needs to be nested group by clause.
  Nested group by has one group by clause in the inner query, one group by clause in the outer query.
  In such a nested query, COUNT function is used in the projection only once in the inner query, and once in the outer query.
  Since 'Count(*) as c_orderdate' is present in the outer query, it will stay as it is. 

@@ -491,7 +491,284 @@ Where wl_suppkey = s_suppkey and n_nationkey = s_nationkey and
 wl_orderkey = o_orderkey and n_regionkey = r_regionkey and s_acctbal
 <= o_totalprice and o_totalprice <= 15000
 Group By n_name, s_name
-Order By price desc, country desc, entity_name)""", False, False, False, False)
+Order By price desc, country desc, entity_name)""", False, False, False, False),
+                     TestQuery("ETPCH_Q1", """SELECT
+    returnflag,
+    linestatus,
+    SUM(quantity) AS sum_qty,
+    SUM(extendedprice) AS sum_base_price,
+    SUM(extendedprice * (1 - discount)) AS sum_disc_price,
+    SUM(extendedprice * (1 - discount) * (1 + tax)) AS sum_charge,
+    AVG(quantity) AS avg_qty,
+    AVG(extendedprice) AS avg_price,
+    AVG(discount) AS avg_disc,
+    COUNT(*) AS count_order
+FROM (
+    SELECT
+        wl_returnflag AS returnflag,
+        wl_linestatus AS linestatus,
+        wl_quantity AS quantity,
+        wl_extendedprice AS extendedprice,
+        wl_discount AS discount,
+        wl_tax AS tax
+    FROM web_lineitem
+    WHERE wl_shipdate <= DATE '1998-12-01' - INTERVAL '3' DAY
+    UNION ALL
+    SELECT
+        sl_returnflag AS returnflag,
+        sl_linestatus AS linestatus,
+        sl_quantity AS quantity,
+        sl_extendedprice AS extendedprice,
+        sl_discount AS discount,
+        sl_tax AS tax
+    FROM store_lineitem
+    WHERE sl_shipdate <= DATE '1998-12-01' - INTERVAL '3' DAY
+) AS combined
+GROUP BY
+    returnflag,
+    linestatus
+ORDER BY
+    returnflag,
+    linestatus;""", False, True, False, False),
+                     TestQuery("ETPCH_Q3", """SELECT
+    orderkey,
+    SUM(extendedprice * (1 - discount)) AS revenue,
+    o_orderdate,
+    o_shippriority
+FROM (
+    SELECT
+        wl_orderkey AS orderkey,
+        wl_extendedprice AS extendedprice,
+        wl_discount AS discount,
+        o_orderdate,
+        o_shippriority
+    FROM
+        customer,
+        orders,
+        web_lineitem
+    WHERE
+        c_mktsegment = 'FURNITURE'
+        AND c_custkey = o_custkey
+        AND wl_orderkey = o_orderkey
+        AND o_orderdate < DATE '1995-01-01'
+        AND wl_shipdate > DATE '1995-01-01'
+    UNION ALL
+    SELECT
+        sl_orderkey AS orderkey,
+        sl_extendedprice AS extendedprice,
+        sl_discount AS discount,
+        o_orderdate,
+        o_shippriority
+    FROM
+        customer,
+        orders,
+        store_lineitem
+    WHERE
+        c_mktsegment = 'FURNITURE'
+        AND c_custkey = o_custkey
+        AND sl_orderkey = o_orderkey
+        AND o_orderdate < DATE '1995-01-01'
+        AND sl_shipdate > DATE '1995-01-01'
+) AS combined_orders
+GROUP BY
+    orderkey,
+    o_orderdate,
+    o_shippriority
+ORDER BY
+    revenue DESC
+LIMIT 10;""", False, True, False, False),
+                     TestQuery("ETPCH_Q4", """SELECT o_orderpriority, SUM(order_count) AS order_count
+FROM (
+    SELECT o_orderpriority, COUNT(DISTINCT orders.o_orderkey) AS order_count
+    FROM orders, web_lineitem
+    WHERE orders.o_orderkey = web_lineitem.wl_orderkey
+    AND web_lineitem.wl_commitdate < web_lineitem.wl_receiptdate
+    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY o_orderpriority
+    UNION ALL
+    SELECT o_orderpriority, COUNT(DISTINCT orders.o_orderkey) AS order_count
+    FROM orders, store_lineitem
+    WHERE orders.o_orderkey = store_lineitem.sl_orderkey
+    AND store_lineitem.sl_commitdate < store_lineitem.sl_receiptdate
+    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-03-31'
+    GROUP BY o_orderpriority
+) AS combined
+GROUP BY o_orderpriority
+ORDER BY o_orderpriority ASC;""", False, True, False, False),
+                     TestQuery("ETPCH_Q5","""SELECT n_name, SUM(revenue) AS revenue
+FROM (
+    SELECT n_name, wl_extendedprice * (1 - wl_discount) AS revenue
+    FROM customer, nation, orders, region, supplier, web_lineitem
+    WHERE customer.c_custkey = orders.o_custkey
+    AND customer.c_nationkey = nation.n_nationkey
+    AND nation.n_nationkey = supplier.s_nationkey
+    AND orders.o_orderkey = web_lineitem.wl_orderkey
+    AND nation.n_regionkey = region.r_regionkey
+    AND supplier.s_suppkey = web_lineitem.wl_suppkey
+    AND region.r_name = 'ASIA'
+    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-12-31'
+    UNION ALL
+    SELECT n_name, sl_extendedprice * (1 - sl_discount) AS revenue
+    FROM customer, nation, orders, region, store_lineitem, supplier
+    WHERE orders.o_orderkey = store_lineitem.sl_orderkey
+    AND store_lineitem.sl_suppkey = supplier.s_suppkey
+    AND customer.c_custkey = orders.o_custkey
+    AND customer.c_nationkey = nation.n_nationkey
+    AND nation.n_nationkey = supplier.s_nationkey
+    AND nation.n_regionkey = region.r_regionkey
+    AND region.r_name = 'ASIA'
+    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-12-31'
+) AS combined
+GROUP BY n_name
+ORDER BY revenue DESC, n_name ASC;""", False, True, False, False),
+                     TestQuery("ETPCH_Q6", """SELECT SUM(revenue) AS revenue
+FROM (
+    SELECT wl_extendedprice * wl_discount AS revenue
+    FROM web_lineitem
+    WHERE wl_shipdate >= DATE '1993-01-01'
+    AND wl_shipdate < DATE '1995-01-01'
+    AND wl_discount BETWEEN 0.05 AND 0.07
+    AND wl_quantity < 24
+    UNION ALL
+    SELECT sl_extendedprice * sl_discount AS revenue
+    FROM store_lineitem
+    WHERE sl_shipdate >= DATE '1993-01-01'
+    AND sl_shipdate < DATE '1995-01-01'
+    AND sl_discount BETWEEN 0.05 AND 0.07
+    AND sl_quantity < 24
+) AS combined_revenue;""", False, True, False, False),
+                     TestQuery("ETPCH_Q7", """SELECT supp_nation, cust_nation, l_year, SUM(revenue) as revenue
+FROM (
+    SELECT n1.n_name as supp_nation, n2.n_name as cust_nation, EXTRACT(YEAR FROM wl_shipdate) as l_year, wl_extendedprice*(1 - wl_discount) as revenue 
+    FROM customer, nation n1, nation n2, orders, supplier, web_lineitem 
+    WHERE orders.o_orderkey = web_lineitem.wl_orderkey
+    AND supplier.s_suppkey = web_lineitem.wl_suppkey
+    AND customer.c_custkey = orders.o_custkey
+    AND customer.c_nationkey = n2.n_nationkey
+    AND n1.n_nationkey = supplier.s_nationkey
+    AND ((n1.n_name = 'FRANCE' AND n2.n_name = 'GERMANY') OR (n2.n_name = 'FRANCE' AND n1.n_name = 'GERMANY'))
+    AND web_lineitem.wl_shipdate BETWEEN '1995-01-01' AND '1996-12-31'
+    UNION ALL  
+    SELECT n1.n_name as supp_nation, n2.n_name as cust_nation, EXTRACT(YEAR FROM sl_shipdate) as l_year, sl_extendedprice*(1 - sl_discount) as revenue 
+    FROM customer, nation n1, nation n2, orders, supplier, store_lineitem 
+    WHERE orders.o_orderkey = store_lineitem.sl_orderkey
+    AND supplier.s_suppkey = store_lineitem.sl_suppkey
+    AND customer.c_custkey = orders.o_custkey
+    AND customer.c_nationkey = n2.n_nationkey
+    AND n1.n_nationkey = supplier.s_nationkey
+    AND ((n1.n_name = 'FRANCE' AND n2.n_name = 'GERMANY') OR (n2.n_name = 'FRANCE' AND n1.n_name = 'GERMANY'))
+    AND store_lineitem.sl_shipdate BETWEEN '1995-01-01' AND '1996-12-31'
+) AS combined
+GROUP BY supp_nation, cust_nation, l_year
+ORDER BY supp_nation, cust_nation, l_year;""", False, True, False, False, True),
+                     TestQuery("ETPCH_Q9", """SELECT 
+    nation, 
+    EXTRACT(YEAR FROM o_orderdate) AS o_year, 
+    SUM(profit) AS sum_profit
+FROM (
+    SELECT 
+        n_name AS nation, 
+        o_orderdate, 
+        (-ps_supplycost * wl_quantity + wl_extendedprice * (1 - wl_discount)) AS profit
+    FROM 
+        nation, orders, part, partsupp, supplier, web_lineitem
+    WHERE 
+        orders.o_orderkey = web_lineitem.wl_orderkey
+        AND part.p_partkey = partsupp.ps_partkey
+        AND partsupp.ps_partkey = web_lineitem.wl_partkey
+        AND partsupp.ps_suppkey = supplier.s_suppkey
+        AND supplier.s_suppkey = web_lineitem.wl_suppkey
+        AND nation.n_nationkey = supplier.s_nationkey
+        AND part.p_name LIKE '%co%'
+    UNION ALL
+    SELECT 
+        n_name AS nation, 
+        o_orderdate, 
+        (-ps_supplycost * sl_quantity + sl_extendedprice * (1 - sl_discount)) AS profit
+    FROM 
+        nation, orders, part, partsupp, store_lineitem, supplier
+    WHERE 
+        orders.o_orderkey = store_lineitem.sl_orderkey
+        AND part.p_partkey = partsupp.ps_partkey
+        AND partsupp.ps_partkey = store_lineitem.sl_partkey
+        AND partsupp.ps_suppkey = store_lineitem.sl_suppkey
+        AND store_lineitem.sl_suppkey = supplier.s_suppkey
+        AND nation.n_nationkey = supplier.s_nationkey
+        AND part.p_name LIKE '%co%'
+) AS combined
+GROUP BY 
+    nation, o_year
+ORDER BY 
+    nation ASC, o_year DESC;""", False, True, False, False),
+                     TestQuery("ETPCH_Q10", """SELECT c_custkey, c_name, SUM(revenue) AS revenue, c_acctbal, n_name, c_address, c_phone, c_comment
+FROM (
+    SELECT c_custkey, c_name, sl_extendedprice * (1 - sl_discount) AS revenue, c_acctbal, n_name, c_address, c_phone, c_comment
+    FROM customer, nation, orders, store_lineitem
+    WHERE orders.o_orderkey = store_lineitem.sl_orderkey
+    AND customer.c_nationkey = nation.n_nationkey
+    AND customer.c_custkey = orders.o_custkey
+    AND store_lineitem.sl_returnflag = 'R'
+    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-03-31'
+    UNION ALL
+    SELECT c_custkey, c_name, wl_extendedprice * (1 - wl_discount) AS revenue, c_acctbal, n_name, c_address, c_phone, c_comment
+    FROM customer, nation, orders, web_lineitem
+    WHERE customer.c_nationkey = nation.n_nationkey
+    AND orders.o_orderkey = web_lineitem.wl_orderkey
+    AND customer.c_custkey = orders.o_custkey
+    AND web_lineitem.wl_returnflag = 'R'
+    AND orders.o_orderdate BETWEEN '1995-01-01' AND '1995-03-31'
+) AS combined
+GROUP BY c_custkey, c_name, c_acctbal, n_name, c_address, c_phone, c_comment
+ORDER BY revenue DESC, c_custkey ASC, c_name ASC, c_acctbal ASC, c_phone ASC, n_name ASC, c_address ASC, c_comment ASC
+LIMIT 20;""", False, True, False, False),
+                     TestQuery("ETPCH_Q12", """SELECT shipmode, 
+       SUM(high_line_count) AS high_line_count, 
+       SUM(low_line_count) AS low_line_count
+FROM (
+    SELECT sl_shipmode AS shipmode, 
+           SUM(CASE WHEN o_orderpriority IN ('1-URGENT', '2-HIGH') THEN 1 ELSE 0 END) AS high_line_count, 
+           SUM(CASE WHEN o_orderpriority NOT IN ('1-URGENT', '2-HIGH') THEN 1 ELSE 0 END) AS low_line_count 
+    FROM orders, store_lineitem 
+    WHERE orders.o_orderkey = store_lineitem.sl_orderkey
+      AND store_lineitem.sl_shipdate < store_lineitem.sl_commitdate
+      AND store_lineitem.sl_commitdate < store_lineitem.sl_receiptdate
+      AND store_lineitem.sl_shipmode IN ('SHIP', 'TRUCK')
+      AND store_lineitem.sl_receiptdate BETWEEN '1995-01-01' AND '1995-12-31'
+    GROUP BY sl_shipmode
+    UNION ALL  
+    SELECT wl_shipmode AS shipmode, 
+           SUM(CASE WHEN o_orderpriority IN ('1-URGENT', '2-HIGH') THEN 1 ELSE 0 END) AS high_line_count, 
+           SUM(CASE WHEN o_orderpriority NOT IN ('1-URGENT', '2-HIGH') THEN 1 ELSE 0 END) AS low_line_count 
+    FROM orders, web_lineitem 
+    WHERE orders.o_orderkey = web_lineitem.wl_orderkey
+      AND web_lineitem.wl_shipdate < web_lineitem.wl_commitdate
+      AND web_lineitem.wl_commitdate < web_lineitem.wl_receiptdate
+      AND web_lineitem.wl_shipmode IN ('SHIP', 'TRUCK')
+      AND web_lineitem.wl_receiptdate BETWEEN '1995-01-01' AND '1995-12-31'
+    GROUP BY wl_shipmode
+) AS combined
+GROUP BY shipmode;""", False, True, False, False),
+                     TestQuery("ETPCH_Q14", """SELECT SUM(promo_revenue) / SUM(total_revenue) * 100 AS promo_revenue_percentage
+FROM (
+    SELECT 
+        SUM(CASE WHEN part.p_type LIKE 'PROMO%' THEN store_lineitem.sl_extendedprice * (1 - store_lineitem.sl_discount) ELSE 0 END) AS promo_revenue,
+        SUM(store_lineitem.sl_extendedprice * (1 - store_lineitem.sl_discount)) AS total_revenue
+    FROM 
+        part, store_lineitem
+    WHERE 
+        part.p_partkey = store_lineitem.sl_partkey
+        AND store_lineitem.sl_shipdate BETWEEN '1995-01-01' AND '1995-01-31'
+    UNION ALL
+    SELECT 
+        SUM(CASE WHEN part.p_type LIKE 'PROMO%' THEN web_lineitem.wl_extendedprice * (1 - web_lineitem.wl_discount) ELSE 0 END) AS promo_revenue,
+        SUM(web_lineitem.wl_extendedprice * (1 - web_lineitem.wl_discount)) AS total_revenue
+    FROM 
+        part, web_lineitem
+    WHERE 
+        part.p_partkey = web_lineitem.wl_partkey
+        AND web_lineitem.wl_shipdate BETWEEN '1995-01-01' AND '1995-01-31'
+) AS combined_revenue;""", False, True, False, False),
+                     TestQuery("ETPCH_Q15", """""", False, True, False, False),
 
                      ]
     return test_workload
