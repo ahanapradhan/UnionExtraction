@@ -81,6 +81,8 @@ class FromClause(AppExtractorBase):
         if not check:
             return False
         self.all_relations = self.init.all_relations
+        self.local_start_time = self.init.local_end_time
+        # still in union pipeline from clause timins include initiator timings. Find out why.
         return True
 
     def doActualJob(self, args=None):
