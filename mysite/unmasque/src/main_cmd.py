@@ -392,36 +392,51 @@ where
 	l_partkey = p_partkey
 	and l_shipdate >= date '1995-01-01'
 	and l_shipdate < date '1995-01-01' + interval '1' month;""", False, False, False, False),
-                     TestQuery("TPCH_Q15", """with revenue(supplier_no, total_revenue) as
-	(select
-		l_suppkey,
-		sum(l_extendedprice * (1 - l_discount))
-	from
-		lineitem
-	where
-		l_shipdate >= date '1995-01-01'
-		and l_shipdate < date '1995-01-01' + interval '3' month
-	group by
-		l_suppkey)
-select
-	s_suppkey,
-	s_name,
-	s_address,
-	s_phone,
-	total_revenue
-from
-	supplier,
-	revenue
+                     TestQuery("TPCH_Q15", """with revenue(supplier_no, total_revenue) as        
+(select
+                l_suppkey,
+                sum(l_extendedprice * (1 - l_discount))
+        from
+                (select 
+		 sl_extendedprice as l_extendedprice,
+		 sl_discount as l_discount,
+		 sl_partkey as l_partkey,
+		 sl_suppkey as l_suppkey,
+		 sl_shipdate as l_shipdate
+		 from store_lineitem
+		 UNION ALL
+		 select
+		 wl_extendedprice as l_extendedprice,
+		 wl_discount as l_discount,
+		 wl_partkey as l_partkey,
+		 wl_suppkey as l_suppkey,
+		 wl_shipdate as l_shipdate
+		 from web_lineitem
+        ) as lineitem
 where
-	s_suppkey = supplier_no
-	and total_revenue = (
-		select
-			max(total_revenue)
-		from
-			revenue
-	)
+        l_shipdate >= date '1995-01-01'
+        and l_shipdate < date '1995-01-01' + interval '1' month
+        group by
+                l_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
 order by
-	s_suppkey;""", False, False, False, False),
+        s_suppkey;""", False, True, False, False),
                      TestQuery("TPCH_Q16", """select
 	p_brand,
 	p_type,
@@ -897,12 +912,12 @@ from
                                 ('13', '31', '23', '29', '30', '18', '17')
                         and c_acctbal > (
                                 select
-                                        avg(c_acctbal)
+                                        avg(c1_acctbal)
                                 from
-                                        customer
+                                        customer1
                                 where
-                                        c_acctbal > 0.00
-                                        and substring(c_phone from 1 for 2) in
+                                        c1_acctbal > 0.00
+                                        and substring(c1_phone from 1 for 2) in
                                                 ('13', '31', '23', '29', '30', '18', '17')
                         )
                         and not exists (
@@ -1096,11 +1111,33 @@ where
 order by
         s_name;""", False, True, False, False),
                      TestQuery("ETPCH_Q21", """""", False, True, False, False),
-                     TestQuery("ETPCH_Q23", """""", False, True, False, False),
+                     TestQuery("ETPCH_Q23", """SELECT   RIGHT(c_address, 5) AS city,
+         p_brand             AS part_brand
+FROM     customer,
+         orders o1,
+         order1 o2,
+         store_lineitem,
+         web_lineitem,
+         part
+WHERE    c_custkey = o1.o_custkey
+AND      c_custkey = o2.o1_custkey 
+AND      o1.o_orderkey = wl_orderkey
+AND      wl_returnflag = 'A' 
+AND      o2.o1_orderkey = sl_orderkey
+AND      sl_returnflag = 'N' 
+AND      wl_partkey = sl_partkey
+AND      sl_partkey = p_partkey
+AND      o1.o_orderdate < o2.o1_orderdate
+AND      wl_receiptdate < sl_receiptdate 
+AND      o1.o_orderdate BETWEEN date '1995-01-01' AND date '1995-12-31'
+AND      o2.o1_orderdate BETWEEN date '1995-01-01' AND date '1995-12-31'
+GROUP BY RIGHT(c_address, 5),
+         p_brand 
+ORDER BY city, part_brand;""", False, True, False, False),
                      TestQuery("ETPCH_Q24", """select c_address as city 
 from customer, 
 orders o1, 
-orders1 o2, 
+order1 o2, 
 store_lineitem, 
 web_lineitem w, 
 part, 
