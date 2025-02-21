@@ -511,7 +511,7 @@ Q15 = """with revenue(supplier_no, total_revenue) as
 		 wl_suppkey as l_suppkey,
 		 wl_shipdate as l_shipdate
 		 from web_lineitem
-        ) as lineitem,
+        ) as lineitem
 where
         l_shipdate >= date '1995-01-01'
         and l_shipdate < date '1995-01-01' + interval '1' month

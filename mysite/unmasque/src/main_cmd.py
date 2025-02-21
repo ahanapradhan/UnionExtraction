@@ -392,36 +392,51 @@ where
 	l_partkey = p_partkey
 	and l_shipdate >= date '1995-01-01'
 	and l_shipdate < date '1995-01-01' + interval '1' month;""", False, False, False, False),
-                     TestQuery("TPCH_Q15", """with revenue(supplier_no, total_revenue) as
-	(select
-		l_suppkey,
-		sum(l_extendedprice * (1 - l_discount))
-	from
-		lineitem
-	where
-		l_shipdate >= date '1995-01-01'
-		and l_shipdate < date '1995-01-01' + interval '3' month
-	group by
-		l_suppkey)
-select
-	s_suppkey,
-	s_name,
-	s_address,
-	s_phone,
-	total_revenue
-from
-	supplier,
-	revenue
+                     TestQuery("TPCH_Q15", """with revenue(supplier_no, total_revenue) as        
+(select
+                l_suppkey,
+                sum(l_extendedprice * (1 - l_discount))
+        from
+                (select 
+		 sl_extendedprice as l_extendedprice,
+		 sl_discount as l_discount,
+		 sl_partkey as l_partkey,
+		 sl_suppkey as l_suppkey,
+		 sl_shipdate as l_shipdate
+		 from store_lineitem
+		 UNION ALL
+		 select
+		 wl_extendedprice as l_extendedprice,
+		 wl_discount as l_discount,
+		 wl_partkey as l_partkey,
+		 wl_suppkey as l_suppkey,
+		 wl_shipdate as l_shipdate
+		 from web_lineitem
+        ) as lineitem
 where
-	s_suppkey = supplier_no
-	and total_revenue = (
-		select
-			max(total_revenue)
-		from
-			revenue
-	)
+        l_shipdate >= date '1995-01-01'
+        and l_shipdate < date '1995-01-01' + interval '1' month
+        group by
+                l_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
 order by
-	s_suppkey;""", False, False, False, False),
+        s_suppkey;""", False, True, False, False),
                      TestQuery("TPCH_Q16", """select
 	p_brand,
 	p_type,
@@ -644,24 +659,24 @@ FROM (
 ) AS combined_revenue;""", False, True, False, False),
                      TestQuery("ETPCH_Q7", """SELECT supp_nation, cust_nation, l_year, SUM(revenue) as revenue
 FROM (
-    SELECT n1.n_name as supp_nation, n2.n_name as cust_nation, EXTRACT(YEAR FROM wl_shipdate) as l_year, wl_extendedprice*(1 - wl_discount) as revenue 
-    FROM customer, nation n1, nation n2, orders, supplier, web_lineitem 
+    SELECT n1.n_name as supp_nation, n2.n1_name as cust_nation, EXTRACT(YEAR FROM wl_shipdate) as l_year, wl_extendedprice*(1 - wl_discount) as revenue 
+    FROM customer, nation n1, nation1 n2, orders, supplier, web_lineitem 
     WHERE orders.o_orderkey = web_lineitem.wl_orderkey
     AND supplier.s_suppkey = web_lineitem.wl_suppkey
     AND customer.c_custkey = orders.o_custkey
-    AND customer.c_nationkey = n2.n_nationkey
+    AND customer.c_nationkey = n2.n1_nationkey
     AND n1.n_nationkey = supplier.s_nationkey
-    AND ((n1.n_name = 'FRANCE' AND n2.n_name = 'GERMANY') OR (n2.n_name = 'FRANCE' AND n1.n_name = 'GERMANY'))
+    AND ((n1.n_name = 'FRANCE' AND n2.n1_name = 'GERMANY') OR (n2.n1_name = 'FRANCE' AND n1.n_name = 'GERMANY'))
     AND web_lineitem.wl_shipdate BETWEEN '1995-01-01' AND '1996-12-31'
     UNION ALL  
-    SELECT n1.n_name as supp_nation, n2.n_name as cust_nation, EXTRACT(YEAR FROM sl_shipdate) as l_year, sl_extendedprice*(1 - sl_discount) as revenue 
-    FROM customer, nation n1, nation n2, orders, supplier, store_lineitem 
+    SELECT n1.n_name as supp_nation, n2.n1_name as cust_nation, EXTRACT(YEAR FROM sl_shipdate) as l_year, sl_extendedprice*(1 - sl_discount) as revenue 
+    FROM customer, nation n1, nation1 n2, orders, supplier, store_lineitem 
     WHERE orders.o_orderkey = store_lineitem.sl_orderkey
     AND supplier.s_suppkey = store_lineitem.sl_suppkey
     AND customer.c_custkey = orders.o_custkey
-    AND customer.c_nationkey = n2.n_nationkey
+    AND customer.c_nationkey = n2.n1_nationkey
     AND n1.n_nationkey = supplier.s_nationkey
-    AND ((n1.n_name = 'FRANCE' AND n2.n_name = 'GERMANY') OR (n2.n_name = 'FRANCE' AND n1.n_name = 'GERMANY'))
+    AND ((n1.n_name = 'FRANCE' AND n2.n1_name = 'GERMANY') OR (n2.n1_name = 'FRANCE' AND n1.n_name = 'GERMANY'))
     AND store_lineitem.sl_shipdate BETWEEN '1995-01-01' AND '1996-12-31'
 ) AS combined
 GROUP BY supp_nation, cust_nation, l_year
@@ -773,7 +788,373 @@ FROM (
         part.p_partkey = web_lineitem.wl_partkey
         AND web_lineitem.wl_shipdate BETWEEN '1995-01-01' AND '1995-01-31'
 ) AS combined_revenue;""", False, True, False, False),
-                     TestQuery("ETPCH_Q15", """""", False, True, False, False),
+
+                     TestQuery("ETPCH_Q13", """select
+        c_count, c_orderdate,
+        count(*) as custdist
+from
+        (
+                select
+                        c_custkey, o_orderdate,
+                        count(o_orderkey)
+                from
+                        customer left outer join orders on
+                                c_custkey = o_custkey
+                                and o_comment not like '%special%requests%'
+                group by
+                        c_custkey, o_orderdate
+        ) as c_orders (c_custkey, c_count, c_orderdate)
+group by
+        c_count, c_orderdate
+order by
+        custdist desc,
+        c_count desc;""", False, True, True, False),
+                     TestQuery("ETPCH_Q15", """with revenue(supplier_no, total_revenue) as        
+(select
+                l_suppkey,
+                sum(l_extendedprice * (1 - l_discount))
+        from
+                (select 
+                 sl_extendedprice as l_extendedprice,
+                 sl_discount as l_discount,
+                 sl_suppkey as l_suppkey,
+                 sl_shipdate as l_shipdate
+                 from store_lineitem
+                 UNION ALL
+                 select
+                 wl_extendedprice as l_extendedprice,
+                 wl_discount as l_discount,
+                 wl_suppkey as l_suppkey,
+                 wl_shipdate as l_shipdate
+                 from web_lineitem
+        ) as lineitem
+        where
+                l_shipdate >= date '1995-01-01'
+                and l_shipdate < date '1995-01-01' + interval '3' month
+        group by
+                l_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
+order by
+        s_suppkey;""", False, True, False, False),
+                     TestQuery("ETPCH_Q2", """
+select
+        s_acctbal,
+        s_name,
+        n_name,
+        p_partkey,
+        p_mfgr,
+        s_address,
+        s_phone,
+        s_comment
+from
+        part,
+        supplier,
+        partsupp,
+        nation,
+        region
+where
+        p_partkey = ps_partkey
+        and s_suppkey = ps_suppkey
+        and p_size = 15
+        and p_type like '%BRASS'
+        and s_nationkey = n_nationkey
+        and n_regionkey = r_regionkey
+        and r_name = 'EUROPE'
+        and ps_supplycost = (
+                select
+                        min(ps_supplycost)
+                from
+                        partsupp,
+                        supplier,
+                        nation,
+                        region
+                where
+                        p_partkey = ps_partkey
+                        and s_suppkey = ps_suppkey
+                        and s_nationkey = n_nationkey
+                        and n_regionkey = r_regionkey
+                        and r_name = 'EUROPE'
+        )
+order by
+        s_acctbal desc,
+        n_name,
+        s_name,
+        p_partkey limit 100;""", False, True, False, False),
+                     TestQuery("ETPCH_Q22", """select
+        cntrycode,
+        count(*) as numcust,
+        sum(c_acctbal) as totacctbal
+from
+        (
+                select
+                        substring(c_phone from 1 for 2) as cntrycode,
+                        c_acctbal
+                from
+                        customer
+                where
+                        substring(c_phone from 1 for 2) in
+                                ('13', '31', '23', '29', '30', '18', '17')
+                        and c_acctbal > (
+                                select
+                                        avg(c1_acctbal)
+                                from
+                                        customer1
+                                where
+                                        c1_acctbal > 0.00
+                                        and substring(c1_phone from 1 for 2) in
+                                                ('13', '31', '23', '29', '30', '18', '17')
+                        )
+                        and not exists (
+                                select
+                                        *
+                                from
+                                        orders
+                                where
+                                        o_custkey = c_custkey
+                        )
+        ) as custsale
+group by
+        cntrycode
+order by
+        cntrycode;""", False, True, False, False, True),
+                     TestQuery("ETPCH_Q8", """select
+        o_year,
+        sum(case
+                when nation = 'INDIA' then volume
+                else 0
+        end) / sum(volume) as mkt_share
+from
+        (
+                select
+                        extract(year from o_orderdate) as o_year,
+                        wl_extendedprice * (1 - wl_discount) as volume,
+                        n2.n1_name as nation
+                from
+                        part,
+                        supplier,
+                        web_lineitem,
+                        orders,
+                        customer,
+                        nation n1,
+                        nation1 n2,
+                        region
+                where
+                        p_partkey = wl_partkey
+                        and s_suppkey = wl_suppkey
+                        and wl_orderkey = o_orderkey
+                        and o_custkey = c_custkey
+                        and c_nationkey = n1.n_nationkey
+                        and n1.n_regionkey = r_regionkey
+                        and r_name = 'ASIA'
+                        and s_nationkey = n2.n1_nationkey
+                        and o_orderdate between date '1995-01-01' and date '1996-12-31'
+                        and p_type = 'ECONOMY ANODIZED STEEL'
+        ) as all_nations
+group by
+        o_year
+order by
+        o_year;""", False, True, False, False),
+                     TestQuery("ETPCH_Q11", """SELECT
+    ps_partkey, n_name,
+    SUM(ps_supplycost * ps_availqty) AS total_value
+FROM
+    partsupp, supplier, nation 
+where
+    ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+GROUP BY
+    ps_partkey, n_name
+HAVING
+    SUM(ps_supplycost * ps_availqty) > (
+        SELECT SUM(ps_supplycost * ps_availqty) * 0.00001
+        FROM partsupp, supplier, nation WHERE 
+        ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+    )
+ORDER BY
+    total_value DESC;""", False, True, False, False),
+                     TestQuery("ETPCH_Q16", """select
+        p_brand,
+        p_type,
+        p_size,
+        count(distinct ps_suppkey) as supplier_cnt
+from
+        partsupp,
+        part
+where
+        p_partkey = ps_partkey
+        and p_brand <> 'Brand#23'
+    AND p_type NOT LIKE 'MEDIUM POLISHED%' 
+        and p_size IN (1, 4, 7)
+        and ps_suppkey not in (
+                select
+                        s_suppkey
+                from
+                        supplier
+                where
+                        s_comment like '%Customer%Complaints%'
+        )
+group by
+        p_brand,
+        p_type,
+        p_size
+order by
+        supplier_cnt desc,
+        p_brand,
+        p_type,
+        p_size;""", False, True, False, False),
+                     TestQuery("ETPCH_Q17", """select sum(wl_extendedprice) / 7.0 as avg_yearly
+from
+        web_lineitem,
+        part
+where
+        p_partkey = wl_partkey
+        and p_brand = 'Brand#53'
+        and p_container = 'MED BAG'
+        and wl_quantity < (
+                select
+                        0.7 * avg(wl_quantity)
+                from
+                        web_lineitem
+                where
+                        wl_partkey = p_partkey
+        );""", False, True, False, False),
+                     TestQuery("ETPCH_Q18", """""", False, True, False, False),
+                     TestQuery("ETPCH_Q19", """select
+        sum(wl_extendedprice* (1 - wl_discount)) as revenue
+from
+        web_lineitem,
+        part
+where
+        (
+                p_partkey = wl_partkey
+                and p_brand = 'Brand#12'
+                and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+                and wl_quantity >= 1 and wl_quantity <= 1 + 10
+                and p_size between 1 and 5
+                and wl_shipmode in ('AIR', 'AIR REG')
+                and wl_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = wl_partkey
+                and p_brand = 'Brand#23'
+                and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+                and wl_quantity >= 10 and wl_quantity <= 10 + 10
+                and p_size between 1 and 10
+                and wl_shipmode in ('AIR', 'AIR REG')
+                and wl_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = wl_partkey
+                and p_brand = 'Brand#34'
+                and p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+                and wl_quantity >= 20 and wl_quantity <= 20 + 10
+                and p_size between 1 and 15
+                and wl_shipmode in ('AIR', 'AIR REG')
+                and wl_shipinstruct = 'DELIVER IN PERSON'
+        );""", False, True, False, False, True),
+                     TestQuery("ETPCH_Q20", """select
+        s_name,
+        s_address
+from
+        supplier,
+        nation
+where
+        s_suppkey in (
+                select
+                        ps_suppkey
+                from
+                        partsupp
+                where
+                        ps_partkey in (
+                                select
+                                        p_partkey
+                                from
+                                        part
+                                where
+                                        p_name like '%ivory%'
+                        )
+                        and ps_availqty > (
+                                select
+                                        0.5 * sum(wl_quantity)
+                                from
+                                        web_lineitem
+                                where
+                                        wl_partkey = ps_partkey
+                                        and wl_suppkey = ps_suppkey
+                                        and wl_shipdate >= date '1995-01-01'
+                                        and wl_shipdate < date '1995-01-01' + interval '1' year
+                        )
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+order by
+        s_name;""", False, True, False, False),
+                     TestQuery("ETPCH_Q21", """""", False, True, False, False),
+                     TestQuery("ETPCH_Q23", """SELECT   RIGHT(c_address, 5) AS city,
+         p_brand             AS part_brand
+FROM     customer,
+         orders o1,
+         order1 o2,
+         store_lineitem,
+         web_lineitem,
+         part
+WHERE    c_custkey = o1.o_custkey
+AND      c_custkey = o2.o1_custkey 
+AND      o1.o_orderkey = wl_orderkey
+AND      wl_returnflag = 'A' 
+AND      o2.o1_orderkey = sl_orderkey
+AND      sl_returnflag = 'N' 
+AND      wl_partkey = sl_partkey
+AND      sl_partkey = p_partkey
+AND      o1.o_orderdate < o2.o1_orderdate
+AND      wl_receiptdate < sl_receiptdate 
+AND      o1.o_orderdate BETWEEN date '1995-01-01' AND date '1995-12-31'
+AND      o2.o1_orderdate BETWEEN date '1995-01-01' AND date '1995-12-31'
+GROUP BY RIGHT(c_address, 5),
+         p_brand 
+ORDER BY city, part_brand;""", False, True, False, False),
+                     TestQuery("ETPCH_Q24", """select c_address as city 
+from customer, 
+orders o1, 
+order1 o2, 
+store_lineitem, 
+web_lineitem w, 
+part, 
+web_lineitem1 w1, 
+partsupp ps1, 
+partsupp1 ps2
+where c_custkey = o1.o_custkey and c_custkey = o2.o1_custkey 
+and o1.o_orderkey = sl_orderkey and sl_returnflag = 'A'
+and o2.o1_orderkey = w.wl_orderkey and w.wl_returnflag = 'N'
+and w.wl_partkey = sl_partkey and sl_partkey = p_partkey and w1.wl1_partkey = p_partkey
+and sl_receiptdate < w.wl_receiptdate 
+and o1.o_orderdate < o2.o1_orderdate
+and w.wl_suppkey = ps1.ps_suppkey and w1.wl1_suppkey = ps2.ps1_suppkey
+and ps2.ps1_availqty >= ps1.ps_availqty
+and o1.o_orderdate between date '1995-01-01' and date '1995-12-31'
+and o2.o1_orderdate between date '1995-01-01' and date '1995-12-31'
+group by c_address;""", False, True, False, False),
 
                      ]
     return test_workload

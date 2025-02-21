@@ -8,7 +8,8 @@ from ..util.utils import get_combs, construct_maxNonNulls
 def algo(db, QH):
     Partial_QH, MaxNonNulls, NonNulls, Nulls, Partials, S = init(db, QH)
 
-    if len(Partial_QH) == 0:
+    if len(Partial_QH) <= 1:
+        # if part table has only 1 table, we can't partition it!
         return {frozenset(db.fromtabs)}, construct_pretty_print_string({frozenset(db.fromtabs)}), (0, db.app_calls)
 
     local_start_time = time.time()
