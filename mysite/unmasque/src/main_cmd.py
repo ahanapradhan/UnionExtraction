@@ -387,7 +387,7 @@ where
 	l_partkey = p_partkey
 	and l_shipdate >= date '1995-01-01'
 	and l_shipdate < date '1995-01-01' + interval '1' month;""", False, False, False, False),
-                     TestQuery("TPCH_Q15", """with revenue(supplier_no, total_revenue) as        
+                     TestQuery("ETPCH_Q15", """with revenue(supplier_no, total_revenue) as        
 (select
                 l_suppkey,
                 sum(l_extendedprice * (1 - l_discount))
@@ -610,7 +610,7 @@ FROM (
 ) AS combined
 GROUP BY o_orderpriority
 ORDER BY o_orderpriority ASC;""", False, True, False, False),
-                     TestQuery("ETPCH_Q5","""SELECT n_name, SUM(revenue) AS revenue
+                     TestQuery("ETPCH_Q5", """SELECT n_name, SUM(revenue) AS revenue
 FROM (
     SELECT n_name, wl_extendedprice * (1 - wl_discount) AS revenue
     FROM customer, nation, orders, region, supplier, web_lineitem
@@ -829,49 +829,6 @@ group by
 order by
         custdist desc,
         c_count desc;""", False, True, True, False),
-                     TestQuery("ETPCH_Q15", """with revenue(supplier_no, total_revenue) as        
-(select
-                l_suppkey,
-                sum(l_extendedprice * (1 - l_discount))
-        from
-                (select 
-                 sl_extendedprice as l_extendedprice,
-                 sl_discount as l_discount,
-                 sl_suppkey as l_suppkey,
-                 sl_shipdate as l_shipdate
-                 from store_lineitem
-                 UNION ALL
-                 select
-                 wl_extendedprice as l_extendedprice,
-                 wl_discount as l_discount,
-                 wl_suppkey as l_suppkey,
-                 wl_shipdate as l_shipdate
-                 from web_lineitem
-        ) as lineitem
-        where
-                l_shipdate >= date '1995-01-01'
-                and l_shipdate < date '1995-01-01' + interval '3' month
-        group by
-                l_suppkey)
-select
-        s_suppkey,
-        s_name,
-        s_address,
-        s_phone,
-        total_revenue
-from
-        supplier,
-        revenue
-where
-        s_suppkey = supplier_no
-        and total_revenue = (
-                select
-                        max(total_revenue)
-                from
-                        revenue
-        )
-order by
-        s_suppkey;""", False, True, False, False),
                      TestQuery("ETPCH_Q2", """
 select
         s_acctbal,
@@ -1040,7 +997,7 @@ order by
         supplier_cnt desc,
         p_brand,
         p_type,
-        p_size;""", False, True, False, False),
+        p_size;""", False, True, False, False, True),
                      TestQuery("ETPCH_Q17", """select sum(wl_extendedprice) / 7.0 as avg_yearly
 from
         web_lineitem,
@@ -1057,7 +1014,6 @@ where
                 where
                         wl_partkey = p_partkey
         );""", False, True, False, False),
-                     TestQuery("ETPCH_Q18", """""", False, True, False, False),
                      TestQuery("ETPCH_Q19", """select
         sum(wl_extendedprice* (1 - wl_discount)) as revenue
 from
@@ -1129,7 +1085,7 @@ where
         and s_nationkey = n_nationkey
         and n_name = 'FRANCE'
 order by
-        s_name;""", False, True, False, False),
+        s_name;""", True, True, False, False),
                      TestQuery("ETPCH_Q21", """""", False, True, False, False),
                      TestQuery("ETPCH_Q23", """SELECT   RIGHT(c_address, 5) AS city,
          p_brand             AS part_brand
