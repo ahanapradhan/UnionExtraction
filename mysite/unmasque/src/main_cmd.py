@@ -658,7 +658,7 @@ FROM (
         FROM web_lineitem
         WHERE wl_shipdate >= DATE '1993-01-01'
         AND wl_shipdate < DATE '1995-01-01'
-        AND wl_discount BETWEEN 0.05 AND 0.07
+        --AND wl_discount BETWEEN 0.05 AND 0.07
         AND wl_quantity < 24
         ) AS combined_revenue;""", False, True, False, False),
                      TestQuery("ETPCH_Q6_2", """SELECT *
