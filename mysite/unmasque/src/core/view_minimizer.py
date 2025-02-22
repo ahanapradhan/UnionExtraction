@@ -92,7 +92,7 @@ class ViewMinimizer(Minimizer):
         return True
 
     def __get_tables_sorted_by_size(self, core_sizes):
-        sort_by_size = sorted(core_sizes)
+        sort_by_size = sorted(core_sizes, reverse=True)
         sorted_relations = []
         for tab in sort_by_size:
             if tab in self.core_relations:
