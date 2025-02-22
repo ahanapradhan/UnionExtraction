@@ -43,6 +43,7 @@ class ScaleDown(Cs2):
             self.set_data_schema()
         else:
             self.logger.info("Hopefully Scaling Down Worked!")
+            print("Hopefully Scaling Down Worked!")
             self.connectionHelper.config.user_schema = self.downscale_schema
             print(self.seed_sample_size_per)
         return check
