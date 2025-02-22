@@ -663,14 +663,14 @@ FROM (
         ) AS combined_revenue;""", False, True, False, False),
                      TestQuery("ETPCH_Q6_2", """SELECT *
     FROM (
-        SELECT sum(wl_extendedprice * wl_discount) AS revenue
+        SELECT sum(wl_extendedprice ) AS revenue
         FROM web_lineitem
         WHERE wl_shipdate >= DATE '1993-01-01'
         AND wl_shipdate < DATE '1995-01-01'
         AND wl_discount BETWEEN 0.05 AND 0.07
         AND wl_quantity < 24
         UNION ALL
-        SELECT sum(sl_extendedprice * sl_discount) AS revenue
+        SELECT sum(sl_extendedprice ) AS revenue
         FROM store_lineitem
         WHERE sl_shipdate >= DATE '1993-01-01'
         AND sl_shipdate < DATE '1995-01-01'
@@ -1156,7 +1156,7 @@ if __name__ == '__main__':
     conn.config.use_cs2 = hq.cs2
     conn.config.detect_or = hq.orf
 
-    print(f"Flags: Union {conn.config.detect_union}, OJ {conn.config.detect_oj}, "
+    print(f"Flags: Scale Down {conn.config.scale_down}, Union {conn.config.detect_union}, OJ {conn.config.detect_oj}, "
           f"NEP {conn.config.detect_nep}, CS2 {conn.config.use_cs2}")
 
     signal.signal(signal.SIGTERM, signal_handler)
