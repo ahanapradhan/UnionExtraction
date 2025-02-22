@@ -65,12 +65,45 @@ class TpchSanitizer:
                                                f_table, backup_name)],
                                           self.logger)
 
+    def __create_col_idx_if_not_exists(self, tab, col):
+        idx = f"{tab}_{col}_idx"
+
+        sql = f"""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                        FROM pg_index i
+                            JOIN pg_attribute a ON a.attrelid = i.indrelid
+                          AND a.attnum = ANY(i.indkey)
+                            WHERE i.indrelid = '{tab}'::regclass
+                            AND a.attname = '{col}'
+                ) THEN
+                    EXECUTE 'CREATE INDEX {idx} ON {tab} ({col})';
+                END IF;
+            END$$;
+            """
+        self.connectionHelper.execute_sql([sql], self.logger)
+
+    def __get_cols_for_table(self, tab):
+        res, desc = self.connectionHelper.execute_sql_fetchall(
+            self.connectionHelper.queries.get_column_details_for_table(self.connectionHelper.config.user_schema,
+                                                                       tab))
+        tab_attribs = [row[0].lower() for row in res]
+        return tab_attribs
+
+    def __create_tab_indexes(self, tab):
+        cols = self.__get_cols_for_table(tab)
+        for col in cols:
+            self.__create_col_idx_if_not_exists(tab, col)
+
     def backup_one_table(self, table):
         self.logger.debug(f"Backing up {table}...")
         self.connectionHelper.begin_transaction()
         self.drop_derived_relations(table)
         working_table = self.get_fully_qualified_table_name(table)
         original_table = self.get_original_table_name(table)
+        self.__create_tab_indexes(table)
         self.connectionHelper.execute_sqls_with_DictCursor(
             [self.connectionHelper.queries.create_table_like(working_table, original_table),
              self.connectionHelper.queries.insert_into_tab_select_star_fromtab(working_table, original_table)],
@@ -95,14 +128,16 @@ class TpchSanitizer:
     def drop_derived_relations(self, table):
         derived_tables = self.connectionHelper.execute_sql_fetchall(f"select tablename from pg_tables "
                                                                     f"where schemaname = '{self.connectionHelper.config.schema}' "
-                                                                    f"and tablename LIKE '{table}%{UNMASQUE}';", self.logger)
+                                                                    f"and tablename LIKE '{table}%{UNMASQUE}';",
+                                                                    self.logger)
         if derived_tables is not None and len(derived_tables):
             derived_tables = derived_tables[0]
         else:
             derived_tables = []
         derived_views = self.connectionHelper.execute_sql_fetchall(f"select viewname from pg_views "
                                                                    f"where schemaname = '{self.connectionHelper.config.schema}' "
-                                                                   f"and viewname LIKE '{table}%{UNMASQUE}';", self.logger)
+                                                                   f"and viewname LIKE '{table}%{UNMASQUE}';",
+                                                                   self.logger)
         if derived_views is not None and len(derived_views):
             derived_views = derived_views[0]
         else:
