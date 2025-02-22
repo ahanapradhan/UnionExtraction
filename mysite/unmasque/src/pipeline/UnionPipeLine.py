@@ -1,3 +1,6 @@
+import datetime
+import time
+
 from .OuterJoinPipeLine import OuterJoinPipeLine
 from ..core.union import Union
 from ..util.constants import UNION, START, DONE, RUNNING, WRONG, FROM_CLAUSE, ERROR
@@ -19,6 +22,7 @@ class UnionPipeLine(OuterJoinPipeLine):
         self.connectionHelper.closeConnection()
 
         self.info[UNION] = [list(ele) for ele in p]
+        print(f"Now end {str(datetime.datetime.now().time())}")
         self.__update_time_profile(union, union_profile)
         self.core_relations = [item for subset in p for item in subset]
         self.all_relations = union.all_relations
@@ -26,6 +30,7 @@ class UnionPipeLine(OuterJoinPipeLine):
         self.key_lists = union.key_lists
         self.logger.debug(f"relations, {self.all_relations} all sizes, {self.all_sizes}, key list: {self.key_lists}")
         u_eq = []
+        # return 0
 
         for rels in p:
             self.info[UNION] = [list(ele) for ele in p]
@@ -61,7 +66,7 @@ class UnionPipeLine(OuterJoinPipeLine):
         result = ""
         if self.pipeLineError:
             self.error += f"Could not extract the query due to errors." \
-                     f"\nHere's what I have as a half-baked answer:\n{pstr}\n"
+                          f"\nHere's what I have as a half-baked answer:\n{pstr}\n"
             self.update_state(ERROR)
             return None
         result += u_Q

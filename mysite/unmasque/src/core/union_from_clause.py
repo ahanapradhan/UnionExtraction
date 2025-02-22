@@ -52,7 +52,7 @@ class UnionFromClause(Schema, AppExtractorBase):
     def doActualJob(self, args=None):
         QH = self.extract_params_from_args(args)
         fromTabQ = set(self.get_fromTabs(QH))
-        comTabQ = set(self.get_comTabs(QH))
+        comTabQ = set(self.get_comTabs(QH, fromTabQ))
         self.logger.debug(f"from tab: {fromTabQ}, com tab: {comTabQ}")
         partTabQ = fromTabQ.difference(comTabQ)
         self.logger.debug(f"part tab: {partTabQ}")
@@ -64,8 +64,10 @@ class UnionFromClause(Schema, AppExtractorBase):
         self.logger.debug(str(self.fromtabs))
         return self.fromtabs
 
-    def get_comTabs(self, QH):
+    def get_comTabs(self, QH, tabs):
         if self.comtabs is None:
+            self.fromClause.set_check_relations(tabs)
             self.comtabs = self.fromClause.doJob(QH, FromClause.TYPE_RENAME)
+            self.fromClause.reset_check_relations()
         return self.comtabs
 

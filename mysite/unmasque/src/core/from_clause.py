@@ -1,3 +1,7 @@
+import copy
+import datetime
+from time import time
+
 from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 from ...src.core.initialization import Initiator
 from ...src.util.application_type import ApplicationType
@@ -16,6 +20,14 @@ class FromClause(AppExtractorBase):
         self.core_relations = []
         self.method = self.TYPE_ERROR
         self.timeout = True
+        self.check_relations = None
+
+    def set_check_relations(self, tabs):
+        self.check_relations = copy.deepcopy(tabs)
+
+    def reset_check_relations(self):
+        self.check_relations = None
+
 
     def set_app_type(self):
         app_type = self.connectionHelper.config.app_type
@@ -31,7 +43,9 @@ class FromClause(AppExtractorBase):
             self.method = self.TYPE_RENAME
 
     def get_core_relations_by_void(self, query):
-        for tabname in self.all_relations:
+        if not len(self.check_relations):
+            self.set_check_relations(self.all_relations)
+        for tabname in self.check_relations:
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
@@ -81,7 +95,7 @@ class FromClause(AppExtractorBase):
         if not check:
             return False
         self.all_relations = self.init.all_relations
-        self.local_start_time = self.init.local_end_time
+        # self.local_start_time = self.init.local_end_time
         # still in union pipeline from clause timins include initiator timings. Find out why.
         return True
 
@@ -89,7 +103,7 @@ class FromClause(AppExtractorBase):
         setup_done = self.setup()
         if not setup_done:
             return False
-
+        print(f"Start from {str(datetime.datetime.now().time())}")
         query, method = self.extract_params_from_args(args)
         if not method:
             method = self.method
