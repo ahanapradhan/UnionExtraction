@@ -1085,7 +1085,7 @@ where
         and s_nationkey = n_nationkey
         and n_name = 'FRANCE'
 order by
-        s_name;""", True, True, False, False),
+        s_name;""", False, True, False, False),
                      TestQuery("ETPCH_Q21", """""", False, True, False, False),
                      TestQuery("ETPCH_Q23", """SELECT   RIGHT(c_address, 5) AS city,
          p_brand             AS part_brand
