@@ -87,9 +87,11 @@ class FromClause(AppExtractorBase):
                 self.logger.info(str(error))
             finally:
                 self.connectionHelper.rollback_transaction()
+                '''
                 check_c = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
                     self.get_original_table_name(tabname)), self.logger)
                 self.logger.debug(check_c)
+                '''
 
     def __check_base_tables(self):
         for tab in self.all_relations:
