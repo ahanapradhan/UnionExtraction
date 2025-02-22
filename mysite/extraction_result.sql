@@ -734,3 +734,17 @@ FROM(q1) = { orders, lineitem }, FROM(q2) = { lineitem, part }
  Where lineitem.l_partkey = part.p_partkey
  and lineitem.l_extendedprice <= 905.0);
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select c_name, avg(c_acctbal) as avg_balance, o_clerk from customer, orders where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' and o_orderdate <= DATE '1995-10-23' and c_acctbal = 121.65 group by c_name, o_clerk order by c_name, o_clerk;
+ --- extracted query:
+  
+ Select c_name, 121.65 as avg_balance, o_clerk 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_acctbal = 121.65
+ and orders.o_orderdate between '1993-10-15' and '1995-10-23' 
+ Group By c_name, o_clerk 
+ Order By c_name asc, avg_balance asc, o_clerk asc;
+ --- END OF ONE EXTRACTION EXPERIMENT

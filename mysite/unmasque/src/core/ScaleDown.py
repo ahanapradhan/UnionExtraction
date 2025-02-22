@@ -7,7 +7,8 @@ class ScaleDown(Cs2):
                  all_sizes,
                  core_relations,
                  global_key_lists):
-        super().__init__(connectionHelper, all_sizes, core_relations, global_key_lists, True, "Scale Down")
+        super().__init__(connectionHelper, all_sizes, core_relations, global_key_lists, True, "Scale Down",
+                         connectionHelper.config.sf)
         self.downscale_schema = f"{WORKING_SCHEMA}{SCALE_DOWN}"
         self.full_schema = self.connectionHelper.config.user_schema
         self.enabled = self.connectionHelper.config.scale_down

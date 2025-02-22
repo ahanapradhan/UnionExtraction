@@ -31,7 +31,7 @@ class ExtractionTestCase(BaseTestCase):
         self.conn.config.detect_oj = False
         self.conn.config.detect_or = False
 
-        self.conn.config.use_cs2 = True
+        self.conn.config.use_cs2 = False
         self.pipeline = None
 
     def test_exists(self):
@@ -159,7 +159,8 @@ c_acctbal > 30.04;"""
                 "where c_custkey = o_custkey and o_orderdate > DATE '1993-10-14' and " \
                 "o_orderdate <= DATE '1995-10-23' and c_acctbal = 121.65 group by c_name," \
                 " o_clerk order by c_name, o_clerk;"
-        self.conn.config.use_cs2 = True
+        self.conn.config.use_cs2 = False
+        self.conn.config.scale_down = True
         self.do_test(query)
 
     def test_gnp_Q10(self):

@@ -25,7 +25,7 @@ class Cs2(AppExtractorBase):
                  core_relations,
                  global_key_lists, perc_based_cutoff=False, name="cs2", sf=1):
         super().__init__(connectionHelper, name)
-        self.sf = sf
+        self.sf = int(sf)
         self.seed_sample_size_per = 0.16 / self.sf
         self.passed = False
         self.iteration_count = 0
