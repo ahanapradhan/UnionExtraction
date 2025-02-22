@@ -91,6 +91,7 @@ OUTER_JOIN = "OUTER JOIN"
 NEP_COMPARATOR = "NEP_COMPARATOR"
 DOWN_SCALE = "scale_down"
 SCALE_FACTOR = "scale_factor"
+SCALE_RETRY = "scale_retry"
 
 
 NEP_ = "NEP"

@@ -4,7 +4,7 @@ from pathlib import Path
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
-    DETECT_OJ, LIMIT, OPTIONS_SECTION, DOWN_SCALE, WORKING_SCHEMA, TABLE_SIZE_SECTION, TABLE, SCALE_FACTOR
+    DETECT_OJ, LIMIT, OPTIONS_SECTION, DOWN_SCALE, WORKING_SCHEMA, TABLE_SIZE_SECTION, TABLE, SCALE_FACTOR, SCALE_RETRY
 
 
 class Config:
@@ -17,7 +17,8 @@ class Config:
 
     def __init__(self):
         # default values
-        self.sf = 1 #Default 1
+        self.scale_retry = 0
+        self.sf = 1  # Default 1
         self.workmem = None
         self.limit_limit = 1000
         self.database = "postgres"
@@ -65,7 +66,7 @@ class Config:
                         table_size_entry = config_object.get(TABLE_SIZE_SECTION, TABLE + str(i))
                         key, value = table_size_entry.split(":")
                         self.table_sizes_dict[key.strip()] = int(value.strip())
-                        i = i+1
+                        i = i + 1
                     except Exception:
                         break
 
@@ -130,6 +131,12 @@ class Config:
 
         try:
             scale_factor = config_object.get(OPTIONS_SECTION, SCALE_FACTOR)
-            self.sf = scale_factor
+            self.sf = int(scale_factor)
+        except:
+            pass
+
+        try:
+            retry_scale_down = config_object.get(OPTIONS_SECTION, SCALE_RETRY)
+            self.scale_retry = int(retry_scale_down)
         except:
             pass

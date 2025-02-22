@@ -1,5 +1,4 @@
 import copy
-import math
 
 from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 
@@ -23,10 +22,11 @@ class Cs2(AppExtractorBase):
     def __init__(self, connectionHelper,
                  all_sizes,
                  core_relations,
-                 global_key_lists, perc_based_cutoff=False, name="cs2", sf=1):
+                 global_key_lists, perc_based_cutoff=False, name="cs2", sf=1, how_many_times_failed=0):
         super().__init__(connectionHelper, name)
-        self.sf = int(sf)
-        self.seed_sample_size_per = 0.16 / self.sf
+        self.sf = sf
+        self.seed_sample_size_per = (0.16 / self.sf) * (how_many_times_failed + 1)
+        print(f"seed_sample_size_per {self.seed_sample_size_per}")
         self.passed = False
         self.iteration_count = 0
         self.core_relations = core_relations
