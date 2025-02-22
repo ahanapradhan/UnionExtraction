@@ -28,7 +28,6 @@ class FromClause(AppExtractorBase):
     def reset_check_relations(self):
         self.check_relations = None
 
-
     def set_app_type(self):
         app_type = self.connectionHelper.config.app_type
         if app_type == ApplicationType.SQL_ERR_FWD:
