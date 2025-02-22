@@ -4,7 +4,8 @@ from pathlib import Path
 from .application_type import ApplicationType
 from .constants import DATABASE_SECTION, HOST, PORT, USER, PASSWORD, SCHEMA, DBNAME, \
     SUPPORT_SECTION, LEVEL, LOGGING_SECTION, FEATURE_SECTION, DETECT_UNION, DETECT_NEP, USE_CS2, DATABASE, DETECT_OR, \
-    DETECT_OJ, LIMIT, OPTIONS_SECTION, DOWN_SCALE, WORKING_SCHEMA, TABLE_SIZE_SECTION, TABLE, SCALE_FACTOR, SCALE_RETRY
+    DETECT_OJ, LIMIT, OPTIONS_SECTION, DOWN_SCALE, WORKING_SCHEMA, TABLE_SIZE_SECTION, TABLE, SCALE_FACTOR, SCALE_RETRY, \
+    USE_INDEX
 
 
 class Config:
@@ -17,6 +18,7 @@ class Config:
 
     def __init__(self):
         # default values
+        self.use_index = False
         self.scale_retry = 0
         self.sf = 1  # Default 1
         self.workmem = None
@@ -138,5 +140,11 @@ class Config:
         try:
             retry_scale_down = config_object.get(OPTIONS_SECTION, SCALE_RETRY)
             self.scale_retry = int(retry_scale_down)
+        except:
+            pass
+
+        try:
+            use_index = config_object.get(OPTIONS_SECTION, USE_INDEX)
+            self.use_index = use_index == 'yes'
         except:
             pass

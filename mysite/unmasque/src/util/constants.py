@@ -92,6 +92,7 @@ NEP_COMPARATOR = "NEP_COMPARATOR"
 DOWN_SCALE = "scale_down"
 SCALE_FACTOR = "scale_factor"
 SCALE_RETRY = "scale_retry"
+USE_INDEX = "use_index"
 
 
 NEP_ = "NEP"
