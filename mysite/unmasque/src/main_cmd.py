@@ -652,6 +652,31 @@ FROM (
     AND sl_discount BETWEEN 0.05 AND 0.07
     AND sl_quantity < 24
 ) AS combined_revenue;""", False, True, False, False),
+                     TestQuery("ETPCH_Q6_1", """SELECT SUM(revenue) AS revenue
+    FROM (
+        SELECT wl_extendedprice * wl_discount AS revenue
+        FROM web_lineitem
+        WHERE wl_shipdate >= DATE '1993-01-01'
+        AND wl_shipdate < DATE '1995-01-01'
+        AND wl_discount BETWEEN 0.05 AND 0.07
+        AND wl_quantity < 24
+        ) AS combined_revenue;""", False, True, False, False),
+                     TestQuery("ETPCH_Q6_2", """SELECT *
+    FROM (
+        SELECT sum(wl_extendedprice * wl_discount) AS revenue
+        FROM web_lineitem
+        WHERE wl_shipdate >= DATE '1993-01-01'
+        AND wl_shipdate < DATE '1995-01-01'
+        AND wl_discount BETWEEN 0.05 AND 0.07
+        AND wl_quantity < 24
+        UNION ALL
+        SELECT sum(sl_extendedprice * sl_discount) AS revenue
+        FROM store_lineitem
+        WHERE sl_shipdate >= DATE '1993-01-01'
+        AND sl_shipdate < DATE '1995-01-01'
+        AND sl_discount BETWEEN 0.05 AND 0.07
+        AND sl_quantity < 24
+    ) AS combined_revenue;""", False, True, False, False),
                      TestQuery("ETPCH_Q7", """SELECT supp_nation, cust_nation, l_year, SUM(revenue) as revenue
 FROM (
     SELECT n1.n_name as supp_nation, n2.n1_name as cust_nation, EXTRACT(YEAR FROM wl_shipdate) as l_year, wl_extendedprice*(1 - wl_discount) as revenue 
