@@ -588,23 +588,23 @@ Q18 = """select
         o_orderkey,
         o_orderdate,
         o_totalprice,
-        sum(l_quantity)
+        sum(wl_quantity)
 from
         customer,
         orders,
-        lineitem
+        web_lineitem
 where
         o_orderkey in (
                 select
-                        l_orderkey
+                        wl_orderkey
                 from
-                        lineitem
+                        web_lineitem
                 group by
-                        l_orderkey having
-                                sum(l_quantity) > 300
+                        wl_orderkey having
+                                sum(wl_quantity) > 300
         )
         and c_custkey = o_custkey
-        and o_orderkey = l_orderkey
+        and o_orderkey = wl_orderkey
 group by
         c_name,
         c_custkey,
