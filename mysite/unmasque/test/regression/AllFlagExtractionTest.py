@@ -1628,9 +1628,15 @@ and o2.o_orderdate between date '1995-01-01' and date '1995-12-31'
                     and o_orderdate >= DATE '1995-01-01';"""]
         self.conn.config.scale_down = 'yes'
         self.conn.config.scale_retry = 1
-        self.conn.config.scale_factor = 0.1
+        self.conn.config.scale_factor = 1
         self.conn.config.use_index = 'no'
-        self.do_test(workload)
+        self.conn.connectUsingParams()
+        init = Initiator(self.conn)
+        check = init.doJob(workload)
+        self.conn.closeConnection()
+        self.assertTrue(check)
+        print(f"scale down worked for {str(len(workload))} queries together!")
+        print(init.local_elapsed_time)
 
     def test_scaleDown_workload1(self):
         workload = ["""SELECT o_orderpriority,

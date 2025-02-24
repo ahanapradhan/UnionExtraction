@@ -54,35 +54,11 @@ class ScaleDown(Cs2):
         return check
 
     def _correlated_sampling(self, query, sizes, to_truncate=False):
-        self.logger.debug("Starting correlated sampling ")
-
-        # choose base table from each key list> sample it> sample remaining tables based on base table
-        for table in self.all_relations:
-            self.connectionHelper.execute_sqls_with_DictCursor(
-                [self.connectionHelper.queries.create_table_like(self.get_fully_qualified_table_name(table),
-                                                                 self.get_original_table_name(table))], self.logger)
-        if to_truncate:
-            self._truncate_tables()
-        self.__do_for_key_lists(sizes)
-
-        not_sampled_tables = copy.deepcopy(self.core_relations)
-        self.__do_for_empty_key_lists(not_sampled_tables)
-
-        for table in self.core_relations:
-            res = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
-                self.get_fully_qualified_table_name(table)), self.logger)
-            self.logger.debug(table, res)
-            self.sample[table] = res
-
+        self.logger.debug("Starting scaling down  sampling ")
+        self._do_sampling(sizes, to_truncate)
         for q in query:
-            # check for null free rows and not just nonempty results
-            new_result = self.app.doJob(q)
-            # self.logger.debug(f"result after sampling: {new_result}")
-            if not self.app.isQ_result_nonEmpty_nullfree(new_result):
-                for table in self.core_relations:
-                    self.connectionHelper.execute_sqls_with_DictCursor([self.connectionHelper.queries.drop_table(
-                        self.get_fully_qualified_table_name(table))], self.logger)
-                    self.sample[table] = sizes[table]
+            sanity = self._sanity_check(sizes, q)
+            if not sanity:
+                self.logger.debug(f"{q} is not satisfied!")
                 return False
-            self.logger.debug(f"{q} is not satisfied!")
         return True

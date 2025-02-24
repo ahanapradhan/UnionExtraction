@@ -42,10 +42,15 @@ class Initiator(Base):
     def __scale_down(self, args=None):
         self.downer = ScaleDown(self.connectionHelper, self.all_sizes, self.all_relations, self.global_key_lists)
         try:
-            self.downer.doJob(args)
+            check = self.downer.doJob(args)
             self.all_sizes = copy.deepcopy(self.downer.sizes)
+            if not check:
+                self.logger.error("Scale down did not succeed! Try with larger retry factor..")
+                return False
+            return True
         except Exception as e:
             self.logger.error("Some error while Cs2 to scale down!!")
+            return False
 
     def doActualJob(self, args=None):
         self.reset()
@@ -62,8 +67,8 @@ class Initiator(Base):
         if not self.connectionHelper.config.use_cs2 and not self.connectionHelper.config.scale_down:
             self.take_backup()
         self.__get_rows_in_tables()
-        self.__scale_down(args)
-        return True
+        check = self.__scale_down(args)
+        return check
 
     def __get_rows_in_tables(self):
         if not self.connectionHelper.config.table_sizes_dict.keys():
