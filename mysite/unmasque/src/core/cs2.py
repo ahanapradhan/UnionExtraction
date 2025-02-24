@@ -62,7 +62,9 @@ class Cs2(AppExtractorBase):
         query = self.extract_params_from_args(args)
         to_truncate = True
         while self._dont_stop_trying():
-            done = self.__correlated_sampling(query, self.sizes, to_truncate)
+            self.connectionHelper.begin_transaction()
+            done = self._correlated_sampling(query, self.sizes, to_truncate)
+            self.connectionHelper.commit_transaction()
             to_truncate = False  # first time truncation is sufficient, each for each union flow
             if not done:
                 self.logger.info(f"sampling failed on attempt no: {self.iteration_count}")
@@ -74,7 +76,6 @@ class Cs2(AppExtractorBase):
                 self.logger.info(f"Sampling Percentage: {self.seed_sample_size_per}")
                 sizes = self.__getSizes_cs()
                 self.logger.info(sizes)
-                self.connectionHelper.commit_transaction()
                 return True
 
         self._restore()
@@ -90,7 +91,7 @@ class Cs2(AppExtractorBase):
                     self.get_fully_qualified_table_name(table), self.get_original_table_name(table))], self.logger)
             self.connectionHelper.commit_transaction()
 
-    def __correlated_sampling(self, query, sizes, to_truncate=False):
+    def _correlated_sampling(self, query, sizes, to_truncate=False):
         self.logger.debug("Starting correlated sampling ")
 
         # choose base table from each key list> sample it> sample remaining tables based on base table

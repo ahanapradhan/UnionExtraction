@@ -474,6 +474,38 @@ WHERE p.p_brand = 'Brand#53'
   AND p.p_container = 'MED BAG'
   AND l.l_quantity < avg_lineitem.threshold_quantity;
 """, False, False, False, False),
+                     TestQuery("ETPCH_Q18", """select
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice,
+        sum(wl_quantity)
+from
+        customer,
+        orders,
+        web_lineitem
+where
+        o_orderkey in (
+                select
+                        wl_orderkey
+                from
+                        web_lineitem
+                group by
+                        wl_orderkey having
+                                sum(wl_quantity) > 300
+        )
+        and c_custkey = o_custkey
+        and o_orderkey = wl_orderkey
+group by
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice
+order by
+        o_totalprice desc,
+        o_orderdate;""", False, True, False, False),
                      TestQuery("Nested_Test", """select
         s_name,
         s_address
@@ -1086,7 +1118,29 @@ where
         and n_name = 'FRANCE'
 order by
         s_name;""", False, True, False, False),
-                     TestQuery("ETPCH_Q21", """""", False, True, False, False),
+                     TestQuery("ETPCH_Q21", """SELECT s_name, COUNT(*) AS numwait
+FROM supplier, nation, orders, web_lineitem l1
+WHERE s_suppkey = l1.wl_suppkey
+  AND s_nationkey = n_nationkey
+  AND n_name = 'ARGENTINA'
+  AND l1.wl_orderkey = o_orderkey
+  AND o_orderstatus = 'F'
+  AND l1.wl_commitdate < l1.wl_receiptdate
+  AND EXISTS (
+    SELECT 1
+    FROM web_lineitem l2
+    WHERE l1.wl_orderkey = l2.wl_orderkey
+      AND l1.wl_suppkey <> l2.wl_suppkey
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM web_lineitem l3
+    WHERE l1.wl_orderkey = l3.wl_orderkey
+      AND l1.wl_suppkey <> l3.wl_suppkey
+      AND l3.wl_commitdate < l3.wl_receiptdate
+  )
+GROUP BY s_name
+ORDER BY numwait DESC, s_name;""", False, True, False, False),
                      TestQuery("ETPCH_Q23", """SELECT   RIGHT(c_address, 5) AS city,
          p_brand             AS part_brand
 FROM     customer,
