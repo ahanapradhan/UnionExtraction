@@ -1990,8 +1990,7 @@ ORDER BY
         print(f"scale down worked for {str(len(workload))} queries together!")
         print(init.local_elapsed_time)
 
-
-def test_scaleDown_workload100(self):
+    def test_scaleDown_workload100(self):
         workload = ["""SELECT o_orderpriority,
        Count(*) AS order_count
 FROM   orders
