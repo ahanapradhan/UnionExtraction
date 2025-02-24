@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 import pytest
 
+from mysite.unmasque.src.core.initialization import Initiator
 from mysite.unmasque.test.eTPCH_Queries import Q4, Q6, Q7, Q9, Q10, Q14, Q5, Q15
 from ...src.core.factory.PipeLineFactory import PipeLineFactory
 from ..util import queries
@@ -1620,6 +1621,721 @@ and o2.o_orderdate between date '1995-01-01' and date '1995-12-31'
         self.conn.config.detect_or = False
         self.conn.config.use_cs2 = False
         self.do_test(query)
+
+    def test_scaleDown_workload(self):
+        workload = ["""select n_name from nation where n_name = 'BRAZIL';""",
+                    """select o_clerk from orders where o_orderstatus = 'F' 
+                    and o_orderdate >= DATE '1995-01-01';"""]
+        self.conn.config.scale_down = 'yes'
+        self.conn.config.scale_retry = 1
+        self.conn.config.scale_factor = 0.1
+        self.conn.config.use_index = 'no'
+        self.do_test(workload)
+
+    def test_scaleDown_workload1(self):
+        workload = ["""SELECT o_orderpriority,
+       Count(*) AS order_count
+FROM   orders
+WHERE  o_orderdate >= DATE '1995-01-01'
+AND    o_orderdate <  DATE '1995-01-01' + interval '3' month
+AND    EXISTS
+       (
+              SELECT *
+              FROM   (
+                     (
+                               SELECT wl_commitdate  AS l_commitdate,
+                                      wl_receiptdate AS l_receiptdate,
+                                      wl_orderkey    AS l_orderkey
+                               FROM   web_lineitem)) AS lineitem
+           WHERE     l_orderkey = o_orderkey
+           AND       l_commitdate < l_receiptdate) GROUP BY o_orderpriority ORDER BY o_orderpriority;""",
+                    """WITH combined_data AS (
+    (SELECT
+        wl_orderkey AS orderkey,
+        wl_extendedprice * (1 - wl_discount) AS l_discounted_price,
+        o_orderdate,
+        o_shippriority
+    FROM
+        customer
+    JOIN orders ON c_custkey = o_custkey
+    JOIN web_lineitem ON wl_orderkey = o_orderkey
+    WHERE
+        c_mktsegment = 'FURNITURE'
+        AND o_orderdate < DATE '1995-01-01'
+        AND wl_shipdate > DATE '1995-01-01')
+)
+SELECT
+    o_shippriority,
+    SUM(l_discounted_price) AS revenue,
+FROM
+    combined_data GROUP BY
+        orderkey, o_orderdate, o_shippriority
+ORDER BY
+    revenue DESC
+LIMIT 10;""",
+                    """select
+        sum(wl_extendedprice* (1 - wl_discount)) as revenue
+from
+        web_lineitem,
+        part
+where
+        (
+                p_partkey = wl_partkey
+                and p_brand = 'Brand#12'
+                and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+                and wl_quantity >= 1 and wl_quantity <= 1 + 10
+                and p_size between 1 and 5
+                and wl_shipmode in ('AIR', 'AIR REG')
+                and wl_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = wl_partkey
+                and p_brand = 'Brand#23'
+                and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+                and wl_quantity >= 10 and wl_quantity <= 10 + 10
+                and p_size between 1 and 10
+                and wl_shipmode in ('AIR', 'AIR REG')
+                and wl_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = wl_partkey
+                and p_brand = 'Brand#34'
+                and p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+                and wl_quantity >= 20 and wl_quantity <= 20 + 10
+                and p_size between 1 and 15
+                and wl_shipmode in ('AIR', 'AIR REG')
+                and wl_shipinstruct = 'DELIVER IN PERSON'
+        );""",
+                    """select
+        cntrycode,
+        count(*) as numcust,
+        sum(c_acctbal) as totacctbal
+from
+        (
+                select
+                        substring(c_phone from 1 for 2) as cntrycode,
+                        c_acctbal
+                from
+                        customer
+                where
+                        substring(c_phone from 1 for 2) in
+                                ('13', '31', '23', '29', '30', '18', '17')
+                        and c_acctbal > (
+                                select
+                                        avg(c_acctbal)
+                                from
+                                        customer
+                                where
+                                        c_acctbal > 0.00
+                                        and substring(c_phone from 1 for 2) in
+                                                ('13', '31', '23', '29', '30', '18', '17')
+                        )
+                        and not exists (
+                                select
+                                        *
+                                from
+                                        orders
+                                where
+                                        o_custkey = c_custkey
+                        )
+        ) as custsale
+group by
+        cntrycode
+order by
+        cntrycode;""",
+                    """select
+        s_name,
+        s_address
+from
+        supplier,
+        nation
+where
+        s_suppkey in (
+                select
+                        ps_suppkey
+                from
+                        partsupp
+                where
+                        ps_partkey in (
+                                select
+                                        p_partkey
+                                from
+                                        part
+                                where
+                                        p_name like '%ivory%'
+                        )
+                        and ps_availqty > (
+                                select
+                                        0.5 * sum(wl_quantity)
+                                from
+                                        web_lineitem
+                                where
+                                        wl_partkey = ps_partkey
+                                        and wl_suppkey = ps_suppkey
+                                        and wl_shipdate >= date '1995-01-01'
+                                        and wl_shipdate < date '1995-01-01' + interval '1' year
+                        )
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+order by
+        s_name;""",
+                    """select
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice,
+        sum(wl_quantity)
+from
+        customer,
+        orders,
+        web_lineitem
+where
+        o_orderkey in (
+                select
+                        wl_orderkey
+                from
+                        web_lineitem
+                group by
+                        wl_orderkey having
+                                sum(wl_quantity) > 300
+        )
+        and c_custkey = o_custkey
+        and o_orderkey = wl_orderkey
+group by
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice
+order by
+        o_totalprice desc,
+        o_orderdate;""",
+                    """select sum(wl_extendedprice) / 7.0 as avg_yearly
+from
+        web_lineitem,
+        part
+where
+        p_partkey = wl_partkey
+        and p_brand = 'Brand#53'
+        and p_container = 'MED BAG'
+        and wl_quantity < (
+                select
+                        0.7 * avg(wl_quantity)
+                from
+                        web_lineitem
+                where
+                        wl_partkey = p_partkey
+        );""",
+                    """select
+        p_brand,
+        p_type,
+        p_size,
+        count(distinct ps_suppkey) as supplier_cnt
+from
+        partsupp,
+        part
+where
+        p_partkey = ps_partkey
+        and p_brand <> 'Brand#23'
+    AND p_type NOT LIKE 'MEDIUM POLISHED%' 
+        and p_size IN (1, 4, 7)
+        and ps_suppkey not in (
+                select
+                        s_suppkey
+                from
+                        supplier
+                where
+                        s_comment like '%Customer%Complaints%'
+        )
+group by
+        p_brand,
+        p_type,
+        p_size
+order by
+        supplier_cnt desc,
+        p_brand,
+        p_type,
+        p_size;""",
+                    """with revenue(supplier_no, total_revenue) as
+        (select
+                wl_suppkey,
+                sum(wl_extendedprice * (1 - wl_discount))
+        from
+                web_lineitem
+        where
+                wl_shipdate >= date '1995-01-01'
+                and wl_shipdate < date '1995-01-01' + interval '3' month
+        group by
+                wl_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
+order by
+        s_suppkey;""",
+                    """select
+        100.00 * sum(case
+                when p_type like 'PROMO%'
+                        then wl_extendedprice * (1 - wl_discount)
+                else 0
+        end) / sum(wl_extendedprice * (1 - wl_discount)) as promo_revenue
+from
+        web_lineitem,
+        part
+where
+        wl_partkey = p_partkey
+        and wl_shipdate >= date '1995-01-01'
+        and wl_shipdate < date '1995-01-01' + interval '1' month;""",
+                    """select
+        c_count, c_orderdate,
+        count(*) as custdist
+from
+        (
+                select
+                        c_custkey, o_orderdate,
+                        count(o_orderkey)
+                from
+                        customer left outer join orders on
+                                c_custkey = o_custkey
+                                and o_comment not like '%special%requests%'
+                group by
+                        c_custkey, o_orderdate
+        ) as c_orders (c_custkey, c_count, c_orderdate)
+group by
+        c_count, c_orderdate
+order by
+        custdist desc,
+        c_count desc;""",
+                    """select
+        wl_shipmode,
+        sum(case
+                when o_orderpriority = '1-URGENT'
+                        or o_orderpriority = '2-HIGH'
+                        then 1
+                else 0
+        end) as high_line_count,
+        sum(case
+                when o_orderpriority <> '1-URGENT'
+                        and o_orderpriority <> '2-HIGH'
+                        then 1
+                else 0
+        end) as low_line_count
+from
+        orders,
+        web_lineitem
+where
+        o_orderkey = wl_orderkey
+        and wl_shipmode = 'SHIP'
+        and wl_commitdate < wl_receiptdate
+        and wl_shipdate < wl_commitdate
+        and wl_receiptdate >= date '1995-01-01'
+        and wl_receiptdate < date '1995-01-01' + interval '1' year
+group by
+        wl_shipmode
+order by
+        wl_shipmode;""",
+                    """SELECT
+    ps_partkey, n_name,
+    SUM(ps_supplycost * ps_availqty) AS total_value
+FROM
+    partsupp, supplier, nation 
+where
+    ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+GROUP BY
+    ps_partkey, n_name
+HAVING
+    SUM(ps_supplycost * ps_availqty) > (
+        SELECT SUM(ps_supplycost * ps_availqty) * 0.00001
+        FROM partsupp, supplier, nation WHERE 
+        ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+    )
+ORDER BY
+    total_value DESC;"""]
+        self.conn.config.scale_down = 'yes'
+        self.conn.config.scale_retry = 1
+        self.conn.config.scale_factor = 1
+        self.conn.config.use_index = 'no'
+        self.conn.connectUsingParams()
+        init = Initiator(self.conn)
+        check = init.doJob(workload)
+        self.conn.closeConnection()
+        self.assertTrue(check)
+        print(f"scale down worked for {str(len(workload))} queries together!")
+        print(init.local_elapsed_time)
+
+
+def test_scaleDown_workload100(self):
+        workload = ["""SELECT o_orderpriority,
+       Count(*) AS order_count
+FROM   orders
+WHERE  o_orderdate >= DATE '1995-01-01'
+AND    o_orderdate <  DATE '1995-01-01' + interval '3' month
+AND    EXISTS
+       (
+              SELECT *
+              FROM   (
+                     (
+                               SELECT l_commitdate,
+                                      l_receiptdate,
+                                      l_orderkey
+                               FROM   web_lineitem)) AS lineitem
+           WHERE     l_orderkey = o_orderkey
+           AND       l_commitdate < l_receiptdate) GROUP BY o_orderpriority ORDER BY o_orderpriority;""",
+                    """WITH combined_data AS (
+    (SELECT
+        l_orderkey AS orderkey,
+        l_extendedprice * (1 - l_discount) AS l_discounted_price,
+        o_orderdate,
+        o_shippriority
+    FROM
+        customer
+    JOIN orders ON c_custkey = o_custkey
+    JOIN web_lineitem ON l_orderkey = o_orderkey
+    WHERE
+        c_mktsegment = 'FURNITURE'
+        AND o_orderdate < DATE '1995-01-01'
+        AND l_shipdate > DATE '1995-01-01')
+)
+SELECT
+    o_shippriority,
+    SUM(l_discounted_price) AS revenue
+FROM
+    combined_data GROUP BY
+        orderkey, o_orderdate, o_shippriority
+ORDER BY
+    revenue DESC
+LIMIT 10;""",
+                    """select
+        sum(l_extendedprice* (1 - l_discount)) as revenue
+from
+        web_lineitem,
+        part
+where
+        (
+                p_partkey = l_partkey
+                and p_brand = 'Brand#12'
+                and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+                and l_quantity >= 1 and l_quantity <= 1 + 10
+                and p_size between 1 and 5
+                and l_shipmode in ('AIR', 'AIR REG')
+                and l_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = l_partkey
+                and p_brand = 'Brand#23'
+                and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+                and l_quantity >= 10 and l_quantity <= 10 + 10
+                and p_size between 1 and 10
+                and l_shipmode in ('AIR', 'AIR REG')
+                and l_shipinstruct = 'DELIVER IN PERSON'
+        )
+        or
+        (
+                p_partkey = l_partkey
+                and p_brand = 'Brand#34'
+                and p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+                and l_quantity >= 20 and l_quantity <= 20 + 10
+                and p_size between 1 and 15
+                and l_shipmode in ('AIR', 'AIR REG')
+                and l_shipinstruct = 'DELIVER IN PERSON'
+        );""",
+                    """select
+        cntrycode,
+        count(*) as numcust,
+        sum(c_acctbal) as totacctbal
+from
+        (
+                select
+                        substring(c_phone from 1 for 2) as cntrycode,
+                        c_acctbal
+                from
+                        customer
+                where
+                        substring(c_phone from 1 for 2) in
+                                ('13', '31', '23', '29', '30', '18', '17')
+                        and c_acctbal > (
+                                select
+                                        avg(c_acctbal)
+                                from
+                                        customer
+                                where
+                                        c_acctbal > 0.00
+                                        and substring(c_phone from 1 for 2) in
+                                                ('13', '31', '23', '29', '30', '18', '17')
+                        )
+                        and not exists (
+                                select
+                                        *
+                                from
+                                        orders
+                                where
+                                        o_custkey = c_custkey
+                        )
+        ) as custsale
+group by
+        cntrycode
+order by
+        cntrycode;""",
+                    """select
+        s_name,
+        s_address
+from
+        supplier,
+        nation
+where
+        s_suppkey in (
+                select
+                        ps_suppkey
+                from
+                        partsupp
+                where
+                        ps_partkey in (
+                                select
+                                        p_partkey
+                                from
+                                        part
+                                where
+                                        p_name like '%ivory%'
+                        )
+                        and ps_availqty > (
+                                select
+                                        0.5 * sum(l_quantity)
+                                from
+                                        web_lineitem
+                                where
+                                        l_partkey = ps_partkey
+                                        and l_suppkey = ps_suppkey
+                                        and l_shipdate >= date '1995-01-01'
+                                        and l_shipdate < date '1995-01-01' + interval '1' year
+                        )
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'FRANCE'
+order by
+        s_name;""",
+                    """select
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice,
+        sum(l_quantity)
+from
+        customer,
+        orders,
+        web_lineitem
+where
+        o_orderkey in (
+                select
+                        l_orderkey
+                from
+                        web_lineitem
+                group by
+                        l_orderkey having
+                                sum(l_quantity) > 300
+        )
+        and c_custkey = o_custkey
+        and o_orderkey = l_orderkey
+group by
+        c_name,
+        c_custkey,
+        o_orderkey,
+        o_orderdate,
+        o_totalprice
+order by
+        o_totalprice desc,
+        o_orderdate;""",
+                    """select sum(l_extendedprice) / 7.0 as avg_yearly
+from
+        web_lineitem,
+        part
+where
+        p_partkey = l_partkey
+        and p_brand = 'Brand#53'
+        and p_container = 'MED BAG'
+        and l_quantity < (
+                select
+                        0.7 * avg(l_quantity)
+                from
+                        web_lineitem
+                where
+                        l_partkey = p_partkey
+        );""",
+                    """select
+        p_brand,
+        p_type,
+        p_size,
+        count(distinct ps_suppkey) as supplier_cnt
+from
+        partsupp,
+        part
+where
+        p_partkey = ps_partkey
+        and p_brand <> 'Brand#23'
+    AND p_type NOT LIKE 'MEDIUM POLISHED%' 
+        and p_size IN (1, 4, 7)
+        and ps_suppkey not in (
+                select
+                        s_suppkey
+                from
+                        supplier
+                where
+                        s_comment like '%Customer%Complaints%'
+        )
+group by
+        p_brand,
+        p_type,
+        p_size
+order by
+        supplier_cnt desc,
+        p_brand,
+        p_type,
+        p_size;""",
+                    """with revenue(supplier_no, total_revenue) as
+        (select
+                l_suppkey,
+                sum(l_extendedprice * (1 - l_discount))
+        from
+                web_lineitem
+        where
+                l_shipdate >= date '1995-01-01'
+                and l_shipdate < date '1995-01-01' + interval '3' month
+        group by
+                l_suppkey)
+select
+        s_suppkey,
+        s_name,
+        s_address,
+        s_phone,
+        total_revenue
+from
+        supplier,
+        revenue
+where
+        s_suppkey = supplier_no
+        and total_revenue = (
+                select
+                        max(total_revenue)
+                from
+                        revenue
+        )
+order by
+        s_suppkey;""",
+                    """select
+        100.00 * sum(case
+                when p_type like 'PROMO%'
+                        then l_extendedprice * (1 - l_discount)
+                else 0
+        end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue
+from
+        web_lineitem,
+        part
+where
+        l_partkey = p_partkey
+        and l_shipdate >= date '1995-01-01'
+        and l_shipdate < date '1995-01-01' + interval '1' month;""",
+                    """select
+        c_count, c_orderdate,
+        count(*) as custdist
+from
+        (
+                select
+                        c_custkey, o_orderdate,
+                        count(o_orderkey)
+                from
+                        customer left outer join orders on
+                                c_custkey = o_custkey
+                                and o_comment not like '%special%requests%'
+                group by
+                        c_custkey, o_orderdate
+        ) as c_orders (c_custkey, c_count, c_orderdate)
+group by
+        c_count, c_orderdate
+order by
+        custdist desc,
+        c_count desc;""",
+                    """select
+        l_shipmode,
+        sum(case
+                when o_orderpriority = '1-URGENT'
+                        or o_orderpriority = '2-HIGH'
+                        then 1
+                else 0
+        end) as high_line_count,
+        sum(case
+                when o_orderpriority <> '1-URGENT'
+                        and o_orderpriority <> '2-HIGH'
+                        then 1
+                else 0
+        end) as low_line_count
+from
+        orders,
+        web_lineitem
+where
+        o_orderkey = l_orderkey
+        and l_shipmode = 'SHIP'
+        and l_commitdate < l_receiptdate
+        and l_shipdate < l_commitdate
+        and l_receiptdate >= date '1995-01-01'
+        and l_receiptdate < date '1995-01-01' + interval '1' year
+group by
+        l_shipmode
+order by
+        l_shipmode;""",
+                    """SELECT
+    ps_partkey, n_name,
+    SUM(ps_supplycost * ps_availqty) AS total_value
+FROM
+    partsupp, supplier, nation 
+where
+    ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+GROUP BY
+    ps_partkey, n_name
+HAVING
+    SUM(ps_supplycost * ps_availqty) > (
+        SELECT SUM(ps_supplycost * ps_availqty) * 0.00001
+        FROM partsupp, supplier, nation WHERE 
+        ps_suppkey = s_suppkey
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+    )
+ORDER BY
+    total_value DESC;"""]
+        self.conn.config.scale_down = 'yes'
+        self.conn.config.scale_retry = 1
+        self.conn.config.scale_factor = 100
+        self.conn.config.use_index = 'no'
+        self.conn.connectUsingParams()
+        init = Initiator(self.conn)
+        check = init.doJob(workload)
+        self.conn.closeConnection()
+        self.assertTrue(check)
+        print(f"scale down worked for {str(len(workload))} queries together!")
+        print(init.local_elapsed_time)
 
 
 if __name__ == '__main__':
