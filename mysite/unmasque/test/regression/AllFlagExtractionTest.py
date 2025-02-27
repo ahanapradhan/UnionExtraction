@@ -1991,13 +1991,12 @@ ORDER BY
         print(init.local_elapsed_time)
 
     def test_non_key_join(self):
-        query = """SELECT c_name AS entity_name, n_name AS country, o_totalprice
-AS price FROM customer, orders, nation
-WHERE o_comment = c_comment AND o_totalprice >= c_acctbal
-AND o_totalprice < 50000 AND c_acctbal >= 1000
-AND c_nationkey = n_nationkey
-AND c_mktsegment IN ('HOUSEHOLD', 'MACHINERY');"""
+        query = """select c_name as entity_name, n_name as country, o_totalprice as
+price from customer, orders, nation where
+o_totalprice = c_acctbal and c_nationkey =
+n_nationkey and c_mktsegment IN ('HOUSEHOLD','MACHINERY');"""
         self.conn.config.scale_down=False
+        self.conn.config.detect_or = True
         self.do_test(query)
 
     def test_scaleDown_workload100(self):

@@ -798,3 +798,54 @@ AND c_mktsegment IN ('HOUSEHOLD', 'MACHINERY');
  --- extracted query:
  Some problem in Regular mutation pipeline. Aborting extraction!
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name AS entity_name, n_name AS country, o_totalprice
+AS price FROM customer, orders, nation
+WHERE o_comment = c_comment AND o_totalprice >= c_acctbal
+AND o_totalprice < 50000 AND c_acctbal >= 1000
+AND c_nationkey = n_nationkey
+AND c_mktsegment IN ('HOUSEHOLD', 'MACHINERY');
+ --- extracted query:
+  
+ Select c_name as entity_name, n_name as country, o_totalprice as price 
+ From customer, nation, orders 
+ Where customer.c_nationkey = nation.n_nationkey
+ and customer.c_comment = orders.o_comment
+ and customer.c_acctbal <= orders.o_totalprice
+ and customer.c_mktsegment = 'MACHINERY'
+ and customer.c_comment = 'ording to the furiously regular'
+ and customer.c_acctbal >= 1000.0
+ and orders.o_totalprice <= 49999.99;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select c_name as entity_name, n_name as country, o_totalprice as
+price from customer, orders, nation where
+o_totalprice = c_acctbal and c_nationkey =
+n_nationkey and c_mktsegment IN ('HOUSEHOLD','MACHINERY');
+ --- extracted query:
+  
+ Select c_name as entity_name, n_name as country, c_acctbal as price 
+ From customer, nation, orders 
+ Where customer.c_nationkey = nation.n_nationkey
+ and customer.c_acctbal = orders.o_totalprice
+ and customer.c_mktsegment = 'MACHINERY';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select c_name as entity_name, n_name as country, o_totalprice as
+price from customer, orders, nation where
+o_totalprice = c_acctbal and c_nationkey =
+n_nationkey and c_mktsegment IN ('HOUSEHOLD','MACHINERY');
+ --- extracted query:
+  
+ Select c_name as entity_name, n_name as country, c_acctbal as price 
+ From customer, nation, orders 
+ Where customer.c_nationkey = nation.n_nationkey
+ and customer.c_acctbal = orders.o_totalprice
+ and customer.c_mktsegment IN ('HOUSEHOLD', 'MACHINERY');
+ --- END OF ONE EXTRACTION EXPERIMENT
