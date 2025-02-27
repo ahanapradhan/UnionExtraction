@@ -21,7 +21,7 @@ ORDER BY
     o_year;
 ```
 
--- Prompt Token count = 825
+-- Prompt Token count = 1945
 
 ```sql
 SELECT 
@@ -46,5 +46,5 @@ ORDER BY
     o_year;
 ```
 
--- Prompt Token count = 1135
+-- Prompt Token count = 2255
 

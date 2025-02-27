@@ -762,3 +762,39 @@ FROM(q1) = { orders, lineitem }, FROM(q2) = { lineitem, part }
  Group By c_name, o_clerk 
  Order By c_name asc, avg_balance asc, o_clerk asc;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name AS entity_name, n_name AS country, o_totalprice
+AS price FROM customer, orders, nation
+WHERE o_comment = c_comment AND o_totalprice >= c_acctbal
+AND o_totalprice < 50000 AND c_acctbal >= 1000
+AND c_nationkey = n_nationkey
+AND c_mktsegment IN ('HOUSEHOLD', 'MACHINERY');
+ --- extracted query:
+ Cannot do database minimizationSome problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name AS entity_name, n_name AS country, o_totalprice
+AS price FROM customer, orders, nation
+WHERE o_comment = c_comment AND o_totalprice >= c_acctbal
+AND o_totalprice < 50000 AND c_acctbal >= 1000
+AND c_nationkey = n_nationkey
+AND c_mktsegment IN ('HOUSEHOLD', 'MACHINERY');
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name AS entity_name, n_name AS country, o_totalprice
+AS price FROM customer, orders, nation
+WHERE o_comment = c_comment AND o_totalprice >= c_acctbal
+AND o_totalprice < 50000 AND c_acctbal >= 1000
+AND c_nationkey = n_nationkey
+AND c_mktsegment IN ('HOUSEHOLD', 'MACHINERY');
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT

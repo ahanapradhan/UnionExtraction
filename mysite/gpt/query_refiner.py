@@ -20,7 +20,7 @@ from ..gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guidelines, 
     Q2_seed_output, Q2_actual_output, Q16_text, Q16_seed, Q22_text, Q22_seed, Q22_seed_output, \
     Q22_actual_output, Q22_feedback1, Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output, Q13_feedback1, Q19_text, \
     Q19_seed, Q19_seed_output, Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output, Q13_feedback2, Q4_feedback2, \
-    Q16_feedback2
+    Q16_feedback2, Q18_feedback2
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -136,7 +136,7 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q15": [Q15_text, Q15_seed, Q15_seed_output, Q15_actual_output, [Q15_feedback1]],
                   "Q16": [Q16_text, Q16_seed, "", "", [Q16_feedback2]],
                   "Q17": [Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output],
-                  "Q18": [Q18_text, Q18_seed, Q18_seed_output, Q18_actual_output, [Q18_feedback1]],
+                  "Q18": [Q18_text, Q18_seed, Q18_seed_output, Q18_actual_output, [Q18_feedback1, Q18_feedback2]],
                   "Q19": [Q19_text, Q19_seed, Q19_seed_output, ""],
                   "Q20": [Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output],
                   "Q21": [Q21_text, Q21_seed, Q21_seed_output, Q21_actual_output, [Q21_feedback1]],

@@ -12,7 +12,8 @@ WHERE
     AND c1.c_acctbal > (
         SELECT AVG(c2.c_acctbal)
         FROM customer c2
-        WHERE c2.c_acctbal > 0
+        WHERE SUBSTRING(c2.c_phone FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+        AND c2.c_acctbal > 0
     )
     AND o.o_orderkey IS NULL
 GROUP BY 
@@ -21,7 +22,7 @@ ORDER BY
     cntrycode;
 ```
 
--- Prompt Token count = 939
+-- Prompt Token count = 2044
 
 ```sql
 SELECT 
@@ -31,7 +32,7 @@ SELECT
 FROM 
     customer c1
 LEFT JOIN 
-    orders o ON c1.c_custkey = o.o_custkey
+    orders o ON c1.c_custkey = o.o_custkey AND o.o_orderdate >= CURRENT_DATE - INTERVAL '7 years'
 WHERE 
     SUBSTRING(c1.c_phone FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
     AND c1.c_acctbal > (
@@ -47,5 +48,5 @@ ORDER BY
     cntrycode;
 ```
 
--- Prompt Token count = 1261
+-- Prompt Token count = 2366
 

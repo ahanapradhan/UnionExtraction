@@ -36,6 +36,8 @@ class ScaleDown(Cs2):
         pass
 
     def doAppCountJob(self, args):  # no need to app count for scaling down
+        if not self.enabled:
+            return True
         self.__delete_schema()
         self.__create_schema()
         self.set_data_schema(self.downscale_schema)

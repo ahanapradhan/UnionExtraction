@@ -10,16 +10,12 @@ WHERE nation.n_nationkey = supplier.s_nationkey
   AND part.p_type LIKE '%BRASS'
   AND partsupp.ps_supplycost = (
     SELECT MIN(ps_supplycost)
-    FROM nation n, region r, partsupp ps, supplier s
+    FROM partsupp ps
     WHERE ps.ps_partkey = part.p_partkey
-    AND ps.ps_suppkey = s.s_suppkey
-    AND s.s_nationkey = n.n_nationkey
-    AND n.r_regionkey = r.r_regionkey
-    AND r.r_name = 'EUROPE'
   )
 ORDER BY s_acctbal DESC, n_name ASC, s_name ASC, p_partkey ASC
 LIMIT 100;
 ```
 
--- Prompt Token count = 9666
+-- Prompt Token count = 9669
 

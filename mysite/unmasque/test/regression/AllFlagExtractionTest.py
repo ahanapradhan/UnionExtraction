@@ -1990,6 +1990,16 @@ ORDER BY
         print(f"scale down worked for {str(len(workload))} queries together!")
         print(init.local_elapsed_time)
 
+    def test_non_key_join(self):
+        query = """SELECT c_name AS entity_name, n_name AS country, o_totalprice
+AS price FROM customer, orders, nation
+WHERE o_comment = c_comment AND o_totalprice >= c_acctbal
+AND o_totalprice < 50000 AND c_acctbal >= 1000
+AND c_nationkey = n_nationkey
+AND c_mktsegment IN ('HOUSEHOLD', 'MACHINERY');"""
+        self.conn.config.scale_down=False
+        self.do_test(query)
+
     def test_scaleDown_workload100(self):
         workload = ["""SELECT o_orderpriority,
        Count(*) AS order_count
