@@ -7,6 +7,8 @@ from itertools import combinations
 from dateutil.relativedelta import relativedelta
 
 from .constants import NUMERIC_TYPES, INT_TYPES, TEXT_TYPES
+from .errorcodes import ERROR_003, ERROR_004
+from ..core.factory.error_handling import UnmasqueError
 from ...src.util import constants
 from ...src.util.constants import dummy_int, dummy_date, dummy_char, NUMBER_TYPES
 
@@ -142,7 +144,7 @@ def get_datatype_of_val(val):
     elif is_number(val):
         return 'numeric'
     else:
-        raise ValueError(f"Datatype of '{val}' is not supported.")
+        raise UnmasqueError(ERROR_003, "utils", {"Data": val})
 
 
 def get_unused_dummy_val(datatype, value_used):
@@ -155,7 +157,7 @@ def get_unused_dummy_val(datatype, value_used):
             constants.dummy_char = 65
         dint = get_char(constants.dummy_char)
     else:
-        raise ValueError(f"Dummy value of '{datatype}' not found.")
+        raise UnmasqueError(ERROR_004, "utils", {"Datatype": datatype})
 
     while dint in value_used:
         dint = get_val_plus_delta(datatype, dint, 1)

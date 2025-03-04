@@ -2,6 +2,8 @@ import copy
 from abc import abstractmethod, ABC
 
 from ...core.abstract.MinimizerBase import Minimizer
+from ...core.factory.error_handling import UnmasqueError
+from ...util.constants import UNMASQUE
 from ....src.core.aoa import InequalityPredicate
 from ....src.core.cs2 import Cs2
 from ....src.core.db_restorer import DbRestorer
@@ -71,15 +73,20 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
         self.update_state(DB_MINIMIZATION + START)
         vm = ViewMinimizer(self.connectionHelper, core_relations, self.db_restorer.last_restored_size, cs2.passed)
         self.update_state(DB_MINIMIZATION + RUNNING)
-        check = vm.doJob(query)
-        self.update_state(DB_MINIMIZATION + DONE)
-        time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
+        try:
+            check = vm.doJob(query)
+            self.update_state(DB_MINIMIZATION + DONE)
+            time_profile.update_for_view_minimization(vm.local_elapsed_time, vm.app_calls)
+        except UnmasqueError as e:
+            e.report_to_logger(self.logger)
+
         if not check or not vm.done:
             self.error = "Cannot do database minimization"
             self.logger.error(self.error)
             self.update_state(ERROR)
             self.info[DB_MINIMIZATION] = None
             return False, time_profile
+
         self.db_restorer.update_last_restored_size(vm.all_sizes)
         self.info[DB_MINIMIZATION] = vm.global_min_instance_dict
         self.global_min_instance_dict = copy.deepcopy(vm.global_min_instance_dict)

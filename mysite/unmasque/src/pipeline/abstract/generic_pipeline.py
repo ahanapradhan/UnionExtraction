@@ -5,8 +5,10 @@ from abc import abstractmethod, ABC
 
 from ...core.elapsed_time import create_zero_time_profile
 from ...core.factory.ExecutableFactory import ExecutableFactory
+from ...core.factory.error_handling import UnmasqueError
 from ...util.Log import Log
 from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING, ERROR
+from ...util.errorcodes import ERROR_002
 from ....src.core.result_comparator import ResultComparator
 
 
@@ -58,17 +60,18 @@ class GenericPipeLine(ABC):
             exe_factory = ExecutableFactory()
             exe_factory.set_hidden_query(query)
             app = exe_factory.create_exe(self.connectionHelper)
-            """
+
             try:
                 self.connectionHelper.connectUsingParams()
-                check_result = app.doJob(query)
+                check_result = app.doJob(f"set search_path='{self.connectionHelper.config.user_schema}';EXPLAIN {query}")
                 self.connectionHelper.closeConnection()
                 if isinstance(check_result, str):
+                    check_result = 'Error no 000 :), Reason: Syntax Error \n' + check_result
                     return check_result
             except Exception as e:
                 self.connectionHelper.closeConnection()
                 return str(e)
-            """
+
             app.method_call_count = 0
             result = self.extract(query)
             if result is None:

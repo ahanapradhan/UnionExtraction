@@ -1,7 +1,5 @@
-import copy
-import datetime
-from time import time
-
+from .factory.error_handling import UnmasqueError
+from ..util.errorcodes import ERROR_006
 from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 from ...src.core.initialization import Initiator
 from ...src.util.application_type import ApplicationType
@@ -20,13 +18,6 @@ class FromClause(AppExtractorBase):
         self.core_relations = []
         self.method = self.TYPE_ERROR
         self.timeout = True
-        self.check_relations = None
-
-    def set_check_relations(self, tabs):
-        self.check_relations = copy.deepcopy(tabs)
-
-    def reset_check_relations(self):
-        self.check_relations = None
 
     def set_app_type(self):
         app_type = self.connectionHelper.config.app_type
@@ -42,9 +33,7 @@ class FromClause(AppExtractorBase):
             self.method = self.TYPE_RENAME
 
     def get_core_relations_by_void(self, query):
-        if not len(self.check_relations):
-            self.set_check_relations(self.all_relations)
-        for tabname in self.check_relations:
+        for tabname in self.all_relations:
             try:
                 self.connectionHelper.begin_transaction()
                 self.connectionHelper.execute_sql(
@@ -61,12 +50,6 @@ class FromClause(AppExtractorBase):
                 self.logger.error("Error Occurred in table extraction. Error: " + str(error))
             finally:
                 self.connectionHelper.rollback_transaction()
-                """
-                self.connectionHelper.execute_sql(
-                    [self.connectionHelper.queries.drop_table(self.get_original_table_name(tabname)),
-                     self.connectionHelper.queries.alter_table_rename_to(
-                         self.get_original_table_name(self._get_dirty_name(tabname)), tabname)], self.logger)
-                """
 
     def get_core_relations_by_error(self, query):
         for tabname in self.all_relations:
@@ -86,42 +69,27 @@ class FromClause(AppExtractorBase):
                 self.logger.info(str(error))
             finally:
                 self.connectionHelper.rollback_transaction()
-                '''
-                check_c = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
-                    self.get_original_table_name(tabname)), self.logger)
-                self.logger.debug(check_c)
-                '''
-
-    def __check_base_tables(self):
-        for tab in self.all_relations:
-            check_c = self.connectionHelper.execute_sql_fetchone_0(self.connectionHelper.queries.get_row_count(
-                self.get_original_table_name(tab)), self.logger)
-            self.logger.debug(check_c)
 
     def extract_params_from_args(self, args):
         if len(args) == 1:
             return args[0], ""
         return args[0], args[1]
 
-    def setup(self, query):
+    def setup(self):
         self.set_app_type()
         check = self.init.result
         if not self.init.done:
-            check = self.init.doJob(query)
+            check = self.init.doJob()
         if not check:
             return False
         self.all_relations = self.init.all_relations
-        # self.local_start_time = self.init.local_end_time
-        # still in union pipeline from clause timins include initiator timings. Find out why.
         return True
 
     def doActualJob(self, args=None):
-        query, method = self.extract_params_from_args(args)
-
-        setup_done = self.setup(query)
+        setup_done = self.setup()
         if not setup_done:
             return False
-        print(f"Start from {str(datetime.datetime.now().time())}")
+
         query, method = self.extract_params_from_args(args)
         if not method:
             method = self.method
@@ -130,6 +98,8 @@ class FromClause(AppExtractorBase):
             self.get_core_relations_by_void(query)
         else:
             self.get_core_relations_by_error(query)
+        if len(self.core_relations) == 0:
+            raise UnmasqueError(ERROR_006, "from_clause", {})
         return self.core_relations
 
     def get_key_lists(self):

@@ -1,6 +1,8 @@
 import pandas as pd
 
 from .abstract.MinimizerBase import Minimizer
+from .factory.error_handling import UnmasqueError
+from ..util.errorcodes import ERROR_002, ERROR_001
 
 
 def extract_start_and_end_page(logger, rctid):
@@ -30,7 +32,7 @@ class ViewMinimizer(Minimizer):
         query = self.extract_params_from_args(args)
         if not self.sanity_check(query):
             self.logger.error(" Original database is not giving populated result!")
-            return False
+            raise UnmasqueError(ERROR_001, "view_minimizer",{})
         return self.reduce_Database_Instance(query, True) if self.cs2_passed \
             else self.reduce_Database_Instance(query, False)
 
@@ -77,9 +79,7 @@ class ViewMinimizer(Minimizer):
                                                                     self._get_dirty_name(tabname))
 
             if not self.sanity_check(query):
-                self.error_table = tabname
-                print(f"Query is producing empty result with following minimized table\n {tabname}, {core_sizes[tabname]}")
-                return False
+                raise UnmasqueError(ERROR_002, "view_minimizer", {"table": tabname, "tab_size": core_sizes[tabname]})
 
         for tabname in self.core_relations:
             self.connectionHelper.execute_sql(
