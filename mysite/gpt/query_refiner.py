@@ -20,7 +20,7 @@ from ..gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guidelines, 
     Q2_seed_output, Q2_actual_output, Q16_text, Q16_seed, Q22_text, Q22_seed, Q22_seed_output, \
     Q22_actual_output, Q22_feedback1, Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output, Q13_feedback1, Q19_text, \
     Q19_seed, Q19_seed_output, Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output, Q13_feedback2, Q4_feedback2, \
-    Q16_feedback2, Q18_feedback2
+    Q16_feedback2, Q18_feedback2, Q20_feedback1, Q20_feedback2, Q13_feedback11, Q13_feedback12
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI()
@@ -131,14 +131,14 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q10": [Q10_text, Q10_seed, Q10_seed_output, Q10_actual_output],
                   "Q11": [Q11_text, Q11_seed, Q11_seed_output, Q11_actual_output, [Q11_feedback1]],
                   "Q12": [Q12_text, Q12_seed, Q12_seed_output, Q12_actual_output, [Q12_feedback1]],
-                  "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output, [Q13_feedback1, Q13_feedback2]],
+                  "Q13": [Q13_text, Q13_seed, Q13_seed_output, Q13_actual_output, [Q13_feedback11, Q13_feedback12]],
                   "Q14": [Q14_text, Q14_seed, Q14_seed_output, Q14_actual_output, [Q14_feedback1]],
                   "Q15": [Q15_text, Q15_seed, Q15_seed_output, Q15_actual_output, [Q15_feedback1]],
                   "Q16": [Q16_text, Q16_seed, "", "", [Q16_feedback2]],
                   "Q17": [Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output],
                   "Q18": [Q18_text, Q18_seed, Q18_seed_output, Q18_actual_output, [Q18_feedback1, Q18_feedback2]],
                   "Q19": [Q19_text, Q19_seed, Q19_seed_output, ""],
-                  "Q20": [Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output],
+                  "Q20": [Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output, [Q20_feedback1, Q20_feedback2]],
                   "Q21": [Q21_text, Q21_seed, Q21_seed_output, Q21_actual_output, [Q21_feedback1]],
                   "Q22": [Q22_text, Q22_seed, Q22_seed_output, Q22_actual_output, [Q22_feedback1]],
                   "Q23": [Q23_text, Q23_seed],
@@ -224,13 +224,18 @@ if __name__ == '__main__':
 
     refiner = create_query_refiner(model_name)
     schema = etpch_schema
+
     unique_prompt = f"{get_text(query_key)}\n" \
                     f"{seed_query_question}\n{get_seed(query_key)}" \
                     f"\n{get_seed_output(query_key)}\n{get_actual_output(query_key)}"
     # print(unique_prompt)
+    """
     prompt = f"{text_2_sql_question}\n{unique_prompt}" \
              f"\n{schema}\n{general_guidelines}"
-
+    """
+    # print(unique_prompt)
+    prompt = f"{text_2_sql_question}\n{unique_prompt}" \
+             f"\n{schema}"
     output1 = refiner.doJob_write(prompt, query_key)
     print(output1)
     do_feedback_refinement(no_show=True)

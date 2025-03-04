@@ -1,108 +1,33 @@
 ```sql
-SELECT
-    wl_orderkey,
-    SUM(wl_extendedprice * (1 - wl_discount)) AS revenue,
-    o_orderdate,
-    o_shippriority
-FROM
-    customer,
-    orders,
-    web_lineitem
-WHERE
-    c_mktsegment = 'FURNITURE'
-    AND c_custkey = o_custkey
-    AND wl_orderkey = o_orderkey
-    AND o_orderdate < DATE '1995-01-01'
-    AND wl_shipdate > DATE '1995-01-01'
-GROUP BY
-    wl_orderkey,
-    o_orderdate,
-    o_shippriority
-UNION ALL
-SELECT
-    sl_orderkey,
-    SUM(sl_extendedprice * (1 - sl_discount)) AS revenue,
-    o_orderdate,
-    o_shippriority
-FROM
-    customer,
-    orders,
-    store_lineitem
-WHERE
-    c_mktsegment = 'FURNITURE'
-    AND c_custkey = o_custkey
-    AND sl_orderkey = o_orderkey
-    AND o_orderdate < DATE '1995-01-01'
-    AND sl_shipdate > DATE '1995-01-01'
-GROUP BY
-    sl_orderkey,
-    o_orderdate,
-    o_shippriority
-ORDER BY
-    revenue DESC
+SELECT o.o_shippriority, 
+       SUM(wl.wl_extendedprice * (1 - wl.wl_discount)) AS potential_revenue
+FROM orders o
+JOIN web_lineitem wl ON o.o_orderkey = wl.wl_orderkey
+WHERE wl.wl_shipdate > :given_date
+GROUP BY o.o_orderkey, o.o_shippriority
+ORDER BY potential_revenue DESC
 LIMIT 10;
 ```
 
--- Prompt Token count = 2768
+-- Prompt Token count = 1584
 
 ```sql
-SELECT
-    orderkey,
-    SUM(revenue) AS revenue,
-    o_orderdate,
-    o_shippriority
+SELECT o_shippriority, SUM(extended_revenue) AS potential_revenue
 FROM (
-    SELECT
-        wl_orderkey AS orderkey,
-        SUM(wl_extendedprice * (1 - wl_discount)) AS revenue,
-        o_orderdate,
-        o_shippriority
-    FROM
-        customer,
-        orders,
-        web_lineitem
-    WHERE
-        c_mktsegment = 'FURNITURE'
-        AND c_custkey = o_custkey
-        AND wl_orderkey = o_orderkey
-        AND o_orderdate < DATE '1995-01-01'
-        AND wl_shipdate > DATE '1995-01-01'
-    GROUP BY
-        wl_orderkey,
-        o_orderdate,
-        o_shippriority
-
+    SELECT o.o_shippriority, (wl.wl_extendedprice * (1 - wl.wl_discount)) AS extended_revenue
+    FROM orders o
+    JOIN web_lineitem wl ON o.o_orderkey = wl.wl_orderkey
+    WHERE wl.wl_shipdate > :given_date
     UNION ALL
-
-    SELECT
-        sl_orderkey AS orderkey,
-        SUM(sl_extendedprice * (1 - sl_discount)) AS revenue,
-        o_orderdate,
-        o_shippriority
-    FROM
-        customer,
-        orders,
-        store_lineitem
-    WHERE
-        c_mktsegment = 'FURNITURE'
-        AND c_custkey = o_custkey
-        AND sl_orderkey = o_orderkey
-        AND o_orderdate < DATE '1995-01-01'
-        AND sl_shipdate > DATE '1995-01-01'
-    GROUP BY
-        sl_orderkey,
-        o_orderdate,
-        o_shippriority
-) AS combined_orders
-GROUP BY
-    orderkey,
-    o_orderdate,
-    o_shippriority
-ORDER BY
-    revenue DESC,
-    o_orderdate
+    SELECT o.o_shippriority, (sl.sl_extendedprice * (1 - sl.sl_discount)) AS extended_revenue
+    FROM orders o
+    JOIN store_lineitem sl ON o.o_orderkey = sl.sl_orderkey
+    WHERE sl.sl_shipdate > :given_date
+) AS combined_revenue
+GROUP BY o_shippriority
+ORDER BY potential_revenue DESC
 LIMIT 10;
 ```
 
--- Prompt Token count = 2777
+-- Prompt Token count = 1593
 

@@ -9,7 +9,7 @@ ORDER BY total_quantity DESC
 LIMIT 100;
 ```
 
--- Prompt Token count = 3301
+-- Prompt Token count = 3326
 
 ```sql
 SELECT c.c_name, c.c_custkey, o.o_orderkey, o.o_orderdate, o.o_totalprice, SUM(wl.wl_quantity) AS total_quantity
@@ -22,7 +22,7 @@ ORDER BY total_quantity DESC
 LIMIT 100;
 ```
 
--- Prompt Token count = 3474
+-- Prompt Token count = 3499
 
 ```sql
 SELECT c.c_name, c.c_custkey, o.o_orderkey, o.o_orderdate, o.o_totalprice, SUM(wl.wl_quantity) AS total_quantity
@@ -40,5 +40,5 @@ ORDER BY total_quantity DESC
 LIMIT 100;
 ```
 
--- Prompt Token count = 7074
+-- Prompt Token count = 7099
 

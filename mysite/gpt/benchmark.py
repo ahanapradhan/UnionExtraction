@@ -196,10 +196,12 @@ general_guidelines = """Strictly follow the instructions given below for your SQ
 1. Strictly use the tables given in the seed query. Do not use any table that is absent in the seed query.
 2. Do not use redundant join conditions. Do not use CROSS-JOIN.
 3. Do not use any predicate with place holder parameter.
-4. Do not use window functions, such as RANK() OVER PARTITION BY, and functions such as NULLIF, COALESCE.
+4. Do not use functions such as NULLIF, COALESCE.
 5. Whenever the seed query has projections, strictly re-use their order and aliases.
 6. Produce SQL compatible for PostgreSQL Engine.
-7. Any of the join predicate may actually be IN operator with nested subquery. The inner query may have group by clause. For such a nested query, do not use the redundant join predicate.
+7. Any of the join predicate may actually be semi-join, that can be written with IN operator and nested query.
+8. A GROUP BY attribute must be present in the projection.
+
 """
 text_2_sql_question = """Give me SQL for the following text 
 (Give only the SQL, do not add any explanation. 
@@ -928,16 +930,17 @@ Q13_seed = """Select o_orderdate as c_count, Count(*) as c_orderdate, <unknown> 
  Group By o_orderdate, custdist
  Order By c_count DESC, custdist <unknwon>; 
  
- Projection 'o_orderdate as c_count' must be there in the query.
- The seed query produces more rows than the actual output.
+ 1. Projection 'o_orderdate as c_count' must be there in the query.
+ 2. Remember that a GROUP BY attribute must be present in the projection.
+ 3.The seed query produces more rows than the actual output.
  So, either 'Group by o_orderdate, custdist' needs more attributes in this clause, or there needs to be nested group by clause.
- Nested group by has one group by clause in the inner query, one group by clause in the outer query.
- In such a nested query, COUNT function is used in the projection only once in the inner query, and once in the outer query.
+ 4. Nested group by has one group by clause in the inner query, one group by clause in the outer query.
+ 5. In such a nested query, COUNT function is used in the projection only once in the inner query, and once in the outer query.
  Since 'Count(*) as c_orderdate' is present in the outer query, it will stay as it is. 
  If any more COUNT is required, that should be in the inner query.
- 'Order by c_count DESC' is correct. Do not change it.
+ 6. 'Order by c_count DESC' is correct. Do not change it.
 """
-Q13_seed_output = """The above seed query gives the following result (first 100 rows):
+Q13_seed_output = """The seed query gives the following result (first 100 rows):
 "1998-08-02"	581	1
 "1998-08-01"	618	1
 "1998-07-31"	621	1
@@ -1144,9 +1147,239 @@ NULL	0	50005
 Fix the seed query.
 Projection 'o_orderdate as c_count' must be there in the query.
 Validate all the other projections against the text.
-Do not use COALESCE in SELECT Clause.
 The query has 3 projections, with their aliases as c_count, c_orderdate and custdist. 
+Always remember that a GROUP BY attribute must be present in the projection (SELECT attributes).
+Do not use COALESCE function. I repeat, do not use COALESCE.
 Fix the SQL."""
+Q13_feedback11 = """The following SQLs are incorrect. Neither of them produces the actual output. Do not produce any of the following SQLs.
+Q1. SELECT 
+    COALESCE(order_count, 0) AS order_count,
+    COUNT(c.c_custkey) AS customer_count
+FROM 
+    customer c
+LEFT JOIN 
+    (SELECT 
+        o_custkey, 
+        COUNT(o_orderkey) AS order_count
+     FROM 
+        orders
+     WHERE 
+        o_comment NOT LIKE '%special%requests%'
+     GROUP BY 
+        o_custkey) o
+ON 
+    c.c_custkey = o.o_custkey
+GROUP BY 
+    order_count
+ORDER BY 
+    order_count;
+
+
+Q2. SELECT 
+    subquery.c_count, 
+    COUNT(*) AS c_orderdate, 
+    subquery.custdist 
+FROM 
+    (
+        SELECT 
+            o.o_orderdate AS c_count, 
+            COUNT(o.o_orderkey) AS custdist 
+        FROM 
+            customer c 
+        LEFT JOIN 
+            orders o 
+        ON 
+            c.c_custkey = o.o_custkey 
+            AND o.o_comment NOT LIKE '%special%requests%' 
+        GROUP BY 
+            o.o_orderdate, c.c_custkey
+    ) AS subquery 
+GROUP BY 
+    subquery.c_count, subquery.custdist 
+ORDER BY 
+    subquery.c_count DESC, subquery.custdist ASC;
+    
+Q3. SELECT 
+    c_count, 
+    COUNT(*) AS c_orderdate, 
+    order_count AS custdist
+FROM (
+    SELECT 
+        customer.c_custkey, 
+        o_orderdate AS c_count,
+        COUNT(orders.o_orderkey) AS order_count
+    FROM 
+        customer
+    LEFT JOIN 
+        orders ON customer.c_custkey = orders.o_custkey 
+        AND orders.o_comment NOT LIKE '%special%requests%'
+    GROUP BY 
+        customer.c_custkey, o_orderdate
+) AS subquery
+GROUP BY 
+    c_count, order_count
+ORDER BY 
+    custdist desc, c_count asc;
+    
+Q4. SELECT 
+    order_count,
+    COUNT(c.c_custkey) AS customer_count
+FROM 
+    customer c
+LEFT JOIN 
+    (SELECT 
+        o_custkey, 
+        COUNT(o_orderkey) AS order_count
+     FROM 
+        orders
+     WHERE 
+        o_comment NOT LIKE '%special%requests%'
+     GROUP BY 
+        o_custkey) o
+ON 
+    c.c_custkey = o.o_custkey
+GROUP BY 
+    order_count
+ORDER BY 
+    order_count;
+
+Q5.
+SELECT 
+    c_count, 
+    COUNT(*) AS c_orderdate, 
+    custdist
+FROM (
+    SELECT 
+        o.o_orderdate AS c_count, 
+        COUNT(o.o_orderkey) AS custdist 
+    FROM 
+        customer c 
+    LEFT JOIN 
+        orders o 
+    ON 
+        c.c_custkey = o.o_custkey 
+        AND o.o_comment NOT LIKE '%special%requests%' 
+    GROUP BY 
+        c.c_custkey, o.o_orderdate
+) AS subquery 
+GROUP BY 
+    c_count, custdist 
+ORDER BY 
+    c_count DESC, custdist;
+    
+Q6.
+SELECT 
+    c_count, 
+    COUNT(*) AS c_orderdate, 
+    custdist
+FROM (
+    SELECT c.c_custkey,
+        o.o_orderdate AS c_count, 
+        COUNT(o.o_orderkey) AS custdist 
+    FROM 
+        customer c 
+    LEFT JOIN 
+        orders o 
+    ON 
+        c.c_custkey = o.o_custkey 
+        AND o.o_comment NOT LIKE '%special%requests%' 
+    GROUP BY 
+        c.c_custkey, o.o_orderdate
+) AS subquery 
+GROUP BY 
+    c_count, custdist 
+ORDER BY 
+    c_count DESC, custdist;
+    
+Q7.
+sql
+SELECT 
+    c_count, 
+    c_orderdate, 
+    custdist
+FROM (
+    SELECT 
+        o.o_orderdate AS c_count, 
+        COUNT(o.o_orderkey) AS c_orderdate, 
+        COUNT(DISTINCT c.c_custkey) AS custdist
+    FROM 
+        customer c 
+    LEFT JOIN 
+        orders o 
+    ON 
+        c.c_custkey = o.o_custkey 
+        AND o.o_comment NOT LIKE '%special%requests%' 
+    GROUP BY 
+        o.o_orderdate
+) AS subquery 
+GROUP BY 
+    c_count, c_orderdate, custdist 
+ORDER BY 
+    c_count DESC, custdist;
+    
+Q8.SELECT 
+    c_count, 
+    c_orderdate, 
+    custdist
+FROM (
+    SELECT 
+        o.o_orderdate AS c_count, 
+        COUNT(o.o_orderkey) AS c_orderdate, 
+        COUNT(DISTINCT c.c_custkey) AS custdist
+    FROM 
+        customer c 
+    LEFT JOIN 
+        orders o 
+    ON 
+        c.c_custkey = o.o_custkey 
+        AND o.o_comment NOT LIKE '%special%requests%' 
+    GROUP BY 
+        o.o_orderdate
+    UNION ALL
+    SELECT 
+        NULL AS c_count, 
+        0 AS c_orderdate, 
+        COUNT(c.c_custkey) AS custdist
+    FROM 
+        customer c
+    LEFT JOIN 
+        orders o 
+    ON 
+        c.c_custkey = o.o_custkey 
+    WHERE 
+        o.o_custkey IS NULL
+) AS subquery 
+GROUP BY 
+    c_count, c_orderdate, custdist 
+ORDER BY 
+    c_count DESC, custdist;
+    
+Produce a correct SQL. Do not repeat any of the above SQLs.
+Do not use COALESCE function. COALESCE word should not appear anywhere in your answer.
+Validate your formulation against the text description.
+Do not use two COUNT aggregation in the same subquery.
+If your answer matches with any one of the queries given above, 
+simply say "I don't know anymore"
+Why are you using UNION ALL? If you are out of answer, simply say "I don't know anymore".
+
+The fist 3 result rows produced by Q6 is:
+c_count,c_orderdate,custdist
+NULL	50005	0
+"1998-08-02"	573	1
+"1998-08-01"	608	1
+
+Whereas in actual output should be as follows:
+c_count,c_orderdate,custdist
+NULL	0	50005
+"1995-01-13"	1	686
+"1996-05-31"	1	685
+
+Looks like projection elements require reordering, keeping the aliases unchanged
+Meaning, COUNT(*) is not c_orderdate. Since c_count is o_orderdate, so only choice is, COUNT(*) as custdist.
+Try this projection. Remember, projection alises must be c_count, c_orderdate, custdist.. in this order.
+Do not change order by clause attribtes.
+"""
+Q13_feedback12 = """Why are you using UNION ALL? If you are out of answer, simply say "I don't know anymore"."""
 Q13_feedback1 = """
 SELECT 
     subquery.c_count, 
@@ -2043,56 +2276,56 @@ where (p_partkey = wl_partkey
                 and l_quantity between 1 and 11
                 and p_container = 'SM PKG')
     OR (p_partkey = wl_partkey
-                and p_brand = 'Brand#12' 
+                and p_brand = 'Brand#23' 
                 and p_size between 1 and 10 
                 and l_shipinstruct = 'DELIVER IN PERSON'
                 and l_shipmode = 'AIR'
                 and l_quantity between 10 and 20
                 and p_container = 'MED CASE') 
     OR (p_partkey = wl_partkey
-                and p_brand = 'Brand#12' 
+                and p_brand = 'Brand#23' 
                 and p_size between 1 and 10 
                 and l_shipinstruct = 'DELIVER IN PERSON'
                 and l_shipmode = 'AIR'
                 and l_quantity between 10 and 20
                 and p_container = 'MED BOX')
     OR (p_partkey = wl_partkey
-                and p_brand = 'Brand#12' 
+                and p_brand = 'Brand#23' 
                 and p_size between 1 and 10 
                 and l_shipinstruct = 'DELIVER IN PERSON'
                 and l_shipmode = 'AIR'
                 and l_quantity between 10 and 20
                 and p_container = 'MED PACK')
     OR (p_partkey = wl_partkey
-                and p_brand = 'Brand#12' 
+                and p_brand = 'Brand#23' 
                 and p_size between 1 and 10 
                 and l_shipinstruct = 'DELIVER IN PERSON'
                 and l_shipmode = 'AIR'
                 and l_quantity between 10 and 20
                 and p_container = 'MED PKG')
     OR (p_partkey = wl_partkey
-                and p_brand = 'Brand#12' 
+                and p_brand = 'Brand#34' 
                 and p_size between 1 and 15 
                 and l_shipinstruct = 'DELIVER IN PERSON'
                 and l_shipmode = 'AIR'
                 and l_quantity between 20 and 30
                 and p_container = 'LG CASE') 
     OR (p_partkey = wl_partkey
-                and p_brand = 'Brand#12' 
+                and p_brand = 'Brand#34' 
                 and p_size between 1 and 15 
                 and l_shipinstruct = 'DELIVER IN PERSON'
                 and l_shipmode = 'AIR'
                 and l_quantity between 20 and 30
                 and p_container = 'LG BOX')
     OR (p_partkey = wl_partkey
-                and p_brand = 'Brand#12' 
+                and p_brand = 'Brand#34' 
                 and p_size between 1 and 15 
                 and l_shipinstruct = 'DELIVER IN PERSON'
                 and l_shipmode = 'AIR'
                 and l_quantity between 20 and 30
                 and p_container = 'LG PACK')
     OR (p_partkey = wl_partkey
-                and p_brand = 'Brand#12' 
+                and p_brand = 'Brand#34' 
                 and p_size between 1 and 15 
                 and l_shipinstruct = 'DELIVER IN PERSON'
                 and l_shipmode = 'AIR'
@@ -2270,6 +2503,82 @@ The above seed query produces the following output:
 Q20_actual_output = """
 Validate whether the predicates of the seed query match against the text.
 Fix the query."""
+
+Q20_feedback1 = """You for mulated the following query:
+SELECT s_name, s_address
+FROM supplier
+WHERE s_suppkey IN (
+    SELECT ps_suppkey
+    FROM partsupp
+    WHERE ps_partkey IN (
+        SELECT wl_partkey
+        FROM web_lineitem
+        WHERE wl_shipdate BETWEEN '1995-01-01' AND '1995-12-31'
+        AND wl_quantity > 0.5 * (
+            SELECT SUM(wl_quantity)
+            FROM web_lineitem
+            WHERE wl_shipdate BETWEEN '1995-01-01' AND '1995-12-31'
+            AND wl_partkey = partsupp.ps_partkey
+            AND wl_suppkey = partsupp.ps_suppkey
+        )
+    )
+    AND ps_availqty > 0.5 * (
+        SELECT SUM(wl_quantity)
+        FROM web_lineitem
+        WHERE wl_shipdate BETWEEN '1995-01-01' AND '1995-12-31'
+        AND wl_partkey = partsupp.ps_partkey
+        AND wl_suppkey = partsupp.ps_suppkey
+    )
+)
+AND s_nationkey = (
+    SELECT n_nationkey
+    FROM nation
+    WHERE n_name = 'FRANCE'
+)
+AND EXISTS (
+    SELECT 1
+    FROM part
+    WHERE p_partkey = partsupp.ps_partkey
+    AND p_name LIKE '%ivory%'
+)
+ORDER BY s_name ASC;
+
+It has syntax error: ERROR:  missing FROM-clause entry for table "partsupp"
+LINE 34:     WHERE p_partkey = partsupp.ps_partkey
+                               ^
+SQL state: 42P01
+Character: 903
+
+Fix the query. Also, remove any redundant nesting."""
+
+Q20_feedback2 = """You formulated the following query:
+SELECT s_name, s_address
+FROM supplier
+WHERE s_suppkey IN (
+    SELECT ps_suppkey
+    FROM partsupp
+    WHERE ps_availqty > 0.5 * (
+        SELECT SUM(l_quantity)
+        FROM lineitem
+        WHERE l_shipdate BETWEEN '1995-01-01' AND '1995-12-31'
+        AND l_partkey = partsupp.ps_partkey
+        AND l_suppkey = partsupp.ps_suppkey
+    )
+    AND ps_partkey IN (
+        SELECT p_partkey
+        FROM part
+        WHERE p_name LIKE '%ivory%'
+    )
+)
+AND s_nationkey = (
+    SELECT n_nationkey
+    FROM nation
+    WHERE n_name = 'FRANCE'
+)
+ORDER BY s_name ASC;
+
+Result is matching. So, remove any redundant nesting without changing the query.
+"""
 
 Q21_text = """The query identifies suppliers, for nation 'ARGENTINA', whose product was part of a
 multi-supplier online order (with current status of 'F') where they were the 
