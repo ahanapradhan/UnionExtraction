@@ -5,6 +5,8 @@ from ...util.constants import NON_TEXT_TYPES, TEXT_TYPES, NUMERIC_TYPES, INT_TYP
 from ....src.core.abstract.MutationPipeLineBase import MutationPipeLineBase
 from ....src.util.aoa_utils import get_tab, get_attrib, get_constants_for
 from ....src.util.utils import get_format, get_min_and_max_val
+from ....src.util.error_handling import UnmasqueError
+from ....src.util.error_codes import ERROR_005
 
 
 class UN2WhereClause(MutationPipeLineBase):
@@ -80,7 +82,7 @@ class UN2WhereClause(MutationPipeLineBase):
         elif any(x in self.attrib_types_dict[tab_attrib] for x in NUMERIC_TYPES):
             return 'numeric'
         else:
-            raise ValueError(f"Datatype '{self.attrib_types_dict[tab_attrib]}' for attribute '{tab_attrib[1]}' in table '{tab_attrib[0]}' is not supported.")
+            raise UnmasqueError(ERROR_005, "un2_where_clause", f"Problem occured in Table {tab_attrib[0]}, attribute {tab_attrib[1]}, datatype {self.attrib_types_dict[tab_attrib]}")
 
     def get_dmin_val_of_attrib_list(self, attrib_list: list) -> list:
         val_list = []

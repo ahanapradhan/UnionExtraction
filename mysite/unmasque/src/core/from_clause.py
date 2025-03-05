@@ -6,6 +6,8 @@ from ...src.core.abstract.AppExtractorBase import AppExtractorBase
 from ...src.core.initialization import Initiator
 from ...src.util.application_type import ApplicationType
 from ...src.util.constants import REL_ERROR
+from ..util.error_handling import UnmasqueError
+from ..util.error_codes import ERROR_006
 
 
 class FromClause(AppExtractorBase):
@@ -130,6 +132,8 @@ class FromClause(AppExtractorBase):
             self.get_core_relations_by_void(query)
         else:
             self.get_core_relations_by_error(query)
+        if len(self.core_relations) == 0:
+            raise UnmasqueError(ERROR_006, "from_clause", {})
         return self.core_relations
 
     def get_key_lists(self):
