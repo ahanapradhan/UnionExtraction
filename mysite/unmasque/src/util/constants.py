@@ -40,7 +40,7 @@ IDENTICAL_EXPR = "identical_expr_nc"
 # we use 1 and 999 to limit, otw overflow can occur
 pr_min = 0.01
 pr_max = 999
-
+un_precision = 2
 max_str_len = 500
 
 OK = "OK"
