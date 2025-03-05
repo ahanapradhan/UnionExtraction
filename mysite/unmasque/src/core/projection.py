@@ -5,7 +5,7 @@ import numpy as np
 from sympy import symbols, expand, collect, nsimplify, Rational, Integer, simplify
 
 from .dataclass.genPipeline_context import GenPipelineContext
-from ..util.constants import CONST_1_VALUE, NUMBER_TYPES
+from ..util.constants import CONST_1_VALUE, NUMBER_TYPES, un_precision
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ...src.util import constants
@@ -273,7 +273,7 @@ class Projection(GenerationPipeLineBase):
             return [[1]]
 
         coeff = np.zeros((2 ** n, 2 ** n))
-        np.set_printoptions(formatter={'float': '{:0.3f}'.format})
+        np.set_printoptions(formatter={'float': lambda x: f"{x:.{un_precision + 1}f}"})
 
         for i in range(n):
             coeff[0][i] = value_used[value_used.index(dep[i][1]) + 1]
@@ -312,7 +312,7 @@ class Projection(GenerationPipeLineBase):
         self.logger.debug("Coeff: ", coeff, "b: ", b)
         # self.logger.debug(f"condition number: {str(np.linalg.cond(coeff))}")
         solution = np.linalg.solve(coeff, b)
-        solution = np.around(solution, decimals=3)
+        solution = np.around(solution, decimals =un_precision + 1)
         final_res = 0
         for i, ele in enumerate(self.syms[idx]):
             final_res += (ele * solution[i])
@@ -321,7 +321,7 @@ class Projection(GenerationPipeLineBase):
         self.logger.debug("Equation", coeff, b)
         self.logger.debug("Solution", solution)
         res_expr = beautify_scalar_func(final_res, local_symbol_list, dep)
-        projected_attrib[idx] = str(round_expr(res_expr, 2))
+        projected_attrib[idx] = str(round_expr(res_expr, un_precision))
         return solution
 
     def __infinite_loop(self, coeff, dep):
@@ -370,7 +370,7 @@ class Projection(GenerationPipeLineBase):
             if datatype == 'int':
                 s_val = random.randrange(mini, maxi)
             elif datatype == 'numeric':
-                s_val = round(random.uniform(mini, maxi), 3)
+                s_val = round(random.uniform(mini, maxi), un_precision + 1)
         else:
             self.logger.debug(f"mini: {mini}, maxi: {maxi}")
             s_val = random.randrange(math.floor(mini), math.ceil(maxi))

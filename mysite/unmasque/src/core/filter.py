@@ -6,6 +6,7 @@ from typing import List
 from ..core.abstract.abstractConnection import AbstractConnectionHelper
 from ..core.abstract.un2_where_clause import UN2WhereClause
 from ..util.aoa_utils import get_constants_for
+from ..util.constants import un_precision
 from ..util.utils import is_int, get_val_plus_delta, get_min_and_max_val, \
     is_left_less_than_right_by_cutoff, get_format, get_mid_val, get_cast_value
 
@@ -203,15 +204,15 @@ class Filter(UN2WhereClause):
             val = self.get_filter_value(query, 'float', float_dmin_val - 5, max_val_domain,
                                         '<=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val), float(val) + 0.99, '<=', attrib_list)
-            val1 = truncate_value(val1, 2)
-            filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, 2))))
+            val1 = truncate_value(val1, un_precision)
+            filterAttribs.append((tabname, attrib, '<=', float(min_val_domain), float(round_floor(val1, un_precision))))
 
         elif not min_present and max_present:
             val = self.get_filter_value(query, 'float', min_val_domain, float_dmin_val + 5,
                                         '>=', attrib_list)
             val1 = self.get_filter_value(query, 'float', float(val) - 1, val, '>=', attrib_list)
-            val1 = truncate_value(val1, 2)
-            filterAttribs.append((tabname, attrib, '>=', float(round_ceil(val1, 2)), float(max_val_domain)))
+            val1 = truncate_value(val1, un_precision)
+            filterAttribs.append((tabname, attrib, '>=', float(round_ceil(val1, un_precision)), float(max_val_domain)))
 
     def get_filter_value(self, query, datatype, min_val, max_val, operator, attrib_list):
         query_front_set = set()
