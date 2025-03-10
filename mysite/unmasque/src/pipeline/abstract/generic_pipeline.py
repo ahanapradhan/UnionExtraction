@@ -7,6 +7,8 @@ from ...core.elapsed_time import create_zero_time_profile
 from ...core.factory.ExecutableFactory import ExecutableFactory
 from ...util.Log import Log
 from ...util.constants import WAITING, DONE, WRONG, RESULT_COMPARE, START, RUNNING, ERROR
+from ...util.error_handling import UnmasqueError
+from ...util.error_codes import ERROR_000
 from ....src.core.result_comparator import ResultComparator
 
 
@@ -58,17 +60,20 @@ class GenericPipeLine(ABC):
             exe_factory = ExecutableFactory()
             exe_factory.set_hidden_query(query)
             app = exe_factory.create_exe(self.connectionHelper)
-            """
+
             try:
                 self.connectionHelper.connectUsingParams()
-                check_result = app.doJob(query)
+                check_result = app.doJob(f"set search_path='{self.connectionHelper.config.user_schema}';EXPLAIN {query}")
                 self.connectionHelper.closeConnection()
                 if isinstance(check_result, str):
-                    return check_result
+                    raise UnmasqueError(ERROR_000, "un2_where_clause", f"\n{check_result}")
+
             except Exception as e:
+                if isinstance(e, UnmasqueError):
+                    e.report_to_logger(self.logger)
                 self.connectionHelper.closeConnection()
                 return str(e)
-            """
+
             app.method_call_count = 0
             result = self.extract(query)
             if result is None:
