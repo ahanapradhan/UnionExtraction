@@ -68,9 +68,11 @@ class GenericPipeLine(ABC):
                 if isinstance(check_result, str):
                     raise UnmasqueError(ERROR_000, "un2_where_clause", f"\n{check_result}")
 
+            except UnmasqueError as e:
+                e.report_to_logger(self.logger)
+                self.connectionHelper.closeConnection()
+                return str(e)
             except Exception as e:
-                if isinstance(e, UnmasqueError):
-                    e.report_to_logger(self.logger)
                 self.connectionHelper.closeConnection()
                 return str(e)
 

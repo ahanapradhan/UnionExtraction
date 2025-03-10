@@ -32,9 +32,11 @@ class Base(TpchSanitizer):
         self.local_start_time = time.time()
         try:
             self.result = self.doAppCountJob(args)
+        except UnmasqueError as e:
+            e.report_to_logger(self.logger)
+            self.done = False
+            return str(e)
         except Exception as e:
-            if isinstance(e, UnmasqueError):
-                e.report_to_logger(self.logger)
             self.done = False
             return str(e)
         else:
