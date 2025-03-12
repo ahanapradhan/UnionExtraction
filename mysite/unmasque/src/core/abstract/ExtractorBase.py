@@ -1,6 +1,7 @@
 import time
 from abc import abstractmethod
 
+from ...util.error_handling import UnmasqueError
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ....src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 from ....src.util.Log import Log
@@ -25,11 +26,16 @@ class Base(TpchSanitizer):
         self.done = False
         self.result = None
         self.logger = Log(name, connectionHelper.config.log_level)
+        self.error = None
 
     def doJob(self, *args):
         self.local_start_time = time.time()
         try:
             self.result = self.doAppCountJob(args)
+        except UnmasqueError as e:
+            e.report_to_logger(self.logger)
+            self.done = False
+            return str(e)
         except Exception as e:
             self.done = False
             return str(e)
