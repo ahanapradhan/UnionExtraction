@@ -158,7 +158,7 @@ def get_unused_dummy_val(datatype, value_used):
             constants.dummy_char = 65
         dint = get_char(constants.dummy_char)
     else:
-        raise UnmasqueError(ERROR_004, "utils", f"The datatype is {datatype}")
+        raise UnmasqueError(ERROR_004, "utils", f"Problem in generating database for datatype :-{datatype}")
 
     while dint in value_used:
         dint = get_val_plus_delta(datatype, dint, 1)
@@ -171,7 +171,7 @@ def get_unused_dummy_val(datatype, value_used):
         dint = get_char(dint)
         constants.dummy_char = get_int(dint)
     else:
-        raise ValueError
+        raise UnmasqueError(ERROR_004, "utils", f"Problem in generating database for datatype :-{datatype}")
     return dint
 
 

@@ -2,6 +2,7 @@ import time
 from abc import abstractmethod
 
 from ...util.error_handling import UnmasqueError
+from ...util.constants import OK
 from ....src.core.abstract.abstractConnection import AbstractConnectionHelper
 from ....src.pipeline.abstract.TpchSanitizer import TpchSanitizer
 from ....src.util.Log import Log
@@ -35,7 +36,7 @@ class Base(TpchSanitizer):
         except UnmasqueError as e:
             e.report_to_logger(self.logger)
             self.done = False
-            return str(e)
+            return OK
         except Exception as e:
             self.done = False
             return str(e)

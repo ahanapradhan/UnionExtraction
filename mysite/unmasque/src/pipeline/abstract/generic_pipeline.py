@@ -66,7 +66,7 @@ class GenericPipeLine(ABC):
                 check_result = app.doJob(f"set search_path='{self.connectionHelper.config.user_schema}';EXPLAIN {query}")
                 self.connectionHelper.closeConnection()
                 if isinstance(check_result, str):
-                    raise UnmasqueError(ERROR_000, "un2_where_clause", f"\n{check_result}")
+                    raise UnmasqueError(ERROR_000, "generic_pipeline", f"\n{check_result}")
 
             except UnmasqueError as e:
                 e.report_to_logger(self.logger)
@@ -85,6 +85,9 @@ class GenericPipeLine(ABC):
             self.verify_correctness(query, result)
             self.time_profile.update_for_app(app.method_call_count)
             return result
+        except UnmasqueError as e:
+            e.report_to_logger(self.logger)
+            return self.error
         except Exception as e:
             self.error += str(e)
             self.logger.error(self.error)

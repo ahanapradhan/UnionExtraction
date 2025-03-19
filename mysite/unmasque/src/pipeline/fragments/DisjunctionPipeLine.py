@@ -81,7 +81,7 @@ class DisjunctionPipeLine(GenericPipeLine, ABC):
             e.report_to_logger(self.logger)
 
         if not check or not vm.done:
-            self.error = "Cannot do database minimization"
+            # self.error = "Cannot do database minimization"
             self.logger.error(self.error)
             self.update_state(ERROR)
             self.info[DB_MINIMIZATION] = None

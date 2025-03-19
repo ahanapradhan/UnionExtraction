@@ -43,7 +43,7 @@ pr_max = 999
 un_precision = 2
 max_str_len = 500
 
-OK = "OK"
+OK = "OK "
 
 DATABASE_SECTION = "database"
 SUPPORT_SECTION = "support"

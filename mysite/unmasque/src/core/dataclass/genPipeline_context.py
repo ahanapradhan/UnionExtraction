@@ -6,6 +6,8 @@ from frozenlist._frozenlist import FrozenList
 from ..aoa import InequalityPredicate
 from ..filter import Filter
 from ...util.aoa_utils import get_constants_for
+from ...util.error_codes import ERROR_007
+from ...util.error_handling import UnmasqueError
 from ...util.utils import get_val_plus_delta, get_min_and_max_val
 
 
@@ -295,7 +297,7 @@ class GenPipelineContext:
                         values.append((i_min, i_max))
                 self.__adjust_for_in_predicates(attrib, tab, values)
             else:
-                raise ValueError("Disjunction on Multiple Attributes are out of scope!")
+                raise UnmasqueError(ERROR_007, "genPipeline_context", "Disjunction on Multiple Attributes are out of scope!")
 
     def __adjust_for_in_predicates(self, attrib, tab, _values):
         values = []

@@ -465,7 +465,7 @@ def need_permanent_mutation(datatype, diffs: list) -> bool:
     elif datatype in ['int', 'numeric']:
         d_val = delta
     else:
-        raise ValueError
+        raise UnmasqueError(ERROR_005, "aoa_utils", f"The datatype is {datatype}")
     val = conseq(diffs)
     return val == d_val
 
