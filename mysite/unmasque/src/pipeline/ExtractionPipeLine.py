@@ -7,7 +7,7 @@ from ...src.pipeline.fragments.NepPipeLine import NepPipeLine
 from .abstract.generic_pipeline import GenericPipeLine
 from ..core.elapsed_time import create_zero_time_profile
 from ..util.constants import FROM_CLAUSE, START, DONE, RUNNING, PROJECTION, \
-    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, UNION, ERROR
+    GROUP_BY, AGGREGATE, ORDER_BY, LIMIT, UNION, ERROR, OK
 from ...src.core.aggregation import Aggregation
 from ...src.core.from_clause import FromClause
 from ...src.core.groupby_clause import GroupBy
@@ -88,7 +88,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
 
         check, time_profile = self._mutation_pipeline(core_relations, query, time_profile)
         if not check:
-            self.error += "Some problem in Regular mutation pipeline. Aborting extraction!"
+            # self.error += OK
             self.logger.error(self.error)
             self.update_state(ERROR)
             self.time_profile.update(time_profile)
@@ -97,7 +97,7 @@ class ExtractionPipeLine(DisjunctionPipeLine,
         check, time_profile = self._extract_disjunction(self.aoa.arithmetic_filters,
                                                         core_relations, query, time_profile)
         if not check:
-            self.error += "Some problem in disjunction pipeline. Aborting extraction!"
+            # self.error += OK
             self.logger.error(self.error)
             self.update_state(ERROR)
             self.time_profile.update(time_profile)

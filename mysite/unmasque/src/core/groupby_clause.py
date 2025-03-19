@@ -3,6 +3,8 @@ import ast
 from frozenlist._frozenlist import FrozenList
 
 from .dataclass.genPipeline_context import GenPipelineContext
+from ..util.error_codes import ERROR_005
+from ..util.error_handling import UnmasqueError
 
 from ...src.core.abstract.GenerationPipeLineBase import GenerationPipeLineBase, get_boundary_value
 from ...src.core.abstract.abstractConnection import AbstractConnectionHelper
@@ -175,7 +177,7 @@ class GroupBy(GenerationPipeLineBase):
                         gap = zone_val - zero_val
                     else:
                         self.logger.debug(f"Datatype '{datatype}' is not supported.")
-                        raise ValueError(f"Datatype '{datatype}' is not supported.")
+                        raise UnmasqueError(ERROR_005, "groupby_clause", f"Datatype '{datatype}' is not supported.")
                     if gap >= left:
                         zero_val = get_val_plus_delta(datatype, zero_val, left)
                         break

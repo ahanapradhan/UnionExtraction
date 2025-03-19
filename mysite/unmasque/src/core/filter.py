@@ -7,6 +7,8 @@ from ..core.abstract.abstractConnection import AbstractConnectionHelper
 from ..core.abstract.un2_where_clause import UN2WhereClause
 from ..util.aoa_utils import get_constants_for
 from ..util.constants import un_precision
+from ..util.error_handling import UnmasqueError
+from ..util.error_codes import ERROR_007
 from ..util.utils import is_int, get_val_plus_delta, get_min_and_max_val, \
     is_left_less_than_right_by_cutoff, get_format, get_mid_val, get_cast_value
 
@@ -147,7 +149,7 @@ class Filter(UN2WhereClause):
         elif datatype in ['numeric', 'float']:
             self.handle_precision_filter(filter_attribs, query, attrib_list, min_val_domain, max_val_domain)
         else:
-            raise ValueError("Datatype is Not Handled by Current UNMASQUE...sorry! ")
+            raise UnmasqueError(ERROR_007, "filter", f"Datatype {datatype}, is Not Handled by Current UNMASQUE...sorry!")
 
     def checkAttribValueEffect(self, query, val, attrib_list):
         prev_values = self.get_dmin_val_of_attrib_list(attrib_list)
