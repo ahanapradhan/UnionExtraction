@@ -3,7 +3,10 @@ from _decimal import Decimal
 from datetime import date
 from typing import Union, List, Tuple
 
+from .constants import NUMERIC_TYPES
 from ..util.utils import get_datatype_of_val, get_format
+from ..util.error_handling import UnmasqueError
+from ..util.error_codes import ERROR_005
 
 
 def optimize_edge_set(edge_set: List[Tuple[Tuple[str, str], Tuple[str, str]]]):
@@ -471,11 +474,11 @@ def get_constants_for(datatype):
     if datatype in ['int', 'date', 'number', 'integer']:
         while_cut_off = 0
         delta = 1
-    elif datatype in ['numeric', 'float', 'decimal', 'Decimal', 'real']:
+    elif datatype in NUMERIC_TYPES:
         while_cut_off = 0.00
         delta = 0.01
     else:
-        raise ValueError(f"Unsupported datatype: {datatype}")
+        raise UnmasqueError(ERROR_005, "aoa_utils", f"The datatype is {datatype}")
     return delta, while_cut_off
 
 
