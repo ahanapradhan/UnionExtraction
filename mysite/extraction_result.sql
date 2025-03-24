@@ -849,3 +849,128 @@ n_nationkey and c_mktsegment IN ('HOUSEHOLD','MACHINERY');
  and customer.c_acctbal = orders.o_totalprice
  and customer.c_mktsegment IN ('HOUSEHOLD', 'MACHINERY');
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ Select ps_COMMENT, sum(ps_supplycost * ps_availqty) as value From partsupp, supplier, nation         Where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'ARGENTINA' Group By ps_COMMENT         Order by value desc Limit 100;
+ --- extracted query:
+  
+ Select ps_comment, Sum(ps_availqty*ps_supplycost) as value 
+ From nation, partsupp, supplier 
+ Where nation.n_nationkey = supplier.s_nationkey
+ and partsupp.ps_suppkey = supplier.s_suppkey
+ and nation.n_name = 'ARGENTINA' 
+ Group By ps_comment 
+ Order By value desc, ps_comment asc 
+ Limit 100;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT name, phone_num
+FROM ((
+SELECT
+c_name AS name, c_phone as phone_num
+FROM customer, orders
+	WHERE c_custkey = o_custkey and c_acctbal <= o_totalprice
+)
+UNION ALL
+(-- subquery 𝑞2
+SELECT s_name AS name, s_phone as phone_num
+	FROM supplier
+WHERE  EXISTS (select wl_suppkey from web_lineitem, orders 
+			   WHERE wl_orderkey = o_orderkey 
+			   AND s_acctbal <= o_totalprice 
+			   AND wl_commitdate = wl_receiptdate
+			  )
+	)) as people
+GROUP BY name, phone_num Limit 100;
+ --- extracted query:
+  
+ (Select s_name as name, s_phone as phone_num 
+ From orders, supplier, web_lineitem 
+ Where orders.o_orderkey = web_lineitem.wl_orderkey
+ and web_lineitem.wl_commitdate = web_lineitem.wl_receiptdate
+ and supplier.s_acctbal <= orders.o_totalprice 
+ Group By s_name, s_phone 
+ Order By phone_num asc, name desc 
+ Limit 100)
+ UNION ALL  
+ (Select c_name as name, c_phone as phone_num 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_acctbal <= orders.o_totalprice 
+ Group By c_name, c_phone 
+ Order By phone_num asc, name desc 
+ Limit 100);
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT name, phone_num
+FROM (
+(-- subquery 𝑞2
+SELECT s_name AS name, s_phone as phone_num
+	FROM supplier
+WHERE  EXISTS (select wl_suppkey from web_lineitem, orders 
+			   WHERE wl_orderkey = o_orderkey 
+			   AND s_acctbal <= o_totalprice 
+			   AND wl_commitdate = wl_receiptdate
+			  )
+	)) as people
+GROUP BY name, phone_num Limit 100;
+ --- extracted query:
+  
+ Select s_name as name, s_phone as phone_num 
+ From orders, supplier, web_lineitem 
+ Where orders.o_orderkey = web_lineitem.wl_orderkey
+ and web_lineitem.wl_commitdate = web_lineitem.wl_receiptdate
+ and supplier.s_acctbal <= orders.o_totalprice 
+ Group By s_name, s_phone 
+ Order By name asc, phone_num desc 
+ Limit 100;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT name, phone_num
+FROM (
+(-- subquery 𝑞2
+SELECT s_name AS name, s_phone as phone_num
+	FROM supplier
+WHERE  EXISTS (select wl_suppkey from web_lineitem, orders 
+			   WHERE wl_orderkey = o_orderkey 
+			   AND s_acctbal <= o_totalprice 
+			   AND wl_commitdate >= wl_receiptdate
+			  )
+	)) as people
+GROUP BY name, phone_num Limit 100;
+ --- extracted query:
+  
+ Select s_name as name, s_phone as phone_num 
+ From orders, supplier, web_lineitem 
+ Where orders.o_orderkey = web_lineitem.wl_orderkey
+ and supplier.s_acctbal <= orders.o_totalprice
+ and web_lineitem.wl_receiptdate <= web_lineitem.wl_commitdate 
+ Group By s_name, s_phone 
+ Order By name asc, phone_num asc 
+ Limit 100;
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT s_name AS name, s_phone as phone
+FROM supplier, web_lineitem, orders WHERE wl_orderkey = o_orderkey
+AND s_suppkey = wl_suppkey AND s_acctbal <= o_totalprice
+AND wl_commitdate = wl_receiptdate GROUP BY s_name, s_phone;
+ --- extracted query:
+  
+ Select s_name as name, s_phone as phone 
+ From orders, supplier, web_lineitem 
+ Where orders.o_orderkey = web_lineitem.wl_orderkey
+ and supplier.s_suppkey = web_lineitem.wl_suppkey
+ and web_lineitem.wl_commitdate = web_lineitem.wl_receiptdate
+ and supplier.s_acctbal <= orders.o_totalprice 
+ Group By s_name, s_phone 
+ Order By name asc, phone asc;
+ --- END OF ONE EXTRACTION EXPERIMENT
