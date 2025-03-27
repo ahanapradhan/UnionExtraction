@@ -22,7 +22,7 @@ set xtics nomirror
 set ytics nomirror
 set ytics 15
 
-# Define colors
+# Define colors and styles
 set style line 1 lc rgb "#8a2be2"  # FROM (Violet) - with texture
 set style line 2 lc rgb "#ff7f0e"  # DB Minimization (Orange) - with texture
 set style line 3 lc rgb "#2ca02c"  # XRE-others (Green) - with texture

@@ -974,3 +974,15 @@ AND wl_commitdate = wl_receiptdate GROUP BY s_name, s_phone;
  Group By s_name, s_phone 
  Order By name asc, phone asc;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ SELECT c_name, c_phone from customer, orders where
+            c_custkey = o_custkey and c_acctbal < 1000;
+ --- extracted query:
+  
+ Select c_name, c_phone 
+ From customer, orders 
+ Where customer.c_custkey = orders.o_custkey
+ and customer.c_acctbal <= 999.99;
+ --- END OF ONE EXTRACTION EXPERIMENT

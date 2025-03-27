@@ -1,6 +1,6 @@
 
 set terminal pngcairo size 1000,500 enhanced font 'Arial,20'
-set output 'stacked_barplot.png'
+set output 'stack_times.png'
 
 set xlabel "QID" font ", 24"
 set ylabel "Extraction Time (Minutes)" font ", 24"
@@ -25,19 +25,15 @@ set style line 5 lc rgb "#FFD700"  # XFE-Comb (Yellow) - different texture
 
 # Define inline data
 $DATA << EOD
-2   5   5    10  240  126
-7   5   313  5   240  0
-8   17  19.5 20  240  0
-11  13  15   8   240  0
-12  8.5 9.5  7   240  0
-13  12  8    3   136  32
-15  8   27   6   240  0
-16  13  50   4   120  0
-17  10  21   5   120  0
-18  15  150  40  240  0
-20  5   54   25  160  0
-21  2   27   15  120  0
-22  8   425  30  240  0
+3  0   0    0   0    0
+4  0   0    0   0    0
+5  0   0    0   0    0
+6  0   0    0   0    0
+7   2   40   10  50   0
+8   0   0    0   0    0
+9   1   5    20  200  0
+10  5   50   10   100  0
+
 EOD
 
 # Plot the stacked bars

@@ -241,6 +241,12 @@ c_acctbal > 30.04;"""
                 "ON c_nationkey = n_nationkey GROUP BY c_name, n_name;"
         self.do_test(query)
 
+    def test_new_paper_query_u1(self):
+        self.conn.config.use_cs2 = False
+        self.conn.config.detect_union = False
+        self.do_test("""SELECT c_name, c_phone from customer, orders where
+            c_custkey = o_custkey and c_acctbal < 1000;""")
+
     def test_new_paper_query(self):
         self.conn.config.use_cs2 = False
         self.conn.config.detect_union = False

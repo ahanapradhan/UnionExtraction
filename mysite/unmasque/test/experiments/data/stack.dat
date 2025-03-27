@@ -1,0 +1,60 @@
+============= Given Query ===============
+select count(distinct account.ac_display_name)
+        from account, so_user, badge b1, badge1 b2
+        where
+--account.ac_website_url != '' and
+account.ac_id = so_user.su_account_id and
+b1.b_site_id = so_user.su_site_id and
+b1.b_user_id = so_user.su_id and
+b1.b_name = 'Supporter' and
+b2.b1_site_id = so_user.su_site_id and
+b2.b1_user_id = so_user.su_id and
+b2.b1_name = 'Student' and
+b2.b1_date > b1.b_date --+ '3 months'::interval
+=========== Extracted Query =============
+
+ Select Count(*) as count
+ From account, badge, badge1, so_user
+ Where account.ac_id = so_user.su_account_id
+ and badge.b_site_id = badge1.b1_site_id
+ and badge1.b1_site_id = so_user.su_site_id
+ and badge.b_user_id = badge1.b1_user_id
+ and badge1.b1_user_id = so_user.su_id
+ and badge.b_date < badge1.b1_date
+ and badge.b_name = 'Supporter'
+ and badge1.b1_name = 'Student';
+================ Profile ================
+╒══════════════════════╤════════════╤═════════╕
+│ Step                 │   Time (s) │   Total │
+╞══════════════════════╪════════════╪═════════╡
+│ From Clause:         │       1.77 │       5 │
+├──────────────────────┼────────────┼─────────┤
+│ Union:               │       0    │       0 │
+├──────────────────────┼────────────┼─────────┤
+│ Restore DB:          │       0.99 │       0 │
+├──────────────────────┼────────────┼─────────┤
+│ Correlated Sampling: │       0    │       0 │
+├──────────────────────┼────────────┼─────────┤
+│ View Minimization:   │      38.4  │      69 │
+├──────────────────────┼────────────┼─────────┤
+│ Where Clause:        │       6.29 │     309 │
+├──────────────────────┼────────────┼─────────┤
+│ Projection:          │       1.81 │      36 │
+├──────────────────────┼────────────┼─────────┤
+│ Group BY:            │       8.37 │      21 │
+├──────────────────────┼────────────┼─────────┤
+│ Aggregation:         │       0.76 │       0 │
+├──────────────────────┼────────────┼─────────┤
+│ Order by:            │       1.1  │       1 │
+├──────────────────────┼────────────┼─────────┤
+│ Limit:               │      59.92 │       4 │
+├──────────────────────┼────────────┼─────────┤
+│ Outer Join:          │       0    │       0 │
+├──────────────────────┼────────────┼─────────┤
+│ NEP:                 │       0    │       0 │
+├──────────────────────┼────────────┼─────────┤
+│ Result               │      18.79 │       1 │
+│  Comparator:         │            │         │
+├──────────────────────┼────────────┼─────────┤
+│ Total:               │     467.67 │     446 │
+╘══════════════════════╧════════════╧═════════╛

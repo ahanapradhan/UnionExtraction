@@ -5,6 +5,7 @@ from abc import abstractmethod
 import tiktoken
 from openai import OpenAI
 
+from mysite.gpt.stack_benchmark import sQ9_text, stack_schema, sQ9_seed
 from ..gpt.benchmark import Q1_text, Q1_seed, etpch_schema, general_guidelines, text_2_sql_question, \
     seed_query_question, Q1_seed_output, Q1_actual_output, Q3_text, Q3_seed, Q3_seed_output, Q3_actual_output, Q4_text, \
     Q4_seed_output, Q4_actual_output, Q4_seed, Q4_feedback1, Q3_feedback1, Q5_text, Q5_seed, Q5_seed_output, \
@@ -138,11 +139,12 @@ benchmark_dict = {"Q1": [Q1_text, Q1_seed, Q1_seed_output, Q1_actual_output],
                   "Q17": [Q17_text, Q17_seed, Q17_seed_output, Q17_actual_output],
                   "Q18": [Q18_text, Q18_seed, Q18_seed_output, Q18_actual_output, [Q18_feedback1, Q18_feedback2]],
                   "Q19": [Q19_text, Q19_seed, Q19_seed_output, ""],
-                  "Q20": [Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output, [Q20_feedback1, Q20_feedback2]],
+                  "Q20": [Q20_text, Q20_seed, Q20_seed_output, Q20_actual_output],
                   "Q21": [Q21_text, Q21_seed, Q21_seed_output, Q21_actual_output, [Q21_feedback1]],
                   "Q22": [Q22_text, Q22_seed, Q22_seed_output, Q22_actual_output, [Q22_feedback1]],
                   "Q23": [Q23_text, Q23_seed],
-                  "Q24": [Q24_text, Q24_seed, Q24_seed_output, Q24_actual_output]
+                  "Q24": [Q24_text, Q24_seed, Q24_seed_output, Q24_actual_output],
+                  "sQ9": [sQ9_text, sQ9_seed]
                   }
 
 
@@ -223,19 +225,21 @@ if __name__ == '__main__':
         exit()
 
     refiner = create_query_refiner(model_name)
-    schema = etpch_schema
+    schema = stack_schema  # etpch_schema
 
     unique_prompt = f"{get_text(query_key)}\n" \
                     f"{seed_query_question}\n{get_seed(query_key)}" \
                     f"\n{get_seed_output(query_key)}\n{get_actual_output(query_key)}"
     # print(unique_prompt)
-    """
+
     prompt = f"{text_2_sql_question}\n{unique_prompt}" \
              f"\n{schema}\n{general_guidelines}"
+
     """
     # print(unique_prompt)
     prompt = f"{text_2_sql_question}\n{unique_prompt}" \
              f"\n{schema}"
+    """
     output1 = refiner.doJob_write(prompt, query_key)
     print(output1)
     do_feedback_refinement(no_show=True)
