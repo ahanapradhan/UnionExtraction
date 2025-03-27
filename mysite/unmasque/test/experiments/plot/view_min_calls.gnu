@@ -27,14 +27,14 @@ set xtics rotate by 45 offset 0,-1
 plot '-' using ($2+$3+750):xtic(1) title "Database Minimization"  with boxes ls 1
 
 # Data to plot
-1	52  13
+1	431 0
 2	48  14
-3	52  13
-4	96  14
-5	176 18
-6	52  13
-7	420 17
-8	114 16
+3	963 0
+4	1266 0
+5	848  0
+6	589    0
+7	9700 0
+8	450  0
 9	210 18
 10	146 16
 11	44  12
