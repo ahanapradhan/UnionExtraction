@@ -46,7 +46,7 @@ plot '-' using ($2+$3+750):xtic(1) title "Database Minimization"  with boxes ls 
 17	651
 18	850
 19	17500
-20	67  14
+20	450
 21  500
 22	36000
 23	127 10
