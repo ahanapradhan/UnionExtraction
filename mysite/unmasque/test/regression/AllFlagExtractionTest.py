@@ -1122,6 +1122,94 @@ group by c_address
         self.conn.config.use_cs2 = False
         self.do_test(q24)
 
+    def test_stack_q9(self):
+        query = """select count(distinct account.ac_id) from
+account, 
+	site, 
+	so_user, 
+	question q, post_link pl, 
+	tag 
+	where
+not exists (select * from answer a where a.an_site_id = q.q_site_id and a.an_question_id = q.q_id) and
+site.s_site_name = 'stackoverflow' and
+site.s_site_id = q.q_site_id 
+	and
+pl.pl_site_id = q.q_site_id 
+	and
+pl.pl_post_id_to = q.q_id 
+	and
+tag.t_name = 'perl' and
+tag.t_site_id = q.q_site_id 
+	and
+q.q_creation_date > '2014-01-01'::date and
+q.q_owner_user_id = so_user.su_id 
+	and
+q.q_site_id = so_user.su_site_id 
+	and
+so_user.su_reputation > 67 and
+account.ac_id = so_user.su_account_id and
+account.ac_website_url != '';"""
+        self.conn.config.detect_union = False
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
+    def test_stack_q7(self):
+        query = """select count(distinct account.ac_display_name) 
+	from account, so_user, badge b1, badge1 b2 
+	where
+--account.ac_website_url != '' and
+account.ac_id = so_user.su_account_id and
+b1.b_site_id = so_user.su_site_id and
+b1.b_user_id = so_user.su_id and
+b1.b_name = 'Supporter' and
+b2.b1_site_id = so_user.su_site_id and
+b2.b1_user_id = so_user.su_id and
+b2.b1_name = 'Student' and
+b2.b1_date > b1.b_date --+ '3 months'::interval"""
+        self.conn.config.detect_union = False
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
+    def test_stack_q1(self):
+        """
+        question: many columns timestamp, change to date
+        q_deletion_date has all null values. Change to current date
+        q_closed_date has all null values. Change to current date
+        Returns:
+
+        """
+        query = """select count(*) from tag, site, question, tag_question
+where
+s_site_name='3dprinting' and
+t_name='material' and
+t_site_id = s_site_id and
+q_site_id = s_site_id and
+tq_site_id = s_site_id and
+tq_question_id = q_id and
+tq_tag_id = t_id;"""
+        self.conn.config.detect_union = False
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test(query)
+
+    def test_stack_basic(self):
+        self.conn.config.detect_union = False
+        self.conn.config.detect_or = False
+        self.conn.config.detect_nep = False
+        self.conn.config.detect_oj = False
+        self.conn.config.use_cs2 = False
+        self.do_test("select count(*), ac_display_name, s_site_name from account, so_user, site "
+                     "where ac_id = su_account_id and su_site_id = s_site_id"
+                     " group by ac_display_name, s_site_name;")
+
     def test_etpchQ14(self):
         self.conn.config.detect_union = True
         self.conn.config.detect_or = False
@@ -2003,7 +2091,7 @@ ORDER BY
 price from customer, orders, nation where
 o_totalprice = c_acctbal and c_nationkey =
 n_nationkey and c_mktsegment IN ('HOUSEHOLD','MACHINERY');"""
-        self.conn.config.scale_down=False
+        self.conn.config.scale_down = False
         self.conn.config.detect_or = True
         self.do_test(query)
 

@@ -7,13 +7,12 @@ partsupp,ps_suppkey,y,y,supplier,s_suppkey
 customer,c_custkey,y,n,,
 orders,o_orderkey,y,n,,
 web_lineitem,wl_orderkey,y,y,orders,o_orderkey
-web_lineitem,wl_linenumber,y,n,,
+web_lineitem1,wl1_orderkey,y,y,orders,o_orderkey
 nation,n_nationkey,y,n,,
 region,r_regionkey,y,n,,
 customer,c_nationkey,n,y,nation,n_nationkey
+customer1,c1_nationkey,n,y,nation,n_nationkey
 orders,o_custkey,n,y,customer,c_custkey
-web_lineitem,wl_partkey,n,y,part,p_partkey
-web_lineitem,wl_suppkey,n,y,supplier,s_suppkey
-web_lineitem,wl_partkey,n,y,partsupp,ps_partkey
-web_lineitem,wl_suppkey,n,y,partsupp,ps_suppkey
+store_lineitem,sl_partkey,n,y,part,p_partkey
 nation,n_regionkey,n,y,region,r_regionkey
+nation1,n1_regionkey,n,y,region,r_regionkey

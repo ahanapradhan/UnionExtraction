@@ -1029,7 +1029,7 @@ order by
         supplier_cnt desc,
         p_brand,
         p_type,
-        p_size;""", False, True, False, False, True),
+        p_size;""", False, False, False, False, True),
                      TestQuery("ETPCH_Q17", """select sum(wl_extendedprice) / 7.0 as avg_yearly
 from
         web_lineitem,
@@ -1128,9 +1128,9 @@ WHERE s_suppkey = l1.wl_suppkey
   AND l1.wl_commitdate < l1.wl_receiptdate
   AND EXISTS (
     SELECT 1
-    FROM web_lineitem l2
-    WHERE l1.wl_orderkey = l2.wl_orderkey
-      AND l1.wl_suppkey <> l2.wl_suppkey
+    FROM web_lineitem1 l2
+    WHERE l1.wl_orderkey = l2.wl1_orderkey
+      AND l1.wl_suppkey <> l2.wl1_suppkey
   )
   AND NOT EXISTS (
     SELECT 1
@@ -1185,6 +1185,44 @@ and ps2.ps1_availqty >= ps1.ps_availqty
 and o1.o_orderdate between date '1995-01-01' and date '1995-12-31'
 and o2.o1_orderdate between date '1995-01-01' and date '1995-12-31'
 group by c_address;""", False, True, False, False),
+                     TestQuery("""Stack_Q7""", """select count(distinct account.ac_display_name) 
+	from account, so_user, badge b1, badge1 b2 
+	where
+--account.ac_website_url != '' and
+account.ac_id = so_user.su_account_id and
+b1.b_site_id = so_user.su_site_id and
+b1.b_user_id = so_user.su_id and
+b1.b_name = 'Supporter' and
+b2.b1_site_id = so_user.su_site_id and
+b2.b1_user_id = so_user.su_id and
+b2.b1_name = 'Student' and
+b2.b1_date > b1.b_date --+ '3 months'::interval""", False, False, False, False),
+                     TestQuery("""Stack_Q9""", """select count(distinct account.ac_id) from
+account, 
+	site, 
+	so_user, 
+	question q, post_link pl, 
+	tag 
+	where
+not exists (select * from answer a where a.an_site_id = q.q_site_id and a.an_question_id = q.q_id) and
+site.s_site_name = 'stackoverflow' and
+site.s_site_id = q.q_site_id 
+	and
+pl.pl_site_id = q.q_site_id 
+	and
+pl.pl_post_id_to = q.q_id 
+	and
+tag.t_name = 'perl' and
+tag.t_site_id = q.q_site_id 
+	and
+q.q_creation_date > '2014-01-01'::date and
+q.q_owner_user_id = so_user.su_id 
+	and
+q.q_site_id = so_user.su_site_id 
+	and
+so_user.su_reputation > 67 and
+account.ac_id = so_user.su_account_id and
+account.ac_website_url != ''""", False, False, False, False)
 
                      ]
     return test_workload

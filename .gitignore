@@ -28,3 +28,5 @@ mysite/gpt/chatgpt_tpch_sql.py
 *.iml
 .idea/UnionExtraction.iml
 *.ini
+mysite/config.ini
+mysite/pkfkrelations.csv

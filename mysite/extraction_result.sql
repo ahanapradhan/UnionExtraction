@@ -974,3 +974,393 @@ AND wl_commitdate = wl_receiptdate GROUP BY s_name, s_phone;
  Group By s_name, s_phone 
  Order By name asc, phone asc;
  --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select * from tag;
+ --- extracted query:
+ connection already closed
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select * from tag;
+ --- extracted query:
+ connection already closed
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select * from tag;
+ --- extracted query:
+ connection already closed
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(*), ac_display_name, s_site_name from account, so_user, site where ac_id = su_account_id and su_site_id = s_site_idgroup by ac_display_name, s_site_name;
+ --- extracted query:
+ 
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(*), ac_display_name, s_site_name from account, so_user, site where ac_id = su_account_id and su_site_id = s_site_id group by ac_display_name, s_site_name;
+ --- extracted query:
+ too many values to unpack (expected 2)
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(*) from tag, site, question, tag_question
+where
+s_site_name='3dprinting' and
+t_name='material' and
+t_site_id = s_site_id and
+q_site_id = s_site_id and
+tq_site_id = s_site_id and
+tq_question_id = q_id and
+tq_tag_id = t_id;
+ --- extracted query:
+ invalid input syntax for type date: "None"
+LINE 1: UPDATE unmasque.question  SET q_deletion_date='None';
+                                                      ^
+Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(*) from tag, site, question, tag_question
+where
+s_site_name='3dprinting' and
+t_name='material' and
+t_site_id = s_site_id and
+q_site_id = s_site_id and
+tq_site_id = s_site_id and
+tq_question_id = q_id and
+tq_tag_id = t_id;
+ --- extracted query:
+ invalid input syntax for type date: "None"
+LINE 1: UPDATE unmasque.question  SET q_closed_date='None';
+                                                    ^
+Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(*) from tag, site, question, tag_question
+where
+s_site_name='3dprinting' and
+t_name='material' and
+t_site_id = s_site_id and
+q_site_id = s_site_id and
+tq_site_id = s_site_id and
+tq_question_id = q_id and
+tq_tag_id = t_id;
+ --- extracted query:
+  
+ Select Count(*) as count 
+ From question, site, tag, tag_question 
+ Where question.q_id = tag_question.tq_question_id
+ and question.q_site_id = site.s_site_id
+ and site.s_site_id = tag.t_site_id
+ and tag.t_site_id = tag_question.tq_site_id
+ and tag.t_id = tag_question.tq_tag_id
+ and site.s_site_name = '3dprinting'
+ and tag.t_name = 'material';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(distinct account.ac_display_name) 
+	from account, so_user, badge b1, badge1 b2 
+	where
+--account.ac_website_url != '' and
+account.ac_id = so_user.su_account_id and
+b1.b_site_id = so_user.su_site_id and
+b1.b_user_id = so_user.su_id and
+b1.b_name = 'Supporter' and
+b2.b1_site_id = so_user.su_site_id and
+b2.b1_user_id = so_user.su_id and
+b2.b1_name = 'Student' and
+b2.b1_date > b1.b_date --+ '3 months'::interval
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(distinct account.ac_display_name) 
+	from account, so_user, badge b1, badge1 b2 
+	where
+--account.ac_website_url != '' and
+account.ac_id = so_user.su_account_id and
+b1.b_site_id = so_user.su_site_id and
+b1.b_user_id = so_user.su_id and
+b1.b_name = 'Supporter' and
+b2.b1_site_id = so_user.su_site_id and
+b2.b1_user_id = so_user.su_id and
+b2.b1_name = 'Student' and
+b2.b1_date > b1.b_date --+ '3 months'::interval
+ --- extracted query:
+  
+ Select Count(*) as count 
+ From account, badge, badge1, so_user 
+ Where account.ac_id = so_user.su_account_id
+ and badge.b_site_id = badge1.b1_site_id
+ and badge1.b1_site_id = so_user.su_site_id
+ and badge.b_user_id = badge1.b1_user_id
+ and badge1.b1_user_id = so_user.su_id
+ and badge.b_date < badge1.b1_date
+ and badge.b_name = 'Supporter'
+ and badge1.b1_name = 'Student';
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(distinct account.ac_display_name) 
+	from account, so_user, badge b1, badge1 b2 
+	where
+--account.ac_website_url != '' and
+account.ac_id = so_user.su_account_id and
+b1.b_site_id = so_user.su_site_id and
+b1.b_user_id = so_user.su_id and
+b1.b_name = 'Supporter' and
+b2.b1_site_id = so_user.su_site_id and
+b2.b1_user_id = so_user.su_id and
+b2.b1_name = 'Student' and
+b2.b1_date > b1.b_date --+ '3 months'::interval
+ --- extracted query:
+ 
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(distinct account.ac_id) from
+account, site, so_user, question q, post_link pl, tag, tag_question tq where
+not exists (select * from answer a where a.an_site_id = q.q_site_id and a.an_question_id = q.q_id) and
+site.s_site_name = 'stackoverflow' and
+site.s_site_id = q.q_site_id and
+pl.pl_site_id = q.q_site_id and
+pl.pl_post_id_to = q.q_id and
+
+tag.t_name = 'perl' and
+tag.t_site_id = q.q_site_id and
+
+q.q_creation_date > '2014-01-01'::date and
+
+tq.tq_site_id = tag.t_site_id and
+tq.tq_tag_id = tag.t_id and
+tq.tq_question_id = q.q_id and
+
+q.q_owner_user_id = so_user.su_id and
+q.q_site_id = so_user.su_site_id and
+so_user.su_reputation > 67 and
+
+account.ac_id = so_user.su_account_id and
+account.ac_website_url != '';
+ --- extracted query:
+ Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ set search_path='experiments';
+select count(distinct account.ac_id) from
+account, 
+	site, 
+	so_user, 
+	question q, post_link pl, 
+	tag 
+	where
+not exists (select * from answer a where a.an_site_id = q.q_site_id and a.an_question_id = q.q_id) and
+site.s_site_name = 'stackoverflow' and
+site.s_site_id = q.q_site_id 
+	and
+pl.pl_site_id = q.q_site_id 
+	and
+pl.pl_post_id_to = q.q_id 
+	and
+tag.t_name = 'perl' and
+tag.t_site_id = q.q_site_id 
+	and
+q.q_creation_date > '2014-01-01'::date and
+q.q_owner_user_id = so_user.su_id 
+	and
+q.q_site_id = so_user.su_site_id 
+	and
+so_user.su_reputation > 67 and
+account.ac_id = so_user.su_account_id and
+account.ac_website_url != '';
+ --- extracted query:
+ 
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(distinct account.ac_id) from
+account, 
+	site, 
+	so_user, 
+	question q, post_link pl, 
+	tag 
+	where
+not exists (select * from answer a where a.an_site_id = q.q_site_id and a.an_question_id = q.q_id) and
+site.s_site_name = 'stackoverflow' and
+site.s_site_id = q.q_site_id 
+	and
+pl.pl_site_id = q.q_site_id 
+	and
+pl.pl_post_id_to = q.q_id 
+	and
+tag.t_name = 'perl' and
+tag.t_site_id = q.q_site_id 
+	and
+q.q_creation_date > '2014-01-01'::date and
+q.q_owner_user_id = so_user.su_id 
+	and
+q.q_site_id = so_user.su_site_id 
+	and
+so_user.su_reputation > 67 and
+account.ac_id = so_user.su_account_id and
+account.ac_website_url != '';
+ --- extracted query:
+ connection already closed
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(distinct account.ac_id) from
+account, 
+	site, 
+	so_user, 
+	question q, post_link pl, 
+	tag 
+	where
+not exists (select * from answer a where a.an_site_id = q.q_site_id and a.an_question_id = q.q_id) and
+site.s_site_name = 'stackoverflow' and
+site.s_site_id = q.q_site_id 
+	and
+pl.pl_site_id = q.q_site_id 
+	and
+pl.pl_post_id_to = q.q_id 
+	and
+tag.t_name = 'perl' and
+tag.t_site_id = q.q_site_id 
+	and
+q.q_creation_date > '2014-01-01'::date and
+q.q_owner_user_id = so_user.su_id 
+	and
+q.q_site_id = so_user.su_site_id 
+	and
+so_user.su_reputation > 67 and
+account.ac_id = so_user.su_account_id and
+account.ac_website_url != '';
+ --- extracted query:
+ invalid input syntax for type date: "None"
+LINE 1: UPDATE unmasque.answer  SET an_deletion_date='None';
+                                                     ^
+Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(distinct account.ac_id) from
+account, 
+	site, 
+	so_user, 
+	question q, post_link pl, 
+	tag 
+	where
+not exists (select * from answer a where a.an_site_id = q.q_site_id and a.an_question_id = q.q_id) and
+site.s_site_name = 'stackoverflow' and
+site.s_site_id = q.q_site_id 
+	and
+pl.pl_site_id = q.q_site_id 
+	and
+pl.pl_post_id_to = q.q_id 
+	and
+tag.t_name = 'perl' and
+tag.t_site_id = q.q_site_id 
+	and
+q.q_creation_date > '2014-01-01'::date and
+q.q_owner_user_id = so_user.su_id 
+	and
+q.q_site_id = so_user.su_site_id 
+	and
+so_user.su_reputation > 67 and
+account.ac_id = so_user.su_account_id and
+account.ac_website_url != '';
+ --- extracted query:
+ invalid input syntax for type date: "None"
+LINE 1: UPDATE unmasque.question  SET q_deletion_date='None';
+                                                      ^
+Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(distinct account.ac_id) from
+account, 
+	site, 
+	so_user, 
+	question q, post_link pl, 
+	tag 
+	where
+not exists (select * from answer a where a.an_site_id = q.q_site_id and a.an_question_id = q.q_id) and
+site.s_site_name = 'stackoverflow' and
+site.s_site_id = q.q_site_id 
+	and
+pl.pl_site_id = q.q_site_id 
+	and
+pl.pl_post_id_to = q.q_id 
+	and
+tag.t_name = 'perl' and
+tag.t_site_id = q.q_site_id 
+	and
+q.q_creation_date > '2014-01-01'::date and
+q.q_owner_user_id = so_user.su_id 
+	and
+q.q_site_id = so_user.su_site_id 
+	and
+so_user.su_reputation > 67 and
+account.ac_id = so_user.su_account_id and
+account.ac_website_url != '';
+ --- extracted query:
+ invalid input syntax for type date: "None"
+LINE 1: UPDATE unmasque.question  SET q_closed_date='None';
+                                                    ^
+Some problem in Regular mutation pipeline. Aborting extraction!
+ --- END OF ONE EXTRACTION EXPERIMENT
+
+ --- START OF ONE EXTRACTION EXPERIMENT
+ --- input query:
+ select count(distinct account.ac_id) from
+account, 
+	site, 
+	so_user, 
+	question q, post_link pl, 
+	tag 
+	where
+not exists (select * from answer a where a.an_site_id = q.q_site_id and a.an_question_id = q.q_id) and
+site.s_site_name = 'stackoverflow' and
+site.s_site_id = q.q_site_id 
+	and
+pl.pl_site_id = q.q_site_id 
+	and
+pl.pl_post_id_to = q.q_id 
+	and
+tag.t_name = 'perl' and
+tag.t_site_id = q.q_site_id 
+	and
+q.q_creation_date > '2014-01-01'::date and
+q.q_owner_user_id = so_user.su_id 
+	and
+q.q_site_id = so_user.su_site_id 
+	and
+so_user.su_reputation > 67 and
+account.ac_id = so_user.su_account_id and
+account.ac_website_url != '';
+ --- extracted query:
+ too many values to unpack (expected 2)
+ --- END OF ONE EXTRACTION EXPERIMENT
